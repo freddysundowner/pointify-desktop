@@ -1,0 +1,27 @@
+{
+    "name": "pointify-server",
+    "type": "module",
+    "main": "src/index.ts",
+    "scripts": {
+        "tsc": "tsc -p tsconfig.base.json",
+        "build:tsc": "tsc -p tsconfig.json",
+        "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs",
+        "build:watch": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs --watch",
+        "dev": "tsx watch src/index.ts",
+        "clean": "rm -rf dist && mkdir -p dist"
+    },
+    "dependencies": {
+        "dotenv": "^17.2.0",
+        "express": "^4.21.2",
+        "form-data": "^4.0.4",
+        "node-fetch": "^2.7.0",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.16.11",
+        "esbuild": "^0.25.0",
+        "tsx": "^4.19.1",
+        "typescript": "^5.0.0"
+    }
+}

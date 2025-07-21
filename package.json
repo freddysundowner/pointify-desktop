@@ -1,0 +1,128 @@
+{
+  "name": "pointify-desktop",
+  "version": "1.0.0",
+  "description": "Offline POS system with embedded MongoDB + Pointify API",
+  "main": "electron/main.cjs",
+  "private": true,
+  "scripts": {
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build:all": "npm run build:client && npm run build:server",
+    "build:production": "npm run export-data && npm run build:all",
+    "dev": "npm run build:all && electron ./electron/main.cjs",
+    "dev1": "electron ./electron/main.cjs",
+    "dev:full": "npm run build:production && electron ./electron/main.cjs",
+    "build:mac": "npm run build:production && electron-builder --mac",
+    "build:win": "npm run build:server && npm run build:client && electron-builder --win",
+    "build:linux": "npm run build:production && electron-builder --linux",
+    "build:all-platforms": "npm run build:production && electron-builder --mac --win --linux",
+    "build:mac-dev": "npm run build:all && electron-builder --mac",
+    "package": "electron-builder",
+    "clean": "rm -rf dist electron/data client/dist server/dist",
+    "test:export": "npm run export-data && echo 'Export test completed'",
+    "export-data": "node scripts/export-from-pointify-api.js"
+  },
+  "devDependencies": {
+    "dotenv": "^16.6.1",
+    "electron": "^29.0.0",
+    "electron-builder": "^24.11.0"
+  },
+  "author": "ReggyCodas <githumbi3fred@gmail.com>",
+  "build": {
+    "appId": "com.pointify.desktop",
+    "productName": "Pointify POS",
+    "directories": {
+      "output": "final",
+      "buildResources": "assets"
+    },
+    "asarUnpack": [
+      "**/server/dist/**/*",
+      "**/client/dist/**/*",
+      "**/electron/data/**/*",
+      "**/*.node"
+    ],
+    "files": [
+      "electron/**/*",
+      "server/dist/**/*",
+      "client/dist/**/*",
+      "package.json",
+      "!**/node_modules/**/*"
+    ],
+    "asar": {
+      "smartUnpack": true
+    },
+    "extraResources": [
+      {
+        "from": "electron/data",
+        "to": "app.asar.unpacked/electron/data",
+        "filter": [
+          "**/*.json",
+          "**/*.txt"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    }, 
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "allowElevation": false
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "dmg": {
+      "title": "Pointify Desktop POS Installer",
+      "icon": "assets/icon.icns",
+      "backgroundColor": "#ffffff",
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "afterPack": "./scripts/afterPack.js",
+    "compression": "normal",
+    "npmRebuild": false
+  },
+  "dependencies": {
+    "mongodb": "^6.17.0"
+  }
+}
