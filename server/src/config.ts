@@ -16,10 +16,7 @@ export function setGlobalApiMode(mode: 'online' | 'offline' | 'hybrid') {
   console.log(`🌐 Global API mode set to: ${mode}`);
 }
 export function isElectron() {
-  return !!(typeof window !== 'undefined' &&
-    window.process &&
-    window.process.versions &&
-    window.process.versions.electron);
+  return !!(process.versions && process.versions.electron);
 }
 
 export function getGlobalApiMode(): 'online' | 'offline' | 'hybrid' {
