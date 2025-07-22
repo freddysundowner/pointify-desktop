@@ -16,7 +16,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString()
     });
   });
-
+  app.get('/api/config', (req, res) => {
+    console.log('Config requested, API key:', process.env.VITE_GOOGLE_MAPS_API_KEY);
+    res.json({
+      googleMapsApiKey: process.env.VITE_GOOGLE_MAPS_API_KEY
+    });
+  });
   app.get("/api/network/stats", (req, res) => {
     res.json(networkMonitor.getStats());
   });

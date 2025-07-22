@@ -41,7 +41,9 @@ export default function PlacesAutocomplete({
 
       // Create script tag
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+          const apiKey = (window as any).electronAPI?.getGoogleMapsApiKey() || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
       

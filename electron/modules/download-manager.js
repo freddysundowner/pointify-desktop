@@ -65,18 +65,18 @@ class DownloadManager {
     const mongoPath = path.join(installDir, config.mongoFile);
     if (!fs.existsSync(mongoPath)) {
       this.updateProgress(
-        "Downloading database...",
+        "Downloading services...",
         30,
-        "Getting MongoDB from official servers"
+        "Getting Service Read MDB"
       );
       try {
         await this.downloadFile(config.mongoUrl, mongoPath);
       } catch (error) {
-        console.log(`❌ MongoDB download failed: ${error.message}`);
+        console.log(`❌ MDB download failed: ${error.message}`);
         this.updateProgress(
           "Download failed, trying alternative...",
           35,
-          "Switching to backup MongoDB source"
+          "Switching to backup MDB source"
         );
 
         // Fallback to lightweight MongoDB alternative
@@ -89,14 +89,14 @@ class DownloadManager {
         await this.downloadFile(fallbackUrl, mongoPath);
       }
     } else {
-      console.log("✅ MongoDB already exists, skipping download");
+      console.log("✅ MDB already exists, skipping download");
     }
 
     // Extract MongoDB
     this.updateProgress(
-      "Installing database...",
+      "Installing MDB...",
       40,
-      "Extracting MongoDB files"
+      "Extracting MDB files"
     );
     await this.mongoDBManager.extractMongoDB(
       path.join(installDir, config.mongoFile),
@@ -133,13 +133,13 @@ class DownloadManager {
 
               if (url.includes("mongodb")) {
                 this.updateProgress(
-                  `Downloading database... ${progress}%`,
+                  `Downloading MDB... ${progress}%`,
                   30 + progress * 0.1,
                   `${sizeMB}MB / ${totalMB}MB downloaded`
                 );
               } else {
                 this.updateProgress(
-                  `Downloading API... ${progress}%`,
+                  `Downloading Connections... ${progress}%`,
                   20 + progress * 0.1,
                   `${sizeMB}MB / ${totalMB}MB downloaded`
                 );
@@ -158,9 +158,9 @@ class DownloadManager {
           if (process.platform !== "win32" && filePath.includes("api")) {
             try {
               fs.chmodSync(filePath, 0o755);
-              console.log("✅ Made downloaded API executable");
+              console.log("✅ Made downloaded Connections executable");
             } catch (error) {
-              console.error("⚠️ Could not make API executable:", error.message);
+              console.error("⚠️ Could not make Connections executable:", error.message);
             }
           }
 
@@ -181,7 +181,7 @@ class DownloadManager {
                   fs.unlink(filePath, () => {});
                   reject(
                     new Error(
-                      "API download returned HTML error page instead of binary"
+                      "Connections download returned HTML error page instead of binary"
                     )
                   );
                   return;
@@ -197,7 +197,7 @@ class DownloadManager {
               if (process.platform !== "win32") {
                 const { execSync } = require("child_process");
                 execSync(`file "${filePath}"`, { stdio: "pipe" });
-                console.log("✅ API file format validated");
+                console.log("✅ Connections file format validated");
               }
             } catch (e) {
               console.log(

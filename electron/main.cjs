@@ -53,7 +53,6 @@ debugLog('Loading modules...');
 // }
 
 // Global state
-const isDev = process.env.NODE_ENV === "development";
 let mainWindow;
 let progressWindow;
 let systemReady = false;
@@ -76,6 +75,7 @@ function loadMainConfig() {
 // Load configuration first
 const CONFIG = loadMainConfig();
 
+const isDev = CONFIG.environment.nodeEnv === "development";
 // Initialize managers
 let mongoManager;
 let apiManager;
@@ -96,11 +96,11 @@ function loadUserConfig() {
   try {
     if (fs.existsSync(configPath)) {
       const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-      console.log("✅ Loaded user configuration");
+      debugLog("✅ Loaded user configuration");
       return config;
     }
   } catch (error) {
-    console.log("⚠️ Could not load user config:", error.message);
+    debugLog("⚠️ Could not load user config:", error.message);
   }
 
   return {
@@ -113,6 +113,10 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: CONFIG.ui.mainWindow.width,
     height: CONFIG.ui.mainWindow.height,
+    closable: true,
+    resizable: false,
+    minimizable: true,
+    maximizable: false,
     minWidth: CONFIG.ui.mainWindow.minWidth,
     minHeight: CONFIG.ui.mainWindow.minHeight,
     icon: path.join(__dirname, "assets/icon.png"),
@@ -124,12 +128,14 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
     titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default",
-    show: false,
+    show: true, // Change from false to true - show immediately
+    alwaysOnTop: false, // Add this to bring to front
   });
 
   mainWindow.loadURL(`http://${CONFIG.server.host}:${CONFIG.server.port}`);
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
+    mainWindow.focus();
     if (isDev) {
       mainWindow.webContents.openDevTools();
     }
@@ -176,18 +182,9 @@ function createMenu() {
               type: "info",
               title: "About Pointify Desktop",
               message: `Pointify Desktop POS v${CONFIG.app.version}`,
-              detail: "Offline Point of Sale System\nBuilt with Electron",
+              detail: "Point of Sale System\nBuilt By ReggyCodas\n© 2025",
               buttons: ["OK"],
             });
-          },
-        },
-        { type: "separator" },
-        {
-          label: "Preferences...",
-          accelerator: "CmdOrCtrl+,",
-          click: () => {
-            // Could open settings window
-            console.log("Preferences clicked");
           },
         },
         { type: "separator" },
@@ -199,11 +196,6 @@ function createMenu() {
       submenu: [
         { role: "reload" },
         { role: "forceReload" },
-        { role: "toggleDevTools" },
-        { type: "separator" },
-        { role: "resetZoom" },
-        { role: "zoomIn" },
-        { role: "zoomOut" },
         { type: "separator" },
         { role: "togglefullscreen" },
       ],
@@ -279,10 +271,10 @@ function initializeManagers() {
 // Main system initialization
 async function initializeSystem() {
   if (systemReady) {
-    return console.log("⚠️ System already initialized, skipping.");
+    return debugLog("⚠️ System already initialized, skipping.");
   }
   if (initializationInProgress) {
-    return console.log("⚠️ Initialization already in progress, skipping.");
+    return debugLog("⚠️ Initialization already in progress, skipping.");
   }
 
   initializationInProgress = true;
@@ -325,10 +317,10 @@ async function initializeSystem() {
       for (let attempt = 1; attempt <= CONFIG.api.maxRetries; attempt++) {
         try {
           await fn(...args);
-          console.log(`✅ ${name} started successfully`);
+          debugLog(`✅ ${name} started successfully`);
           return;
         } catch (error) {
-          console.log(`❌ ${name} attempt ${attempt} failed: ${error.message}`);
+          debugLog(`❌ ${name} attempt ${attempt} failed: ${error.message}`);
           if (attempt === CONFIG.api.maxRetries) {
             throw new Error(
               `${name} failed after ${CONFIG.api.maxRetries} attempts: ${error.message}`
@@ -341,14 +333,14 @@ async function initializeSystem() {
   };
 
   try {
-    console.log("🚀 Initializing Pointify Desktop System...");
+    debugLog("🚀 Initializing Pointify Desktop System...");
 
     // Validate and update components
     utils.progress("Validating components...", 5, "Checking system files");
 
     const apiValidation = utils.validateFile(paths.api, CONFIG.api.minSize);
     if (!apiValidation.valid) {
-      console.log(`🗑️ ${apiValidation.reason}, will re-download API`);
+      debugLog(`🗑️ ${apiValidation.reason}, will re-download API`);
       utils.fileExists(paths.api) && fs.unlinkSync(paths.api);
     }
 
@@ -380,9 +372,9 @@ async function initializeSystem() {
     // Start services using our managers
     const services = [
       {
-        name: "MongoDB",
+        name: "MDB",
         fn: () => mongoManager.startMongoDB(paths.mongo),
-        progress: [50, "Initializing MongoDB"],
+        progress: [50, "Initializing MDB"],
       },
       // {
       //   name: "Data Seeding",
@@ -390,12 +382,12 @@ async function initializeSystem() {
       //   progress: [60, "Setting up initial data"],
       // },
       {
-        name: "Pointify API",
+        name: "Pointify",
         fn: () => apiManager.startPointifyAPI(paths.api),
         progress: [70, "Loading your business data"],
       },
       {
-        name: "React Dashboard",
+        name: "POS Dashboard",
         fn: () => serverManager.startReactServer(),
         progress: [90, "Preparing user interface"],
       },
@@ -407,21 +399,21 @@ async function initializeSystem() {
         ...service.progress
       );
 
-      if (service.name === "Pointify API") {
+      if (service.name === "Pointify") {
         const validation = utils.validateFile(paths.api, CONFIG.api.minSize);
         if (!validation.valid) {
-          throw new Error(`API validation failed: ${validation.reason}`);
+          throw new Error(`Connnections validation failed: ${validation.reason}`);
         }
-        console.log(`📊 API validated: ${validation.stats.size} bytes`);
+        debugLog(`📊 Connnections validated: ${validation.stats.size} bytes`);
       }
 
       await utils.retry(service.name, service.fn);
 
-      if (service.name === "MongoDB") {
+      if (service.name === "MDB") {
         utils.progress(
           "Waiting for database...",
           55,
-          "Ensuring MongoDB is ready"
+          "Ensuring MDB is ready"
         );
         await new Promise((resolve) =>
           setTimeout(resolve, CONFIG.database.readyDelay)
@@ -431,17 +423,34 @@ async function initializeSystem() {
 
     systemReady = true;
     utils.progress("Ready!", 100, "Pointify Desktop is ready to use");
-    console.log("✅ All systems running locally");
+    debugLog("✅ All systems running locally");  // Change console.log to debugLog
 
     // Start automatic update checks
     if (updateManager) {
       updateManager.startPeriodicChecks();
     }
 
+    debugLog("🕐 Setting timeout to transition to main window...");  // Change to debugLog
+    debugLog(`🕐 Timeout delay: ${CONFIG.app.successDisplayTime}ms`);  // Change to debugLog
+
+    const timeoutDelay = CONFIG.app.successDisplayTime || 3000; // fallback to 3 seconds
+
     setTimeout(() => {
-      closeProgressWindow();
-      createWindow();
-    }, CONFIG.app.successDisplayTime);
+      debugLog("🕐 Timeout executed - closing progress and opening main window");
+      try {
+        debugLog("📝 Calling closeProgressWindow()...");
+        closeProgressWindow();
+        debugLog("✅ Progress window closed successfully");
+        
+        debugLog("📝 Calling createWindow()...");
+        createWindow();
+        debugLog("✅ Main window created successfully");
+      } catch (error) {
+        debugLog(`❌ Error during window transition: ${error.message}`);
+        debugLog(`Stack: ${error.stack}`);
+      }
+    }, timeoutDelay);
+    
   } catch (error) {
     console.error("❌ System initialization failed:", error.message);
 
@@ -470,29 +479,29 @@ async function initializeSystem() {
 
 // Clean shutdown of all components
 async function shutdownSystem() {
-  console.log("🛑 Shutting down system...");
+  debugLog("🛑 Shutting down system...");
 
   if (apiManager) apiManager.shutdown();
   if (mongoManager) mongoManager.shutdown();
   if (serverManager) serverManager.shutdown();
   if (updateManager) updateManager.closeUpdateWindow();
 
-  console.log("🛑 System shutdown complete");
+  debugLog("🛑 System shutdown complete");
 }
 
 // App event handlers
 app.whenReady().then(async () => {
-  console.log("🚀 Starting Pointify Desktop...");
+  debugLog("🚀 Starting Pointify Desktop...");
 
   if (systemReady) {
-    console.log("⚠️ App already ready, skipping initialization");
+    debugLog("⚠️ App already ready, skipping initialization");
     return;
   }
 
   try {
     const userDataPath = app.getPath("userData");
     process.chdir(userDataPath);
-    console.log(`✅ Working directory set to: ${process.cwd()}`);
+    debugLog(`✅ Working directory set to: ${process.cwd()}`);
   } catch (err) {
     console.error("❌ Failed to set working directory:", err);
   }
@@ -566,7 +575,7 @@ function createProgressWindow() {
     resizable: false,
     minimizable: true,
     maximizable: false,
-    closable: false,
+    closable: true,
     alwaysOnTop: false,
     show: false,
     webPreferences: {
@@ -587,7 +596,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; m
 <div class="logo">Pointify Desktop</div>
 <div class="status" id="status">Initializing...</div>
 <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-<div class="details" id="details">Preparing your offline POS system</div>
+<div class="details" id="details">Preparing your POS system</div>
 <script>
 const { ipcRenderer } = require("electron");
 ipcRenderer.on("progress-update", (event, data) => {
@@ -618,8 +627,13 @@ function updateProgress(status, progress, details = "") {
 }
 
 function closeProgressWindow() {
+  debugLog(`📋 closeProgressWindow called. progressWindow exists: ${!!progressWindow}`);
   if (progressWindow && !progressWindow.isDestroyed()) {
+    debugLog(`📋 progressWindow is not destroyed, calling close()`);
     progressWindow.close();
     progressWindow = null;
+    debugLog(`📋 progressWindow closed and set to null`);
+  } else {
+    debugLog(`📋 progressWindow is null or destroyed`);
   }
 }

@@ -38,63 +38,65 @@ export default function AddressInput({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const hasSelectedPlace = useRef(false);
   const isSelectingPlace = useRef(false);
+  const [apiKey, setApiKey] = useState<string | null>('AIzaSyAhhiH3PrL9td9IGJWfpK3CXnU3gtsIYHY');
 
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(config => {
+        console.log('Fetched config:', config);
+        setApiKey(config.googleMapsApiKey);
+      })
+      .catch(err => {
+        console.error('Failed to fetch config:', err);
+      });
+  }, []);
   // Load Google Maps API
   useEffect(() => {
     if (window.google?.maps?.places) {
-      console.log('AddressInput: Google Maps API already loaded');
       setIsLoaded(true);
       return;
     }
 
-    console.log('AddressInput: Loading Google Maps API');
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+    console.log('Final API key being used:', apiKey);
+  
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
+    // script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
     // Set up global callback
     (window as any).initGoogleMaps = () => {
-      console.log('AddressInput: Google Maps API loaded via callback');
       setIsLoaded(true);
     };
     
     script.onload = () => {
-      console.log('AddressInput: Google Maps script loaded');
       if (window.google?.maps?.places) {
         setIsLoaded(true);
       }
     };
     
-    script.onerror = (error) => {
-      console.error('AddressInput: Failed to load Google Maps API:', error);
-    };
-    
     if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
       document.head.appendChild(script);
-      console.log('AddressInput: Google Maps script added to DOM');
     } else {
-      console.log('AddressInput: Google Maps script already exists, waiting for load');
       const checkInterval = setInterval(() => {
         if (window.google?.maps?.places) {
-          console.log('AddressInput: Google Maps API detected in polling');
           setIsLoaded(true);
           clearInterval(checkInterval);
         }
       }, 100);
     }
-  }, []);
+  }, [apiKey]);
 
   // Initialize autocomplete
   useEffect(() => {
     if (!isLoaded || !inputRef.current || autocompleteRef.current) return;
 
     try {
-      console.log('AddressInput: Initializing Google Places Autocomplete');
       autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
         types: ['geocode', 'establishment'],
         fields: ['formatted_address', 'name', 'place_id', 'geometry'],
         componentRestrictions: { country: 'ke' },
         strictBounds: false
       });
-      console.log('AddressInput: Autocomplete initialized successfully for Kenya locations');
 
       // Handle place selection - simplified approach
       const placeChangedListener = () => {
@@ -173,7 +175,6 @@ export default function AddressInput({
 
       // Add the place_changed listener
       autocompleteRef.current.addListener('place_changed', placeChangedListener);
-      console.log('AddressInput: Place changed listener attached');
       
       // Add direct event listeners to capture place selection
       if (inputRef.current) {

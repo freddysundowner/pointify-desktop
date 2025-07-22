@@ -29,19 +29,13 @@ class ServerManager {
   }
 
   async startReactServer() {
-    console.log("🚀 Starting React server...");
+    console.log("🚀 Starting server...");
 
     const isPackaged = app.isPackaged;
 
-    const serverPath = isPackaged
-      ? path.join(
-          process.resourcesPath,
-          "app.asar.unpacked",
-          "server",
-          "dist",
-          "index.cjs"
-        )
-      : path.join(__dirname, "..", "..", "server", "dist", "index.cjs");
+   const serverPath = isPackaged
+  ? path.join(process.resourcesPath, "server", "dist", "index.cjs")
+  : path.join(__dirname, "..", "..", "server", "dist", "index.cjs");
 
     console.log(`📍 Server path: ${serverPath}`);
     console.log(`📍 Server exists: ${fs.existsSync(serverPath)}`);
@@ -69,11 +63,12 @@ class ServerManager {
         POINTIFY_OFFLINE_API_URL: this.config.server.offline_api,
         DEFAULT_API_MODE: this.config.server.api_mode,
         MONGODB_URL: this.config.database.url,
+        VITE_GOOGLE_MAPS_API_KEY: this.config.server.env.VITE_GOOGLE_MAPS_API_KEY,
         ...this.config.server.env,
       };
 
       // Use fork() with explicit execPath for Node.js
-      console.log(`🍴 Forking server process: ${serverPath}`);
+      console.log(`🍴 Forking server process: ${this.config.server.env.VITE_GOOGLE_MAPS_API_KEY}`);
       console.log(`🔧 Server will run on port: ${this.config.server.port}`);
       console.log(`🔧 Server environment: ${this.config.environment.nodeEnv}`);
 
@@ -215,7 +210,7 @@ class ServerManager {
 
   shutdown() {
     if (this.serverProcess) {
-      console.log("🛑 Shutting down React server...");
+      console.log("🛑 Shutting down server...");
       this.serverProcess.kill();
       this.serverProcess = null;
     }
