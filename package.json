@@ -5,8 +5,8 @@
   "main": "electron/main.cjs",
   "private": true,
   "scripts": {
-    "build:client": "cd client && npm run build",
-    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm install && npm run build",
+    "build:server": "cd server && npm install && npm run build",
     "build:all": "npm run build:client && npm run build:server",
     "build:production": "npm run export-data && npm run build:all",
     "dev": "npm run build:all && electron ./electron/main.cjs",
@@ -88,7 +88,7 @@
       ],
       "icon": "assets/icon.ico",
       "requestedExecutionLevel": "asInvoker"
-    }, 
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

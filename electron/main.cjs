@@ -36,8 +36,8 @@ try {
   debugLog('Loading APIManager...');
   const { APIManager } = require("./modules/api-manager.js");
   
-  // debugLog('Loading ServerManager...');
-  // const { ServerManager } = require("./modules/server-manager.js");
+  debugLog('Loading ServerManager...');
+  const { ServerManager } = require("./modules/server-manager.js");
   
   debugLog('Loading DownloadManager...');
   const { DownloadManager } = require("./modules/download-manager.js");
