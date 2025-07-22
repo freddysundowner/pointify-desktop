@@ -1,6 +1,6 @@
 import type { Express } from "express";
-import { makePointifyRequest, makeOnlinePointifyRequest, makeLocalPointifyRequest, setGlobalApiMode } from "../config.js";
-import { setAdminId, clearAdminId, setRefreshTimer } from "../network-status-handler.js";
+import { makePointifyRequest, setGlobalApiMode } from "../config.js";
+import { setAdminId, clearAdminId, startSyncTimer } from "../network-status-handler.js";
 
 export function registerAuthRoutes(app: Express) {
   // =============================================================================
@@ -19,10 +19,9 @@ app.post("/api/business/register", async (req, res) => {
       body: JSON.stringify(req.body),
     }); 
 
-    const adminId = data?._id || data?.userdata?._id;
+    const adminId = data?.userdata?._id;
     if (adminId) {
-      setAdminId(adminId);
-      setRefreshTimer(data?.syncInterval * 60 * 1000 || 120000);
+      setAdminId(data?.userdata);
     } else {
       console.log("❌ No admin ID found in registration data");
     }
@@ -82,8 +81,8 @@ app.post("/api/business/register", async (req, res) => {
       console.log("Final adminId:", adminId);
       if (adminId) {
         console.log("✅ Admin ID found in login data:", adminId);
-        setAdminId(adminId);
         setGlobalApiMode(data?.userdata?.status || "online");
+        setAdminId(data?.userdata);
       } else {
         console.log("❌ No admin ID found in login data");
       }
@@ -146,8 +145,8 @@ app.post("/api/business/register", async (req, res) => {
 
       // Cache admin ID from successful admin data fetch
       if (data && data._id) {
-        setAdminId(data._id);
         setGlobalApiMode(data?.status);
+        setAdminId(data);
       }
 
       // The makePointifyRequest now returns null for auth failures instead of throwing errors

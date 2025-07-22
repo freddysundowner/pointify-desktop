@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { makePointifyRequest, setGlobalApiMode, getGlobalApiMode, makeLocalPointifyRequest } from "../config.js";
+import { makePointifyRequest, setGlobalApiMode, makeLocalPointifyRequest } from "../config.js";
 import { stopSyncTimer, startSyncTimer } from "../network-status-handler.js";
 
 
@@ -15,7 +15,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔧 Fetching admin settings for: ${adminId}`);
 
       // Use existing makePointifyRequest method to call first reachable API
-      const adminData = await makeLocalPointifyRequest(`/auth/admin/${adminId}`, {
+      const adminData: any = await makeLocalPointifyRequest(`/auth/admin/${adminId}`, {
         method: "GET",
       });
 
@@ -97,7 +97,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔧 Updating admin ${adminId} status to: ${apiMode}, syncInterval: ${finalSyncInterval}ms`);
 
       // Store both sync interval and API mode in memory
-      let data = await makeLocalPointifyRequest(`/admin/${adminId}`, {
+      let data : any = await makeLocalPointifyRequest(`/admin/${adminId}`, {
         method: "PUT",
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +160,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔍 Fetching status for admin: ${adminId}`);
 
       // Call auth/admin/:id to get current status from both APIs
-      const adminData = await makePointifyRequest(`/auth/admin/${adminId}`, {
+      const adminData: any = await makePointifyRequest(`/auth/admin/${adminId}`, {
         method: "GET",
       });
 
@@ -182,7 +182,6 @@ export function registerSettingsRoutes(app: Express) {
         data: {
           apiMode: 'hybrid',
           syncEnabled: true,
-          adminId: adminId
         },
         message: "Default status returned (API unavailable)"
       });

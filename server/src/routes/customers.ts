@@ -111,7 +111,6 @@ export function registerCustomerRoutes(app: Express) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      console.log('External overdue customers API response:', overdueData);
       
       // Transform the external API response to match UI expectations
       if (Array.isArray(overdueData)) {
@@ -143,7 +142,6 @@ export function registerCustomerRoutes(app: Express) {
           overdueCustomers: transformedCustomers
         };
         
-        console.log('Formatted response for UI:', formattedResponse);
         res.json(formattedResponse);
       } else {
         // If not an array, return as-is

@@ -19,7 +19,8 @@ export async function registerInitsRoutes(app: Express) {
         }
     } 
      try {
-        if(currentPrinterConfig.initialsync === true) return;
+         if (currentPrinterConfig.initialsync === true) return;
+         //getting global data like shopcategories and import locally
         console.log('initializing database');
         let data: any = await makeOnlinePointifyRequest('/sync/database/init', { method: 'GET' });
         // import to local database

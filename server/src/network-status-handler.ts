@@ -1,5 +1,5 @@
 import { networkMonitor } from './network-monitor.js';
-import { makeOnlinePointifyRequest, makeLocalPointifyRequest, getGlobalApiMode, makeOnlineFormDataSyncDumpCall } from './config.js';
+import { makeOnlinePointifyRequest, makeLocalPointifyRequest, getGlobalApiMode, makeOnlineFormDataSyncDumpCall, setGlobalApiMode } from './config.js';
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -14,7 +14,7 @@ let cachedAdminId: string | null = null;
 
 // Timer for periodic sync operations (2 minutes)
 let syncInterval: NodeJS.Timeout | null = null;
-const SYNC_INTERVAL_MS = 2 * 60 * 1000; 2  // 2 minutes
+const SYNC_INTERVAL_MS = 2 * 60 * 1000; //2 * 60 * 1000; 
 
 // Constants to avoid hardcoding
 const SYNC_HEADERS = { 'Content-Type': 'application/json' };
@@ -68,13 +68,12 @@ async function performSyncOperation(
 /**
  * Set admin ID in memory (called from login/registration)
  */
-export function setAdminId(adminId: string) {
-  cachedAdminId = adminId;
+export function setAdminId(data: any) {
+  cachedAdminId = data?._id;
+  startSyncTimer(data?.syncInterval * 60 * 1000 || SYNC_INTERVAL_MS);
 }
 
-export function setRefreshTimer(intervalMs?: number) {
-  startSyncTimer(intervalMs);
-}
+
 /**
  * Get cached admin ID
  */
@@ -107,7 +106,7 @@ export function startSyncTimer(intervalMs?: number) {
   }
   
   // Use provided interval or default
-  const syncIntervalMs = intervalMs || SYNC_INTERVAL_MS;
+  const syncIntervalMs = intervalMs;
   console.log(`🔄 Starting sync timer with interval: ${syncIntervalMs}ms (${syncIntervalMs / 60000} minutes)`);
   
   syncInterval = setInterval(() => {
@@ -154,7 +153,7 @@ async function performPeriodicSync() {
 async function downloadAndImportDumpFile(downloadUrl: string, adminId: string): Promise<void> {
   try {
     // Setup dump directory and file path
-    const dumpsDir = ''; //path.join(__dirname, '../dumps');
+    const dumpsDir = path.join(__dirname, '../dumps');
     if (!fs.existsSync(dumpsDir)) {
       fs.mkdirSync(dumpsDir, { recursive: true });
     }
@@ -205,42 +204,25 @@ async function downloadAndImportDumpFile(downloadUrl: string, adminId: string): 
   }
 }
 
-/**
- * Safely remove a file
- */
-function safeRemoveFile(filePath: string): boolean {
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('❌ Error removing file:', error);
-    return false;
-  }
-}
-
 // Initialize network status monitoring
 
 // Listen for offline event
 networkMonitor.on('offline', () => {
-
+  console.log('Network is offline');
   // ADD YOUR OFFLINE LOGIC HERE
   // This is where you can add whatever you need to do when network goes offline
   // Examples:
-  // - Switch database modes
   // - Pause sync operations
-  // - Enable local-only features
+  // - Switch to offline mode
+  // - Flush cached data
   // - Notify services
   // - Update global flags
-
   handleOfflineStatus();
 });
 
 // Listen for online event
 networkMonitor.on('online', () => {
-
+  console.log('Network is back online');
   // ADD YOUR ONLINE LOGIC HERE
   // This is where you can add whatever you need to do when network comes back online
   // Examples:
@@ -256,26 +238,11 @@ networkMonitor.on('online', () => {
 // Listen for status changes
 networkMonitor.on('statusChange', (status, previousStatus) => {
 
-  // ADD YOUR STATUS CHANGE LOGIC HERE
-  // This fires for any status change (offline→online or online→offline)
-
   handleStatusChange(status, previousStatus);
 });
 
 // Your custom offline handler function
 async function handleOfflineStatus() {
-
-  // Example: Set global offline flag
-  // global.isOfflineMode = true;
-
-  // Example: Notify other services
-  // serviceManager.switchToOfflineMode();
-
-  // Example: Pause background tasks
-  // backgroundTaskManager.pauseAll();
-
-  // Example: Switch to local database
-  // databaseManager.useLocalDatabase();
 }
 
 /**
@@ -308,24 +275,6 @@ async function performOnlineSync() {
   );
 }
 
-/**
- * Make local call to /sync/dump endpoint
- */
-async function makeLocalSyncDumpCall(payload: any) {
-  try {
-    const response = await makeLocalPointifyRequest('/sync/dump', {
-      method: 'POST',
-      headers: SYNC_HEADERS,
-      body: JSON.stringify(payload)
-    });
-
-    return response;
-
-  } catch (error) {
-    console.error('🚨 Local sync dump error:', error);
-    throw error;
-  }
-}
 
 /**
  * Perform local-to-online sync (opposite flow)
@@ -349,13 +298,6 @@ async function performLocalToOnlineSync() {
   );
 }
 
-/**
- * Make online call to /sync/dump endpoint
- */
-
-
-
-
 // Your custom online handler function
 async function handleOnlineStatus() {
   console.log("handleOnlineStatus")
@@ -365,23 +307,13 @@ async function handleOnlineStatus() {
 
 // Your custom status change handler function
 function handleStatusChange(status: string, previousStatus: string) {
-  // PUT YOUR STATUS CHANGE LOGIC HERE
-
-  // Example: Log to database
-  // await db.networkLogs.create({
-  //   status,
-  //   previousStatus,
-  //   timestamp: new Date()
-  // });
-
-  // Example: Broadcast to clients
-  // if (global.io) {
-  //   global.io.emit('networkStatus', { status, timestamp: new Date() });
-  // }
+  setGlobalApiMode(status as any)
+  if(status == 'online') {
+    startSyncTimer();
+  }else{
+    stopSyncTimer();
+  }
 }
-
-// Export functions if needed elsewhere
-export { handleOfflineStatus, handleOnlineStatus, handleStatusChange };
 
 
 function removeSyncDumpFile(downloadUrl: any) {
@@ -395,3 +327,6 @@ function removeSyncDumpFile(downloadUrl: any) {
     });
   });
 }
+
+// Export functions if needed elsewhere
+export { handleOfflineStatus, handleOnlineStatus, handleStatusChange };

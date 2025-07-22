@@ -12,6 +12,10 @@ class APIManager {
     this.apiProcess = null;
     this.config = this.loadConfig();
   }
+  setMongoConnectionInfo(connectionInfo) {
+    this.mongoConnectionInfo = connectionInfo;
+    console.log(`🔗 API will use MongoDB: ${connectionInfo.connectionString}`);
+  }
 
   loadConfig() {
     try {
@@ -255,8 +259,6 @@ class APIManager {
   async startPointifyAPI(apiPath) {
     // Kill any existing Pointify processes first
     await this.killPointifyProcesses();
-
-    // Ensure port is free with retries
     await this.ensurePortFree(this.config.api.port);
 
     // Critical: Add final safety wait for OS to fully release the port

@@ -4,52 +4,52 @@
 const { app, BrowserWindow, Menu, shell, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const os = require('os');
+const os = require("os");
 
 // Create debug log function
 function debugLog(message) {
-  const logFile = path.join(os.tmpdir(), 'pointify-debug.log');
+  const logFile = path.join(os.tmpdir(), "pointify-debug.log");
   const timestamp = new Date().toISOString();
   fs.appendFileSync(logFile, `${timestamp}: ${message}\n`);
   console.log(message);
 }
 
 // Catch all unhandled errors
-process.on('uncaughtException', (error) => {
+process.on("uncaughtException", (error) => {
   debugLog(`Uncaught Exception: ${error.message}`);
   debugLog(`Stack: ${error.stack}`);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on("unhandledRejection", (reason, promise) => {
   debugLog(`Unhandled Rejection at: ${promise}`);
   debugLog(`Reason: ${reason}`);
 });
-debugLog('🚀 Starting Pointify Desktop...');
+debugLog("🚀 Starting Pointify Desktop...");
 
 // Add this after your debug setup and before the imports:
-debugLog('Loading modules...');
+debugLog("Loading modules...");
 
 // try {
-  debugLog('Loading MongoDBManager...');
-  const { MongoDBManager } = require("./modules/mongodb-manager.js");
-  
-  debugLog('Loading APIManager...');
-  const { APIManager } = require("./modules/api-manager.js");
-  
-  debugLog('Loading ServerManager...');
-  const { ServerManager } = require("./modules/server-manager.js");
-  
-  debugLog('Loading DownloadManager...');
-  const { DownloadManager } = require("./modules/download-manager.js");
-  
-  debugLog('Loading UpdateManager...');
-  const { UpdateManager } = require("./modules/update-manager.js");
-  
-  debugLog('✅ All modules loaded successfully');
+debugLog("Loading MongoDBManager...");
+const { MongoDBManager } = require("./modules/mongodb-manager.js");
+
+debugLog("Loading APIManager...");
+const { APIManager } = require("./modules/api-manager.js");
+
+debugLog("Loading ServerManager...");
+const { ServerManager } = require("./modules/server-manager.js");
+
+debugLog("Loading DownloadManager...");
+const { DownloadManager } = require("./modules/download-manager.js");
+
+debugLog("Loading UpdateManager...");
+const { UpdateManager } = require("./modules/update-manager.js");
+
+debugLog("✅ All modules loaded successfully");
 // } catch (error) {
 //   debugLog(`❌ Module loading failed: ${error.message}`);
 //   debugLog(`Stack: ${error.stack}`);
-  // process.exit(1);
+// process.exit(1);
 // }
 
 // Global state
@@ -373,7 +373,11 @@ async function initializeSystem() {
     const services = [
       {
         name: "MDB",
-        fn: () => mongoManager.startMongoDB(paths.mongo),
+        fn: async () => {
+          await mongoManager.startMongoDB(paths.mongo);
+          // Don't update config - if MongoDB can't start, use existing one on 27017
+          console.log("📋 Using MongoDB connection: " + CONFIG.database.url);
+        },
         progress: [50, "Initializing MDB"],
       },
       // {
@@ -402,7 +406,9 @@ async function initializeSystem() {
       if (service.name === "Pointify") {
         const validation = utils.validateFile(paths.api, CONFIG.api.minSize);
         if (!validation.valid) {
-          throw new Error(`Connnections validation failed: ${validation.reason}`);
+          throw new Error(
+            `Connnections validation failed: ${validation.reason}`
+          );
         }
         debugLog(`📊 Connnections validated: ${validation.stats.size} bytes`);
       }
@@ -410,11 +416,7 @@ async function initializeSystem() {
       await utils.retry(service.name, service.fn);
 
       if (service.name === "MDB") {
-        utils.progress(
-          "Waiting for database...",
-          55,
-          "Ensuring MDB is ready"
-        );
+        utils.progress("Waiting for database...", 55, "Ensuring MDB is ready");
         await new Promise((resolve) =>
           setTimeout(resolve, CONFIG.database.readyDelay)
         );
@@ -423,25 +425,27 @@ async function initializeSystem() {
 
     systemReady = true;
     utils.progress("Ready!", 100, "Pointify Desktop is ready to use");
-    debugLog("✅ All systems running locally");  // Change console.log to debugLog
+    debugLog("✅ All systems running locally"); // Change console.log to debugLog
 
     // Start automatic update checks
     if (updateManager) {
       updateManager.startPeriodicChecks();
     }
 
-    debugLog("🕐 Setting timeout to transition to main window...");  // Change to debugLog
-    debugLog(`🕐 Timeout delay: ${CONFIG.app.successDisplayTime}ms`);  // Change to debugLog
+    debugLog("🕐 Setting timeout to transition to main window..."); // Change to debugLog
+    debugLog(`🕐 Timeout delay: ${CONFIG.app.successDisplayTime}ms`); // Change to debugLog
 
     const timeoutDelay = CONFIG.app.successDisplayTime || 3000; // fallback to 3 seconds
 
     setTimeout(() => {
-      debugLog("🕐 Timeout executed - closing progress and opening main window");
+      debugLog(
+        "🕐 Timeout executed - closing progress and opening main window"
+      );
       try {
         debugLog("📝 Calling closeProgressWindow()...");
         closeProgressWindow();
         debugLog("✅ Progress window closed successfully");
-        
+
         debugLog("📝 Calling createWindow()...");
         createWindow();
         debugLog("✅ Main window created successfully");
@@ -450,7 +454,6 @@ async function initializeSystem() {
         debugLog(`Stack: ${error.stack}`);
       }
     }, timeoutDelay);
-    
   } catch (error) {
     console.error("❌ System initialization failed:", error.message);
 
@@ -627,7 +630,9 @@ function updateProgress(status, progress, details = "") {
 }
 
 function closeProgressWindow() {
-  debugLog(`📋 closeProgressWindow called. progressWindow exists: ${!!progressWindow}`);
+  debugLog(
+    `📋 closeProgressWindow called. progressWindow exists: ${!!progressWindow}`
+  );
   if (progressWindow && !progressWindow.isDestroyed()) {
     debugLog(`📋 progressWindow is not destroyed, calling close()`);
     progressWindow.close();

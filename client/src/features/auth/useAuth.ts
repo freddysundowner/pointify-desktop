@@ -80,8 +80,8 @@ export const useAuthProvider = (): AuthContextType => {
       });
       
       const adminData = await response.json();
-
-      if (adminData) {
+      console.log("Fetched admin data:", adminData);
+      if (adminData?._id) {
         setAdmin(adminData);
         localStorage.setItem("adminData", JSON.stringify(adminData));
         return adminData;
@@ -257,7 +257,7 @@ export const useAuthProvider = (): AuthContextType => {
         if (adminId) {
           try {
             // Trigger automatic sync in background
-            const syncResponse = await apiCall('/api/sync/initial', {
+            const syncResponse = await apiCall(`/api/sync/${currentAdmin._id}`, {
               method: 'POST',
               body: JSON.stringify({ 
                 adminId, 
