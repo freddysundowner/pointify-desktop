@@ -10,13 +10,11 @@
     "build:all": "npm run build:client && npm run build:server",
     "build:production": "npm run export-data && npm run build:all",
     "dev": "npm run build:all && electron ./electron/main.cjs",
-    "dev1": "npm run build:all && electron ./electron/main.cjs",
     "dev:full": "npm run build:production && electron ./electron/main.cjs",
     "build:mac": "npm run build:production && electron-builder --mac",
-    "build:win": "npm run build:server && npm run build:client && electron-builder --win",
-    "build:linux": "npm run build:production && electron-builder --linux",
+    "build:win": "npm install && build:all && electron-builder --win",
     "build:all-platforms": "npm run build:production && electron-builder --mac --win --linux",
-    "build:mac-dev": "npm run build:all && electron-builder --mac",
+    "build:mac-dev": "npm install && npm run build:all && electron-builder --mac",
     "package": "electron-builder",
     "clean": "rm -rf dist electron/data client/dist server/dist",
     "test:export": "npm run export-data && echo 'Export test completed'",
@@ -28,7 +26,6 @@
     "electron-builder": "^24.11.0"
   },
   "author": "ReggyCodas <githumbi3fred@gmail.com>",
-  
   "build": {
     "appId": "com.pointify.desktop",
     "productName": "Pointify POS",
@@ -59,7 +56,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico",
@@ -70,7 +69,9 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.icns",
@@ -87,7 +88,6 @@
       "allowElevation": false
     }
   },
-
   "dependencies": {
     "mongodb": "^6.17.0"
   }
