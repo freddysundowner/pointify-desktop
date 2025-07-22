@@ -29,7 +29,7 @@ debugLog('🚀 Starting Pointify Desktop...');
 // Add this after your debug setup and before the imports:
 debugLog('Loading modules...');
 
-try {
+// try {
   debugLog('Loading MongoDBManager...');
   const { MongoDBManager } = require("./modules/mongodb-manager.js");
   
@@ -46,11 +46,11 @@ try {
   const { UpdateManager } = require("./modules/update-manager.js");
   
   debugLog('✅ All modules loaded successfully');
-} catch (error) {
-  debugLog(`❌ Module loading failed: ${error.message}`);
-  debugLog(`Stack: ${error.stack}`);
-  process.exit(1);
-}
+// } catch (error) {
+//   debugLog(`❌ Module loading failed: ${error.message}`);
+//   debugLog(`Stack: ${error.stack}`);
+  // process.exit(1);
+// }
 
 // Global state
 const isDev = process.env.NODE_ENV === "development";

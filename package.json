@@ -1,7 +1,7 @@
 {
   "name": "pointify-desktop",
   "version": "1.0.0",
-  "description": "Offline POS system with embedded MongoDB + Pointify API",
+  "description": "Pointify POS",
   "main": "electron/main.cjs",
   "private": true,
   "scripts": {
@@ -101,7 +101,7 @@
       "icon": "assets/icon.png"
     },
     "dmg": {
-      "title": "Pointify Desktop POS Installer",
+      "title": "Pointify Desktop",
       "icon": "assets/icon.icns",
       "backgroundColor": "#ffffff",
       "contents": [
