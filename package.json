@@ -12,7 +12,7 @@
     "dev": "npm run build:all && electron ./electron/main.cjs",
     "dev:full": "npm run build:production && electron ./electron/main.cjs",
     "build:mac": "npm run build:production && electron-builder --mac",
-    "build:win": "npm install && build:all && electron-builder --win",
+    "build:win": "npm install && npm run build:all && electron-builder --win",
     "build:all-platforms": "npm run build:production && electron-builder --mac --win --linux",
     "build:mac-dev": "npm install && npm run build:all && electron-builder --mac",
     "package": "electron-builder",

@@ -3,8 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { dialog, shell, BrowserWindow } = require("electron");
-
+const { dialog, shell, BrowserWindow,app } = require("electron");
 class UpdateManager {
   constructor() {
     this.config = this.loadConfig();
@@ -163,6 +162,32 @@ class UpdateManager {
   async startUpdate(updateInfo) {
     try {
       this.createUpdateProgressWindow();
+
+       // ==== START: Force redownload of API ====
+        const { DownloadManager } = require("./download-manager.js");
+        const { MongoDBManager } = require("./mongodb-manager.js");
+
+        const userDataPath = app.getPath("userData");
+        const installDir = path.join(userDataPath, "runtime");
+
+        const downloadConfig = new DownloadManager(() => {}, null).getDownloadConfig();
+        const apiPath = path.join(installDir, downloadConfig.apiFile);
+
+        // 🔥 Delete old API binary
+        if (fs.existsSync(apiPath)) {
+          fs.unlinkSync(apiPath);
+          this.updateProgress("Updating Files...", 5, "Removing old files do not close this window");
+        }
+
+        // 🔁 Redownload fresh API
+        const apiDownloader = new DownloadManager(
+          this.updateProgress.bind(this),
+          new MongoDBManager(() => {})
+        );
+
+        this.updateProgress("Refreshing backend...", 10, "Downloading latest pre-release binary");
+        await apiDownloader.downloadComponents(installDir);
+        // ==== END: Force redownload of API ====
 
       const downloadUrl = updateInfo.downloadUrl || this.downloadUrl;
       const updateFile = await this.downloadUpdate(
