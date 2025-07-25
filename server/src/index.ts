@@ -69,8 +69,8 @@ app.use((req, res, next) => {
 
   
     // Handle different paths for pkg binary vs normal Node.js
-
-  const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
+  if (!process.env.DEV) {
+    const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
     app.use(express.static(staticPath));
     
     app.get("*", (req, res) => {
@@ -78,13 +78,14 @@ app.use((req, res, next) => {
         res.sendFile(path.join(staticPath, "index.html"));
       }
     });
+  }
   
 
-  const port = process.env.PORT || 2040;
+  const port = 9001; //process.env.PORT || 2040;
   app.listen(port, () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
       dumpRetryMonitor.startMonitoring();
     }
-  });
+  }); 
 })();

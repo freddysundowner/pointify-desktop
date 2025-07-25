@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 
+const __dirname = path.dirname(process.argv[1]);
 /**
  * Network Status Handler - Single file to handle network status changes
  * This is where network offline/online events are detected and processed

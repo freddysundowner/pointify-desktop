@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { makePointifyRequest, setGlobalApiMode } from "../config.js";
-import { setAdminId, clearAdminId, startSyncTimer } from "../network-status-handler.js";
+import { setAdminId, clearAdminId } from "../network-status-handler.js";
 
 export function registerAuthRoutes(app: Express) {
   // =============================================================================

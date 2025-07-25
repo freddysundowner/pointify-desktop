@@ -4,8 +4,8 @@ import fs from 'fs';
 import fetchh from 'node-fetch';
 
 // Constants
-export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL;
-export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'https://api.pointifypos.com';
+export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL || 'http://localhost:2040';
+export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'http://localhost:2040'; //'https://api.pointifypos.com';
 
 // Global API mode setting
 let globalApiMode: 'online' | 'offline' | 'hybrid' = 'online';

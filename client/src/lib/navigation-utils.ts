@@ -65,6 +65,10 @@ export const ROUTE_MAPPINGS = {
     admin: "/purchase-returns",
     attendant: "/attendant/purchases/returns"
   },
+  addPurchase: {
+    admin: "/purchases/create",
+    attendant: "/attendant/purchases/create"
+  },
   
   // Supplier routes
   suppliers: {

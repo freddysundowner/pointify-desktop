@@ -18,9 +18,11 @@
     "package": "electron-builder",
     "clean": "rm -rf dist electron/data client/dist server/dist",
     "test:export": "npm run export-data && echo 'Export test completed'",
-    "export-data": "node scripts/export-from-pointify-api.js"
+    "export-data": "node scripts/export-from-pointify-api.js",
+    "build:mac-signed": "electron-builder --mac --publish=never"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.0.1",
     "dotenv": "^16.6.1",
     "electron": "^29.0.0",
     "electron-builder": "^24.11.0"
@@ -75,11 +77,13 @@
         }
       ],
       "icon": "assets/icon.icns",
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
-      "gatekeeperAssess": false
+      "gatekeeperAssess": false,
+      "identity": "GIST360 INCORPORATED (JANRA7BC7W)"
     },
+    "afterSign": "scripts/notarize.js",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
