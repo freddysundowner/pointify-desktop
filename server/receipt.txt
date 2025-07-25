@@ -1,18 +1,18 @@
-            shop one
- Nakuru Street, Nairobi, Kenya
+              fred
+         Nakuru, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC138946
-Date: Jul 22, 2025, 10:55 AM
+Receipt #: REC604446
+Date: Jul 25, 2025, 11:02 AM
 Customer: Walk-in
-Attendant: Fredrick
+Attendant: fredrick
 -------------------------------
-Oil 2
-  1 x KES 200.00 = KES200.00
+phone screen
+  1 x KES 100.00 = KES100.00
 -------------------------------
-Subtotal:      KES200.00
+Subtotal:      KES100.00
 Tax:           KES0.00
-TOTAL:         KES200.00
+TOTAL:         KES100.00
 
 Payment Method: cash
 

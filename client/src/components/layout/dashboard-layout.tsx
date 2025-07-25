@@ -55,8 +55,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Desktop Sidebar - Hidden for attendant routes */}
       {!isAttendantRoute && (
         <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:bg-gradient-to-b lg:from-purple-900 lg:via-purple-800 lg:to-purple-900 lg:shadow-2xl lg:border-r lg:border-purple-700/50 lg:z-40">
-        <div className="flex flex-col justify-between h-full">
-          <div className="p-6">
+<div className="flex-1 h-0 overflow-y-auto overflow-x-hidden p-4 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-purple-900/30">
             <Link href="/dashboard">
               <div className="flex items-center cursor-pointer group mb-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg">
@@ -186,7 +185,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                 </>
               )}
             </nav>
-          </div>
 
 
         </div>

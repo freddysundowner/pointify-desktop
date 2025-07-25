@@ -98,10 +98,6 @@ export default function PurchaseViewPage() {
                   <p className="font-medium">Attendant:</p>
                   <p className="text-muted-foreground">{purchase.attendantId?.username || "System"}</p>
                 </div>
-                <div>
-                  <p className="font-medium">Purchase ID:</p>
-                  <p className="text-muted-foreground font-mono text-xs">{purchase._id}</p>
-                </div>
               </div>
 
               {/* Items Table Header */}

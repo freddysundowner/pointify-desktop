@@ -1,6 +1,4 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useHashLocation } from "wouter/use-hash-location";
-
 
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -64,7 +62,7 @@ import StockReport from "@/features/reports/stock-report";
 import ProductMovements from "@/features/reports/product-movements";
 import CustomerDueSales from "@/features/reports/customer-due-sales";
 import SubscriptionPage from "@/pages/subscription";
-import PaymentWaiting from "@/pages/payment-waiting";
+import PaymentWaiting from "@/pages/payment-waiting"; 
 import EditProfilePage from "@/pages/edit-profile";
 import ExpenseCategories from "@/pages/expense-categories";
 import CashflowCategories from "@/pages/cashflow-categories";
@@ -234,6 +232,14 @@ function AppContent() {
         {() => (
           <AttendantRoute>
             <PurchasesList />
+          </AttendantRoute>
+        )}
+      </Route>
+      {/* /purchases/create */}
+      <Route path="/attendant/purchases/create">
+        {() => (
+          <AttendantRoute>
+            <CreatePurchase />
           </AttendantRoute>
         )}
       </Route>

@@ -346,13 +346,9 @@ export default function StockProducts() {
         throw new Error(`Download failed: ${response.status} ${response.statusText}`);
       }
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
       
       // Create blob and download
       const blob = await response.blob();
-      console.log("Blob size:", blob.size);
-      console.log("Blob type:", blob.type);
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -663,7 +659,7 @@ export default function StockProducts() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search products by name or barcode..."
+                  placeholder="Search products by name, serial number or barcode..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"

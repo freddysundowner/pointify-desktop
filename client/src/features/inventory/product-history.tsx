@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
   TrendingUp,
@@ -14,13 +13,15 @@ import {
   RefreshCw
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { useLocation } from "wouter";
+import { useLocation,useParams } from "wouter";
 import { apiCall } from "@/lib/api-config";
+import { navigate } from "wouter/use-browser-location";
+import { useAuth } from "@/features/auth/useAuth";
 
 export default function ProductHistory() {
   const [, setLocation] = useLocation();
-  const [, params] = useRoute("/product/:id/history");
-  const productId = params?.id;
+  const { id } = useParams<{ id: string }>();
+  const productId = id;
   
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -135,9 +136,17 @@ export default function ProductHistory() {
   };
   
   const { totalPages, currentPage, setPage } = getPaginationInfo();
+    const { admin } = useAuth();
+  
+  const isAdmin = !!admin && !localStorage.getItem("attendantData");
 
   const handleGoBack = () => {
-    setLocation("/stock-summary");
+    if (isAdmin) {
+      navigate("/products");
+    } else {
+      navigate("/attendant/products");
+    }
+    // setLocation("/attendant/stock-summary");
   };
 
   if (!productId) {

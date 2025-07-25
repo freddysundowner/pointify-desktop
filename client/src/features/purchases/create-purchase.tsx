@@ -16,18 +16,13 @@ import { useProducts } from "@/contexts/ProductsContext";
 import type { PurchaseItem } from "@shared/schema";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
+import { usePrimaryShop } from "../../hooks/usePrimaryShop";
 
 export default function CreatePurchase() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { admin, isAuthenticated } = useAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
-
-  // Get shop ID for API calls - use Redux state
-  const shopId = selectedShopId || (
-    typeof admin?.primaryShop === 'string' 
-      ? admin.primaryShop 
-      : (admin?.primaryShop as { _id: string })?._id
-  );
+  const { attendantId,shopId } = usePrimaryShop();
 
   // Suppliers API integration
   const { data: suppliersResponse, isLoading: suppliersLoading } = useQuery({
@@ -147,7 +142,7 @@ export default function CreatePurchase() {
       const selectedSupplier = suppliers.find((s: any) => s.name === supplierName);
       
       // Extract attendant ID properly
-      const attendantId = (admin?.attendantId as any)?._id || admin?.attendantId || admin?._id || null;
+      // const attendantId = (admin?.attendantId as any)?._id || admin?.attendantId || admin?._id || null;
 
       // Map items to Pointify format
       const purchaseItems = validItems.map(item => {
@@ -159,7 +154,7 @@ export default function CreatePurchase() {
           unitPrice: item.unitCost,
           sellingPrice: (item as any).sellingPrice || product?.sellingPrice || item.unitCost * 1.5, // Use custom selling price or default
           lineDiscount: 0,
-          attendantId: attendantId
+          attendantId
         };
       });
 
@@ -175,8 +170,6 @@ export default function CreatePurchase() {
         trackBatches: trackBatches,
         useWarehouse: true
       };
-
-      console.log("Creating purchase order with Pointify payload:", payload);
       
       const response = await fetch('/api/purchases', {
         method: 'POST',
@@ -187,7 +180,11 @@ export default function CreatePurchase() {
       });
 
       if (response.ok) {
-        setLocation("/purchases");
+        if(isAttendant) {
+          setLocation("/attendant/purchases");
+        }else{
+          setLocation("/purchases");
+        }
       } else {
         const error = await response.text();
         alert(`Failed to create purchase order: ${error}`);
@@ -199,10 +196,36 @@ export default function CreatePurchase() {
       setIsSubmitting(false);
     }
   };
+  const isAttendant = location.startsWith("/attendant/");
 
   return (
     <DashboardLayout title="Create Purchase Order">
       <div className="space-y-6">
+      <div className="flex items-center space-x-4 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Check if we came from stock summary by looking at URL parameters
+              const urlParams = new URLSearchParams(window.location.search);
+              const hasFilter = urlParams.has('filter');
+              
+              if (hasFilter) {
+                // If we came from stock summary with a filter, go back there
+                const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
+                setLocation(backRoute);
+              } else {
+                // Otherwise go to dashboard
+                const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
+                setLocation(backRoute);
+              }
+            }}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+        </div>
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -443,9 +466,7 @@ export default function CreatePurchase() {
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={() => setLocation("/purchases")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Purchases
+          <Button variant="outline" onClick={() => setLocation("/purchases")}>           
           </Button>
           <Button 
             onClick={handleSave} 
