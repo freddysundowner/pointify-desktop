@@ -47,7 +47,7 @@
     "port": 9001,
     "host": "localhost",
     "dumpsDir": "dumps",
-    "online_api": "https://api.pointifypos.com",
+    "online_api": "https://staging.pointifypos.com",
     "offline_api": "http://localhost:2039",
     "api_mode": "hybrid",
     "healthCheckTimeout": 8000,
@@ -73,10 +73,10 @@
   },
   "app": {
     "name": "Pointify Desktop POS",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "updateCheckInterval": 3600000,
     "successDisplayTime": 2000,
-    "author": "Pointify Team",
+    "author": "Fredrick Mundia Githumbi",
     "description": "Pointify Point of Sale System",
     "website": "https://pointifypos.com"
   },

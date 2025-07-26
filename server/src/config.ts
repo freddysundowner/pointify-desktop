@@ -4,7 +4,7 @@ import fs from 'fs';
 import fetchh from 'node-fetch';
 
 // Constants
-export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL || 'http://localhost:2040';
+export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL;
 export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'http://localhost:2040'; //'https://api.pointifypos.com';
 
 // Global API mode setting
@@ -128,28 +128,6 @@ export async function makeLocalPointifyRequest(
     console.log(`🚨 Local API request failed: ${response}`);
     return {};
   }
-  // if (!response.ok) {
-  //   // const errorText = await response.text();
-  //   // if (response.status === 401) {
-  //   //   const error = new Error('LOGOUT_REQUIRED') as Error & {
-  //   //     status: number;
-  //   //     responseBody: string;
-  //   //     logoutRequired: boolean;
-  //   //   };
-  //   //   error.status = 401;
-  //   //   error.responseBody = errorText;
-  //   //   error.logoutRequired = true;
-  //   //   throw error;
-  //   // }
-
-  //   // const error = new Error(
-  //   //   `Local API request failed: ${response.status} ${response.statusText} - ${errorText}`
-  //   // ) as Error & { status: number; responseBody: string };
-  //   // error.status = response.status;
-  //   // error.responseBody = errorText;
-  //   // throw error;
-  //   console.log(`🚨 Local API request failed: ${response.status} ${response.statusText}`);
-  // }
 
   return await response.json();
 }

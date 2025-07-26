@@ -1,6 +1,7 @@
 import type { Express } from "express";
-import {  makeOnlinePointifyRequest, makeLocalPointifyRequest } from "../config.js";
+import {  makeOnlinePointifyRequest, makeLocalPointifyRequest, isElectron } from "../config.js";
 import fs from 'fs';
+import { performPeriodicSync } from "../network-status-handler.js";
 const CONFIG_FILE = 'initial_config.json';
 let currentPrinterConfig = {
   initialsync: false
@@ -9,7 +10,20 @@ let currentPrinterConfig = {
 // Load config at startup
 
 export async function registerInitsRoutes(app: Express) {
-     
+    app.get('/api/sync', async (req, res) => {
+        if (isElectron()) {
+            await performPeriodicSync();
+            res.json({
+                message: 'Sync completed',
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            res.json({
+                message: 'Sync not supported in browser',
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
     if (fs.existsSync(CONFIG_FILE)) {
         try {
             currentPrinterConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));

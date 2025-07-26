@@ -296,6 +296,8 @@ class APIManager {
         ENV_PRO_PORT: this.config.api.port.toString(),
         MONGO_URL: this.config.database.url,
         jwtsecret: jwtSecret,
+        SERVER_PORT: this.config.server.port.toString(),
+        SERVER_HOST: this.config.server.host.toString(),
         NODE_ENV: this.config.environment.nodeEnv,
         GOOGLE_MAPS_API_KEY:
           userConfig.GOOGLE_MAPS_API_KEY ||

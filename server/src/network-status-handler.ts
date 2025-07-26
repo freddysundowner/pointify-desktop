@@ -330,4 +330,4 @@ function removeSyncDumpFile(downloadUrl: any) {
 }
 
 // Export functions if needed elsewhere
-export { handleOfflineStatus, handleOnlineStatus, handleStatusChange };
+export { handleOfflineStatus, handleOnlineStatus, handleStatusChange,performPeriodicSync };

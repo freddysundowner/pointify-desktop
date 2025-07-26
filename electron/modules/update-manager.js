@@ -92,16 +92,6 @@ class UpdateManager {
       }
 
       const updateData = await response.json();
-
-      // Expected format:
-      // {
-      //   "version": "1.0.1",
-      //   "releaseNotes": "Bug fixes and improvements",
-      //   "downloadUrl": "https://...",
-      //   "mandatory": false,
-      //   "minimumVersion": "1.0.0"
-      // }
-
       return updateData;
     } catch (error) {
       console.error("❌ Failed to fetch update info:", error);
