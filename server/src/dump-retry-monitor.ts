@@ -12,7 +12,7 @@ interface DumpFile {
 
 class DumpRetryMonitor {
   private monitorInterval: NodeJS.Timeout | null = null;
-  private readonly CHECK_INTERVAL =20 * 1000; // 5 minutes
+  private readonly CHECK_INTERVAL =5 * 60 * 1000; // 5 minutes
   private readonly dumpsDir = path.join(__dirname, '../dumps');
   private isRunning = false;
 
@@ -123,7 +123,7 @@ class DumpRetryMonitor {
         status: 'offline'
       };
       const { makeLocalPointifyRequest } = await import('./config.js');
-      const dumpResponse = await makeLocalPointifyRequest('/sync/dump', {
+      const dumpResponse:any = await makeLocalPointifyRequest('/sync/dump', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,8 +132,7 @@ class DumpRetryMonitor {
       });
       console.log(dumpResponse);
       if(dumpResponse.success ==true){
-          // Remove file after successful import
-          const removed = this.safeRemoveFile(dumpFile.filePath);
+         this.safeRemoveFile(dumpFile.filePath);
       }
   }
 

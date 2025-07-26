@@ -3,6 +3,8 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
+
 const { dialog, shell, BrowserWindow,app } = require("electron");
 class UpdateManager {
   constructor() {
@@ -158,6 +160,25 @@ class UpdateManager {
         break;
     }
   }
+async tryDeleteWithBackoff(filePath, retries = 5, delayMs = 500) {
+  return new Promise((resolve, reject) => {
+    const attempt = (count) => {
+      try {
+        fs.unlinkSync(filePath);
+        console.log("✅ Deleted:", filePath);
+        resolve();
+      } catch (err) {
+        if (err.code === "EPERM" && count < retries) {
+          console.warn(`⚠️ File locked. Retry ${count + 1}/${retries}...`);
+          setTimeout(() => attempt(count + 1), delayMs);
+        } else {
+          reject(err);
+        }
+      }
+    };
+    attempt(0);
+  });
+}
 
   async startUpdate(updateInfo) {
     try {
@@ -172,11 +193,14 @@ class UpdateManager {
 
         const downloadConfig = new DownloadManager(() => {}, null).getDownloadConfig();
         const apiPath = path.join(installDir, downloadConfig.apiFile);
-
-        // 🔥 Delete old API binary
-        if (fs.existsSync(apiPath)) {
-          fs.unlinkSync(apiPath);
-          this.updateProgress("Updating Files...", 5, "Removing old files do not close this window");
+        try {
+          execSync('taskkill /F /IM pointify-api.exe', { stdio: 'ignore' });
+          console.log("✅ Killed running API process");
+          
+          // 🔥 Delete old API binary
+           await this.tryDeleteWithBackoff(apiPath);
+        } catch (e) {
+          console.warn("⚠️ Could not kill API process:", e.message);
         }
 
         // 🔁 Redownload fresh API
@@ -212,8 +236,8 @@ class UpdateManager {
       resizable: false,
       minimizable: false,
       maximizable: false,
-      closable: false,
-      alwaysOnTop: true,
+      closable: true,
+      alwaysOnTop: false,
       parent: BrowserWindow.getFocusedWindow(),
       modal: true,
       webPreferences: {
@@ -223,26 +247,26 @@ class UpdateManager {
     });
 
     const progressHTML = `<!DOCTYPE html>
-<html><head><style>
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 30px; background: #f5f5f5; text-align: center; }
-.title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333; }
-.status { font-size: 14px; margin-bottom: 15px; color: #666; }
-.progress-bar { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
-.progress-fill { height: 100%; background: #007AFF; border-radius: 3px; transition: width 0.3s ease; width: 0%; }
-.details { font-size: 12px; color: #888; }
-</style></head><body>
-<div class="title">Downloading Update</div>
-<div class="status" id="status">Preparing download...</div>
-<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
-<div class="details" id="details">Please wait while we download the latest version</div>
-<script>
-const { ipcRenderer } = require("electron");
-ipcRenderer.on("update-progress", (event, data) => {
-  document.getElementById("status").textContent = data.status;
-  document.getElementById("progress").style.width = data.progress + "%";
-  if (data.details) document.getElementById("details").textContent = data.details;
-});
-</script></body></html>`;
+      <html><head><style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 30px; background: #f5f5f5; text-align: center; }
+      .title { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333; }
+      .status { font-size: 14px; margin-bottom: 15px; color: #666; }
+      .progress-bar { width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
+      .progress-fill { height: 100%; background: #007AFF; border-radius: 3px; transition: width 0.3s ease; width: 0%; }
+      .details { font-size: 12px; color: #888; }
+      </style></head><body>
+      <div class="title">Downloading Update</div>
+      <div class="status" id="status">Preparing download...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+      <div class="details" id="details">Please wait while we download the latest version</div>
+      <script>
+      const { ipcRenderer } = require("electron");
+      ipcRenderer.on("update-progress", (event, data) => {
+        document.getElementById("status").textContent = data.status;
+        document.getElementById("progress").style.width = data.progress + "%";
+        if (data.details) document.getElementById("details").textContent = data.details;
+      });
+      </script></body></html>`;
 
     this.updateWindow.loadURL(
       `data:text/html;charset=utf-8,${encodeURIComponent(progressHTML)}`

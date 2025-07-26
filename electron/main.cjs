@@ -526,7 +526,6 @@ app.on("window-all-closed", async () => {
     app.quit();
   }
 });
-
 app.on("before-quit", async (event) => {
   if (systemReady) {
     event.preventDefault();

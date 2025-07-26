@@ -120,9 +120,9 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     receiptContent += `Attendant: ${attendant}\n`;
     receiptContent += '-------------------------------\n';
 
-    items.forEach((item: { name: string | any[]; quantity: number; unitPrice: number; total: number; discount: number; }) => {
+    items.forEach((item: { name: string | any[]; serialnumber: string; quantity: number; unitPrice: number; total: number; discount: number; }) => {
       // First line with item name
-      receiptContent += `${item.name.slice(0,20)}\n`;
+      receiptContent += `${item.name.slice(0,20)}\n ${'srn: '+item.serialnumber}\n`;
       // Second line with qty x unit price = total
       receiptContent += `  ${item.quantity} x ${currency ?? 'KES'} ${item.unitPrice.toFixed(2)} = ${currency?? "KES"}${item.total.toFixed(2)}\n`;
 

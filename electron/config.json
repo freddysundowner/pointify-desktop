@@ -41,7 +41,7 @@
     "googleMapsApiKey": "AIzaSyAhhiH3PrL9td9IGJWfpK3CXnU3gtsIYHY"
   },
   "environment": {
-    "nodeEnv": "production"
+    "nodeEnv": "producdetion"
   },
   "server": {
     "port": 9001,
@@ -73,7 +73,7 @@
   },
   "app": {
     "name": "Pointify Desktop POS",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "updateCheckInterval": 3600000,
     "successDisplayTime": 2000,
     "author": "Pointify Team",

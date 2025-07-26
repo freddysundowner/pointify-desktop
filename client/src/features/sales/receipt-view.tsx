@@ -154,7 +154,8 @@ export default function ReceiptView() {
           name: item?.product?.name,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          total: item.unitPrice * item.quantity
+          total: item.unitPrice * item.quantity,
+          serialnumber: item?.serialnumber
         })),
         subtotal: sale?.items.reduce((total, item) => total + item.unitPrice * item.quantity, 0),
         tax: sale?.totaltax,

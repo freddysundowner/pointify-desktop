@@ -69,7 +69,7 @@ export default function Attendants() {
   // Get shops data - availableShops uses 'id' field, not '_id'
   const shops = availableShops.map(shop => ({
     id: shop.id,
-    name: shop.name,
+    name: shop?.name,
     location: shop.location || 'No address'
   }));
   
@@ -490,7 +490,7 @@ export default function Attendants() {
 
   // Get shop name for display
   const getShopName = (shopId: string | { _id: string; name: string }) => {
-    if (typeof shopId === 'object') return shopId.name;
+    if (typeof shopId === 'object') return shopId?.name;
     const shop = shops.find((s) => s.id === shopId);
     return shop?.name || 'Unknown Shop';
   };
@@ -728,7 +728,7 @@ export default function Attendants() {
                   <SelectContent>
                     {shops.map((shop) => (
                       <SelectItem key={shop.id} value={shop.id}>
-                        {shop.name} - {shop.location}
+                        {shop?.name} - {shop.location}
                       </SelectItem>
                     ))}
                   </SelectContent>

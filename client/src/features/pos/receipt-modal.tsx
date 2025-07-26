@@ -54,7 +54,8 @@ export default function ReceiptModal({
           name: item.name,
           quantity: item.quantity,
           unitPrice: item.price,
-          total: item.total
+          total: item.total,
+          serialnumber: item?.serialnumber || ''
         })),
         subtotal: transaction.subtotal,
         tax: transaction.tax,

@@ -44,17 +44,38 @@ class MongoDBManager {
     let mongodPath;
     if (platform === "win32") {
       mongodPath = path.join(mongoPath, "bin", "mongod.exe");
+
       if (!fs.existsSync(mongodPath)) {
-        const mongodAlt = path.join(
-          mongoPath,
-          "mongodb-windows-x86_64-4.4.18",
-          "bin",
-          "mongod.exe"
+        console.warn("❌ MongoDB binary not found. Attempting recovery...");
+
+        const parentDir = path.resolve(mongoPath, "..");
+        const mongoRoot = fs.existsSync(path.join(mongoPath, "bin")) ? mongoPath : parentDir;
+
+        // Remove broken folder if it's corrupted
+        const toDelete = path.join(mongoRoot, "mongodb");
+        if (fs.existsSync(toDelete)) {
+          console.log("🧹 Removing corrupted MongoDB directory:", toDelete);
+          fs.rmSync(toDelete, { recursive: true, force: true });
+        }
+
+        // Trigger redownload + extract
+        const { DownloadManager } = require("./download-manager");
+        const dm = new DownloadManager(
+          this.updateProgress || (() => {}),
+          this // Pass MongoDBManager as the extractor
         );
-        if (fs.existsSync(mongodAlt)) {
-          mongodPath = mongodAlt;
+
+        const installDir = parentDir; // Re-install into runtime/
+        await dm.downloadComponents(installDir);
+
+        // Retry updated mongodPath
+        mongodPath = path.join(installDir, "mongodb", "bin", platform === "win32" ? "mongod.exe" : "mongod");
+
+        if (!fs.existsSync(mongodPath)) {
+          throw new Error(`MongoDB recovery failed: still missing at ${mongodPath}`);
         }
       }
+
     } else {
       mongodPath = path.join(mongoPath, "bin", "mongod");
       if (!fs.existsSync(mongodPath)) {
