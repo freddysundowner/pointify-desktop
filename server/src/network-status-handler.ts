@@ -71,7 +71,7 @@ async function performSyncOperation(
  */
 export function setAdminId(data: any) {
   cachedAdminId = data?._id;
-  startSyncTimer(data?.syncInterval * 60 * 1000 || SYNC_INTERVAL_MS);
+  // startSyncTimer(data?.syncInterval * 60 * 1000 || SYNC_INTERVAL_MS);
 }
 
 
@@ -90,7 +90,7 @@ export function getCachedAdminId(): string | null {
  */
 export function clearAdminId() {
   cachedAdminId = null;
-  stopSyncTimer();
+  // stopSyncTimer();
 }
 
 /**
@@ -309,11 +309,11 @@ async function handleOnlineStatus() {
 // Your custom status change handler function
 function handleStatusChange(status: string, previousStatus: string) {
   setGlobalApiMode(status as any)
-  if(status == 'online') {
-    startSyncTimer();
-  }else{
-    stopSyncTimer();
-  }
+  // if(status == 'online') {
+  //   startSyncTimer();
+  // }else{
+  //   stopSyncTimer();
+  // }
 }
 
 

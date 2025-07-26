@@ -83,7 +83,6 @@
       "gatekeeperAssess": false,
       "identity": "GIST360 INCORPORATED (JANRA7BC7W)"
     },
-    "afterSign": "scripts/notarize.js",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

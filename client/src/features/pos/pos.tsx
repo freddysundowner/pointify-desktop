@@ -186,6 +186,7 @@ export default function POS() {
           id: product.id || product._id,
           name: product.name || product.title || "Unknown Product",
           price: priceForSaleType,
+          serialnumber: product?.serialnumber,
           quantity: 1,
           total: priceForSaleType,
           discount: 0,

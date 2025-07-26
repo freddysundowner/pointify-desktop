@@ -438,25 +438,10 @@ async function initializeSystem() {
     const timeoutDelay = CONFIG.app.successDisplayTime || 3000; // fallback to 3 seconds
 
     setTimeout(() => {
-      debugLog(
-        "🕐 Timeout executed - closing progress and opening main window"
-      );
-      try {
-        debugLog("📝 Calling closeProgressWindow()...");
         closeProgressWindow();
-        debugLog("✅ Progress window closed successfully");
-
-        debugLog("📝 Calling createWindow()...");
         createWindow();
-        debugLog("✅ Main window created successfully");
-      } catch (error) {
-        debugLog(`❌ Error during window transition: ${error.message}`);
-        debugLog(`Stack: ${error.stack}`);
-      }
     }, timeoutDelay);
   } catch (error) {
-    console.error("❌ System initialization failed:", error.message);
-
     const userMessages = {
       corrupted:
         "Some system files need to be re-downloaded. Please restart the application.",
@@ -518,9 +503,10 @@ app.whenReady().then(async () => {
   createMenu();
 
   try {
-    if (!fs.existsSync(apiPath)) {
-      createProgressWindow();
-    }
+    // if (!fs.existsSync(apiPath)) {
+    //   createProgressWindow();
+    // }
+    createProgressWindow();
     await initializeSystem();
   } catch (error) {
     console.error("❌ Initialization failed:", error);
@@ -540,7 +526,6 @@ app.on("window-all-closed", async () => {
     app.quit();
   }
 });
-
 app.on("before-quit", async (event) => {
   if (systemReady) {
     event.preventDefault();
