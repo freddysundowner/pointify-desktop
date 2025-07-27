@@ -1,12 +1,13 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { isElectron } from "./config.js";
+import { getGlobalApiMode, isElectron } from "./config.js";
 import { dumpRetryMonitor } from "./dump-retry-monitor.js";
 import "./network-status-handler.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
 import path from "path";
+import { performPeriodicSync } from "./network-status-handler.js";
 const __dirname = path.dirname(process.argv[1]);
 
 
@@ -14,6 +15,14 @@ const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+app.use((req, res, next) => {
+  const interceptMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (interceptMethods.includes(req.method) && getGlobalApiMode() !="offline") {
+    console.log(interceptMethods, getGlobalApiMode())
+    performPeriodicSync();
+  }
+  next();
+});
 // Logger for /api
 app.use((req, res, next) => {
   const start = Date.now();
@@ -85,6 +94,7 @@ app.use((req, res, next) => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
       dumpRetryMonitor.startMonitoring();
+     
     }
   });
 })();

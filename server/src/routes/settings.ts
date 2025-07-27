@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { makePointifyRequest, setGlobalApiMode, makeLocalPointifyRequest } from "../config.js";
-// import { stopSyncTimer, startSyncTimer } from "../network-status-handler.js";
 
 
 export function registerSettingsRoutes(app: Express) {
@@ -22,7 +21,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`📊 Admin data received:`, adminData);
 
       // Get API mode from local storage first, then external API, then default
-      const apiMode = adminData?.status || 'hybrid';
+      const apiMode =  adminData?.status || 'hybrid';
       setGlobalApiMode(apiMode);
       
       // Transform admin data to settings format
@@ -107,21 +106,7 @@ export function registerSettingsRoutes(app: Express) {
           status: apiMode
         })
       });
-      // syncIntervalStorage.set(adminId, finalSyncInterval);
-      // apiModeStorage.set(adminId, apiMode);
-
-      // Update global API mode first
       setGlobalApiMode(apiMode);
-
-
-      // Handle sync timer based on mode
-      // if (apiMode === 'offline') {
-      //   console.log('🔄 Stopping sync timer for offline mode');
-      //   stopSyncTimer();
-      // } else {
-      //   console.log(`🔄 Starting sync timer for online/hybrid mode with interval: ${data?.syncInterval}min`);
-      //   startSyncTimer(data?.syncInterval * 60 * 1000 || 120000);
-      // }
 
       // Return success response
       res.json({

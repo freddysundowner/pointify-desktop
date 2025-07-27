@@ -9,11 +9,22 @@ export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'http://
 
 // Global API mode setting
 let globalApiMode: 'online' | 'offline' | 'hybrid' = 'online';
+let internetAvailable = true;
+export function setInternetAvailable(status: false | true) { 
+  internetAvailable = status;
+}
+export function getInternetAvailable():  false | true {
+  return internetAvailable;
+}
 
 // Functions to manage global API mode
 export function setGlobalApiMode(mode: 'online' | 'offline' | 'hybrid') {
-  globalApiMode = mode;
   console.log(`🌐 Global API mode set to: ${mode}`);
+  if (internetAvailable == false) { 
+    globalApiMode = "offline"
+    return;
+  }
+  globalApiMode = mode;
 }
 export function isElectron() {
   return !!(process.versions && process.versions.electron);
@@ -57,8 +68,12 @@ export async function makeOnlineFormDataSyncDumpCall(payload: { downloadUrl?: an
     return await res.json();
 
   } catch (error) {
-    console.error('🚨 Online sync dump error:', error);
-    throw error;
+    // console.log('🚨 Online sync dump error:', error);
+    return {
+      success: false,
+      offline: false,
+      message: `sync dump error`,
+    };
   }
 } 
 // Main online request
@@ -145,7 +160,19 @@ export async function makePointifyRequest(
     case 'online':
       // Online only - try online API, fallback to graceful if fails
       try {
-        return await makeOnlinePointifyRequest(endpoint, options);
+        let response: any = await makeOnlinePointifyRequest(endpoint, options);
+        console.log(`🌐 Online API response for ${endpoint}:`, response);
+        if(response.success === false) {
+          try {
+            let localresponse = await makeLocalPointifyRequest(endpoint, options);
+            console.log(`🏠 Local API response for ${endpoint}:`, localresponse);
+            return localresponse;
+          } catch (localError) {
+            console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
+            return gracefulFallback(endpoint);
+          }
+        }
+        return response;
       } catch (onlineError) {
         console.log(`🌐 Online API error for ${endpoint}, using graceful fallback... ${onlineError}`);
        try {

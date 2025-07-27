@@ -56,16 +56,6 @@ export const useAuthProvider = (): AuthContextType => {
 
   useEffect(() => {
     initializeAuth();
-    
-    // Safety timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Auth loading timeout - forcing completion');
-        setIsLoading(false);
-      }
-    }, 10000); // 10 second timeout
-    
-    return () => clearTimeout(timeout);
   }, [isLoading]);
 
   const fetchAdminData = async (adminId: string, authToken: string) => {
@@ -80,13 +70,19 @@ export const useAuthProvider = (): AuthContextType => {
       });
       
       const adminData = await response.json();
+      await checkAndTriggerAutoSync();
       console.log("Fetched admin data:", adminData);
-      if (adminData?._id) {
-        setAdmin(adminData);
-        localStorage.setItem("adminData", JSON.stringify(adminData));
-        return adminData;
+      if (!adminData?._id) {
+        logout();
+      } else {
+        if (adminData?._id) {
+          setAdmin(adminData);
+          localStorage.setItem("adminData", JSON.stringify(adminData));
+          return adminData;
+        }
       }
     } catch (error) {
+      logout();
       console.warn("Failed to fetch admin data:", error);
       // Don't set server error - let app continue loading normally
       throw error;
@@ -96,8 +92,6 @@ export const useAuthProvider = (): AuthContextType => {
   const initializeAuth = async () => {
     try {
       const storedToken = localStorage.getItem("authToken");
-      const storedAdmin = localStorage.getItem("adminData");
-
       if (storedToken) {
         setToken(storedToken);
         
@@ -105,34 +99,6 @@ export const useAuthProvider = (): AuthContextType => {
         try {
           const tokenPayload = JSON.parse(atob(storedToken.split('.')[1]));
           console.log("Token payload:", tokenPayload);
-          
-          const adminFromToken = {
-            _id: tokenPayload.id || tokenPayload._id,
-            id: tokenPayload.id || tokenPayload._id,
-            email: tokenPayload.email,
-            username: tokenPayload.email,
-            emailVerified: 1,
-            phoneVerified: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          
-          // Use stored admin data if available, otherwise use token data
-          let adminData = adminFromToken;
-          if (storedAdmin && storedAdmin !== '{}') {
-            try {
-              const parsedStoredAdmin = JSON.parse(storedAdmin);
-              if (parsedStoredAdmin && Object.keys(parsedStoredAdmin).length > 0) {
-                adminData = parsedStoredAdmin;
-              }
-            } catch (e) {
-              console.warn("Could not parse stored admin data:", e);
-            }
-          }
-          
-          setAdmin(adminData);
-          
-          // Try to fetch fresh admin data to get current primaryShop status
           const adminId = tokenPayload.id || tokenPayload._id;
           console.log("Admin ID from token:", adminId);
           
@@ -154,19 +120,6 @@ export const useAuthProvider = (): AuthContextType => {
         } catch (e) {
           console.error("Could not decode JWT token:", e);
           console.log("Stored token:", storedToken);
-          // Don't logout immediately, try to use stored admin data
-          if (storedAdmin && storedAdmin !== '{}') {
-            try {
-              const parsedStoredAdmin = JSON.parse(storedAdmin);
-              if (parsedStoredAdmin && Object.keys(parsedStoredAdmin).length > 0) {
-                setAdmin(parsedStoredAdmin);
-                console.log("Using stored admin data despite token decode failure");
-                return;
-              }
-            } catch (adminParseError) {
-              console.warn("Could not parse stored admin data:", adminParseError);
-            }
-          }
           logout();
           return;
         }
@@ -206,7 +159,7 @@ export const useAuthProvider = (): AuthContextType => {
         localStorage.setItem("authToken", data.token);
         
         // Fetch fresh admin data to get current primaryShop status
-        const adminId = data.userdata._id || data.userdata.id;
+        const adminId = data.userdata._id;
         if (adminId) {
           try {
             await fetchAdminData(adminId, data.token);
@@ -226,7 +179,7 @@ export const useAuthProvider = (): AuthContextType => {
         queryClient.invalidateQueries({ queryKey: ["admin"] });
         
         // Check if automatic sync is needed after login
-        await checkAndTriggerAutoSync();
+        // await checkAndTriggerAutoSync();
         
       } else {
         throw new Error("Invalid response from server");
@@ -242,12 +195,6 @@ export const useAuthProvider = (): AuthContextType => {
 
   const checkAndTriggerAutoSync = async () => {
     try {
-      // Check if sync is needed
-      const syncStatusResponse = await apiCall('/api/sync/status');
-      const syncStatus = await syncStatusResponse.json();
-      
-      if (syncStatus.needsSync) {
-        console.log('Local database is empty - triggering automatic sync...');
         
         // Get current admin data
         const currentAdmin = admin || JSON.parse(localStorage.getItem("adminData") || '{}');
@@ -258,7 +205,7 @@ export const useAuthProvider = (): AuthContextType => {
           try {
             // Trigger automatic sync in background
             const syncResponse = await apiCall(`/api/sync/${currentAdmin._id}`, {
-              method: 'POST',
+              method: 'GET',
               body: JSON.stringify({ 
                 adminId, 
                 shopId: primaryShopId 
@@ -275,9 +222,6 @@ export const useAuthProvider = (): AuthContextType => {
             // Don't block login if sync fails
           }
         }
-      } else {
-        console.log('Local database has data - no sync needed');
-      }
     } catch (error) {
       console.warn('Could not check sync status:', error);
       // Don't block login if sync check fails

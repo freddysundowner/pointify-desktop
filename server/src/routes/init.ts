@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import {  makeOnlinePointifyRequest, makeLocalPointifyRequest, isElectron } from "../config.js";
 import fs from 'fs';
-import { performPeriodicSync } from "../network-status-handler.js";
+import { performPeriodicSync, setAdminId } from "../network-status-handler.js";
 const CONFIG_FILE = 'initial_config.json';
 let currentPrinterConfig = {
   initialsync: false
@@ -10,12 +10,14 @@ let currentPrinterConfig = {
 // Load config at startup
 
 export async function registerInitsRoutes(app: Express) {
-    app.get('/api/sync', async (req, res) => {
+    app.get(`/api/sync/:id`, async (req, res) => {
         if (isElectron()) {
+            setAdminId(req.params.id);
             await performPeriodicSync();
             res.json({
                 message: 'Sync completed',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                success: true
             });
         } else {
             res.json({

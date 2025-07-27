@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { makePointifyRequest, setGlobalApiMode } from "../config.js";
-import { setAdminId, clearAdminId } from "../network-status-handler.js";
+import { setAdminId, clearAdminId, performPeriodicSync, } from "../network-status-handler.js";
 
 export function registerAuthRoutes(app: Express) {
   // =============================================================================
@@ -134,19 +134,17 @@ app.post("/api/business/register", async (req, res) => {
     try {
       const { id } = req.params;
       const token = req.headers.authorization?.replace('Bearer ', '');
-      
-      if (!token) {
-        return res.status(401).json({ error: "Authorization token required" });
-      }
 
       const data: any = await makePointifyRequest(`/auth/admin/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log("🔍 Admin data received:", JSON.stringify(data, null, 2));
 
       // Cache admin ID from successful admin data fetch
       if (data && data._id) {
         setGlobalApiMode(data?.status);
         setAdminId(data);
+        await performPeriodicSync();
       }
 
       // The makePointifyRequest now returns null for auth failures instead of throwing errors
@@ -363,3 +361,4 @@ app.post("/api/business/register", async (req, res) => {
     }
   });
 }
+

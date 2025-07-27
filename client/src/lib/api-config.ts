@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     getAdmin: (id: string) => `/api/auth/admin/${id}`,
     resetPassword: "/api/admin/reset/password",
     requestPasswordReset: "/api/admin/request/password",
+    sync: (id: string) => `/api/sync/${id}`,
   },
 
   // Analytics endpoints - all go through /api/ proxy

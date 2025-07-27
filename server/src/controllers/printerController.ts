@@ -169,7 +169,6 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
 
     exec(`copy /b receipt.txt \\\\localhost\\${currentPrinterConfig.interface}`, (err, stdout, stderr) => {
       if (err) {
-        console.error(`❌ Print failed: ${err.message}`);
         return res.status(500).json({ success: false, message: `Print failed: ${err.message}` });
       }
       console.log(`✅ Receipt sent to printer.`);

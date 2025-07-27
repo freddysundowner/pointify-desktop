@@ -329,7 +329,7 @@ export default function POS() {
   return (
     <div className="flex h-screen bg-background">
       {/* Back to Dashboard Button - Fixed position */}
-      <div className="absolute top-4 left-4 z-50">
+      <div className="absolute top-8 left-4 z-50">
         <Button
           onClick={handleBackToDashboard}
           variant="outline"

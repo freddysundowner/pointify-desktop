@@ -1,5 +1,5 @@
 import { networkMonitor } from './network-monitor.js';
-import { makeOnlinePointifyRequest, makeLocalPointifyRequest, getGlobalApiMode, makeOnlineFormDataSyncDumpCall, setGlobalApiMode } from './config.js';
+import { makeOnlinePointifyRequest, makeLocalPointifyRequest, getGlobalApiMode, makeOnlineFormDataSyncDumpCall, setGlobalApiMode, isElectron, setInternetAvailable } from './config.js';
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -13,9 +13,6 @@ const __dirname = path.dirname(process.argv[1]);
 // In-memory storage for admin ID to avoid repeated API calls
 let cachedAdminId: string | null = null;
 
-// Timer for periodic sync operations (2 minutes)
-let syncInterval: NodeJS.Timeout | null = null;
-const SYNC_INTERVAL_MS = 2 * 60 * 1000; //2 * 60 * 1000; 
 
 // Constants to avoid hardcoding
 const SYNC_HEADERS = { 'Content-Type': 'application/json' };
@@ -32,6 +29,31 @@ function createSyncDumpPayload(syncResponse: any, adminId: string) {
     id: syncResponse.id || adminId,
     status: syncResponse.status
   };
+}
+async function localToOnlineSync(adminId: string) {
+  let response: any  = await makeLocalPointifyRequest(
+    `/sync/${adminId}?source=local`,
+    {
+      method: 'GET',
+      headers: SYNC_HEADERS
+    }
+  );
+
+  if (response && response.status === SYNC_STATUS_SUCCESS) {
+    response = await makeLocalPointifyRequest(
+      `/sync/${adminId}?source=local`,
+      {
+        method: 'GET',
+        headers: SYNC_HEADERS
+      }
+    );
+  }
+
+  const dumpPayload = createSyncDumpPayload(response, adminId);
+  const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
+  if(onlineResponse.success == true) {
+    await removeSyncDumpFile(response.downloadUrl);
+  }
 }
 
 /**
@@ -54,7 +76,19 @@ async function performSyncOperation(
       method: 'GET',
       headers: SYNC_HEADERS
     });
-
+    localToOnlineSync(adminId);
+    // await performSyncOperation(
+    //   `/sync/${adminId}?source=local`,
+    //   makeLocalPointifyRequest,
+    //   async (syncResponse: any, adminId: string) => {
+    //     const dumpPayload = createSyncDumpPayload(syncResponse, adminId);
+    //     const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
+    //     if(onlineResponse.success == true) {
+    //       await removeSyncDumpFile(syncResponse.downloadUrl);
+    //     }
+    //   },
+    //   'local-to-online sync'
+    // );
 
     if (syncResponse && syncResponse.status === SYNC_STATUS_SUCCESS) {
       await successCallback(syncResponse, adminId);
@@ -71,7 +105,6 @@ async function performSyncOperation(
  */
 export function setAdminId(data: any) {
   cachedAdminId = data?._id;
-  // startSyncTimer(data?.syncInterval * 60 * 1000 || SYNC_INTERVAL_MS);
 }
 
 
@@ -90,40 +123,8 @@ export function getCachedAdminId(): string | null {
  */
 export function clearAdminId() {
   cachedAdminId = null;
-  // stopSyncTimer();
 }
 
-/**
- * Start periodic sync timer
- */
-export function startSyncTimer(intervalMs?: number) {
-  if (typeof window !== 'undefined' && typeof process === 'undefined') {
-    console.log("⚠️ Skipping sync operations - running in web browser");
-    return;
-  }
-  // Clear any existing timer
-  if (syncInterval) {
-    clearInterval(syncInterval);
-  }
-  
-  // Use provided interval or default
-  const syncIntervalMs = intervalMs;
-  console.log(`🔄 Starting sync timer with interval: ${syncIntervalMs}ms (${syncIntervalMs / 60000} minutes)`);
-  
-  syncInterval = setInterval(() => {
-    performPeriodicSync();
-  }, syncIntervalMs);
-}
-
-/**
- * Stop periodic sync timer
- */
-export function stopSyncTimer() {
-  if (syncInterval) {
-    clearInterval(syncInterval);
-    syncInterval = null;
-  }
-}
 
 /**
  * Perform periodic sync operation
@@ -135,13 +136,16 @@ async function performPeriodicSync() {
     console.log('⏸️ Skipping periodic sync - system is in offline mode');
     return;
   }
+  if (!isElectron()) {
+    console.log('⏸️ Skipping periodic sync - not in Electron environment');
+    return;
+  }
   
   console.log(`🔄 Performing periodic sync in ${currentApiMode} mode`);
   
   try {
     // Perform bidirectional sync
     await performOnlineSync();
-    await performLocalToOnlineSync();
     
   } catch (error) {
     console.error('❌ Periodic sync failed:');
@@ -185,21 +189,11 @@ async function downloadAndImportDumpFile(downloadUrl: string, adminId: string): 
       status: SYNC_STATUS_OFFLINE
     };
     console.log('syncDumpPayload', syncDumpPayload);
-    // const importResponse = await makeLocalSyncDumpCall(syncDumpPayload);
-    // console.log(importResponse);
-    
-    // if (importResponse) {
-      
-      // Clean up dump file after successful import using shared function
-      // if (importResponse.success == true) {
         await makeOnlinePointifyRequest(`/sync/${adminId}`, {
           method: 'DELETE',
           headers: SYNC_HEADERS,
           body: JSON.stringify({ id: adminId, latestSyncTime,fileName})
         });
-        // const removed = safeRemoveFile(filePath);
-      // }
-    // } 
   } catch (error) {
     console.error('❌ Error downloading/importing dump file:', error);
   }
@@ -210,20 +204,17 @@ async function downloadAndImportDumpFile(downloadUrl: string, adminId: string): 
 // Listen for offline event
 networkMonitor.on('offline', () => {
   console.log('Network is offline');
-  // ADD YOUR OFFLINE LOGIC HERE
-  // This is where you can add whatever you need to do when network goes offline
-  // Examples:
-  // - Pause sync operations
-  // - Switch to offline mode
-  // - Flush cached data
-  // - Notify services
-  // - Update global flags
+  setGlobalApiMode("offline")
+  setInternetAvailable(false)
   handleOfflineStatus();
 });
 
 // Listen for online event
 networkMonitor.on('online', () => {
   console.log('Network is back online');
+  setInternetAvailable(true)
+  setGlobalApiMode("online")
+  performPeriodicSync();
   // ADD YOUR ONLINE LOGIC HERE
   // This is where you can add whatever you need to do when network comes back online
   // Examples:
@@ -258,19 +249,10 @@ async function performOnlineSync() {
     `/sync/${adminId}`,
     makeOnlinePointifyRequest,
     async (syncResponse: any, adminId: string) => {
-      // Check if we have a downloadUrl that needs to be downloaded
       console.log('syncResponse', syncResponse);
       if (syncResponse.downloadUrl && syncResponse.downloadUrl.startsWith('http')) {
         await downloadAndImportDumpFile(syncResponse.downloadUrl, adminId);
-      }  
-      // else {
-      //   // Direct payload for local API call
-      //   console.log(
-      //     syncResponse,
-      //   )
-      //   const dumpPayload = createSyncDumpPayload(syncResponse, adminId);
-      //   await makeLocalSyncDumpCall(dumpPayload);
-      // }
+      }
     },
     'online sync'
   );
@@ -302,18 +284,11 @@ async function performLocalToOnlineSync() {
 // Your custom online handler function
 async function handleOnlineStatus() {
   console.log("handleOnlineStatus")
-  await performOnlineSync();
-  await performLocalToOnlineSync();
 }
 
 // Your custom status change handler function
 function handleStatusChange(status: string, previousStatus: string) {
   setGlobalApiMode(status as any)
-  // if(status == 'online') {
-  //   startSyncTimer();
-  // }else{
-  //   stopSyncTimer();
-  // }
 }
 
 
@@ -330,4 +305,4 @@ function removeSyncDumpFile(downloadUrl: any) {
 }
 
 // Export functions if needed elsewhere
-export { handleOfflineStatus, handleOnlineStatus, handleStatusChange,performPeriodicSync };
+export { handleOfflineStatus, handleOnlineStatus, handleStatusChange,performPeriodicSync ,performOnlineSync};
