@@ -6,7 +6,6 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
-import ExpandedSidebar from "@/features/pos/expanded-sidebar";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 

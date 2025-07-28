@@ -133,6 +133,7 @@ export async function makeLocalPointifyRequest(
   };
 
   let response: Response;
+  console.log(url,headers)
   try {
     response = await fetch(url, { ...options, headers });
   } catch (fetchError: any) {
@@ -157,15 +158,14 @@ export async function makePointifyRequest(
   console.log(`🌐 Making request for ${endpoint} using API mode: ${apiMode}`);
   
   switch (apiMode) {
-    case 'online':
+    case 'online' :
       // Online only - try online API, fallback to graceful if fails
       try {
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
-        console.log(`🌐 Online API response for ${endpoint}:`, response);
+        console.log(`🌐 Online API response for ${endpoint}:`);
         if(response.success === false) {
           try {
             let localresponse = await makeLocalPointifyRequest(endpoint, options);
-            console.log(`🏠 Local API response for ${endpoint}:`, localresponse);
             return localresponse;
           } catch (localError) {
             console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
@@ -193,6 +193,28 @@ export async function makePointifyRequest(
       }
       
     case 'hybrid':
+      try {
+        let response: any = await makeOnlinePointifyRequest(endpoint, options);
+        console.log(`🌐 Online API response for ${endpoint}:`);
+        if(response.success === false) {
+          try {
+            let localresponse = await makeLocalPointifyRequest(endpoint, options);
+            return localresponse;
+          } catch (localError) {
+            console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
+            return gracefulFallback(endpoint);
+          }
+        }
+        return response;
+      } catch (onlineError) {
+        console.log(`🌐 Online API error for ${endpoint}, trying local fallback...`);
+        try {
+          return await makeLocalPointifyRequest(endpoint, options);
+        } catch (localError) {
+          console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
+          return gracefulFallback(endpoint);
+        }
+      }
     default:
       // Hybrid - try online first, then local, then graceful fallback
       try {

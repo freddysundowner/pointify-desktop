@@ -93,7 +93,7 @@ export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
 // API request wrapper - uses server proxy with auth token forwarding
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   
-  const url = buildApiUrl(endpoint);
+  const url = buildApiUrl(endpoint, );
   
   // Get auth token from localStorage - check both admin and attendant tokens
   const adminToken = localStorage.getItem('authToken');

@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { makePointifyRequest, setGlobalApiMode } from "../config.js";
-import { setAdminId, clearAdminId, performPeriodicSync, } from "../network-status-handler.js";
+import { setAdminId, clearAdminId, performDataSync, } from "../network-status-handler.js";
 
 export function registerAuthRoutes(app: Express) {
   // =============================================================================
@@ -71,16 +71,8 @@ app.post("/api/business/register", async (req, res) => {
         method: "POST",
         body: JSON.stringify(req.body),
       });
-      
-      // Extract and cache admin ID from successful login
-      console.log("🔍 Login data received:", JSON.stringify(data, null, 2));
-      console.log("🔍 Checking admin ID extraction:");
-      console.log("data?._id:", data?._id);
-      console.log("data?.userdata?._id:", data?.userdata?._id);
       const adminId = data?._id || data?.userdata?._id;
-      console.log("Final adminId:", adminId);
       if (adminId) {
-        console.log("✅ Admin ID found in login data:", adminId);
         setGlobalApiMode(data?.userdata?.status || "online");
         setAdminId(data?.userdata);
       } else {
@@ -138,13 +130,12 @@ app.post("/api/business/register", async (req, res) => {
       const data: any = await makePointifyRequest(`/auth/admin/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      console.log("🔍 Admin data received:", JSON.stringify(data, null, 2));
 
       // Cache admin ID from successful admin data fetch
       if (data && data._id) {
         setGlobalApiMode(data?.status);
         setAdminId(data);
-        await performPeriodicSync();
+        await performDataSync();
       }
 
       // The makePointifyRequest now returns null for auth failures instead of throwing errors

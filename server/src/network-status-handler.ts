@@ -30,9 +30,9 @@ function createSyncDumpPayload(syncResponse: any, adminId: string) {
     status: syncResponse.status
   };
 }
-async function localToOnlineSync(adminId: string) {
+async function localToOnlineSync(adminId: string, force = false) {
   let response: any  = await makeLocalPointifyRequest(
-    `/sync/${adminId}?source=local`,
+    `/sync/${adminId}?source=local&force=${force}`,
     {
       method: 'GET',
       headers: SYNC_HEADERS
@@ -40,65 +40,15 @@ async function localToOnlineSync(adminId: string) {
   );
 
   if (response && response.status === SYNC_STATUS_SUCCESS) {
-    response = await makeLocalPointifyRequest(
-      `/sync/${adminId}?source=local`,
-      {
-        method: 'GET',
-        headers: SYNC_HEADERS
-      }
-    );
-  }
-
-  const dumpPayload = createSyncDumpPayload(response, adminId);
-  const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
-  if(onlineResponse.success == true) {
-    await removeSyncDumpFile(response.downloadUrl);
+    const dumpPayload = createSyncDumpPayload(response, adminId);
+    const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
+    if(onlineResponse.success == true) {
+      await removeSyncDumpFile(response.downloadUrl);
+    }
   }
 }
 
-/**
- * Perform sync operation with API endpoint
- */
-async function performSyncOperation(
-  endpoint: string, 
-  apiFunction: any, 
-  successCallback: (response: any, adminId: string) => Promise<void>,
-  operationName: string
-) {
-  try {
-    const adminId = getCachedAdminId();
-    
-    if (!adminId) {
-      return;
-    }
 
-    const syncResponse = await apiFunction(endpoint, {
-      method: 'GET',
-      headers: SYNC_HEADERS
-    });
-    localToOnlineSync(adminId);
-    // await performSyncOperation(
-    //   `/sync/${adminId}?source=local`,
-    //   makeLocalPointifyRequest,
-    //   async (syncResponse: any, adminId: string) => {
-    //     const dumpPayload = createSyncDumpPayload(syncResponse, adminId);
-    //     const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
-    //     if(onlineResponse.success == true) {
-    //       await removeSyncDumpFile(syncResponse.downloadUrl);
-    //     }
-    //   },
-    //   'local-to-online sync'
-    // );
-
-    if (syncResponse && syncResponse.status === SYNC_STATUS_SUCCESS) {
-      await successCallback(syncResponse, adminId);
-    } else {
-    }
-
-  } catch (error) {
-    console.error(`🚨 ${operationName} error:`, error);
-  }
-}
 
 /**
  * Set admin ID in memory (called from login/registration)
@@ -126,31 +76,6 @@ export function clearAdminId() {
 }
 
 
-/**
- * Perform periodic sync operation
- */
-async function performPeriodicSync() {
-  // Check current API mode - don't sync if offline
-  const currentApiMode = getGlobalApiMode();
-  if (currentApiMode === 'offline' ) {
-    console.log('⏸️ Skipping periodic sync - system is in offline mode');
-    return;
-  }
-  if (!isElectron()) {
-    console.log('⏸️ Skipping periodic sync - not in Electron environment');
-    return;
-  }
-  
-  console.log(`🔄 Performing periodic sync in ${currentApiMode} mode`);
-  
-  try {
-    // Perform bidirectional sync
-    await performOnlineSync();
-    
-  } catch (error) {
-    console.error('❌ Periodic sync failed:');
-  }
-}
 
 /**
  * Download and import dump file
@@ -189,11 +114,17 @@ async function downloadAndImportDumpFile(downloadUrl: string, adminId: string): 
       status: SYNC_STATUS_OFFLINE
     };
     console.log('syncDumpPayload', syncDumpPayload);
-        await makeOnlinePointifyRequest(`/sync/${adminId}`, {
-          method: 'DELETE',
-          headers: SYNC_HEADERS,
-          body: JSON.stringify({ id: adminId, latestSyncTime,fileName})
-        });
+    //export to local 
+    console.log('export to local', JSON.stringify({downloadUrl,latestSyncTime,id:adminId,status:SYNC_STATUS_OFFLINE}));
+    await makeLocalPointifyRequest('/sync/dump', {
+      method: 'POST',
+      body: JSON.stringify({downloadUrl,latestSyncTime,id:adminId,status:SYNC_STATUS_OFFLINE})
+    })
+    await makeOnlinePointifyRequest(`/sync/${adminId}`, {
+      method: 'DELETE',
+      headers: SYNC_HEADERS,
+      body: JSON.stringify({ id: adminId, latestSyncTime,fileName})
+    });
   } catch (error) {
     console.error('❌ Error downloading/importing dump file:', error);
   }
@@ -214,15 +145,7 @@ networkMonitor.on('online', () => {
   console.log('Network is back online');
   setInternetAvailable(true)
   setGlobalApiMode("online")
-  performPeriodicSync();
-  // ADD YOUR ONLINE LOGIC HERE
-  // This is where you can add whatever you need to do when network comes back online
-  // Examples:
-  // - Resume sync operations
-  // - Switch back to online mode
-  // - Flush cached data
-  // - Notify services
-  // - Update global flags
+  performDataSync();
 
   handleOnlineStatus();
 });
@@ -241,45 +164,51 @@ async function handleOfflineStatus() {
  * Perform online sync by calling online sync endpoint
  * Then make local call with response data
  */
-async function performOnlineSync() {
+async function performDataSync(force = false) {
+  const currentApiMode = getGlobalApiMode();
+  if (currentApiMode === 'offline' ) {
+    console.log('⏸️ Skipping periodic sync - system is in offline mode');
+    return;
+  }
+  if (!isElectron()) {
+    console.log('⏸️ Skipping periodic sync - not in Electron environment');
+    return;
+  }
   const adminId = getCachedAdminId();
+  console.log('adminId', adminId);
   if (!adminId) return;
- 
-  await performSyncOperation(
-    `/sync/${adminId}`,
-    makeOnlinePointifyRequest,
-    async (syncResponse: any, adminId: string) => {
-      console.log('syncResponse', syncResponse);
-      if (syncResponse.downloadUrl && syncResponse.downloadUrl.startsWith('http')) {
-        await downloadAndImportDumpFile(syncResponse.downloadUrl, adminId);
-      }
-    },
-    'online sync'
-  );
+  const syncResponse:any = await makeOnlinePointifyRequest(`/sync/${adminId}?force=${force}`, { method: 'GET', headers: SYNC_HEADERS });
+  console.log('syncResponse', syncResponse);
+  localToOnlineSync(adminId,force);
+  console.log('performSyncOperation ', adminId);
+  if (syncResponse.downloadUrl && syncResponse.downloadUrl.startsWith('http')) {
+    await downloadAndImportDumpFile(syncResponse.downloadUrl, adminId);
+  }
 }
 
 
-/**
- * Perform local-to-online sync (opposite flow)
- * Call local /sync/:id then online /sync/dump
- */
-async function performLocalToOnlineSync() {
-  const adminId = getCachedAdminId();
-  if (!adminId) return;
+// /**
+//  * Perform local-to-online sync (opposite flow)
+//  * Call local /sync/:id then online /sync/dump
+//  */
+// async function performLocalToOnlineSync(force = false) {
+//   const adminId = getCachedAdminId();
+//   if (!adminId) return;
 
-  await performSyncOperation(
-    `/sync/${adminId}?source=local`,
-    makeLocalPointifyRequest,
-    async (syncResponse: any, adminId: string) => {
-      const dumpPayload = createSyncDumpPayload(syncResponse, adminId);
-      const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
-      if(onlineResponse.success == true) {
-        await removeSyncDumpFile(syncResponse.downloadUrl);
-      }
-    },
-    'local-to-online sync'
-  );
-}
+//   await performSyncOperation(
+//     `/sync/${adminId}?source=local`,
+//     makeLocalPointifyRequest,
+//     async (syncResponse: any, adminId: string) => {
+//       const dumpPayload = createSyncDumpPayload(syncResponse, adminId);
+//       const onlineResponse = await makeOnlineFormDataSyncDumpCall(dumpPayload);
+//       if(onlineResponse.success == true) {
+//         await removeSyncDumpFile(syncResponse.downloadUrl);
+//       }
+//     },
+//     'local-to-online sync',
+//     force
+//   );
+// }
 
 // Your custom online handler function
 async function handleOnlineStatus() {
@@ -305,4 +234,4 @@ function removeSyncDumpFile(downloadUrl: any) {
 }
 
 // Export functions if needed elsewhere
-export { handleOfflineStatus, handleOnlineStatus, handleStatusChange,performPeriodicSync ,performOnlineSync};
+export { handleOfflineStatus, handleOnlineStatus, handleStatusChange,performDataSync};

@@ -32,29 +32,19 @@ export default function SettingsPage() {
   });
   const manualSyncMutation = useMutation({
     mutationFn: async () => {
-      // const response = await fetch(`/api/sync/${admin?._id}`, {
-      //   method: 'GET',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ adminId: admin?._id }),
-      // });
-      const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-      const response = await apiCall(API_ENDPOINTS.auth.sync(admin?._id || ''), {
-              headers,
-            });
+      const response = await apiCall(`/api/sync/${admin?._id}?force=true`);
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Manual sync failed');
       return data;
     },
+
     onSuccess: (data) => {
       toast({
         title: "Manual Sync Started",
         description: data.message || "Manual sync has started successfully.",
       });
       // Invalidate all queries to refresh with synced data
-      queryClient.invalidateQueries();
+      queryClient.invalidateQueries({ refetchActive: true });
     },
     onError: (error) => {
       toast({

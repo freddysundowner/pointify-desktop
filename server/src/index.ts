@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import path from "path";
-import { performPeriodicSync } from "./network-status-handler.js";
+import { performDataSync } from "./network-status-handler.js";
 const __dirname = path.dirname(process.argv[1]);
 
 
@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   const interceptMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (interceptMethods.includes(req.method) && getGlobalApiMode() !="offline") {
     console.log(interceptMethods, getGlobalApiMode())
-    performPeriodicSync();
+    performDataSync();
   }
   next();
 });

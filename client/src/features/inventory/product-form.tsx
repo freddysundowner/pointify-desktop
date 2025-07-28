@@ -89,7 +89,7 @@ export default function ProductForm() {
   const queryClient = useQueryClient();
   const { shopId, adminId,  attendantId } = usePrimaryShop();
   const productsRoute = useNavigationRoute("products");
-  const { products } = useProducts();
+  const { products,refreshProducts } = useProducts();
 
   // Fetch categories for the dropdown
   const { data: categories, isLoading: categoriesLoading } = useQuery({
@@ -229,10 +229,6 @@ export default function ProductForm() {
   // Handle navigation state data for edit mode
   useEffect(() => {
     if (isEditMode && (window as any).productEditData) {
-      console.log(
-        "Product edit data received:",
-        (window as any).productEditData,
-      );
       const editData = (window as any).productEditData;
       const productData = editData.productData;
 
@@ -442,6 +438,7 @@ export default function ProductForm() {
           queryKey: [`/api/product/${productId}`],
         });
       }
+        refreshProducts();
       navigate(productsRoute);
     },
     onError: (error: Error) => {

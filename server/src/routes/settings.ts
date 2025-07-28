@@ -14,11 +14,9 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔧 Fetching admin settings for: ${adminId}`);
 
       // Use existing makePointifyRequest method to call first reachable API
-      const adminData: any = await makeLocalPointifyRequest(`/auth/admin/${adminId}`, {
+      const adminData: any = await makePointifyRequest(`/auth/admin/${adminId}`, {
         method: "GET",
       });
-
-      console.log(`📊 Admin data received:`, adminData);
 
       // Get API mode from local storage first, then external API, then default
       const apiMode =  adminData?.status || 'hybrid';
@@ -26,9 +24,7 @@ export function registerSettingsRoutes(app: Express) {
       
       // Transform admin data to settings format
       const settings = {
-        apiMode: apiMode, // 'online', 'offline', 'hybrid'
-        onlineApiUrl: 'https://staging.pointifypos.com',
-        localApiUrl: 'http://localhost:3000',
+        apiMode: apiMode, 
         syncEnabled: apiMode !== 'offline',
         syncInterval: adminData?.syncInterval,
         adminId: adminId,

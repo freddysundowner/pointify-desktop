@@ -18,9 +18,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
 
 export default function POS() {
-  console.log('=== POS COMPONENT LOADED ===');
-  console.log('Window location:', window.location.pathname);
-  console.log('POS component rendering...');
   
   const { admin } = useAuth(); // Admin auth for POS access
   const { attendant } = useAttendantAuth();
@@ -34,16 +31,10 @@ export default function POS() {
   // Load products when POS page loads (only if not already loaded)
   useEffect(() => {
     if (products.length === 0) {
-      console.log('POS page loaded - loading products');
       refreshProducts();
     }
   }, []); // Remove refreshProducts dependency to prevent loops
   
-  // Add refresh button for debugging
-  const handleRefreshProducts = () => {
-    console.log('Manual refresh triggered from POS');
-    refreshProducts();
-  };
 
   // POS Permission checks based on attendant permissions
   const hasSpecificPOSPermission = (permissionValue: string) => {

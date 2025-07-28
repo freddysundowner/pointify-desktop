@@ -73,6 +73,12 @@ export const useAuthProvider = (): AuthContextType => {
       await checkAndTriggerAutoSync();
       console.log("Fetched admin data:", adminData);
       if (!adminData?._id) {
+        let localdata = await localStorage.getItem('adminData');
+        if(localdata){
+          localdata = JSON.parse(localdata);
+          setAdmin(localdata );
+          return localdata;
+        }
         logout();
       } else {
         if (adminData?._id) {
