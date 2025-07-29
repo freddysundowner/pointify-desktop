@@ -102,6 +102,36 @@ class DownloadManager {
       path.join(installDir, config.mongoFile),
       installDir
     );
+
+
+    // ✅ VERIFY extraction was successful
+    const mongoBinPath = path.join(installDir, "mongodb", "bin", "mongod.exe");
+
+    if (!fs.existsSync(mongoBinPath)) {
+      console.warn("❌ MongoDB binary not found after extract – retrying...");
+
+      // Cleanup partial extraction
+      const mongoDir = path.join(installDir, "mongodb");
+      if (fs.existsSync(mongoDir)) {
+        fs.rmSync(mongoDir, { recursive: true, force: true });
+      }
+
+      // Re-download and re-extract
+      this.updateProgress("Retrying MongoDB setup...", 45, "Fixing corrupted MDB install");
+
+      // Download again
+      await this.downloadFile(config.mongoUrl, path.join(installDir, config.mongoFile));
+
+      // Retry extract
+      await this.mongoDBManager.extractMongoDB(path.join(installDir, config.mongoFile), installDir);
+
+      // Verify again
+      if (!fs.existsSync(mongoBinPath)) {
+        throw new Error("MongoDB installation failed after retry. Please check your internet connection.");
+      } else {
+        console.log("✅ MongoDB setup successful after retry");
+      }
+    }
   }
 
   downloadFile(url, filePath) {

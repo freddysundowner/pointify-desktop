@@ -1,12 +1,13 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { isElectron } from "./config.js";
+import { getGlobalApiMode, isElectron } from "./config.js";
 import { dumpRetryMonitor } from "./dump-retry-monitor.js";
 import "./network-status-handler.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
 import path from "path";
+import { performDataSync } from "./network-status-handler.js";
 const __dirname = path.dirname(process.argv[1]);
 
 
@@ -14,6 +15,14 @@ const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+app.use((req, res, next) => {
+  const interceptMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (interceptMethods.includes(req.method) && getGlobalApiMode() != "offline") {
+    console.log(interceptMethods, getGlobalApiMode())
+    performDataSync();
+  }
+  next();
+});
 // Logger for /api
 app.use((req, res, next) => {
   const start = Date.now();
@@ -67,20 +76,20 @@ app.use((req, res, next) => {
     }
   });
 
-  
-    // Handle different paths for pkg binary vs normal Node.js
 
-  const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
-    app.use(express.static(staticPath));
-    
-    app.get("*", (req, res) => {
-      if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(staticPath, "index.html"));
-      }
-    });
-  
+  let staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
+  if(process.env.DEV == 'true'){
+      staticPath = "/var/www/pointify/pos-web/web/client/dist";
+  } 
+  app.use(express.static(staticPath));
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(staticPath, "index.html"));
+    }
+  });
 
-  const port = process.env.PORT || 2040;
+
+  const port = 1999;
   app.listen(port, () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {

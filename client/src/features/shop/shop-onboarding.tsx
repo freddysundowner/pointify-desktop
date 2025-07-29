@@ -84,7 +84,7 @@ export default function ShopOnboarding() {
     try {
       const shopData = {
         name: formData.name,
-        shopCategoryId: formData.category,
+        shopCategoryId: formData.category || null,
         address: formData.address,
         currency: formData.currency,
         allowOnlineSelling: formData.allowOnlineSelling,
@@ -229,21 +229,21 @@ export default function ShopOnboarding() {
                   </div>
 
                   {/* Category */}
-                  <div className="space-y-2">
+                  {categories?.length > 0 ? <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category: ShopCategory) => (
+                        {categories?.map((category: ShopCategory) => (
                           <SelectItem key={category._id} value={category._id}>
                             {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> : <> </>}
 
                   {/* Address */}
                   <div className="space-y-2">

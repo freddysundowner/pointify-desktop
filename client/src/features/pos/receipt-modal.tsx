@@ -54,7 +54,8 @@ export default function ReceiptModal({
           name: item.name,
           quantity: item.quantity,
           unitPrice: item.price,
-          total: item.total
+          total: item.total,
+          serialnumber: item?.serialnumber || ''
         })),
         subtotal: transaction.subtotal,
         tax: transaction.tax,
@@ -96,18 +97,12 @@ export default function ReceiptModal({
     if (respo.success) {
       toast({
         title: "Receipt Printed",
-        description: "Thermal receipt printed successfully",
       });
     } else {
-      throw new Error(respo.message || 'Print failed');
+      console.log(respo.message || 'Print failed');
     } 
   } catch (error) {
-    console.error('Thermal printing error:', error);
-    toast({
-      title: "Print Failed",
-      description: error instanceof Error ? error.message : "Failed to print thermal receipt",
-      variant: "destructive",
-    });
+    console.log('Thermal printing error:', error);
   }
 };
 

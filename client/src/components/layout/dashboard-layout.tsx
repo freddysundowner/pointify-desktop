@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit } from "lucide-react";
+import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
-import ExpandedSidebar from "@/features/pos/expanded-sidebar";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { formatDate, formatTime } from "@/utils";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -22,6 +22,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const { isExpired: isSubscriptionExpired } = useSubscriptionStatus();
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Check if current route is an attendant route
   const isAttendantRoute = location.startsWith('/attendant/');
@@ -32,6 +33,14 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       [menuKey]: !prev[menuKey]
     }));
   };
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Using dynamic navigation based on user type
   const dashboardRoute = useNavigationRoute('dashboard');
@@ -55,8 +64,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* Desktop Sidebar - Hidden for attendant routes */}
       {!isAttendantRoute && (
         <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:bg-gradient-to-b lg:from-purple-900 lg:via-purple-800 lg:to-purple-900 lg:shadow-2xl lg:border-r lg:border-purple-700/50 lg:z-40">
-        <div className="flex flex-col justify-between h-full">
-          <div className="p-6">
+          <div className="flex-1 h-0 overflow-y-auto overflow-x-hidden p-4 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-purple-900/30">
             <Link href="/dashboard">
               <div className="flex items-center cursor-pointer group mb-8">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-lg">
@@ -186,7 +194,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                 </>
               )}
             </nav>
-          </div>
 
 
         </div>
@@ -369,12 +376,23 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
               </Button>
             )}
             
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <Store className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Welcome {admin?.username}
+                </h1>
+                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span>{formatDate(currentTime)}</span>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span className="font-medium">{formatTime(currentTime)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 className="ml-2 text-lg font-semibold text-gray-900">
-              {title || "Pointify"}
-            </h1>
           </div>
           
           {/* Profile & Logout - Top Right */}

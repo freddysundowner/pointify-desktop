@@ -1,6 +1,7 @@
 import type { Express } from "express";
-import {  makeOnlinePointifyRequest, makeLocalPointifyRequest } from "../config.js";
+import {  makeOnlinePointifyRequest, makeLocalPointifyRequest, isElectron } from "../config.js";
 import fs from 'fs';
+import {  setAdminId,performDataSync } from "../network-status-handler.js";
 const CONFIG_FILE = 'initial_config.json';
 let currentPrinterConfig = {
   initialsync: false
@@ -9,7 +10,24 @@ let currentPrinterConfig = {
 // Load config at startup
 
 export async function registerInitsRoutes(app: Express) {
-     
+    app.get(`/api/sync/:id`, async (req, res) => {
+        if (isElectron()) {
+            console.log('initial sync ', req.params.id, req.query);
+            let {force = 'false'} = req.query;
+            setAdminId({_id: req.params.id});
+            await performDataSync(force == 'true' ? true : false);
+            res.json({
+                message: 'Sync completed',
+                timestamp: new Date().toISOString(),
+                success: true
+            });
+        } else {
+            res.json({
+                message: 'Sync not supported in browser',
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
     if (fs.existsSync(CONFIG_FILE)) {
         try {
             currentPrinterConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
@@ -19,7 +37,8 @@ export async function registerInitsRoutes(app: Express) {
         }
     } 
      try {
-        if(currentPrinterConfig.initialsync === true) return;
+         if (currentPrinterConfig.initialsync === true) return;
+         //getting global data like shopcategories and import locally
         console.log('initializing database');
         let data: any = await makeOnlinePointifyRequest('/sync/database/init', { method: 'GET' });
         // import to local database

@@ -11,9 +11,10 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
+import { API_ENDPOINTS, apiCall } from "@/lib/api-config";
 
 export default function SettingsPage() {
-  const { admin } = useAuth();
+  const { admin,token } = useAuth();
   const { toast } = useToast();
   const [selectedMode, setSelectedMode] = useState<'online' | 'offline' | 'hybrid'>('hybrid');
   const [syncInterval, setSyncInterval] = useState<number>(120000); // Default 2 min
@@ -29,7 +30,31 @@ export default function SettingsPage() {
     },
     enabled: !!admin?._id,
   });
+  const manualSyncMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiCall(`/api/sync/${admin?._id}?force=true`);
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Manual sync failed');
+      return data;
+    },
 
+    onSuccess: (data) => {
+      toast({
+        title: "Manual Sync Started",
+        description: data.message || "Manual sync has started successfully.",
+      });
+      // Invalidate all queries to refresh with synced data
+      queryClient.invalidateQueries({ refetchActive: true });
+    },
+    onError: (error) => {
+      toast({
+        title: "Sync Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+  });
+  
   console.log("Settings Data:", settingsData);
   // Load settings data
   useEffect(() => {
@@ -249,7 +274,26 @@ export default function SettingsPage() {
                     <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
                       Active
                     </Badge>
-                  </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => manualSyncMutation.mutate()}
+                      disabled={manualSyncMutation.isPending}
+                      className="w-full"
+                    >
+                      {manualSyncMutation.isPending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Syncing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Manual Sync Now
+                        </>
+                      )}
+                    </Button>
+
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between py-2">

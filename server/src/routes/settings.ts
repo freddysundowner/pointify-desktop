@@ -1,6 +1,5 @@
 import type { Express } from "express";
-import { makePointifyRequest, setGlobalApiMode, getGlobalApiMode, makeLocalPointifyRequest } from "../config.js";
-import { stopSyncTimer, startSyncTimer } from "../network-status-handler.js";
+import { makePointifyRequest, setGlobalApiMode, makeLocalPointifyRequest } from "../config.js";
 
 
 export function registerSettingsRoutes(app: Express) {
@@ -15,21 +14,17 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔧 Fetching admin settings for: ${adminId}`);
 
       // Use existing makePointifyRequest method to call first reachable API
-      const adminData = await makeLocalPointifyRequest(`/auth/admin/${adminId}`, {
+      const adminData: any = await makePointifyRequest(`/auth/admin/${adminId}`, {
         method: "GET",
       });
 
-      console.log(`📊 Admin data received:`, adminData);
-
       // Get API mode from local storage first, then external API, then default
-      const apiMode = adminData?.status || 'hybrid';
+      const apiMode =  adminData?.status || 'hybrid';
       setGlobalApiMode(apiMode);
       
       // Transform admin data to settings format
       const settings = {
-        apiMode: apiMode, // 'online', 'offline', 'hybrid'
-        onlineApiUrl: 'https://staging.pointifypos.com',
-        localApiUrl: 'http://localhost:3000',
+        apiMode: apiMode, 
         syncEnabled: apiMode !== 'offline',
         syncInterval: adminData?.syncInterval,
         adminId: adminId,
@@ -97,7 +92,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔧 Updating admin ${adminId} status to: ${apiMode}, syncInterval: ${finalSyncInterval}ms`);
 
       // Store both sync interval and API mode in memory
-      let data = await makeLocalPointifyRequest(`/admin/${adminId}`, {
+      let data : any = await makeLocalPointifyRequest(`/admin/${adminId}`, {
         method: "PUT",
         headers: {
           'Content-Type': 'application/json',
@@ -107,21 +102,7 @@ export function registerSettingsRoutes(app: Express) {
           status: apiMode
         })
       });
-      // syncIntervalStorage.set(adminId, finalSyncInterval);
-      // apiModeStorage.set(adminId, apiMode);
-
-      // Update global API mode first
       setGlobalApiMode(apiMode);
-
-
-      // Handle sync timer based on mode
-      if (apiMode === 'offline') {
-        console.log('🔄 Stopping sync timer for offline mode');
-        stopSyncTimer();
-      } else {
-        console.log(`🔄 Starting sync timer for online/hybrid mode with interval: ${data?.syncInterval}min`);
-        startSyncTimer(data?.syncInterval * 60 * 1000 || 120000);
-      }
 
       // Return success response
       res.json({
@@ -160,7 +141,7 @@ export function registerSettingsRoutes(app: Express) {
       console.log(`🔍 Fetching status for admin: ${adminId}`);
 
       // Call auth/admin/:id to get current status from both APIs
-      const adminData = await makePointifyRequest(`/auth/admin/${adminId}`, {
+      const adminData: any = await makePointifyRequest(`/auth/admin/${adminId}`, {
         method: "GET",
       });
 
@@ -182,7 +163,6 @@ export function registerSettingsRoutes(app: Express) {
         data: {
           apiMode: 'hybrid',
           syncEnabled: true,
-          adminId: adminId
         },
         message: "Default status returned (API unavailable)"
       });

@@ -1,21 +1,21 @@
-         Business Name
+            shop one
+ Nakuru Street, Nairobi, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC382173
-Date: Jul 21, 2025, 09:16 PM
+Receipt #: REC464555
+Date: Jul 28, 2025, 10:18 PM
 Customer: Walk-in
 Attendant: Fredrick
 -------------------------------
-Oil 2
-  1 x KES 200.00 = KES200.00
 test ine
+ srn: 
   1 x KES 100.00 = KES100.00
 -------------------------------
-Subtotal:      KES300.00
+Subtotal:      KES100.00
 Tax:           KES0.00
-TOTAL:         KES300.00
+TOTAL:         KES100.00
 
-Payment Method: mpesa
+Payment Method: cash
 
   Thank you for your business!
       Visit us again soon

@@ -34,6 +34,7 @@ import { queryClient } from "@/lib/queryClient";
 import type { RootState, AppDispatch } from "@/store";
 import { setSelectedShop, setAvailableShops, initializeSelectedShop } from "@/store/shopSlice";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { formatCurrency, formatDate, formatTime } from "@/utils";
 
 export default function BusinessDashboard() {
   const dispatch = useDispatch<AppDispatch>();
@@ -122,8 +123,6 @@ export default function BusinessDashboard() {
     queryFn: async () => {
       const shopId = effectiveShopId || "";
       const params = new URLSearchParams({
-        start: today,
-        end: today,
         shopId: shopId,
         limit: "20",
         page: "1",
@@ -143,23 +142,14 @@ export default function BusinessDashboard() {
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Update time every minute
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Fetch shops for the admin
   const { data: shopsData } = useQuery({
     queryKey: ["shops", admin?._id],
     queryFn: async () => {
       if (!admin?._id) return [];
-      console.log(`🏪 Dashboard: Fetching shops for admin ${admin._id}`);
       const response = await apiCall(`/api/shop/admin/${admin._id}`, { method: "GET" });
       const data = await response.json();
-      console.log(`🏪 Dashboard: Received ${data?.length || 0} shops for admin ${admin._id}`);
       return data;
     },
     enabled: !!admin?._id,
@@ -178,11 +168,6 @@ export default function BusinessDashboard() {
     }
   }, [shopsData, dispatch]);
 
-  // Debug logging
-  console.log('Business Dashboard - Shops Data:', shopsData);
-  console.log('Business Dashboard - Available Shops:', availableShops);
-  console.log('Business Dashboard - Selected Shop:', selectedShopId);
-
   // Function to refresh all dashboard data
   const refreshDashboardData = async () => {
     await Promise.all([
@@ -190,19 +175,6 @@ export default function BusinessDashboard() {
       refetchSalesData()
     ]);
   };
-
-  // Fetch attendants for the current shop
-  const { data: attendantsData } = useQuery({
-    queryKey: [`/api/attendants/shop/filter`, effectiveShopId, admin?._id],
-    queryFn: async () => {
-      if (!effectiveShopId || !admin?._id) return [];
-      const response = await apiCall(`/api/attendants/shop/filter?shopId=${effectiveShopId}&adminId=${admin._id}`, { 
-        method: "GET" 
-      });
-      return response.json();
-    },
-    enabled: !!effectiveShopId && !!admin?._id,
-  });
 
   // Fetch overdue customers data - only on business dashboard page
   const { data: overdueCustomersData, isLoading: overdueCustomersLoading, error: overdueCustomersError } = useQuery({
@@ -216,10 +188,6 @@ export default function BusinessDashboard() {
       
       const response = await apiCall(`/api/customers/overdue/${effectiveShopId}?${params.toString()}`, { method: "GET" });
       const data = await response.json();
-      console.log('=== OVERDUE CUSTOMERS API RESPONSE ===');
-      console.log('Shop ID:', effectiveShopId);
-      console.log('Admin ID:', admin._id);
-      console.log('Overdue customers data:', data);
       return data;
     },
     enabled: !!admin?._id && (location === '/business-dashboard' || location === '/dashboard'),
@@ -249,12 +217,9 @@ export default function BusinessDashboard() {
           const shopExists = availableShops.find(shop => shop.id === primaryShopId);
           const shopToSelect = shopExists ? primaryShopId : availableShops[0]?.id;
           if (shopToSelect) {
-            console.log('Setting shop for admin:', admin._id, 'to shop:', shopToSelect);
             dispatch(setSelectedShop(shopToSelect));
           }
         } else if (availableShops[0]?.id) {
-          // If no primary shop, select the first available shop
-          console.log('No primary shop, selecting first available:', availableShops[0].id);
           dispatch(setSelectedShop(availableShops[0].id));
         }
       }
@@ -282,8 +247,6 @@ export default function BusinessDashboard() {
       };
       localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
       updateAdmin(mergedAdminData);
-      
-      console.log(`Shop switched to: ${selectedShopData?.name || 'Selected Shop'}`);
       
       // Show loading toast
       toast({
@@ -314,36 +277,10 @@ export default function BusinessDashboard() {
   const canViewSales = true;
   const canViewProfit = true;
   const canViewExpenses = true;
-  const canViewFinancials = true;
 
   // Format time for display
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
+ 
 
-  // Format date for display
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  // Currency formatter
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Today's key metrics from net profit API - using correct field mappings
   const todayMetrics = {
@@ -353,13 +290,6 @@ export default function BusinessDashboard() {
     transactions: 0, // Would need separate endpoint for transaction count
     customers: 0 // Would need separate endpoint for customer count
   };
-
-  console.log('BusinessDashboard API Data:', {
-    netProfitData,
-    todayMetrics,
-    rawSales: netProfitData?.totalProfitAndSalesValue?.totalSales,
-    rawProfit: netProfitData?.totalProfitAndSalesValue?.totalProfit
-  });
 
 
 
@@ -412,26 +342,11 @@ export default function BusinessDashboard() {
     status: sale.status || "completed"
   })) : [];
 
-  console.log('Sales API Response:', { salesData, processedSales: recentSales.slice(0, 3) });
-
   // Pagination logic
   const totalPages = Math.ceil(recentSales.length / salesPerPage);
   const startIndex = (currentPage - 1) * salesPerPage;
   const endIndex = startIndex + salesPerPage;
   const currentSales = recentSales.slice(startIndex, endIndex);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
-      case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   const getPaymentMethodBadge = (method: string) => {
     switch (method) {
@@ -446,20 +361,10 @@ export default function BusinessDashboard() {
     }
   };
 
-  const getStockBadge = (status: string) => {
-    switch (status) {
-      case "out":
-        return <Badge variant="destructive">Out of Stock</Badge>;
-      case "low":
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Low Stock</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   return (
     <DashboardLayout title="Business Dashboard">
-      <div className="space-y-6 w-full">
+      <div className="space-y-6 w-full mt-6">
         
         {/* Subscription Expiration Alert */}
         {isSubscriptionExpired && showSubscriptionAlert && (
@@ -586,42 +491,22 @@ export default function BusinessDashboard() {
           </div>
 
           {/* Desktop Layout */}
-          <div className="hidden md:flex md:items-center md:justify-between gap-6">
+          <div className="hidden md:flex md:items-center md:justify-between gap-2 flex-row top-4">
             
             {/* Welcome Section */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Store className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Welcome to Pointify
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{formatDate(currentTime)}</span>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span className="font-medium">{formatTime(currentTime)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-3">
+          
               
               {/* Current Shop */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 py-2 w-1/2">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Current Shop
+                  Switch Shop
                 </label>
                 <Select value={selectedShopId || ""} onValueChange={handleShopSwitch}>
-                  <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4 text-purple-500" />
+                  <SelectTrigger className=" bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center gap-2 px-2">
+                      <Store className="h-6 w-4 text-purple-500" />
                       <div className="text-left">
                         <div className="font-medium text-sm">{currentShopData?.name}</div>
-                        <div className="text-xs text-gray-500">{currentShopData?.location}</div>
                       </div>
                     </div>
                   </SelectTrigger>
@@ -629,10 +514,9 @@ export default function BusinessDashboard() {
                     {availableShops.map((shop) => (
                       <SelectItem key={shop.id} value={shop.id}>
                         <div className="flex items-center gap-2">
-                          <Store className="h-4 w-4 text-purple-500" />
+                          <Store className="h-6 w-4 text-purple-500" />
                           <div>
                             <div className="font-medium">{shop.name}</div>
-                            <div className="text-xs text-gray-500">{shop.type} • {shop.location}</div>
                           </div>
                         </div>
                       </SelectItem>
@@ -641,76 +525,70 @@ export default function BusinessDashboard() {
                 </Select>
               </div>
 
-              {/* Attendant Filter */}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  Filter by Attendant
-                </label>
-                <Select value={selectedAttendantId} onValueChange={setSelectedAttendantId}>
-                  <SelectTrigger className="w-[180px] bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4 text-purple-500" />
-                      <div className="text-left">
-                        <div className="font-medium text-sm">
-                          {selectedAttendantId !== "all" ? 
-                            attendants.find((a: any) => a._id === selectedAttendantId)?.username || "Select Attendant" : 
-                            "All Attendants"
-                          }
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {selectedAttendantId !== "all" ? "Filtered view" : "All data"}
-                        </div>
-                      </div>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">
+              {/* Controls */}
+              <div className="flex items-center gap-2">
+
+                {/* Attendant Filter */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Filter by Attendant
+                  </label>
+                  <Select value={selectedAttendantId} onValueChange={setSelectedAttendantId}>
+                    <SelectTrigger className="w-[360px] bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4 text-purple-500" />
-                        <div>
-                          <div className="font-medium">All Attendants</div>
-                          <div className="text-xs text-gray-500">Show all data</div>
+                        <div className="text-left">
+                          <div className="font-medium text-sm">
+                            {selectedAttendantId !== "all" ? 
+                              attendants.find((a: any) => a._id === selectedAttendantId)?.username || "Select Attendant" : 
+                              "All Attendants"
+                            }
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {selectedAttendantId !== "all" ? "Filtered view" : "All data"}
+                          </div>
                         </div>
                       </div>
-                    </SelectItem>
-                    {attendants?.map((attendant: any) => (
-                      <SelectItem key={attendant._id} value={attendant._id}>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-4 w-4 text-purple-500" />
                           <div>
-                            <div className="font-medium">{attendant.username}</div>
-                            <div className="text-xs text-gray-500">PIN: {attendant.uniqueDigits}</div>
+                            <div className="font-medium">All Attendants</div>
+                            <div className="text-xs text-gray-500">Show all data</div>
                           </div>
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      {attendants?.map((attendant: any) => (
+                        <SelectItem key={attendant._id} value={attendant._id}>
+                          <div className="flex items-center gap-2">
+                            <UserCheck className="h-4 w-4 text-purple-500" />
+                            <div>
+                              <div className="font-medium">{attendant.username}</div>
+                              <div className="text-xs text-gray-500">PIN: {attendant.uniqueDigits}</div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Refresh Button */}
+                <div className="flex flex-col justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={refreshDashboardData}
+                    className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 mt-4"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
-              {/* Refresh Button */}
-              <div className="flex flex-col justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={refreshDashboardData}
-                  className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 mt-4"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
           </div>
-
-          {/* Status Indicators for Desktop */}
-          {selectedShopId !== "main-store" && (
-            <div className="hidden md:flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">
-                <Store className="h-3 w-3 mr-1" />
-                Active Shop: {currentShopData?.name}
-              </Badge>
-            </div>
-          )}
         </div>
         
         {/* Today's Key Metrics */}
@@ -824,7 +702,7 @@ export default function BusinessDashboard() {
               </CardHeader>
               <CardContent className="p-6">
                 {/* Sales Table */}
-                <div className="overflow-x-auto">
+                {currentSales.length > 0 ? <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
@@ -875,7 +753,11 @@ export default function BusinessDashboard() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </div>: (
+                  <div className="text-center text-gray-600">
+                    No recent sales
+                  </div>
+                )}
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">

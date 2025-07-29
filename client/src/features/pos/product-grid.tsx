@@ -122,7 +122,7 @@ export default function ProductGrid({
   const { products: allProducts, isLoading, refreshProducts } = useProducts();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid'); // Default to restaurant grid view
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
 
   // Local search function
   const searchLocally = (query: string) => {
@@ -782,7 +782,7 @@ export default function ProductGrid({
         <div className="px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-4">
-              <h1 className="text-lg font-semibold text-gray-800">POS</h1>
+              <h1 className="text-lg font-semibold text-gray-800"></h1>
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
@@ -808,12 +808,12 @@ export default function ProductGrid({
                 </Button>
               </div>
               
-              <Button 
+              {viewMode === 'grid' ? <Button
                 onClick={() => setShowCategoriesDrawer(true)}
                 className="bg-red-600 hover:bg-red-700 text-white h-8 px-3 text-sm whitespace-nowrap"
               >
                 Category
-              </Button>
+              </Button> : <></>}
             </div>
           </div>
         </div>
@@ -947,7 +947,7 @@ export default function ProductGrid({
                       products.slice(0, 8).map((product: any) => (
                         <div
                           key={product._id}
-                          onClick={() => {
+                          onClick={product.quantity === 0 ? undefined : () => {
                             onAddToCart(product);
                             onSearchChange(''); // Clear search after adding
                           }}
@@ -958,9 +958,15 @@ export default function ProductGrid({
                               {product.name}
                             </h4>
                             <div className="flex items-center space-x-3 mt-1">
-                              <span className="text-xs text-gray-500">
-                                Stock: {product.quantity || 0}
-                              </span>
+                              {
+                                product.quantity === 0 && product?.productType == 'product' ? (
+                                  <span className="text-xs text-red-600">
+                                    Out of stock
+                                  </span>
+                                ) :(<span className="text-xs text-gray-500">
+                                  Stock: {product.quantity || 0}
+                                </span>)
+                              }
                               {product.barcode && (
                                 <span className="text-xs text-purple-600 font-mono">
                                   {product.barcode}
@@ -1495,7 +1501,7 @@ export default function ProductGrid({
         {/* Table Mode - Right Panel for Totals */}
         {viewMode === 'table' && (
           <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 order-1 lg:order-2 flex flex-col">
-            <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col">
               {/* Summary Section */}
               <div className="bg-gray-50 p-4 lg:p-6 rounded-lg">
                 <div className="space-y-3 lg:space-y-4">

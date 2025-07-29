@@ -39,13 +39,13 @@ import {
   RefreshCw,
   ArrowLeft,
   RotateCcw,
-  Download,
+  Download
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import React, { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useAuth } from "@/features/auth/useAuth";
@@ -99,6 +99,7 @@ export default function PurchasesList() {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const { toast } = useToast();
   const purchasesRoute = useNavigationRoute("purchases");
+  const addPurchasesRoute = useNavigationRoute("addPurchase");
 
   // Get shop and admin data - use Redux state for shop ID
   const primaryShop =
@@ -678,10 +679,11 @@ export default function PurchasesList() {
                 Export PDF
               </Button>
               {(isAdmin || hasAttendantPermission("stocks", "add_purchases")) && (
-                <Button onClick={handleCreatePurchase}>
+                <Link href={addPurchasesRoute}>
+                  <Button onClick={handleCreatePurchase}>
                   <Plus className="mr-2 h-4 w-4" />
                   New Purchase Order
-                </Button>
+                </Button></Link>
               )}
             </div>
           </div>

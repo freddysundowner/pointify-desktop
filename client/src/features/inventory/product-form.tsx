@@ -54,6 +54,7 @@ const productSchema = z.object({
   manageByPrice: z.boolean().default(false),
   productType: z.enum(["product", "service"]).default("product"),
   manufacturer: z.string().optional().or(z.literal("")),
+  serialnumber: z.string().optional().or(z.literal("")),
   wholesalePrice: z.preprocess(
     (val) => (val === "" || val === null ? undefined : val),
     z.number().min(0).optional(),
@@ -86,11 +87,9 @@ export default function ProductForm() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { admin } = useAuth();
-  const { attendant } = useAttendantAuth();
-  const { shopId, adminId, shopData, userType, attendantId } = usePrimaryShop();
+  const { shopId, adminId,  attendantId } = usePrimaryShop();
   const productsRoute = useNavigationRoute("products");
-  const { products } = useProducts();
+  const { products,refreshProducts } = useProducts();
 
   // Fetch categories for the dropdown
   const { data: categories, isLoading: categoriesLoading } = useQuery({
@@ -117,7 +116,6 @@ export default function ProductForm() {
     enabled: !!(shopId && adminId),
   });
 
-  const isAddMode = location.includes("/add-product");
   const isEditMode = location.includes("/edit-product");
   const productId = isEditMode ? location.split("/edit-product/")[1] : null;
 
@@ -146,6 +144,7 @@ export default function ProductForm() {
     reorderLevel: false,
     discount: false,
     maxDiscount: false,
+    serialnumber: false,
     description: false,
     bundle: false,
   });
@@ -160,6 +159,9 @@ export default function ProductForm() {
           case "manufacturer":
             form.setValue("manufacturer", "", { shouldValidate: true });
             break;
+            case "serialnumber":
+              form.setValue("serialnumber", "", { shouldValidate: true });
+              break;
           case "wholesalePrice":
             form.setValue("wholesalePrice", undefined, {
               shouldValidate: true,
@@ -227,16 +229,11 @@ export default function ProductForm() {
   // Handle navigation state data for edit mode
   useEffect(() => {
     if (isEditMode && (window as any).productEditData) {
-      console.log(
-        "Product edit data received:",
-        (window as any).productEditData,
-      );
       const editData = (window as any).productEditData;
       const productData = editData.productData;
 
       // Set bundle products if passed through navigation
       if (editData.passedBundleItems && editData.bundleItems) {
-        console.log("Setting bundle products:", editData.bundleItems);
         setSelectedBundleProducts(
           editData.bundleItems.reduce((acc: any, item: any) => {
             // Handle new API structure where item_product contains the product data
@@ -272,6 +269,7 @@ export default function ProductForm() {
           | "product"
           | "service",
         manufacturer: productData.manufacturer || "",
+        serialnumber: productData.serialnumber || "",
         wholesalePrice: Number(productData.wholesalePrice) || 0,
         dealerPrice: Number(productData.dealerPrice) || 0,
         productCategoryId: productData.productCategoryId?._id || productData.productCategoryId || productData.category || "",
@@ -304,6 +302,7 @@ export default function ProductForm() {
         maxDiscount: !!(formData.maxDiscount && formData.maxDiscount > 0),
         description: !!formData.description,
         bundle: !!formData.isBundle,
+        serialnumber: !!formData.serialnumber,
       });
 
       // Clean up navigation data after use
@@ -329,6 +328,7 @@ export default function ProductForm() {
           | "product"
           | "service",
         manufacturer: productData.manufacturer || "",
+        serialnumber: productData.serialnumber || "",
         wholesalePrice: Number(productData.wholesalePrice) || 0,
         dealerPrice: Number(productData.dealerPrice) || 0,
         productCategoryId: productData.productCategoryId?._id || productData.productCategoryId || productData.category || "",
@@ -349,6 +349,7 @@ export default function ProductForm() {
 
       setExpandedSections({
         manufacturer: !!formData.manufacturer,
+        serialnumber: !!formData.serialnumber,
         wholesalePrice: !!(
           formData.wholesalePrice && formData.wholesalePrice > 0
         ),
@@ -382,6 +383,7 @@ export default function ProductForm() {
         virtual: formData.productType === "service",
         manageByPrice: formData.manageByPrice,
         manufacturer: formData.manufacturer || "",
+        serialnumber: formData.serialnumber || "",
         wholesalePrice: formData.wholesalePrice || 0,
         dealerPrice: formData.dealerPrice || 0,
         productCategoryId:
@@ -436,6 +438,7 @@ export default function ProductForm() {
           queryKey: [`/api/product/${productId}`],
         });
       }
+        refreshProducts();
       navigate(productsRoute);
     },
     onError: (error: Error) => {
@@ -965,6 +968,36 @@ export default function ProductForm() {
                         )}
                       />
                     )}
+                    {/* Serial Number - expandable */}
+                    {expandedSections.serialnumber && (
+                      <FormField
+                        control={form.control}
+                        name="serialnumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between">
+                              <FormLabel>Serial Number</FormLabel>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleSection("serialnumber")}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter serialnumber name"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     {/* Category - expandable */}
                     {expandedSections.category && (
@@ -1167,6 +1200,16 @@ export default function ProductForm() {
                           >
                             <Plus className="h-3 w-3" />
                             <span>Add Manufacturer</span>
+                          </button>
+                        )}
+                        {!expandedSections.serialnumber && (
+                          <button
+                            type="button"
+                            onClick={() => toggleSection("serialnumber")}
+                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm px-2 py-1 border border-blue-200 rounded-md hover:bg-blue-50"
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>Add Serial Number</span>
                           </button>
                         )}
 

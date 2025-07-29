@@ -142,8 +142,6 @@ function AttendantLoginContent() {
                     value={formData.uniqueDigits}
                     onChange={handleInputChange('uniqueDigits')}
                     className="pl-10 h-12 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
-                    maxLength={5}
-                    pattern="[0-9]{5}"
                     autoComplete="username"
                   />
                 </div>

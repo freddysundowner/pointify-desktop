@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     getAdmin: (id: string) => `/api/auth/admin/${id}`,
     resetPassword: "/api/admin/reset/password",
     requestPasswordReset: "/api/admin/request/password",
+    sync: (id: string) => `/api/sync/${id}`,
   },
 
   // Analytics endpoints - all go through /api/ proxy
@@ -91,7 +92,8 @@ export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
 
 // API request wrapper - uses server proxy with auth token forwarding
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const url = buildApiUrl(endpoint);
+  
+  const url = buildApiUrl(endpoint, );
   
   // Get auth token from localStorage - check both admin and attendant tokens
   const adminToken = localStorage.getItem('authToken');
@@ -113,7 +115,7 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const timeoutId = setTimeout(() => {
       controller.abort('Request timeout after 20 seconds');
     }, 20000); // 20 second timeout
-    
+     
     const response = await fetch(url, {
       ...options,
       headers: {
