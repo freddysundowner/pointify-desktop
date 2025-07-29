@@ -31,7 +31,7 @@ export function registerCustomerRoutes(app: Express) {
       const adminid = req.query.adminid as string;
       
       // Get customer data for analysis
-      const data = await getCustomers(token, shopId, adminid);
+      const data:any = await getCustomers(token, shopId, adminid);
       const customerList = Array.isArray(data) ? data : data?.customers || data?.data || [];
       
 
@@ -90,21 +90,7 @@ export function registerCustomerRoutes(app: Express) {
       }
 
       const { shopId } = req.params;
-      const adminid = req.query.adminid;
-      
-      // Get all customers
-      const customerData = await getCustomers(token, shopId, adminid as string);
-      const customerList = Array.isArray(customerData) ? customerData : customerData?.customers || customerData?.data || [];
-      
-      // Get ALL sales data first, then filter locally for credit sales
-      const salesParams = new URLSearchParams({
-        adminid: adminid as string,
-        shopId: shopId
-        // Remove paymentTag filter - get all sales then filter locally
-      });
-      
-      console.log('=== OVERDUE CUSTOMERS DEBUG ===');
-      console.log('Calling external Pointify API:', `/customers/overdue/${shopId}`);
+      console.log('token:', token);
       
       // Call the external Pointify API directly
       const overdueData = await makePointifyRequest(`/customers/overdue/${shopId}`, {
@@ -203,7 +189,7 @@ export function registerCustomerRoutes(app: Express) {
   });
 
   // Get customer debtors
-  app.get("/api/customers/debtors", async (req: Request, res: Response) => {
+  app.get("/api/customers/debtors", async (req: any, res: any) => {
     try {
       const { shopId, adminid, page, limit } = req.query;
       
@@ -225,15 +211,13 @@ export function registerCustomerRoutes(app: Express) {
       if (page) queryString += `&page=${page}`;
       if (limit) queryString += `&limit=${limit}`;
 
-      const response = await makePointifyRequest(`/customers/customers/debtors?${queryString}`, {
+      const response: any = await makePointifyRequest(`/customers/customers/debtors?${queryString}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
-      console.log('Debtors API response:', response);
 
       // Handle the response structure based on what the API returns
       if (response && typeof response === 'object') {
@@ -299,23 +283,16 @@ export function registerCustomerRoutes(app: Express) {
 
       const { shopId, adminid } = req.query;
       
-      if (shopId && adminid) {
         // Use cached data if both shopId and adminid are provided
-        console.log(`GET /api/customers - Using shopId: ${shopId}, adminid: ${adminid}`);
-        const data = await getCachedCustomers(token, shopId as string, adminid as string);
-        console.log(`GET /api/customers - Returning data:`, data);
-        res.json(data);
-      } else {
-        // Fallback to direct API call for other query patterns
-        const queryParams = new URLSearchParams(req.query as any);
-        const endpoint = `/customers?${queryParams.toString()}`;
-        
-        const data = await makePointifyRequest(endpoint, {
+        let data: any = await makePointifyRequest(`/customers?shopId=${shopId}&adminid=${adminid}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
+        if (data && data.data && Array.isArray(data.data)) {
+          data = data.data;
+        }
+        
         res.json(data);
-      }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch customers" });
     }
@@ -359,7 +336,7 @@ export function registerCustomerRoutes(app: Express) {
       }
 
       // Ensure required fields are present and properly formatted
-      const customerPayload = {
+      const customerPayload: any = {
         name: req.body.name.trim(),
         phonenumber: req.body.phonenumber || req.body.phone || '',
         email: req.body.email || '',
@@ -373,18 +350,11 @@ export function registerCustomerRoutes(app: Express) {
       if (req.body.type) customerPayload.type = req.body.type;
       if (req.body.creditLimit) customerPayload.creditLimit = req.body.creditLimit;
 
-      console.log('Formatted customer payload:', customerPayload);
-
       const data = await makePointifyRequest("/customers", {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(customerPayload)
       });
-      
-      // Clear cache for this shop and admin after customer creation
-      const cacheKey = `${req.body.shopId}-${req.body.adminid}`;
-      customerCache.delete(cacheKey);
-      console.log(`Cache cleared for ${cacheKey} after customer creation`);
       
       res.json(data);
     } catch (error) {
@@ -408,13 +378,6 @@ export function registerCustomerRoutes(app: Express) {
         body: JSON.stringify(req.body)
       });
       
-      // Clear cache for this shop and admin after customer update
-      if (req.body.shopId && req.body.adminid) {
-        const cacheKey = `${req.body.shopId}-${req.body.adminid}`;
-        customerCache.delete(cacheKey);
-        console.log(`Cache cleared for ${cacheKey} after customer update`);
-      }
-      
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: "Failed to update customer" });
@@ -434,10 +397,6 @@ export function registerCustomerRoutes(app: Express) {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      // Clear all cache entries after customer deletion
-      customerCache.clear();
-      console.log('Cache cleared after customer deletion');
       
       res.json(data);
     } catch (error) {

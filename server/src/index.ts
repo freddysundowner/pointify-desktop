@@ -77,29 +77,23 @@ app.use((req, res, next) => {
   });
 
 
-  // Handle different paths for pkg binary vs normal Node.js
-  // const staticPath = path.resolve(__dirname, "../../web/client/dist");
-  // const staticPath = path.resolve(process.cwd(), "client/dist");
-  const staticPath = "/var/www/pointify/pos-web/web/client/dist";
-
-  // const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
+  let staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
+  if(process.env.DEV == 'true'){
+      staticPath = "/var/www/pointify/pos-web/web/client/dist";
+  } 
   app.use(express.static(staticPath));
-
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
       res.sendFile(path.join(staticPath, "index.html"));
     }
   });
 
-  console.log("🔥 Running file:", __filename);
-  console.log("🧭 STATIC PATH:", staticPath);
 
   const port = 1999;
   app.listen(port, () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
       dumpRetryMonitor.startMonitoring();
-
     }
   });
 })();
