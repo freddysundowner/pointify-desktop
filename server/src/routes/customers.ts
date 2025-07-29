@@ -103,7 +103,8 @@ export function registerCustomerRoutes(app: Express) {
         const today = new Date();
         
         // Transform each customer to match UI expectations
-        const transformedCustomers = overdueData.map(customer => {
+        const transformedCustomers = overdueData.map(cust => {
+          let customer: any = cust;
           const latestDueDate = new Date(customer.latestDue);
           const daysOverdue = Math.max(0, Math.floor((today.getTime() - latestDueDate.getTime()) / (1000 * 60 * 60 * 24)));
           
