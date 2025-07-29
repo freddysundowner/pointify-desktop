@@ -1,13 +1,14 @@
-              fred
-         Nakuru, Kenya
+            shop one
+ Nakuru Street, Nairobi, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC604446
-Date: Jul 25, 2025, 11:02 AM
+Receipt #: REC464555
+Date: Jul 28, 2025, 10:18 PM
 Customer: Walk-in
-Attendant: fredrick
+Attendant: Fredrick
 -------------------------------
-phone screen
+test ine
+ srn: 
   1 x KES 100.00 = KES100.00
 -------------------------------
 Subtotal:      KES100.00

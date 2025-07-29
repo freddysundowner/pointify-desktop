@@ -17,7 +17,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 app.use((req, res, next) => {
   const interceptMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-  if (interceptMethods.includes(req.method) && getGlobalApiMode() !="offline") {
+  if (interceptMethods.includes(req.method) && getGlobalApiMode() != "offline") {
     console.log(interceptMethods, getGlobalApiMode())
     performDataSync();
   }
@@ -76,25 +76,30 @@ app.use((req, res, next) => {
     }
   });
 
-  
-    // Handle different paths for pkg binary vs normal Node.js
 
-  const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
-    app.use(express.static(staticPath));
-    
-    app.get("*", (req, res) => {
-      if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(staticPath, "index.html"));
-      }
-    });
-  
+  // Handle different paths for pkg binary vs normal Node.js
+  // const staticPath = path.resolve(__dirname, "../../web/client/dist");
+  // const staticPath = path.resolve(process.cwd(), "client/dist");
+  const staticPath = "/var/www/pointify/pos-web/web/client/dist";
 
-  const port = process.env.PORT || 2040;
+  // const staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
+  app.use(express.static(staticPath));
+
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(staticPath, "index.html"));
+    }
+  });
+
+  console.log("🔥 Running file:", __filename);
+  console.log("🧭 STATIC PATH:", staticPath);
+
+  const port = 1999;
   app.listen(port, () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
       dumpRetryMonitor.startMonitoring();
-     
+
     }
   });
 })();

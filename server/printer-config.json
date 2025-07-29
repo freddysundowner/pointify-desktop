@@ -1,0 +1,6 @@
+{
+  "type": "SYSTEM",
+  "interface": "xpprinter",
+  "width": 32,
+  "characterSet": "PC437_USA"
+}

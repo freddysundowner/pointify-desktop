@@ -5,22 +5,22 @@ import fetchh from 'node-fetch';
 
 // Constants
 export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL;
-export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'http://localhost:2040'; //'https://api.pointifypos.com';
+export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'https://api.pointifypos.com';
 
 // Global API mode setting
 let globalApiMode: 'online' | 'offline' | 'hybrid' = 'online';
 let internetAvailable = true;
-export function setInternetAvailable(status: false | true) { 
+export function setInternetAvailable(status: false | true) {
   internetAvailable = status;
 }
-export function getInternetAvailable():  false | true {
+export function getInternetAvailable(): false | true {
   return internetAvailable;
 }
 
 // Functions to manage global API mode
 export function setGlobalApiMode(mode: 'online' | 'offline' | 'hybrid') {
   console.log(`🌐 Global API mode set to: ${mode}`);
-  if (internetAvailable == false) { 
+  if (internetAvailable == false) {
     globalApiMode = "offline"
     return;
   }
@@ -53,18 +53,18 @@ const normalizeHeaders = (headers: Record<string, string> = {}): Record<string, 
 };
 export async function makeOnlineFormDataSyncDumpCall(payload: { downloadUrl?: any; latestSyncTime: any; id: any; status: any; filePath?: any; }) {
   try {
-      
-      const form = new FormData();
-      form.append('file', fs.createReadStream(payload.downloadUrl));
-      form.append('latestSyncTime', payload.latestSyncTime);
-      form.append('id', payload.id);
-      form.append('status', payload.status);
-      
-      const res = await fetchh(`${POINTIFY_ONLINE_API_BASE}/sync/dump/online`, {
-        method: 'POST',
-        headers: form.getHeaders(),
-        body: form 
-      });
+
+    const form = new FormData();
+    form.append('file', fs.createReadStream(payload.downloadUrl));
+    form.append('latestSyncTime', payload.latestSyncTime);
+    form.append('id', payload.id);
+    form.append('status', payload.status);
+
+    const res = await fetchh(`${POINTIFY_ONLINE_API_BASE}/sync/dump/online`, {
+      method: 'POST',
+      headers: form.getHeaders(),
+      body: form
+    });
     return await res.json();
 
   } catch (error) {
@@ -75,7 +75,7 @@ export async function makeOnlineFormDataSyncDumpCall(payload: { downloadUrl?: an
       message: `sync dump error`,
     };
   }
-} 
+}
 // Main online request
 export async function makeOnlinePointifyRequest(
   endpoint: string,
@@ -133,14 +133,14 @@ export async function makeLocalPointifyRequest(
   };
 
   let response: Response;
-  console.log(url,headers)
+  console.log(url, headers)
   try {
     response = await fetch(url, { ...options, headers });
   } catch (fetchError: any) {
     console.log(`🚨 Local API request failed: ${fetchError.message}`);
   }
   console.log(`🌐 Attempting local request for ${response}`);
-  if(!response) {
+  if (!response) {
     console.log(`🚨 Local API request failed: ${response}`);
     return {};
   }
@@ -153,17 +153,17 @@ export async function makePointifyRequest(
   endpoint: string,
   options: PointifyRequestOptions = {}
 ): Promise<PointifyResponse> {
-  
+
   const apiMode = getGlobalApiMode();
   console.log(`🌐 Making request for ${endpoint} using API mode: ${apiMode}`);
-  
+
   switch (apiMode) {
-    case 'online' :
+    case 'online':
       // Online only - try online API, fallback to graceful if fails
       try {
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
         console.log(`🌐 Online API response for ${endpoint}:`);
-        if(response.success === false) {
+        if (response.success === false) {
           try {
             let localresponse = await makeLocalPointifyRequest(endpoint, options);
             return localresponse;
@@ -175,14 +175,14 @@ export async function makePointifyRequest(
         return response;
       } catch (onlineError) {
         console.log(`🌐 Online API error for ${endpoint}, using graceful fallback... ${onlineError}`);
-       try {
+        try {
           return await makeLocalPointifyRequest(endpoint, options);
         } catch (localError) {
           console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
           return gracefulFallback(endpoint);
         }
       }
-      
+
     case 'offline':
       // Offline only - try local API, fallback to graceful if fails
       try {
@@ -191,12 +191,12 @@ export async function makePointifyRequest(
         console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
         return gracefulFallback(endpoint);
       }
-      
+
     case 'hybrid':
       try {
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
         console.log(`🌐 Online API response for ${endpoint}:`);
-        if(response.success === false) {
+        if (response.success === false) {
           try {
             let localresponse = await makeLocalPointifyRequest(endpoint, options);
             return localresponse;

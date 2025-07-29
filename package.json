@@ -10,6 +10,7 @@
     "build:all": "npm run build:client && npm run build:server",
     "build:production": "npm run export-data && npm run build:all",
     "dev": "npm run build:all && electron ./electron/main.cjs",
+    "dev-web": "node ../web/server/dist/index.cjs",
     "dev:full": "npm run build:production && electron ./electron/main.cjs",
     "build:mac": "npm run build:production && electron-builder --mac",
     "build:win": "npm install && npm run build:all && electron-builder --win",
