@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Smartphone, RefreshCw, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/utils';
 
 interface PaymentWaitingProps {
   subscriptionId: string;
@@ -19,11 +20,10 @@ export default function PaymentWaiting() {
   const [isValidating, setIsValidating] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(300); // 5 minutes countdown
+  const currency = useCurrency();
   
   // Get payment details from navigation state with localStorage fallback
   const navigationState = (window.history.state?.state) || {};
-  console.log('Navigation state:', navigationState);
-  console.log('History state:', window.history.state);
   
   // Prioritize history state over localStorage for consistency
   const historyState = window.history.state || {};
@@ -47,7 +47,6 @@ export default function PaymentWaiting() {
   const phoneNumber = historyState.phoneNumber || navigationState.phoneNumber || localStorage.getItem('pendingPhone') || '';
   const shopCount = historyState.shopCount || navigationState.shopCount || parseInt(localStorage.getItem('pendingShopCount') || '1');
   
-  console.log('Payment data:', { subscriptionId, planName, amount, phoneNumber, shopCount });
 
   // Countdown timer
   useEffect(() => {
@@ -307,7 +306,7 @@ export default function PaymentWaiting() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Amount:</span>
-                <span className="font-medium">KES {amount.toLocaleString()}</span>
+                <span className="font-medium">{currency} {amount.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-300">Shops:</span>

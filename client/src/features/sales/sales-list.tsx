@@ -111,7 +111,6 @@ function SalesList() {
   const [dateFilter, setDateFilter] = useState<string>(
     urlParams.get("startDate") && urlParams.get("endDate") ? "custom" : "all",
   );
-  const [reportType, setReportType] = useState<string>("all");
   const [attendantFilter, setAttendantFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<any>(null);
@@ -123,7 +122,6 @@ function SalesList() {
   const shopId = selectedShopId || primaryShopId;
   const primaryShop =
     typeof admin?.primaryShop === "object" ? admin.primaryShop : null;
-  const attendantId = admin?._id;
   const primaryShopCurrency = (primaryShop as any)?.currency || "KES";
 
   // Function to get currency for a sale - extract from shopId object
@@ -202,13 +200,7 @@ function SalesList() {
   // Check if query should be enabled
   const queryEnabled = !!shopId && (userType === "admin" || (userType === "attendant" && !!attendant?._id));
   
-  console.log("Sales Query Debug:", {
-    shopId,
-    userType,
-    attendantId: attendant?._id,
-    queryEnabled,
-    queryParams
-  });
+ 
 
   // Fetch sales data from API using default query function
   const {
@@ -340,28 +332,17 @@ function SalesList() {
     // Pass original sale data from API, not transformed
     const originalSale = salesData.find((s: any) => s._id === sale.id);
     const saleId = sale.id;
-    console.log("Navigating to receipt for sale:", saleId, originalSale);
     
     // Use dynamic routing based on user type
     const receiptRoute = userType === "attendant" ? `/attendant/receipt/${saleId}` : `/receipt/${saleId}`;
     setLocation(receiptRoute, { state: { saleData: originalSale } });
   };
 
-  const handleEditSale = (sale: any) => {
-    // Pass original sale data from API, not transformed
-    const originalSale = salesData.find((s: any) => s._id === sale.id);
-    const saleId = sale.id;
-    console.log("Navigating to edit sale:", saleId, originalSale);
-    setLocation(`${salesRoute}/edit/${saleId}`, {
-      state: { saleData: originalSale },
-    });
-  };
 
   const handleReturnSale = (sale: any) => {
     // Pass original sale data from API, not transformed
     const originalSale = salesData.find((s: any) => s._id === sale.id);
     const saleId = sale.id;
-    console.log("Navigating to return for sale:", saleId, originalSale);
     setLocation(`${salesRoute}/return/${saleId}`, {
       state: { saleData: originalSale },
     });
@@ -511,25 +492,9 @@ function SalesList() {
     }
   };
 
-  // Calculate stats based on transformed data
-  const filteredRevenue = transformedSales
-    .filter((sale: any) => sale.status === "completed")
-    .reduce(
-      (sum: number, sale: any) => sum + parseFloat(sale.totalAmount || 0),
-      0,
-    );
-
   const filteredSalesCount = totalCount;
-  const filteredCustomers = new Set(
-    transformedSales.map((sale: any) => sale.customerName),
-  ).size;
 
-  // Status counts for filter buttons
-  const getStatusCount = (status: string) => {
-    return transformedSales.filter((sale: any) =>
-      status === "all" ? true : sale.status === status,
-    ).length;
-  };
+
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

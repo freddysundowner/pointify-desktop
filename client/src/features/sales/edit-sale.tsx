@@ -10,6 +10,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useRoute } from "wouter";
 import { useState, useEffect } from "react";
 import type { Sale, SaleItem } from "@shared/schema";
+import { useCurrency } from "@/utils";
 
 export default function EditSale() {
   // Try both admin and attendant routes
@@ -22,6 +23,7 @@ export default function EditSale() {
   
   const [originalSale, setOriginalSale] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+    const currency = useCurrency();
 
   useEffect(() => {
     // Try to get data from navigation state first
@@ -283,7 +285,7 @@ export default function EditSale() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Total</Label>
-                          <p className="font-medium">KES {((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</p>
+                          <p className="font-medium">{currency} {((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}</p>
                         </div>
                         <Button
                           variant="ghost"

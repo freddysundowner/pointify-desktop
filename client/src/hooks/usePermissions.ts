@@ -112,12 +112,10 @@ export const usePermissions = () => {
 
   // Check attendant permissions (key-value structure)
   const hasAttendantPermission = (key: string, action: string): boolean => {
-    console.log(`=== PERMISSION CHECK: ${key}.${action} ===`);
     
     // Check if we're in attendant context
     const attendantData = localStorage.getItem('attendantData');
     if (!attendantData) {
-      console.log('Permission denied: No attendant data in localStorage');
       return false;
     }
     
@@ -126,18 +124,8 @@ export const usePermissions = () => {
     try {
       attendant = JSON.parse(attendantData);
     } catch {
-      console.log('Permission denied: Invalid attendant data');
       return false;
     }
-    
-    // For attendants, check their shop's subscription status from the shop data
-    // The shop data should be available from when the attendant logged in
-    const shopId = typeof attendant.shopId === 'object' ? attendant.shopId._id : attendant.shopId;
-    
-    // For attendants, we need to check their specific shop's subscription
-    // The current isSubscriptionExpired is checking admin subscription, not shop subscription
-    
-    // Implement proper shop subscription validation
     const checkShopSubscription = () => {
       try {
         // Check if we have shop data cached from when attendant logged in
@@ -148,52 +136,32 @@ export const usePermissions = () => {
             const now = new Date();
             const endDate = new Date(shop.subscription.endDate);
             const isExpired = now > endDate || !shop.subscription.status;
-            console.log('Shop subscription check:', {
-              status: shop.subscription.status,
-              endDate: shop.subscription.endDate,
-              isExpired
-            });
             return !isExpired;
           }
         }
-        
-        // If no cached shop data, assume subscription is valid for now
-        // In production, this should make an API call to verify
-        console.log('No cached shop subscription data - allowing access');
         return true;
       } catch (error) {
-        console.log('Shop subscription check error:', error);
         return true; // Default to allowing access if check fails
       }
     };
     
     if (!checkShopSubscription()) {
-      console.log('Permission denied: Shop subscription expired');
       return false;
     }
     
-    console.log('Shop subscription valid - checking attendant permissions');
-    
     // Continue with permission validation using the already parsed attendant data
     try {
-      console.log('Attendant from localStorage:', attendant);
       
       if (!attendant.permissions) {
-        console.log('Permission denied: No permissions array');
         return false;
       }
       
-      console.log('Attendant permissions:', attendant.permissions);
-      
       const permission = attendant.permissions.find((p: any) => p.key === key);
-      console.log(`Found permission for key '${key}':`, permission);
       
       const hasPermission = permission ? permission.value.includes(action) : false;
-      console.log(`Permission result for '${key}.${action}':`, hasPermission);
       
       return hasPermission;
     } catch (error) {
-      console.log('Permission check error:', error);
       return false;
     }
   };

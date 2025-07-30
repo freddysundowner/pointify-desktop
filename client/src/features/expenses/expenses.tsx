@@ -23,6 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { ArrowLeft } from "lucide-react";
+import { useCurrency } from '@/utils';
 
 interface Expense {
   _id: string;
@@ -49,165 +50,7 @@ interface ExpenseCategory {
   shopId: string;
 }
 
-const mockExpenses: Expense[] = [
-  {
-    _id: '1',
-    description: 'Office Supplies - Stationary',
-    amount: 125.50,
-    category: 'Office Supplies',
-    date: '2024-01-15',
-    vendor: 'Office Depot',
-    paymentMethod: 'card',
-    receiptNumber: 'RCP-001',
-    status: 'paid',
-    isRecurring: false
-  },
-  {
-    _id: '2',
-    description: 'Monthly Internet Bill',
-    amount: 89.99,
-    category: 'Utilities',
-    date: '2024-01-14',
-    vendor: 'Internet Provider Co',
-    paymentMethod: 'bank_transfer',
-    receiptNumber: 'INV-2024-001',
-    status: 'paid',
-    isRecurring: true,
-    recurringPeriod: 'start_of_month',
-    nextDueDate: '2024-02-01'
-  },
-  {
-    _id: '3',
-    description: 'Office Cleaning Service',
-    amount: 200.00,
-    category: 'Cleaning',
-    date: '2024-01-12',
-    vendor: 'CleanPro Services',
-    paymentMethod: 'card',
-    status: 'approved',
-    isRecurring: true,
-    recurringPeriod: 'friday',
-    nextDueDate: '2024-01-19'
-  },
-  {
-    _id: '4',
-    description: 'Coffee Supplies',
-    amount: 45.75,
-    category: 'Office Supplies',
-    date: '2024-01-11',
-    vendor: 'Coffee Corner',
-    paymentMethod: 'cash',
-    receiptNumber: 'CF-001',
-    status: 'pending',
-    isRecurring: true,
-    recurringPeriod: 'daily',
-    nextDueDate: '2024-01-12'
-  },
-  {
-    _id: '5',
-    description: 'Monthly Rent',
-    amount: 2500.00,
-    category: 'Rent',
-    date: '2024-01-31',
-    vendor: 'Property Management Co',
-    paymentMethod: 'bank_transfer',
-    receiptNumber: 'RENT-JAN-2024',
-    status: 'paid',
-    isRecurring: true,
-    recurringPeriod: 'end_of_month',
-    nextDueDate: '2024-02-29'
-  },
-  {
-    _id: '6',
-    description: 'Weekly Maintenance',
-    amount: 150.00,
-    category: 'Maintenance',
-    date: '2024-01-13',
-    vendor: 'Fix-It Solutions',
-    paymentMethod: 'card',
-    status: 'paid',
-    isRecurring: true,
-    recurringPeriod: 'saturday',
-    nextDueDate: '2024-01-20'
-  },
-  {
-    _id: '7',
-    description: 'Equipment Purchase',
-    amount: 850.00,
-    category: 'Equipment',
-    date: '2024-01-10',
-    vendor: 'Tech Solutions Inc',
-    paymentMethod: 'bank_transfer',
-    receiptNumber: 'EQ-2024-001',
-    status: 'approved',
-    isRecurring: false
-  },
-  {
-    _id: '8',
-    description: 'Travel Expenses',
-    amount: 320.50,
-    category: 'Travel',
-    date: '2024-01-09',
-    vendor: 'Business Travel Corp',
-    paymentMethod: 'card',
-    receiptNumber: 'TRV-001',
-    status: 'pending',
-    isRecurring: false
-  },
-  {
-    _id: '9',
-    description: 'Software License',
-    amount: 99.99,
-    category: 'Software',
-    date: '2024-01-01',
-    vendor: 'Software Solutions Ltd',
-    paymentMethod: 'card',
-    receiptNumber: 'SW-2024-001',
-    status: 'paid',
-    isRecurring: true,
-    recurringPeriod: 'start_of_month',
-    nextDueDate: '2024-02-01'
-  },
-  {
-    _id: '10',
-    description: 'Marketing Materials',
-    amount: 275.25,
-    category: 'Marketing',
-    date: '2024-01-08',
-    vendor: 'Print & Design Co',
-    paymentMethod: 'cash',
-    status: 'paid',
-    isRecurring: false
-  },
-  {
-    _id: '11',
-    description: 'Utilities - Electricity',
-    amount: 145.80,
-    category: 'Utilities',
-    date: '2024-01-31',
-    vendor: 'Electric Company',
-    paymentMethod: 'bank_transfer',
-    receiptNumber: 'ELEC-JAN-2024',
-    status: 'pending',
-    isRecurring: true,
-    recurringPeriod: 'end_of_month',
-    nextDueDate: '2024-02-29'
-  },
-  {
-    _id: '12',
-    description: 'Insurance Premium',
-    amount: 450.00,
-    category: 'Insurance',
-    date: '2024-01-01',
-    vendor: 'Business Insurance Co',
-    paymentMethod: 'bank_transfer',
-    receiptNumber: 'INS-JAN-2024',
-    status: 'paid',
-    isRecurring: true,
-    recurringPeriod: 'start_of_month',
-    nextDueDate: '2024-02-01'
-  }
-];
+
 
 export default function Expenses() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -217,6 +60,7 @@ export default function Expenses() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const currency  = useCurrency();
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -720,7 +564,7 @@ export default function Expenses() {
           <Card>
             <CardContent className="p-4">
               <div className="text-sm text-gray-600">Total Amount</div>
-              <div className="text-2xl font-bold">KES {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
+              <div className="text-2xl font-bold">{currency} {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
               <div className="text-xs text-gray-500 mt-1">Total spent</div>
             </CardContent>
           </Card>
@@ -735,7 +579,7 @@ export default function Expenses() {
             <CardContent className="p-4">
               <div className="text-sm text-gray-600">Top Category</div>
               <div className="text-lg font-bold">{expenseStats?.byCategory?.[0]?.category || 'None'}</div>
-              <div className="text-sm text-gray-500">KES {(expenseStats?.byCategory?.[0]?.totalAmount || 0).toLocaleString()}</div>
+              <div className="text-sm text-gray-500">{currency} {(expenseStats?.byCategory?.[0]?.totalAmount || 0).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -771,7 +615,7 @@ export default function Expenses() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold">KES {categoryData.totalAmount.toLocaleString()}</div>
+                        <div className="font-semibold">{currency} {categoryData.totalAmount.toLocaleString()}</div>
                         <div className="text-xs text-gray-500">
                           {expenseStats.summary.totalAmount > 0 
                             ? Math.round((categoryData.totalAmount / expenseStats.summary.totalAmount) * 100)
@@ -918,7 +762,7 @@ export default function Expenses() {
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-medium text-red-600">
-                          KES {expense.amount.toLocaleString()}
+                          {currency} {expense.amount.toLocaleString()}
                         </span>
                       </TableCell>
                       <TableCell>

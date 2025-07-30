@@ -21,6 +21,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
+import { useCurrency } from "@/utils";
 
 interface PurchaseOrderDialogProps {
   isOpen: boolean;
@@ -53,6 +54,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
   const { attendant } = useAttendantAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { products, refreshProducts } = useProducts();
+  const currency  = useCurrency();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -364,7 +366,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
                               <p className="font-medium">{supplier.name}</p>
                               {supplier.currentBalance && (
                                 <p className="text-xs text-muted-foreground">
-                                  Balance: KES {supplier.currentBalance.toFixed(2)}
+                                  Balance: {currency} {supplier.currentBalance.toFixed(2)}
                                 </p>
                               )}
                             </div>
@@ -384,7 +386,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
                         Outstanding Balance
                       </Badge>
                       <span className="font-medium text-orange-700">
-                        KES {selectedSupplier.currentBalance.toFixed(2)}
+                        {currency} {selectedSupplier.currentBalance.toFixed(2)}
                       </span>
                     </div>
                   </CardContent>

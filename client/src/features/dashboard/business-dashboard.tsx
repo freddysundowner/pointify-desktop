@@ -9,6 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/features/auth/useAuth";
 import { useShop } from "@/features/shop/useShop";
 import { apiCall } from "@/lib/api-config";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
+dayjs.extend(relativeTime);
+
+
+const timeAgo = (date) => {
+  return dayjs.utc(date).format("DD/MM/YYYY hh:mm:ss A");
+};
+
 import { 
   DollarSign, 
   TrendingUp, 
@@ -34,10 +45,11 @@ import { queryClient } from "@/lib/queryClient";
 import type { RootState, AppDispatch } from "@/store";
 import { setSelectedShop, setAvailableShops, initializeSelectedShop } from "@/store/shopSlice";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
-import { formatCurrency, formatDate, formatTime } from "@/utils";
+import { formatCurrency, formatDate, formatTime, useCurrency } from "@/utils";
 
 export default function BusinessDashboard() {
   const dispatch = useDispatch<AppDispatch>();
+  const currency = useCurrency();
   const { selectedShopId, availableShops } = useSelector((state: RootState) => state.shop);
   const [currentPage, setCurrentPage] = useState(1);
   const salesPerPage = 10;
@@ -314,21 +326,6 @@ export default function BusinessDashboard() {
     }))
     .slice(0, 10); // Limit to first 10 for display
 
-  // Helper function to format relative time
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-  };
 
   // Process real sales data from API
   const recentSales = Array.isArray(salesData?.data) ? salesData.data.map((sale: any) => ({
@@ -337,7 +334,7 @@ export default function BusinessDashboard() {
     customer: sale.customerName || sale.customerId?.name || sale.customer?.name || "Walk-in",
     amount: parseFloat(sale.totalWithDiscount || sale.totalAmount || sale.total || 0), // Use totalWithDiscount if available, fallback to totalAmount
     items: sale.products?.length || sale.items?.length || 1,
-    time: formatRelativeTime(sale.createdAt || sale.saleDate),
+    time: timeAgo(sale.createdAt),
     paymentMethod: sale.paymentType || sale.paymentMethod || "Cash",
     status: sale.status || "completed"
   })) : [];
@@ -873,7 +870,7 @@ export default function BusinessDashboard() {
                   <div className="mb-6 text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
                     <p className="text-sm font-medium text-red-800 dark:text-red-200">Total Overdue Amount</p>
                     <p className="text-2xl font-bold text-red-600">
-                      KES {overdueCustomersData.totalOverdueAmount?.toLocaleString() || '0'}
+                      {currency} {overdueCustomersData.totalOverdueAmount?.toLocaleString() || '0'}
                     </p>
                   </div>
                   
@@ -896,7 +893,7 @@ export default function BusinessDashboard() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-bold text-red-600 dark:text-red-400 text-lg">
-                              KES {customer.totalOverdue?.toLocaleString() || '0'}
+                              {currency} {customer.totalOverdue?.toLocaleString() || '0'}
                             </p>
                             <p className="text-xs text-red-500 dark:text-red-400">
                               {customer.daysOverdue} days overdue

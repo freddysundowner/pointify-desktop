@@ -500,6 +500,27 @@ export function registerSalesRoutes(app: Express) {
     }
   });
 
+  app.get("/api/sales/shop/onlineorders/:shopId", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+
+      const { shopId } = req.params;
+      const queryParams = new URLSearchParams(req.query as any);
+      console.log(queryParams);
+
+      const data = await makePointifyRequest(`/sales/orders/sale/online?shop=${shopId}&${queryParams}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch sales transaction" });
+    }
+  });
+
   // Void sales transaction
   app.delete("/api/sales/void/sale/:id", async (req, res) => {
     try {

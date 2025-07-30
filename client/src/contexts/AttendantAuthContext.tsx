@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useLocation } from 'wouter';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing } from '@/store/slices/attendantSlice';
+import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
 
 interface AttendantData {
   _id: string;
@@ -11,6 +12,7 @@ interface AttendantData {
   adminId: string;
   permissions: Array<{ key: string; value: string[] }>;
   status: string;
+  shopData?: any
 }
 
 interface AttendantAuthContextType {
@@ -19,7 +21,7 @@ interface AttendantAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isRefreshing: boolean;
-  login: (attendantData: AttendantData, token: string) => void;
+  login: (attendantData: AttendantData, token: string,shopData: any) => void;
   logout: () => void;
   refreshAttendantData: () => Promise<void>;
 }
@@ -51,22 +53,24 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     try {
       const storedAttendantData = localStorage.getItem('attendantData');
       const storedToken = localStorage.getItem('attendantToken');
-
+      const storedShopData = localStorage.getItem('shopData');
       if (storedAttendantData && storedToken) {
         const parsedData = JSON.parse(storedAttendantData);
         
         // Map the stored data to the expected AttendantData structure
         const attendantData: AttendantData = {
           _id: parsedData.attendantId || parsedData._id,
-          username: parsedData.username || 'Fred',
+          username: parsedData.username || '',
           uniqueDigits: parsedData.uniqueDigits || 96580,
           shopId: parsedData.shopId,
           adminId: parsedData.adminId,
           permissions: parsedData.permissions || [],
-          status: parsedData.status || 'active'
+          status: parsedData.status || 'active',
+          shopData: JSON.parse(storedShopData || '{}')
         };
-        
-        dispatch(setAttendant({ attendant: attendantData, token: storedToken }));
+        dispatch(setCurrency(storedShopData?.currency || 'KES'));
+        dispatch(setAttendant({ attendant: attendantData, token: storedToken, shopData: JSON.parse(storedShopData || '{}') }));
+        setLocation('/');
       }
     } catch (error) {
       console.error('Failed to initialize attendant auth:', error);
@@ -76,9 +80,10 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     }
   };
 
-  const login = (attendantData: AttendantData, authToken: string) => {
-    dispatch(setAttendant({ attendant: attendantData, token: authToken }));
+  const login = (attendantData: AttendantData, authToken: string, shopData: any) => {
+    dispatch(setAttendant({ attendant: attendantData, token: authToken,shopData }));
     localStorage.setItem('attendantData', JSON.stringify(attendantData));
+    localStorage.setItem('shopData', JSON.stringify(shopData));
     localStorage.setItem('attendantToken', authToken);
   };
 
@@ -86,6 +91,7 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     dispatch(clearAttendant());
     localStorage.removeItem('attendantData');
     localStorage.removeItem('attendantToken');
+    localStorage.removeItem('shopData');
     setLocation('/login-selection');
   };
 

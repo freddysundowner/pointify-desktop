@@ -105,7 +105,6 @@ export default function StockSummary() {
   }
 
   const formatCurrency = (amount: number) => {
-    // Get currency from shop data or default to KES
     const currency = shopData?.currency || "KES";
     return `${currency} ${amount.toLocaleString()}`;
   };

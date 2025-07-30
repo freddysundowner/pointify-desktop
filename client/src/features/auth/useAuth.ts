@@ -7,6 +7,8 @@ import { clearAttendant } from "@/store/slices/attendantSlice";
 import { clearShopData } from "@/store/shopSlice";
 import { clearPermissions } from "@/store/slices/permissionsSlice";
 import { queryClient } from "@/lib/queryClient";
+import { useAppDispatch } from "@/store/hooks";
+import { setCurrency } from "@/store/slices/defaultCurrencySlicce";
 
 interface Admin {
   _id: string;
@@ -53,6 +55,7 @@ export const useAuthProvider = (): AuthContextType => {
   const [isLoading, setIsLoading] = useState(true);
   const [serverError, setServerError] = useState<Error | null>(null);
   const [, setLocation] = useLocation();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     initializeAuth();
@@ -70,9 +73,13 @@ export const useAuthProvider = (): AuthContextType => {
       });
       
       const adminData = await response.json();
+
+      dispatch(setCurrency(adminData?.primaryShop?.currency || 'KES'));
       await checkAndTriggerAutoSync();
       console.log("Fetched admin data:", adminData);
       if (!adminData?._id) {
+        dispatch(setCurrency(adminData?.primaryShop?.currency || 'KES'));
+        
         let localdata = await localStorage.getItem('adminData');
         if(localdata){
           localdata = JSON.parse(localdata);

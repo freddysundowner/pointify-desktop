@@ -4,6 +4,7 @@ import permissionsSlice from './slices/permissionsSlice';
 import rolesSlice from './slices/rolesSlice';
 import attendantSlice from './slices/attendantSlice';
 import shopSlice from './shopSlice';
+import currencySlice from './slices/defaultCurrencySlicce';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     roles: rolesSlice,
     attendant: attendantSlice,
     shop: shopSlice,
+    currency: currencySlice
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

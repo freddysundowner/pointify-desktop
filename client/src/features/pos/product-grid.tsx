@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,13 +51,6 @@ interface ProductGridProps {
   canEditPrice?: boolean;
 }
 
-const categories = [
-  { id: "all", label: "All Items" },
-  { id: "beverages", label: "Beverages" },
-  { id: "food", label: "Food" },
-  { id: "snacks", label: "Snacks" },
-  { id: "electronics", label: "Electronics" },
-];
 
 export default function ProductGrid({
   activeCategory,
@@ -65,7 +58,6 @@ export default function ProductGrid({
   onCategoryChange,
   onSearchChange,
   onAddToCart,
-  onOpenCalculator,
   cartItems,
   totals,
   onUpdateQuantity,
@@ -79,12 +71,11 @@ export default function ProductGrid({
   saleType,
   onSaleTypeChange,
   getPriceForSaleType,
-  // POS Permission flags
   canSetSaleDate = true,
-  canSell = true,
   canSellToDealer = true,
   canDiscount = true,
   canEditPrice = true,
+  orderId
 }: ProductGridProps) {
   const { attendant } = useAttendantAuth();
   const { admin } = useAuth();
@@ -102,7 +93,7 @@ export default function ProductGrid({
   const [showDiscountDialog, setShowDiscountDialog] = useState(false);
   const [selectedDiscountItem, setSelectedDiscountItem] = useState<CartItem | null>(null);
   const [discountAmount, setDiscountAmount] = useState("");
-  
+ 
   // Payment-specific input states
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
   const [bankTransactionId, setBankTransactionId] = useState("");
@@ -119,7 +110,7 @@ export default function ProductGrid({
   const { toast } = useToast();
   const { hasAttendantPermission } = usePermissions();
   const queryClient = useQueryClient();
-  const { products: allProducts, isLoading, refreshProducts } = useProducts();
+  const { products: allProducts, isLoading, refreshProducts,hasMore,fetchMoreProducts } = useProducts();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
@@ -183,7 +174,6 @@ export default function ProductGrid({
     
     // First, search locally
     const localResults = searchLocally(query);
-    console.log(`Local search found ${localResults.length} products for query: "${query}"`);
     
     if (localResults.length > 0) {
       // Found results locally, use them
@@ -193,9 +183,7 @@ export default function ProductGrid({
     }
 
     // No local results, search server
-    console.log(`No local results, searching server for: "${query}"`);
     const serverResults = await searchServer(query);
-    console.log(`Server search found ${serverResults.length} products for query: "${query}"`);
     
     setSearchResults(serverResults);
     setIsSearching(false);
@@ -215,23 +203,33 @@ export default function ProductGrid({
     return () => clearTimeout(timeoutId);
   }, [searchQuery, shopId, adminId]);
 
-  // Debug: Log product data when page loads
-  useEffect(() => {
-    if (allProducts.length > 0) {
-      console.log('=== PRODUCT DATA DUMP ===');
-      console.log('Total products:', allProducts.length);
-      
-      // Find Omo specifically and show all its fields
-      const omoProduct = allProducts.find(p => p.name?.toLowerCase().includes('omo'));
-      if (omoProduct) {
-        console.log('=== OMO PRODUCT FIELDS ===');
-        Object.keys(omoProduct).forEach(key => {
-          console.log(`${key}:`, (omoProduct as any)[key]);
-        });
-      }
-    }
-  }, [allProducts]);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    if (!loaderRef.current || !hasMore) return;
+  
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchMoreProducts();
+        }
+      },
+      {
+        rootMargin: "300px",
+        threshold: 0.1
+      }
+    );
+  
+    const target = loaderRef.current;
+    observer.observe(target);
+  
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMore, fetchMoreProducts]);
+  
+  
+  
   // Filter products based on category and search query
   const products = useMemo(() => {
     // If user is searching, use search results instead of local filtering
@@ -265,7 +263,6 @@ export default function ProductGrid({
   const { data: customersResponse, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", adminId, shopId],
     queryFn: async () => {
-      console.log('Fetching customers for POS - adminId:', adminId, 'shopId:', shopId);
       const params = new URLSearchParams({
         adminid: adminId || "",
         shopId: shopId || ""
@@ -274,7 +271,6 @@ export default function ProductGrid({
         method: "GET",
       });
       const data = await response.json();
-      console.log('Customers fetched for POS:', data);
       return data;
     },
     enabled: !!adminId && !!shopId, // Load customers when POS loads
@@ -306,12 +302,6 @@ export default function ProductGrid({
     ? customersResponse 
     : customersResponse?.customers || customersResponse?.data || [];
     
-
-
-
-
-
-
   const selectedCustomer = Array.isArray(customers) 
     ? customers.find(c => {
         const customerId = c._id || c.id;
@@ -321,15 +311,12 @@ export default function ProductGrid({
 
   const createTransactionMutation = useMutation({
     mutationFn: async (transactionData: any): Promise<any> => {
-      console.log("Sending transaction data:", transactionData);
-      
       const response = await apiCall('/api/sales', {
         method: "POST",
         body: JSON.stringify(transactionData),
       });
       
       const data = await response.json();
-      console.log("Sales API response:", data);
       return data;
     },
     onSuccess: (response: any, variables: any) => {
@@ -630,7 +617,6 @@ export default function ProductGrid({
 
     // Check shop batch tracking setting
     const shouldTrackBatches = Boolean(shopData?.trackbatches);
-    console.log(`Shop batch tracking enabled: ${shouldTrackBatches}`, { shopData: shopData?.trackbatches });
 
     const transactionData = {
       products: cartItems.map(item => {
@@ -657,7 +643,7 @@ export default function ProductGrid({
       status: isHold ? "hold" : "cashed",
       totaltax: parseFloat(totals.tax.toString()),
       salesnote: isHold ? "HOLD TRANSACTION" : "",
-      orderId: null,
+      orderId: orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
       batchTrack: shouldTrackBatches,
       allownegativeselling: false, // Default for attendant POS
@@ -709,8 +695,6 @@ export default function ProductGrid({
 
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
-
-    // Call the same payment processing method but as a hold transaction
     await processTransaction(true);
   };
 
@@ -727,11 +711,6 @@ export default function ProductGrid({
     setCustomDateTime("");
   };
 
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
@@ -1349,7 +1328,10 @@ export default function ProductGrid({
                           </div>
                         );
                       })
-                    )}
+                      )}
+                      {hasMore && !isLoading && (
+                        <div ref={loaderRef} style={{ height: "40px" }} />
+                      )}
                   </div>
                 )}
               </div>
@@ -1404,7 +1386,7 @@ export default function ProductGrid({
                     const productName = product.name || product.title;
                     const quantity = product.quantity || 0;
                     const reorderLevel = product.reorderLevel || product.lowStockThreshold || 0;
-                    const isVirtual = product.virtual;
+                    const isVirtual = product.virtual || product?.productType == "service";
                     const isOutOfStock = !isVirtual && quantity === 0;
                     const isLowStock = !isVirtual && quantity > 0 && quantity <= reorderLevel;
                     
@@ -1447,6 +1429,8 @@ export default function ProductGrid({
                       </div>
                     );
                   })}
+                      {isLoading && <p>Loading...</p>}
+                      {hasMore && <div ref={loaderRef} style={{ height: "30px" }} />}
                 </div>
               ) : (
                 /* Table View - Supermarket Style (Scanner/Search Only) */

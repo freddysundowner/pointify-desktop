@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { useCurrency } from '@/utils';
 
 interface Product {
   _id?: string;
@@ -63,6 +64,7 @@ export default function PurchaseOrderPage() {
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const currency = useCurrency();
 
   const [trackBatches, setTrackBatches] = useState(false);
   const [quantityInputs, setQuantityInputs] = useState<{[key: number]: string}>({});
@@ -405,7 +407,7 @@ export default function PurchaseOrderPage() {
                             <div className="flex items-center justify-between w-full">
                               <span>{product.name}</span>
                               <Badge variant="secondary">
-                                KES {((product as any)?.buyingPrice || (product as any)?.sellingPrice || 0).toFixed(2)}
+                                {currency} {((product as any)?.buyingPrice || (product as any)?.sellingPrice || 0).toFixed(2)}
                               </Badge>
                             </div>
                           </CommandItem>
@@ -496,7 +498,7 @@ export default function PurchaseOrderPage() {
                       <div>
                         <Label className="text-xs">Total Cost</Label>
                         <div className="h-8 px-3 py-1 bg-gray-50 border rounded-md flex items-center">
-                          <span className="text-sm font-medium">KES {item.total.toFixed(2)}</span>
+                          <span className="text-sm font-medium">{currency} {item.total.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -532,7 +534,7 @@ export default function PurchaseOrderPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium">Total Amount</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    KES {calculateTotal().toFixed(2)}
+                    {currency} {calculateTotal().toFixed(2)}
                   </span>
                 </div>
               </CardContent>

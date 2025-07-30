@@ -17,6 +17,7 @@ import { useLocation,useParams } from "wouter";
 import { apiCall } from "@/lib/api-config";
 import { navigate } from "wouter/use-browser-location";
 import { useAuth } from "@/features/auth/useAuth";
+import { useCurrency } from "@/utils";
 
 export default function ProductHistory() {
   const [, setLocation] = useLocation();
@@ -26,6 +27,7 @@ export default function ProductHistory() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState("sales");
+  const currency = useCurrency();
   
   // Pagination states for each tab
   const [salesPage, setSalesPage] = useState(1);
@@ -192,7 +194,7 @@ export default function ProductHistory() {
                 <div className="flex items-center">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Sales</p>
-                    <p className="text-2xl font-bold">KES {summary.totalSales?.toFixed(2) || "0.00"}</p>
+                    <p className="text-2xl font-bold">{currency} {summary.totalSales?.toFixed(2) || "0.00"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -298,8 +300,8 @@ export default function ProductHistory() {
                                 </td>
                                 <td className="p-4 capitalize">{purchase.paymentType || 'cash'}</td>
                                 <td className="p-4 text-right">{purchase.units || 1}</td>
-                                <td className="p-4 text-right">KES {parseFloat(purchase.unitPrice || purchase.unitCost || 0).toFixed(2)}</td>
-                                <td className="p-4 text-right font-medium">KES {parseFloat(purchase.total || 0).toFixed(2)}</td>
+                                <td className="p-4 text-right">{currency} {parseFloat(purchase.unitPrice || purchase.unitCost || 0).toFixed(2)}</td>
+                                <td className="p-4 text-right font-medium">{currency} {parseFloat(purchase.total || 0).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -376,8 +378,8 @@ export default function ProductHistory() {
                                 </td>
                                 <td className="p-4 capitalize">{sale.paymentType}</td>
                                 <td className="p-4 text-right">{sale.units}</td>
-                                <td className="p-4 text-right">KES {parseFloat(sale.unitPrice).toFixed(2)}</td>
-                                <td className="p-4 text-right font-medium">KES {parseFloat(sale.total).toFixed(2)}</td>
+                                <td className="p-4 text-right">{currency} {parseFloat(sale.unitPrice).toFixed(2)}</td>
+                                <td className="p-4 text-right font-medium">{currency} {parseFloat(sale.total).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -453,9 +455,9 @@ export default function ProductHistory() {
                                 <td className="p-4 capitalize">{movement.reason || 'Bad Stock'}</td>
                                 <td className="p-4">{movement.attendantId?.username || movement.performedBy || 'System'}</td>
                                 <td className="p-4 text-right text-red-600 font-medium">-{movement.quantity || 1}</td>
-                                <td className="p-4 text-right">KES {parseFloat(movement.unitPrice || 0).toFixed(2)}</td>
+                                <td className="p-4 text-right">{currency} {parseFloat(movement.unitPrice || 0).toFixed(2)}</td>
                                 <td className="p-4 text-right font-medium text-red-600">
-                                  KES {(parseFloat(movement.unitPrice || 0) * parseInt(movement.quantity || 1)).toFixed(2)}
+                                {currency} {(parseFloat(movement.unitPrice || 0) * parseInt(movement.quantity || 1)).toFixed(2)}
                                 </td>
                               </tr>
                             ))}

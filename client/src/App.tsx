@@ -54,13 +54,11 @@ import Expenses from "@/features/expenses/expenses";
 import StaffPermissions from "@/features/attendants/staff-permissions";
 import PermissionsInit from "@/components/PermissionsInit";
 import CashFlow from "@/features/cashflow/cashflow";
-import Reports from "@/features/reports/reports";
 import IncomeReports from "@/features/reports/income-reports";
 import ProfitAnalysis from "@/features/reports/profit-analysis";
 import DiscountReports from "@/features/reports/discount-reports";
 import StockReport from "@/features/reports/stock-report";
 import ProductMovements from "@/features/reports/product-movements";
-import CustomerDueSales from "@/features/reports/customer-due-sales";
 import SubscriptionPage from "@/pages/subscription";
 import PaymentWaiting from "@/pages/payment-waiting"; 
 import EditProfilePage from "@/pages/edit-profile";
@@ -390,13 +388,6 @@ function AppContent() {
           </AttendantRoute>
         )}
       </Route>
-      <Route path="/attendant/reports">
-        {() => (
-          <AttendantRoute>
-            <Reports />
-          </AttendantRoute>
-        )}
-      </Route>
       <Route path="/attendant/profit-analysis">
         {() => (
           <AttendantRoute>
@@ -447,7 +438,6 @@ function AppContent() {
             <Route path="/staff-permissions" component={StaffPermissions} />
             <Route path="/cashflow" component={CashFlow} />
             <Route path="/cashflow-categories" component={CashflowCategories} />
-            <Route path="/reports" component={Reports} />
             <Route path="/income-reports" component={IncomeReports} />
             <Route path="/profit-analysis" component={ProfitAnalysis} />
             <Route path="/profit-loss" component={ProfitLossPage} />
@@ -458,7 +448,6 @@ function AppContent() {
             <Route path="/discount-reports" component={DiscountReports} />
             <Route path="/stock-report" component={StockReport} />
             <Route path="/product-movements" component={ProductMovements} />
-            <Route path="/customer-due-sales" component={CustomerDueSales} />
             <Route path="/shops" component={Shops} />
             <Route path="/shop/:id" component={ShopDetails} />
             <Route path="/shop-setup" component={ShopSetup} />
@@ -509,13 +498,6 @@ function AppContent() {
             {() => (
               <AttendantRoute>
                 <Customers />
-              </AttendantRoute>
-            )}
-          </Route>
-          <Route path="/attendant/reports">
-            {() => (
-              <AttendantRoute>
-                <Reports />
               </AttendantRoute>
             )}
           </Route>

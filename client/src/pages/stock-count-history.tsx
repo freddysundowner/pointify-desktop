@@ -15,6 +15,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useLocation } from "wouter";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useCurrency } from "@/utils";
 
 interface StockCountHistory {
   _id: string;
@@ -56,8 +57,7 @@ export default function StockCountHistoryPage() {
   const { shopId, adminId, attendantId } = usePrimaryShop();
   const [, setLocation] = useLocation();
   
-  // Get currency from admin data or default to KES
-  const currency = 'KES'; // Default currency as shop data structure is complex
+  const currency = useCurrency()
 
   // Fetch stock count history with proper authentication context
   const { data: historyData, isLoading, error } = useQuery({

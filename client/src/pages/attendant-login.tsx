@@ -44,7 +44,7 @@ function AttendantLoginContent() {
     },
     onSuccess: (data) => {
       // Use the attendant auth context to handle login
-      login(data.attendant, data.token);
+      login(data.attendant, data.token, data?.shopData || {});
       
       toast({
         title: "Login Successful", 

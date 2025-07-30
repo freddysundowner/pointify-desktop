@@ -248,7 +248,7 @@ export default function CheckoutModal({
                   Select Customer *
                 </Label>
                 <Select onValueChange={(value) => {
-                  const customer = customers.find(c => c._id === value);
+                  const customer = customers.find((c: { _id: string; }) => c._id === value);
                   setSelectedCustomer(customer);
                 }}>
                   <SelectTrigger className="h-12 rounded-xl border-orange-200 focus:border-orange-500">

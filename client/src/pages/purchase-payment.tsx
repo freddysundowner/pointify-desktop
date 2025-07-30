@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/utils";
 
 export default function PurchasePaymentPage() {
   const [, setLocation] = useLocation();
@@ -19,6 +20,7 @@ export default function PurchasePaymentPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const purchasesRoute = useNavigationRoute('purchases');
+  const currency = useCurrency()
   
   // Get purchase data from navigation state
   const state = window.history.state;
@@ -173,15 +175,15 @@ export default function PurchasePaymentPage() {
               <div className="grid grid-cols-1 gap-4 text-center">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-lg font-semibold">KES {(purchase.totalAmount || 0).toFixed(2)}</p>
+                  <p className="text-lg font-semibold">{currency} {(purchase.totalAmount || 0).toFixed(2)}</p>
                 </div>
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <p className="text-sm text-muted-foreground">Amount Paid</p>
-                  <p className="text-lg font-semibold text-green-600">KES {(purchase.amountPaid || 0).toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-green-600">{currency} {(purchase.amountPaid || 0).toFixed(2)}</p>
                 </div>
                 <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                   <p className="text-sm text-muted-foreground">Outstanding</p>
-                  <p className="text-lg font-semibold text-red-600">KES {(purchase.outstandingBalance || 0).toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-red-600">{currency} {(purchase.outstandingBalance || 0).toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -195,7 +197,7 @@ export default function PurchasePaymentPage() {
             <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="amount">Payment Amount (KES)</Label>
+                <Label htmlFor="amount">Payment Amount ({currency})</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -208,7 +210,7 @@ export default function PurchasePaymentPage() {
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  Maximum: KES {maxAmount.toFixed(2)}
+                  Maximum: {currency} {maxAmount.toFixed(2)}
                 </p>
               </div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Filter, Plus, Eye, CheckCircle, XCircle, Clock, Truck, Phone, Mail, MapPin, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import type { Order } from "@shared/schema";
-
-const statusColors = {
+import { useQuery } from "@tanstack/react-query";
+import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { apiCall } from "@/lib/api-config";
+import { useCart } from "@/hooks/useCart";
+import { useProducts } from "@/contexts/ProductsContext";
+import { navigate } from "wouter/use-browser-location";
+const statusColors:any = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
   preparing: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
@@ -26,84 +30,49 @@ const sourceColors = {
   whatsapp: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
 };
 
-// Dummy orders data
-const ordersData: Order[] = [
-  {
-    id: 1,
-    customerName: "Sarah Johnson",
-    customerPhone: "+254712345678",
-    customerEmail: "sarah@email.com",
-    items: [
-      { productName: "Laptop Stand", quantity: 1, unitPrice: 2500, totalPrice: 2500 },
-      { productName: "Wireless Mouse", quantity: 2, unitPrice: 800, totalPrice: 1600 }
-    ],
-    totalAmount: 4100,
-    orderDate: "2025-06-19T10:30:00Z",
-    status: "pending",
-    orderSource: "website",
-    deliveryAddress: "123 Main St, Nairobi",
-    notes: "Please call before delivery"
-  },
-  {
-    id: 2,
-    customerName: "John Kamau",
-    customerPhone: "+254723456789",
-    items: [
-      { productName: "Bluetooth Headphones", quantity: 1, unitPrice: 3200, totalPrice: 3200 }
-    ],
-    totalAmount: 3200,
-    orderDate: "2025-06-19T09:15:00Z",
-    status: "confirmed",
-    orderSource: "app",
-    deliveryAddress: "456 Oak Ave, Nairobi"
-  },
-  {
-    id: 3,
-    customerName: "Mary Wanjiku",
-    customerPhone: "+254734567890",
-    customerEmail: "mary@email.com",
-    items: [
-      { productName: "Phone Case", quantity: 3, unitPrice: 500, totalPrice: 1500 },
-      { productName: "Screen Protector", quantity: 3, unitPrice: 200, totalPrice: 600 }
-    ],
-    totalAmount: 2100,
-    orderDate: "2025-06-19T08:45:00Z",
-    status: "preparing",
-    orderSource: "whatsapp"
-  },
-  {
-    id: 4,
-    customerName: "David Mwangi",
-    customerPhone: "+254745678901",
-    items: [
-      { productName: "Power Bank", quantity: 1, unitPrice: 1800, totalPrice: 1800 }
-    ],
-    totalAmount: 1800,
-    orderDate: "2025-06-19T08:00:00Z",
-    status: "ready",
-    orderSource: "phone",
-    deliveryAddress: "789 Pine St, Nairobi",
-    notes: "Customer prefers evening delivery"
-  }
-];
+interface Order {
+  id: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  items: { productName: string; quantity: number; unitPrice: number; totalPrice: number }[];
+  totalAmount: number;
+  orderDate: string;
+  status: string;
+  orderSource: string;
+  deliveryAddress: string;
+  notes: string;
+}
+
 
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const  primaryShopData: any = usePrimaryShop();
+  const { products } = useProducts(); // used for pricing logic
+  const { addToCart, clearCart,updateCartPricesForSaleType, setOrderId } = useCart(products, 0, "Retail"); // set taxRate and saleType as needed
+  const [saleType, setSaleType] = useState<"Retail" | "Wholesale" | "Dealer">("Retail");
 
-  const filteredOrders = ordersData.filter(order => {
-    const matchesSearch = 
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerPhone?.includes(searchTerm) ||
-      order.id.toString().includes(searchTerm);
-    
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    const matchesSource = sourceFilter === "all" || order.orderSource === sourceFilter;
-    
-    return matchesSearch && matchesStatus && matchesSource;
+  const { data: allorders, isLoading: summaryLoading,refetch } = useQuery({
+    queryKey: ["/api/product-summary", primaryShopData?.shopId,],
+    queryFn: async () => {
+      const response = await apiCall(`/api/sales/shop/onlineorders/${primaryShopData?.shopId}?status=${statusFilter}`, {
+        method: "GET",
+      });
+      return await response.json();
+    },
+    enabled: !!primaryShopData?.shopId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    refetch();
+  }, [statusFilter,refetch]);
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -118,26 +87,40 @@ export default function OrdersPage() {
     console.log(`Updating order ${orderId} to status: ${newStatus}`);
   };
 
-  const convertToSale = (orderId: number) => {
-    // In a real app, this would convert the order to a sale
-    console.log(`Converting order ${orderId} to sale`);
+  const convertToSale = (orderId: any) => {
+    const order = allorders?.data?.find((o: any) => o._id === orderId);
+    if (!order) return;
+  
+    clearCart();
+  
+    order.items.forEach((item: any) => {
+      const matchedProduct = products.find((p: any) => p._id === item.product._id);
+  
+      const productData = matchedProduct
+        ? { ...matchedProduct, quantity: item.quantity }
+        : {
+            id: item.product._id || item.product.id,
+            name: item.product.name || "Unknown Product",
+            quantity: item.quantity,
+            price: item.sellingPrice,
+            originalPrice: item.sellingPrice,
+            discount: 0,
+            maxDiscount: item.product.maxDiscount || 0,
+            virtual: item.product.virtual || false,
+            serialnumber: item.product.serialnumber || undefined,
+          };
+  
+      addToCart(productData, orderId);   // ✅ pass it explicitly
+    });
+  
+    updateCartPricesForSaleType(saleType);
+    navigate("/pos");
   };
-
+  
+  
   return (
     <DashboardLayout title="Orders">
       <div className="space-y-6 w-full">
-
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Online Orders</h2>
-            <p className="text-gray-600 dark:text-gray-400">Manage customer orders from online channels</p>
-          </div>
-          <Button className="sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            Manual Order
-          </Button>
-        </div>
 
         {/* Filters */}
         <Card>
@@ -162,24 +145,8 @@ export default function OrdersPage() {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="preparing">Preparing</SelectItem>
-                    <SelectItem value="ready">Ready</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="website">Website</SelectItem>
-                    <SelectItem value="app">Mobile App</SelectItem>
-                    <SelectItem value="phone">Phone</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -187,39 +154,38 @@ export default function OrdersPage() {
           </CardContent>
         </Card>
 
+        
+
         {/* Orders List */}
         <div className="grid gap-4">
-          {filteredOrders.map((order) => (
-            <Card key={order.id} className="hover:shadow-md transition-shadow">
+          {summaryLoading ? <p className="text-gray-600 dark:text-gray-400 justify-center">Loading orders...</p> : allorders?.data?.length ==0 && <p className="text-gray-600 dark:text-gray-400">No orders found</p>} {allorders?.data?.map((order) => (
+            <Card key={order._id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   
                   {/* Order Info */}
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-lg">Order #{order.id}</h3>
+                      <h3 className="font-semibold text-lg">Order #{order.receiptNo}</h3>
                       <Badge className={statusColors[order.status]}>
                         {order.status}
-                      </Badge>
-                      <Badge variant="outline" className={sourceColors[order.orderSource]}>
-                        {order.orderSource}
                       </Badge>
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <ShoppingBag className="h-4 w-4" />
-                        <span>{order.customerName}</span>
+                        <span>{order?.customer?.name}</span>
                       </div>
-                      {order.customerPhone && (
+                      {order?.customer?.phonenumber && (
                         <div className="flex items-center gap-1">
                           <Phone className="h-4 w-4" />
-                          <span>{order.customerPhone}</span>
+                          <span>{order?.customer?.phonenumber}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        <span>{formatDate(order.orderDate)}</span>
+                        <span>{formatDate(order.createdAt)}</span>
                       </div>
                     </div>
 
@@ -228,24 +194,26 @@ export default function OrdersPage() {
                         {order.items.length} item(s)
                       </span>
                       <span className="text-gray-400">•</span>
-                      <span className="font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(order.totalAmount)}
-                      </span>
+                      {/* <span className="font-semibold text-green-600 dark:text-green-400">
+                        {formatCurrency(order?.totalAmount)}
+                      </span> */}
                     </div>
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <Dialog>
-                      <DialogTrigger asChild>
+                      {order?.status == 'completed' ? <></>: (
+                        <DialogTrigger asChild>
                         <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
                       </DialogTrigger>
+                      )}
                       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>Order #{selectedOrder?.id} Details</DialogTitle>
+                          <DialogTitle>Order #{selectedOrder?.receiptNo} Details</DialogTitle>
                         </DialogHeader>
                         {selectedOrder && (
                           <div className="space-y-6">
@@ -255,18 +223,18 @@ export default function OrdersPage() {
                               <div className="space-y-2 text-sm">
                                 <div className="flex items-center gap-2">
                                   <ShoppingBag className="h-4 w-4 text-gray-400" />
-                                  <span>{selectedOrder.customerName}</span>
+                                  <span>{selectedOrder.customer.name}</span>
                                 </div>
-                                {selectedOrder.customerPhone && (
+                                {selectedOrder.customer.phonenumber && (
                                   <div className="flex items-center gap-2">
                                     <Phone className="h-4 w-4 text-gray-400" />
-                                    <span>{selectedOrder.customerPhone}</span>
+                                    <span>{selectedOrder.customer.phonenumber}</span>
                                   </div>
                                 )}
-                                {selectedOrder.customerEmail && (
+                                {selectedOrder.customer.email && (
                                   <div className="flex items-center gap-2">
                                     <Mail className="h-4 w-4 text-gray-400" />
-                                    <span>{selectedOrder.customerEmail}</span>
+                                    <span>{selectedOrder.customer.email}</span>
                                   </div>
                                 )}
                                 {selectedOrder.deliveryAddress && (
@@ -284,25 +252,16 @@ export default function OrdersPage() {
                             <div>
                               <h4 className="font-semibold mb-3">Order Items</h4>
                               <div className="space-y-3">
-                                {selectedOrder.items.map((item, index) => (
+                                {selectedOrder.items.map((item: any, index) => (
                                   <div key={index} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <div>
-                                      <div className="font-medium">{item.productName}</div>
+                                      <div className="font-medium">{item.product.name}</div>
                                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                                        Qty: {item.quantity} × {formatCurrency(item.unitPrice)}
+                                        Qty: {item.quantity} × {formatCurrency(item?.sellingPrice)}
                                       </div>
-                                    </div>
-                                    <div className="font-semibold">
-                                      {formatCurrency(item.totalPrice)}
                                     </div>
                                   </div>
                                 ))}
-                                <div className="flex justify-between items-center pt-3 border-t">
-                                  <span className="font-semibold">Total</span>
-                                  <span className="font-bold text-lg text-green-600 dark:text-green-400">
-                                    {formatCurrency(selectedOrder.totalAmount)}
-                                  </span>
-                                </div>
                               </div>
                             </div>
 
@@ -318,7 +277,7 @@ export default function OrdersPage() {
 
                             {/* Actions */}
                             <div className="flex gap-2 pt-4">
-                              <Button onClick={() => convertToSale(selectedOrder.id)} className="flex-1">
+                              <Button onClick={() => convertToSale(selectedOrder._id)} className="flex-1">
                                 <CheckCircle className="h-4 w-4 mr-2" />
                                 Convert to Sale
                               </Button>
@@ -327,11 +286,6 @@ export default function OrdersPage() {
                                   <SelectValue placeholder="Update Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="preparing">Preparing</SelectItem>
-                                  <SelectItem value="ready">Ready</SelectItem>
-                                  <SelectItem value="delivered">Delivered</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -342,7 +296,7 @@ export default function OrdersPage() {
                     </Dialog>
 
                     {order.status === "ready" && (
-                      <Button size="sm" onClick={() => convertToSale(order.id)}>
+                      <Button size="sm" onClick={() => convertToSale(order._id)}>
                         <CheckCircle className="h-4 w-4 mr-1" />
                         Convert to Sale
                       </Button>
@@ -354,19 +308,6 @@ export default function OrdersPage() {
           ))}
         </div>
 
-        {filteredOrders.length === 0 && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No orders found</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                {searchTerm || statusFilter !== "all" || sourceFilter !== "all" 
-                  ? "Try adjusting your filters to see more orders." 
-                  : "Online orders will appear here once customers place them."}
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );

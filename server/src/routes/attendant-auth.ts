@@ -23,7 +23,7 @@ export function registerAttendantAuthRoutes(app: Express) {
       
       console.log('Sending to Pointify API:', payload);
       
-      const loginResponse = await makePointifyRequest('/attendants/login', {
+      let loginResponse:any = await makePointifyRequest('/attendants/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -31,7 +31,6 @@ export function registerAttendantAuthRoutes(app: Express) {
         body: JSON.stringify(payload)
       });
 
-      console.log('Pointify API response:', loginResponse);
 
       if (!loginResponse || !loginResponse.token) {
         return res.status(401).json({ 
@@ -40,27 +39,17 @@ export function registerAttendantAuthRoutes(app: Express) {
       }
 
       // Fetch actual permissions from database instead of hardcoded values
-      let attendantPermissions = [];
+      let attendant: any;
       try {
-        const attendantData = await makePointifyRequest(`/attendants/${loginResponse.userdata._id}`, {
+        attendant = await makePointifyRequest(`/attendants/${loginResponse.userdata._id}`, {
           method: 'GET'
         });
-        attendantPermissions = attendantData.permissions || [];
       } catch (error) {
         console.log('Could not fetch attendant permissions from API, using empty array:', error.message);
-        attendantPermissions = [];
       }
 
-      const attendant = {
-        _id: loginResponse.userdata._id,
-        username: `Fred`,
-        uniqueDigits: loginResponse.userdata.uniqueDigits,
-        shopId: "685077ce3dd888c2f51607de",
-        adminId: "685020c03748aaa4dfa0a43a",
-        permissions: attendantPermissions,
-        status: 'active'
-      };
 
+      console.log('Pointify API response:', attendant?.shopId);
 
 
       // Check if attendant is active
@@ -89,11 +78,13 @@ export function registerAttendantAuthRoutes(app: Express) {
           _id: attendant._id,
           username: attendant.username,
           uniqueDigits: attendant.uniqueDigits,
-          shopId: attendant.shopId,
+          shopId: attendant?.shopId?._id,
+          shopname: attendant?.shopId?.name,
           adminId: attendant.adminId,
           permissions: attendant.permissions || [],
-          status: attendant.status || 'active'
+          status: attendant?.status || 'active'
         },
+        shopData: attendant?.shopId,
         token
       });
 

@@ -7,7 +7,8 @@ interface PrimaryShopData {
   adminId: string;
   shopData?: any;
   userType: 'admin' | 'attendant' | null;
-  attendantId: string | null
+  attendantId: string | null,
+  allowNegativeStock?: boolean
 }
 
 export const usePrimaryShop = (): PrimaryShopData => {
@@ -18,13 +19,11 @@ export const usePrimaryShop = (): PrimaryShopData => {
     adminId: '',
     shopData: null,
     userType: null,
-    attendantId: null
+    attendantId: null,
+    allowNegativeStock: false
   });
 
   useEffect(() => {
-    console.log('usePrimaryShop: Evaluating user type and shop data');
-    console.log('Attendant data:', attendant ? 'Present' : 'None');
-    console.log('Admin data:', admin ? 'Present' : 'None');
     
     // Check if user is an attendant
     if (attendant) {
@@ -32,14 +31,14 @@ export const usePrimaryShop = (): PrimaryShopData => {
         ? attendant.shopId 
         : attendant.shopId?._id || '';
       
-      console.log('usePrimaryShop: Using attendant data - shopId:', shopId, 'adminId:', attendant.adminId);
       
       setPrimaryShopData({
         shopId,
         adminId: attendant.adminId || '',
         shopData: typeof attendant.shopId === 'object' ? attendant.shopId : null,
         userType: 'attendant',
-        attendantId: attendant._id || attendant.id || ''
+        attendantId: attendant._id || attendant.id || '',
+        allowNegativeStock: attendant?.shopData?.allownegativeselling
       });
       return;
     }
@@ -55,14 +54,14 @@ export const usePrimaryShop = (): PrimaryShopData => {
       const shopId = getShopId(admin.primaryShop);
       const adminId = admin._id || admin.id || '';
       
-      console.log('usePrimaryShop: Using admin data - shopId:', shopId, 'adminId:', adminId);
 
       setPrimaryShopData({
         shopId,
         adminId,
         shopData: typeof admin.primaryShop === 'object' ? admin.primaryShop : null,
         userType: 'admin',
-        attendantId: admin.attendantId || ''
+        attendantId: admin.attendantId || '',
+        allowNegativeStock: admin?.primaryShop?.allownegativeselling
       });
       return;
     }
@@ -105,7 +104,6 @@ export const usePrimaryShop = (): PrimaryShopData => {
         return;
       }
     } catch (error) {
-      console.error('Error parsing localStorage data:', error);
     }
 
     // Reset if no valid data found

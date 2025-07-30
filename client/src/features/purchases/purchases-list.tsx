@@ -58,6 +58,7 @@ import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useCurrency } from "@/utils";
 
 // Purchases data now comes from API
 
@@ -94,7 +95,7 @@ export default function PurchasesList() {
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [dateFilter, setDateFilter] = useState<string>("today");
+  const currency = useCurrency();
   const [, setLocation] = useLocation();
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const { toast } = useToast();
@@ -346,20 +347,7 @@ export default function PurchasesList() {
       currency: purchase.shopId?.currency || "KES",
     }));
 
-  const clearDateFilters = () => {
-    setStartDate("");
-    setEndDate("");
-  };
 
-  const setDateRange = (days: number) => {
-    const today = new Date();
-    const startDate = new Date();
-    startDate.setDate(today.getDate() - days);
-
-    setStartDate(startDate.toISOString().split("T")[0]);
-    setEndDate(today.toISOString().split("T")[0]);
-    setCurrentPage(1);
-  };
 
   // Pagination calculations
   const paginatedData = useMemo(() => {
@@ -897,7 +885,7 @@ export default function PurchasesList() {
                     Total Purchases
                   </p>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    KES {(analyticsData.totalpurchases || 0).toFixed(2)}
+                    {currency} {(analyticsData.totalpurchases || 0).toFixed(2)}
                   </p>
                 </div>
                 <TrendingDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -911,7 +899,7 @@ export default function PurchasesList() {
                     Cash Purchases
                   </p>
                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    KES {(analyticsData.cash || 0).toFixed(2)}
+                    {currency} {(analyticsData.cash || 0).toFixed(2)}
                   </p>
                 </div>
                 <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -925,7 +913,7 @@ export default function PurchasesList() {
                     Unpaid Purchases
                   </p>
                   <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                    KES {(analyticsData.credit || 0).toFixed(2)}
+                    {currency} {(analyticsData.credit || 0).toFixed(2)}
                   </p>
                 </div>
                 <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
@@ -939,7 +927,7 @@ export default function PurchasesList() {
                     Amount Paid
                   </p>
                   <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    KES {(analyticsData.paid || 0).toFixed(2)}
+                    {currency} {(analyticsData.paid || 0).toFixed(2)}
                   </p>
                 </div>
                 <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -953,7 +941,7 @@ export default function PurchasesList() {
                     Returns
                   </p>
                   <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                    KES {(analyticsData.returns || 0).toFixed(2)}
+                    {currency} {(analyticsData.returns || 0).toFixed(2)}
                   </p>
                 </div>
                 <Package className="h-4 w-4 text-red-600 dark:text-red-400" />

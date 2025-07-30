@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/contexts/ProductsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useCurrency } from "@/utils";
 
 export default function PurchaseEditPage() {
   const [, setLocation] = useLocation();
@@ -22,7 +23,7 @@ export default function PurchaseEditPage() {
   const queryClient = useQueryClient();
   const { products } = useProducts();
   const purchasesRoute = useNavigationRoute('purchases');
-  
+  const currency = useCurrency();
   // Get purchase data from navigation state
   const state = window.history.state;
   const purchaseFromState = state?.purchase;
@@ -380,7 +381,7 @@ export default function PurchaseEditPage() {
                   <div className="flex justify-end pt-4 border-t">
                     <div className="text-right">
                       <p className="text-lg font-semibold">
-                        Total: KES {totalAmount.toFixed(2)}
+                        Total: {currency} {totalAmount.toFixed(2)}
                       </p>
                     </div>
                   </div>

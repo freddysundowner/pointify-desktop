@@ -14,6 +14,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { apiCall } from "@/lib/api-config";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useLocation } from "wouter";
+import { useCurrency } from "@/utils";
 
 interface PurchaseReturn {
   _id: string;
@@ -56,6 +57,7 @@ export default function PurchaseReturns() {
   const { shopId, adminId, attendantId } = usePrimaryShop();
   const [, setLocation] = useLocation();
   const purchasesRoute = useNavigationRoute('purchases');
+    const currency = useCurrency()
   
   // Determine back route: attendants go to dashboard, admins go to purchases
   const backRoute = attendant ? '/attendant/dashboard' : purchasesRoute;
@@ -135,7 +137,6 @@ export default function PurchaseReturns() {
 
   // Summary statistics
   const totalReturnAmount = returns.reduce((sum: number, ret: PurchaseReturn) => sum + (ret.refundAmount || ret.totalAmount || 0), 0);
-  const currency = returns[0]?.shopId?.currency || 'KES';
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -203,7 +204,7 @@ export default function PurchaseReturns() {
       // Summary
       doc.setFontSize(12);
       doc.text(`Total Returns: ${totalReturnsCount}`, 20, yPos);
-      doc.text(`Total Amount: KES ${totalAmount.toLocaleString()}`, 20, yPos + 10);
+      doc.text(`Total Amount: ${currency} ${totalAmount.toLocaleString()}`, 20, yPos + 10);
       yPos += 25;
       
       // Table headers
@@ -229,7 +230,7 @@ export default function PurchaseReturns() {
         xPos = 20;
         const rowData = [
           ret.purchaseReturnNo || ret._id,
-          `KES ${(ret.refundAmount || ret.totalAmount || 0).toLocaleString()}`,
+          `${currency} ${(ret.refundAmount || ret.totalAmount || 0).toLocaleString()}`,
           new Date(ret.createdAt || ret.returnDate || new Date()).toLocaleDateString(),
           ret.attendantId?.username || 'Unknown',
           ret.reason || 'N/A'

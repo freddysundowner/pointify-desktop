@@ -8,6 +8,7 @@ export interface AttendantData {
   adminId: string;
   permissions: Array<{ key: string; value: string[] }>;
   status: string;
+  shopData?: any
 }
 
 interface AttendantState {
@@ -16,6 +17,8 @@ interface AttendantState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isRefreshing: boolean;
+  shopData: any,
+  currency: string
 }
 
 const initialState: AttendantState = {
@@ -24,17 +27,21 @@ const initialState: AttendantState = {
   isAuthenticated: false,
   isLoading: true,
   isRefreshing: false,
+  shopData: null,
+  currency: ""
 };
 
 const attendantSlice = createSlice({
   name: 'attendant',
   initialState,
   reducers: {
-    setAttendant: (state, action: PayloadAction<{ attendant: AttendantData; token: string }>) => {
+    setAttendant: (state, action: PayloadAction<{ attendant: AttendantData; token: string, shopData: any }>) => {
       state.attendant = action.payload.attendant;
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.isLoading = false;
+      state.shopData = action.payload.shopData;
+      state.currency = action.payload.shopData.currency
     },
     updateAttendant: (state, action: PayloadAction<AttendantData>) => {
       state.attendant = action.payload;
@@ -45,6 +52,7 @@ const attendantSlice = createSlice({
       state.isAuthenticated = false;
       state.isLoading = false;
       state.isRefreshing = false;
+      state.currency = ""
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;

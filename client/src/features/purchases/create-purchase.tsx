@@ -21,7 +21,7 @@ import { usePrimaryShop } from "../../hooks/usePrimaryShop";
 export default function CreatePurchase() {
   const [location, setLocation] = useLocation();
   const { admin, isAuthenticated } = useAuth();
-  const { selectedShopId } = useSelector((state: RootState) => state.shop);
+  const { currency } = useSelector((state: RootState) => state.currency);
   const { attendantId,shopId } = usePrimaryShop();
 
   // Suppliers API integration
@@ -64,21 +64,6 @@ export default function CreatePurchase() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get currency from selected products or shop data
-  const getDisplayCurrency = () => {
-    // Find first item with a product name and get currency from matching product
-    const firstSelectedItem = items.find(item => item.productName);
-    if (firstSelectedItem) {
-      const matchingProduct = products.find((p: any) => 
-        (p.name || p.title) === firstSelectedItem.productName
-      );
-      if (matchingProduct?.shopId?.currency) {
-        return matchingProduct.shopId.currency;
-      }
-    }
-    // Fallback to default currency
-    return 'KES';
-  };
 
   const addProductToOrder = (product: any) => {
     // Check if product already exists in the order
@@ -426,7 +411,7 @@ export default function CreatePurchase() {
                           <div>
                             <Label className="text-xs">Total Cost</Label>
                             <Input
-                              value={`${getDisplayCurrency()} ${item.totalCost.toFixed(2)}`}
+                              value={`${currency} ${item.totalCost.toFixed(2)}`}
                               readOnly
                               className="h-8 bg-gray-50 dark:bg-gray-800"
                             />
@@ -451,7 +436,7 @@ export default function CreatePurchase() {
                       Total Amount:
                     </span>
                     <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {getDisplayCurrency()} {calculateTotal().toFixed(2)}
+                      {currency} {calculateTotal().toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
