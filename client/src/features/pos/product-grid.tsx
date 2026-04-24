@@ -694,6 +694,7 @@ export default function ProductGrid({
   };
 
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
+  const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({ name: '', phone: '', email: '', address: '' });
 
@@ -2126,7 +2127,7 @@ export default function ProductGrid({
       </Dialog>
 
       {/* Hold Transaction - Customer Required Dialog */}
-      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); } }}>
+      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
@@ -2141,7 +2142,7 @@ export default function ProductGrid({
             </p>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-gray-700">Customer *</label>
                 <button
                   type="button"
@@ -2152,35 +2153,77 @@ export default function ProductGrid({
                   <span>Add new customer</span>
                 </button>
               </div>
-              <select
-                className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-              >
-                <option value="">Select a customer...</option>
-                {customers.map((customer: any) => {
-                  const customerId = customer._id || customer.id;
-                  return (
-                    <option key={customerId} value={customerId}>
-                      {customer.name}{customer.phone ? ` (${customer.phone})` : ""}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
 
-            {selectedCustomer && (
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
-                <p className="font-medium text-gray-900">{selectedCustomer.name}</p>
-                <p className="text-gray-500">
-                  Outstanding: Ksh {Math.abs(selectedCustomer.totalOutstanding || selectedCustomer.balance || 0).toFixed(2)}
-                </p>
+              {/* Search input */}
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by name or phone..."
+                  value={holdCustomerSearch}
+                  onChange={(e) => { setHoldCustomerSearch(e.target.value); setSelectedCustomerId(''); }}
+                  className="pl-9 text-sm"
+                  autoFocus
+                />
               </div>
-            )}
+
+              {/* Selected customer pill */}
+              {selectedCustomer && !holdCustomerSearch && (
+                <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 mb-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{selectedCustomer.name}</p>
+                    {(selectedCustomer.phone || selectedCustomer.phonenumber) && (
+                      <p className="text-xs text-gray-500">{selectedCustomer.phone || selectedCustomer.phonenumber}</p>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => setSelectedCustomerId('')} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Filtered results list */}
+              {holdCustomerSearch && (
+                <div className="border border-gray-200 rounded-lg max-h-44 overflow-y-auto">
+                  {customers
+                    .filter((c: any) => {
+                      const term = holdCustomerSearch.toLowerCase();
+                      return (
+                        (c.name || '').toLowerCase().includes(term) ||
+                        (c.phone || '').toLowerCase().includes(term) ||
+                        (c.phonenumber || '').toLowerCase().includes(term)
+                      );
+                    })
+                    .map((customer: any) => {
+                      const customerId = customer._id || customer.id;
+                      return (
+                        <div
+                          key={customerId}
+                          onClick={() => { setSelectedCustomerId(customerId); setHoldCustomerSearch(''); }}
+                          className="flex items-center justify-between px-3 py-2 hover:bg-purple-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{customer.name}</p>
+                            {(customer.phone || customer.phonenumber) && (
+                              <p className="text-xs text-gray-500">{customer.phone || customer.phonenumber}</p>
+                            )}
+                          </div>
+                          <User className="h-4 w-4 text-gray-300" />
+                        </div>
+                      );
+                    })}
+                  {customers.filter((c: any) => {
+                    const term = holdCustomerSearch.toLowerCase();
+                    return (c.name || '').toLowerCase().includes(term) || (c.phone || '').toLowerCase().includes(term) || (c.phonenumber || '').toLowerCase().includes(term);
+                  }).length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No customers found</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); }}>
+            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}>
               Cancel
             </Button>
             <Button
