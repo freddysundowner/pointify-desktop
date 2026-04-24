@@ -801,6 +801,7 @@ export default function CustomerOverview() {
   const downloadStatementPDF = () => {
     const customerName = customerOverviewData.name;
     const currentDate = new Date().toLocaleDateString();
+    const shopName = (typeof admin?.primaryShop === 'object' ? (admin.primaryShop as any)?.name : null) || 'Customer Account Statement';
     
     if (!customerPayments || customerPayments.length === 0) {
       toast({
@@ -942,7 +943,7 @@ export default function CustomerOverview() {
         </head>
         <body>
           <div class="header">
-            <div class="company-name">Business Management System</div>
+            <div class="company-name">${shopName}</div>
             <div class="statement-title">Customer Account Statement</div>
           </div>
           
@@ -980,17 +981,17 @@ export default function CustomerOverview() {
             <div class="summary-title">Account Summary</div>
             <div class="summary-grid">
               <div class="summary-item">
-                <div class="summary-value" style="color: #2563eb;">$${customerOverviewData.totalSpent.toFixed(2)}</div>
+                <div class="summary-value" style="color: #2563eb;">${currency} ${customerOverviewData.totalSpent.toFixed(2)}</div>
                 <div class="summary-label">Total Spent</div>
               </div>
               <div class="summary-item">
-                <div class="summary-value" style="color: ${customerOverviewData.balance < 0 ? '#dc2626' : '#059669'};">
-                  $${Math.abs(customerOverviewData.balance).toFixed(2)}
+                <div class="summary-value" style="color: ${customerOverviewData.creditBalance < 0 ? '#dc2626' : '#059669'};">
+                  ${currency} ${Math.abs(customerOverviewData.creditBalance || 0).toFixed(2)}
                 </div>
-                <div class="summary-label">${customerOverviewData.balance < 0 ? 'Outstanding Balance' : 'Wallet Balance'}</div>
+                <div class="summary-label">${customerOverviewData.creditBalance < 0 ? 'Outstanding Balance' : 'Wallet Balance'}</div>
               </div>
               <div class="summary-item">
-                <div class="summary-value" style="color: #7c3aed;">${customerOverviewData.loyaltyPoints}</div>
+                <div class="summary-value" style="color: #7c3aed;">${(customerData as any)?.loyaltyPoints ?? 0}</div>
                 <div class="summary-label">Loyalty Points</div>
               </div>
             </div>
