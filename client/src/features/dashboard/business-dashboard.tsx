@@ -216,18 +216,28 @@ export default function BusinessDashboard() {
   // Initialize selected shop from admin data - reset shop selection for new users
   useEffect(() => {
     if (availableShops.length > 0 && admin?._id) {
-      const primaryShopId = typeof admin?.primaryShop === 'string' 
-        ? admin.primaryShop 
+      // localStorage selection always wins over the API's primaryShop so
+      // manual shop switches persist across page refreshes
+      const storedShopId = localStorage.getItem('selectedShopId');
+      const storedBelongsToAdmin = storedShopId
+        ? availableShops.find(s => s.id === storedShopId)
+        : null;
+
+      const primaryShopId = typeof admin?.primaryShop === 'string'
+        ? admin.primaryShop
         : admin?.primaryShop?._id || admin?.primaryShop?.id;
-      
-      // Check if current selected shop belongs to current admin's shops
+
       const currentShopBelongsToAdmin = availableShops.find(shop => shop.id === selectedShopId);
-      
-      // Force shop re-selection if no shop selected OR current shop doesn't belong to current admin
+
       if (!selectedShopId || !currentShopBelongsToAdmin) {
-        if (primaryShopId) {
-          const shopExists = availableShops.find(shop => shop.id === primaryShopId);
-          const shopToSelect = shopExists ? primaryShopId : availableShops[0]?.id;
+        // Prefer: stored user selection → API primaryShop → first shop
+        const preferredId = storedBelongsToAdmin
+          ? storedShopId!
+          : primaryShopId;
+
+        if (preferredId) {
+          const shopExists = availableShops.find(shop => shop.id === preferredId);
+          const shopToSelect = shopExists ? preferredId : availableShops[0]?.id;
           if (shopToSelect) {
             dispatch(setSelectedShop(shopToSelect));
           }
