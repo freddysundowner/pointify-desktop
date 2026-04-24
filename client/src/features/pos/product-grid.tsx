@@ -645,7 +645,7 @@ export default function ProductGrid({
       salesnote: "",
       orderId: orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
-      ready_date: "",
+      ready_date: readyDate || "",
       batchTrack: shouldTrackBatches,
       allownegativeselling: false,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
@@ -694,8 +694,10 @@ export default function ProductGrid({
     processTransaction(false);
   };
 
+  const isLaundryShop = (shopData?.shopCategoryId?.name || '').toLowerCase().includes('laundry');
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
+  const [readyDate, setReadyDate] = useState('');
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({ name: '', phone: '', email: '', address: '' });
 
@@ -2128,7 +2130,7 @@ export default function ProductGrid({
       </Dialog>
 
       {/* Hold Transaction - Customer Required Dialog */}
-      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); } }}>
+      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); setReadyDate(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
@@ -2221,10 +2223,27 @@ export default function ProductGrid({
                 </div>
               )}
             </div>
+
+            {/* Ready Date - Laundry shops only */}
+            {isLaundryShop && (
+              <div className="mt-3">
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center space-x-1">
+                  <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                  <span>Ready Date</span>
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={readyDate}
+                  onChange={(e) => setReadyDate(e.target.value)}
+                  className="text-sm mt-1"
+                  min={new Date().toISOString().slice(0, 16)}
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}>
+            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); setReadyDate(""); }}>
               Cancel
             </Button>
             <Button
