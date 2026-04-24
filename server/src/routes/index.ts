@@ -19,6 +19,7 @@ import { registerSubscriptionRoutes } from "./subscriptions.js";
 import { registerPrinterRoutes } from "./printer.js";
 import { registerSettingsRoutes } from "./settings.js";
 import { registerInitsRoutes } from "./init.js";
+import { registerSmsRoutes } from "./sms.js";
 
 import { isElectron } from "../config.js";
 
@@ -48,6 +49,7 @@ export function registerAllRoutes(app: Express) {
   registerSubscriptionRoutes(app);
   registerPrinterRoutes(app);
   registerSettingsRoutes(app);
+  registerSmsRoutes(app);
 
 
 }
