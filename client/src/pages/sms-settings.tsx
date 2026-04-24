@@ -23,7 +23,7 @@ const SAMPLE_DATA = {
   receipt_url: "https://ptfy.link/A102",
 };
 
-const PRICE_PER_SMS = 1; // KES per SMS credit
+const PRICE_PER_SMS = 0.5; // KES per SMS credit
 
 function buildPreview(template: string): string {
   return template
