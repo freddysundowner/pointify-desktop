@@ -1,21 +1,21 @@
-          RS branch 2
+ Riverside cosmetics  branch 1
          Nakuru, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC860746
-Date: Apr 24, 2026, 02:05 PM
-Customer: fredrick 
+Receipt #: REC705370
+Date: 4/24/2026 3:26:36 PM
+Customer: Fredrick Mundia
 Attendant: Fredrick
 -------------------------------
-Body butter
- srn: 
-  1 x KES 300.00 = KES300.00
+white jeans
+ srn: undefined
+  1 x KES 20.00 = KES20.00
 -------------------------------
-Subtotal:      KES300.00
+Subtotal:      KES20.00
 Tax:           KES0.00
-TOTAL:         KES300.00
+TOTAL:         KES20.00
 
-Payment Method: credit
+Payment Method: cash
 
   Thank you for your business!
       Visit us again soon

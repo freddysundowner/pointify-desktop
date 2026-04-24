@@ -2358,13 +2358,28 @@ export default function ProductGrid({
                   <Calendar className="h-3.5 w-3.5 text-gray-500" />
                   <span>Ready Date</span>
                 </label>
-                <Input
-                  type="datetime-local"
-                  value={readyDate}
-                  onChange={(e) => setReadyDate(e.target.value)}
-                  className="text-sm mt-1"
-                  min={new Date().toISOString().slice(0, 16)}
-                />
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="date"
+                    value={readyDate ? readyDate.split('T')[0] : ''}
+                    onChange={(e) => {
+                      const datePart = e.target.value;
+                      const timePart = readyDate ? (readyDate.split('T')[1] || '00:00') : '00:00';
+                      setReadyDate(datePart ? `${datePart}T${timePart}` : '');
+                    }}
+                    className="text-sm flex-1"
+                    min={new Date().toISOString().slice(0, 10)}
+                  />
+                  <Input
+                    type="time"
+                    value={readyDate ? (readyDate.split('T')[1] || '00:00') : ''}
+                    onChange={(e) => {
+                      const datePart = readyDate ? readyDate.split('T')[0] : new Date().toISOString().slice(0, 10);
+                      setReadyDate(`${datePart}T${e.target.value}`);
+                    }}
+                    className="text-sm w-28"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -2401,13 +2416,28 @@ export default function ProductGrid({
                 <Calendar className="h-3.5 w-3.5 text-gray-500" />
                 <span>Ready Date</span>
               </label>
-              <Input
-                type="datetime-local"
-                value={readyDate}
-                onChange={(e) => setReadyDate(e.target.value)}
-                className="text-sm mt-1"
-                min={new Date().toISOString().slice(0, 16)}
-              />
+              <div className="flex gap-2 mt-1">
+                <Input
+                  type="date"
+                  value={readyDate ? readyDate.split('T')[0] : ''}
+                  onChange={(e) => {
+                    const datePart = e.target.value;
+                    const timePart = readyDate ? (readyDate.split('T')[1] || '00:00') : '00:00';
+                    setReadyDate(datePart ? `${datePart}T${timePart}` : '');
+                  }}
+                  className="text-sm flex-1"
+                  min={new Date().toISOString().slice(0, 10)}
+                />
+                <Input
+                  type="time"
+                  value={readyDate ? (readyDate.split('T')[1] || '00:00') : ''}
+                  onChange={(e) => {
+                    const datePart = readyDate ? readyDate.split('T')[0] : new Date().toISOString().slice(0, 10);
+                    setReadyDate(`${datePart}T${e.target.value}`);
+                  }}
+                  className="text-sm w-28"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
