@@ -24,6 +24,26 @@ export function registerSmsRoutes(app: Express) {
     }
   });
 
+  // Get SMS logs for an admin
+  app.get("/api/sms/sms-logs", async (req, res) => {
+    try {
+      const { adminId } = req.query;
+      const token = req.headers.authorization;
+
+      const response = await makePointifyRequest(`/sms/sms-logs?adminId=${adminId ?? ""}`, {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: token } : {}),
+        },
+      });
+
+      res.json(response);
+    } catch (error) {
+      console.error("SMS logs fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch SMS logs" });
+    }
+  });
+
   // Get SMS price per credit
   app.get("/api/sms/price", async (req, res) => {
     try {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, BadgeCheck, Info, RefreshCw, Zap, Phone, DollarSign, Smartphone } from "lucide-react";
+import { MessageSquare, BadgeCheck, Info, RefreshCw, Zap, Phone, DollarSign, Smartphone, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,9 +152,28 @@ export default function SmsSettingsPage() {
     refetchShop();
   };
 
+  const adminId = shopData?.adminId?._id || admin?._id || "";
+
+  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
+    queryKey: ["sms-logs", adminId],
+    queryFn: async () => {
+      if (!adminId) return [];
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/sms/sms-logs?adminId=${adminId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch SMS logs");
+      const data = await res.json();
+      return Array.isArray(data) ? data : (data?.data ?? data?.logs ?? []);
+    },
+    enabled: !!adminId,
+  });
+
   const smsCredits: number = shopData?.adminId?.smscredit ?? shopData?.smscredit ?? 0;
   const parsedAmount = parseFloat(topUpAmount) || 0;
   const estimatedCredits = parsedAmount > 0 ? Math.floor(parsedAmount / PRICE_PER_SMS) : 0;
+
+  const logs: any[] = logsData ?? [];
 
   return (
     <DashboardLayout>
@@ -278,6 +297,81 @@ export default function SmsSettingsPage() {
               <span>Updates as you edit</span>
             </div>
           </div>
+        </div>
+
+        {/* SMS Logs */}
+        <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">SMS Logs</p>
+            <button
+              onClick={() => refetchLogs()}
+              className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+            >
+              <RefreshCw className={`w-3 h-3 ${logsLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
+
+          {logsLoading ? (
+            <div className="flex items-center justify-center py-10 text-xs text-gray-400 gap-2">
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading logs...
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+              <MessageSquare className="w-8 h-8 mb-2 opacity-30" />
+              <p className="text-xs">No SMS logs found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500">Recipient</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500">Message</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500">Status</th>
+                    <th className="text-left px-4 py-2 font-semibold text-gray-500">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {logs.map((log: any, i: number) => {
+                    const status = (log.status || log.deliveryStatus || "").toLowerCase();
+                    const isDelivered = status === "delivered" || status === "success" || status === "sent";
+                    const isFailed = status === "failed" || status === "error" || status === "undelivered";
+                    return (
+                      <tr key={log._id ?? i} className="hover:bg-gray-50/60">
+                        <td className="px-4 py-2 font-medium text-gray-800">
+                          {log.recipient || log.phone || log.to || "—"}
+                        </td>
+                        <td className="px-4 py-2 text-gray-500 max-w-xs truncate">
+                          {log.message || log.body || "—"}
+                        </td>
+                        <td className="px-4 py-2">
+                          {isDelivered ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 font-medium">
+                              <CheckCircle2 className="w-3 h-3" /> Delivered
+                            </span>
+                          ) : isFailed ? (
+                            <span className="inline-flex items-center gap-1 text-red-500 font-medium">
+                              <XCircle className="w-3 h-3" /> Failed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-yellow-500 font-medium">
+                              <Clock className="w-3 h-3" /> {log.status || "Pending"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-gray-400 whitespace-nowrap">
+                          {log.createdAt || log.date || log.sentAt
+                            ? new Date(log.createdAt || log.date || log.sentAt).toLocaleString()
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
