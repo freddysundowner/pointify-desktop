@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -114,6 +114,12 @@ export default function ProductGrid({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
+
+  // Custom item states
+  const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
+  const [customItemName, setCustomItemName] = useState("");
+  const [customItemPrice, setCustomItemPrice] = useState("");
+  const [isCreatingCustomItem, setIsCreatingCustomItem] = useState(false);
 
   // Local search function
   const searchLocally = (query: string) => {
@@ -511,6 +517,45 @@ export default function ProductGrid({
     setShowDiscountDialog(false);
     setSelectedDiscountItem(null);
     setDiscountAmount("");
+  };
+
+  const handleCreateCustomItem = async () => {
+    const price = parseFloat(customItemPrice);
+    if (!customItemName.trim()) {
+      toast({ title: "Item name required", variant: "destructive" });
+      return;
+    }
+    if (!customItemPrice || isNaN(price) || price <= 0) {
+      toast({ title: "Enter a valid price", variant: "destructive" });
+      return;
+    }
+    setIsCreatingCustomItem(true);
+    try {
+      const product = await apiCall("/api/product", {
+        method: "POST",
+        body: JSON.stringify({
+          name: customItemName.trim(),
+          shopId,
+          attendantId: attendant?._id || (attendant as any)?.id,
+          admin: adminId,
+          sellingPrice: price,
+          wholesalePrice: price,
+          dealerPrice: price,
+          buyingPrice: 0,
+          quantity: 0,
+          productType: "service",
+        }),
+      });
+      onAddToCart(product);
+      setShowCustomItemDialog(false);
+      setCustomItemName("");
+      setCustomItemPrice("");
+      toast({ title: "Custom item added", description: `"${product.name}" added to cart` });
+    } catch (err: any) {
+      toast({ title: "Failed to add item", description: err.message || "Could not create custom item", variant: "destructive" });
+    } finally {
+      setIsCreatingCustomItem(false);
+    }
   };
 
   const processTransaction = async (isHold = false) => {
@@ -1002,7 +1047,8 @@ export default function ProductGrid({
           {/* Table Mode - Product Search Bar */}
           {viewMode === 'table' && (
             <div className="mb-4">
-              <div className="relative">
+              <div className="flex gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   type="text"
@@ -1072,6 +1118,16 @@ export default function ProductGrid({
                     )}
                   </div>
                 )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCustomItemDialog(true)}
+                className="h-10 px-3 border-dashed border-purple-400 text-purple-600 hover:bg-purple-50 whitespace-nowrap shrink-0"
+              >
+                <PlusCircle className="h-4 w-4 mr-1.5" />
+                Custom Item
+              </Button>
               </div>
             </div>
           )}
@@ -2406,6 +2462,51 @@ export default function ProductGrid({
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
               {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Item Dialog */}
+      <Dialog open={showCustomItemDialog} onOpenChange={(open) => { setShowCustomItemDialog(open); if (!open) { setCustomItemName(""); setCustomItemPrice(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Custom Item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Item Name</label>
+              <Input
+                placeholder="e.g. Delivery fee, Special order..."
+                value={customItemName}
+                onChange={(e) => setCustomItemName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomItem()}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Price (Ksh)</label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                value={customItemPrice}
+                onChange={(e) => setCustomItemPrice(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomItem()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowCustomItemDialog(false); setCustomItemName(""); setCustomItemPrice(""); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateCustomItem}
+              disabled={isCreatingCustomItem || !customItemName.trim() || !customItemPrice}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isCreatingCustomItem ? 'Adding...' : 'Add to Cart'}
             </Button>
           </DialogFooter>
         </DialogContent>
