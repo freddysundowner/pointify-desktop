@@ -1,0 +1,26 @@
+          RS branch 2
+         Nakuru, Kenya
+         SALES RECEIPT
+-------------------------------
+Receipt #: REC511215
+Date: Apr 24, 2026, 11:02 AM
+Customer: fredrick 
+Attendant: Fredrick
+-------------------------------
+black clothes
+ srn: 
+  1 x KES 200.00 = KES200.00
+-------------------------------
+Subtotal:      KES200.00
+Tax:           KES0.00
+TOTAL:         KES200.00
+
+Payment Method: credit
+
+  Thank you for your business!
+      Visit us again soon
+
+
+
+
+i
