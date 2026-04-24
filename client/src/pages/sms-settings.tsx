@@ -113,10 +113,11 @@ export default function SmsSettingsPage() {
   const topUpMutation = useMutation({
     mutationFn: async ({ phone, amount }: { phone: string; amount: number }) => {
       const token = localStorage.getItem("token");
+      const userId = shopData?.adminId?._id || admin?._id;
       const res = await fetch("/api/sms/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ phone, amount }),
+        body: JSON.stringify({ phone, amount, userId }),
       });
       const data = await res.json();
       if (data?.error) throw new Error(data.error);
