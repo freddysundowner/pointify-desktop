@@ -15,7 +15,7 @@ interface ShopState {
 }
 
 const initialState: ShopState = {
-  selectedShopId: null,
+  selectedShopId: localStorage.getItem('selectedShopId') || null,
   availableShops: [],
   isLoading: false,
   error: null,
