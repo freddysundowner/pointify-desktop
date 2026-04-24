@@ -153,7 +153,7 @@ export default function ReceiptView() {
         : "",
   });
 
-  const getReceiptHtml = (autoPrint = false) => `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
+  const getReceiptHtml = () => `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
 <style>
   *{box-sizing:border-box}
   body{font-family:'Courier New',Courier,monospace;margin:0;background:#f5f5f5;display:flex;justify-content:center;padding:20px}
@@ -166,7 +166,6 @@ export default function ReceiptView() {
   .item-detail{display:flex;justify-content:space-between;font-size:12px;padding-left:8px;color:#444}
   @media print{body{background:#fff;padding:0}.receipt{box-shadow:none;width:100%}}
 </style>
-${autoPrint ? '<script>window.onload=function(){window.print();}<\/script>' : ''}
 </head><body><div class="receipt">
 <div class="center bold" style="font-size:15px;text-transform:uppercase">${saleData.shop.name}</div>
 ${saleData.shop.address ? `<div class="center small">${saleData.shop.address}</div>` : ""}
@@ -227,9 +226,14 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 
   const openReceiptWindow = (autoPrint: boolean) => {
     const printWindow = window.open("", "_blank", "width=420,height=750");
-    if (printWindow) {
-      printWindow.document.write(getReceiptHtml(autoPrint));
-      printWindow.document.close();
+    if (!printWindow) return;
+    printWindow.document.write(getReceiptHtml());
+    printWindow.document.close();
+    if (autoPrint) {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+      }, 600);
     }
   };
 
