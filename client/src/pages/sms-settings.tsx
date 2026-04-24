@@ -158,143 +158,127 @@ export default function SmsSettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6 pb-10">
-        {/* Page header */}
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">SMS Settings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Configure automatic SMS notifications sent after a sale
-          </p>
+      <div className="space-y-4 pb-6">
+        {/* Page header + save */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-base font-bold text-gray-900">SMS Settings</h1>
+            <p className="text-xs text-gray-500">Configure automatic SMS notifications sent after a sale</p>
+          </div>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending || !shopId}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm"
+          >
+            {saveMutation.isPending ? (
+              <span className="flex items-center gap-1.5">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                Saving...
+              </span>
+            ) : "Save Settings"}
+          </Button>
         </div>
 
-        {/* Credits summary card */}
-        <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-orange-500" />
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left col — credits + config */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Credits card */}
+            <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+                  <MessageSquare className="w-4 h-4 text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">SMS Credits</p>
+                  <p className="text-xl font-bold text-gray-900 leading-none mt-0.5">
+                    {isLoading ? "—" : smsCredits.toLocaleString()}
+                  </p>
+                </div>
               </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <Info className="w-3 h-3" /> 1 credit per SMS
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700 font-semibold"
+                  onClick={() => setShowTopUpDialog(true)}
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1" />
+                  Top Up
+                </Button>
+              </div>
+            </div>
+
+            {/* Config card */}
+            <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 space-y-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</p>
+
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">Enable SMS after sale</p>
+                  <p className="text-xs text-gray-400">Send SMS to customer when a sale is completed</p>
+                </div>
+                <Switch
+                  checked={smsEnabled}
+                  onCheckedChange={setSmsEnabled}
+                  className="data-[state=checked]:bg-orange-500 shrink-0"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                    <BadgeCheck className="w-3 h-3 text-gray-400" /> Sender Name
+                  </label>
+                  <Input
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    disabled={!smsEnabled}
+                    placeholder="e.g. POINTIFY"
+                    maxLength={11}
+                    className="text-sm h-8 disabled:opacity-50"
+                  />
+                  <p className="text-xs text-gray-400 mt-0.5">Max 11 characters</p>
+                </div>
+              </div>
+
               <div>
-                <p className="text-xs text-gray-500 font-medium">SMS Credits</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {isLoading ? "—" : smsCredits.toLocaleString()}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700 font-semibold"
-              onClick={() => setShowTopUpDialog(true)}
-            >
-              <Zap className="w-3.5 h-3.5 mr-1.5" />
-              Top Up
-            </Button>
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-xs text-gray-500">
-            <Info className="w-3.5 h-3.5 shrink-0" />
-            <span>Each SMS sent deducts 1 credit from your balance.</span>
-          </div>
-        </div>
-
-        {/* Configuration section */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            Configuration
-          </p>
-          <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5 space-y-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">Enable SMS after sale</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Automatically send an SMS to the customer when a sale is completed
-                </p>
-              </div>
-              <Switch
-                checked={smsEnabled}
-                onCheckedChange={setSmsEnabled}
-                className="data-[state=checked]:bg-orange-500 mt-0.5 shrink-0"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-                <BadgeCheck className="w-3.5 h-3.5 text-gray-400" />
-                Sender Name
-              </label>
-              <Input
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                disabled={!smsEnabled}
-                placeholder="e.g. POINTIFY"
-                maxLength={11}
-                className="text-sm disabled:opacity-50"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Maximum 11 characters. Shown as the message sender on the recipient's phone.
-              </p>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-700 mb-1.5 block">
-                Sale SMS Template
-              </label>
-              <Textarea
-                value={template}
-                onChange={(e) => setTemplate(e.target.value)}
-                disabled={!smsEnabled}
-                rows={5}
-                placeholder={DEFAULT_TEMPLATE}
-                className="text-sm resize-none disabled:opacity-50"
-              />
-              <div className="mt-2 rounded-xl bg-orange-50 border border-orange-200 px-3.5 py-2.5">
-                <p className="text-xs text-gray-700 leading-relaxed">
-                  <span className="font-semibold text-orange-700">Available placeholders:</span>{" "}
-                  <code className="text-orange-600">{"{name}"}</code>,{" "}
-                  <code className="text-orange-600">{"{shop}"}</code>,{" "}
-                  <code className="text-orange-600">{"{amount}"}</code>,{" "}
-                  <code className="text-orange-600">{"{receipt}"}</code>,{" "}
-                  <code className="text-orange-600">{"{receipt_url}"}</code>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">SMS Template</label>
+                <Textarea
+                  value={template}
+                  onChange={(e) => setTemplate(e.target.value)}
+                  disabled={!smsEnabled}
+                  rows={3}
+                  placeholder={DEFAULT_TEMPLATE}
+                  className="text-sm resize-none disabled:opacity-50"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Placeholders:{" "}
+                  {["{name}", "{shop}", "{amount}", "{receipt}", "{receipt_url}"].map((p) => (
+                    <code key={p} className="text-orange-600 mr-1">{p}</code>
+                  ))}
                 </p>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Preview section */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-            Preview
-          </p>
-          <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-gray-500 mb-3">Sample message</p>
-            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
+          {/* Right col — preview */}
+          <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 h-fit">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Preview</p>
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-3">
               <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
                 {buildPreview(template || DEFAULT_TEMPLATE)}
               </p>
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="mt-2 flex items-center gap-1 text-xs text-gray-400">
               <RefreshCw className="w-3 h-3" />
-              <span>Preview updates as you edit the template above</span>
+              <span>Updates as you edit</span>
             </div>
           </div>
         </div>
-
-        {/* Save button */}
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={saveMutation.isPending || !shopId}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-6 rounded-xl text-sm"
-        >
-          {saveMutation.isPending ? (
-            <span className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              Saving...
-            </span>
-          ) : (
-            "Save SMS Settings"
-          )}
-        </Button>
       </div>
 
       {/* Top-up dialog */}
