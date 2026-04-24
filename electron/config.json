@@ -10,7 +10,7 @@
   "database": {
     "url": "mongodb://127.0.0.1:27017/pointify-win",
     "sourceUrl": "mongodb://127.0.0.1:27017/postaging",  
-    "sourceApiUrl": "https://api.pointifypos.com",                        
+    "sourceApiUrl": "https://staging.pointifypos.com",                        
     "sourceApiToken": "",                                                  
     "readyDelay": 5000,
     "seedingMaxRetries": 15,
@@ -47,7 +47,7 @@
     "port": 9001,
     "host": "localhost",
     "dumpsDir": "dumps",
-    "online_api": "https://api.pointifypos.com",
+    "online_api": "https://staging.pointifypos.com",
     "offline_api": "http://localhost:2039",
     "api_mode": "hybrid",
     "healthCheckTimeout": 8000,
@@ -99,7 +99,7 @@
   },
   "updates": {
     "autoCheck": true,
-    "checkUrl": "https://api.pointifypos.com/sync/checkupdate/desktop",
+    "checkUrl": "https://staging.pointifypos.com/sync/checkupdate/desktop",
     "downloadUrl": "https://pointifypos.com/installers/",
     "timeout": 10000,
     "downloadTimeout": 300000,
