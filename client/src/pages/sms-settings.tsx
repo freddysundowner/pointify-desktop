@@ -179,15 +179,15 @@ export default function SmsSettingsPage() {
     <DashboardLayout>
       <div className="space-y-4 pb-6">
         {/* Page header + save */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0">
             <h1 className="text-base font-bold text-gray-900">SMS Settings</h1>
             <p className="text-xs text-gray-500">Configure automatic SMS notifications sent after a sale</p>
           </div>
           <Button
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending || !shopId}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm"
+            className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm"
           >
             {saveMutation.isPending ? (
               <span className="flex items-center gap-1.5">
