@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
+import nodemailer from "nodemailer";
 
 // Authentication middleware to extract token from Authorization header
 const extractToken = (req: any) => {
@@ -684,6 +685,51 @@ export function registerSalesRoutes(app: Express) {
       res.json(data);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to fetch online sales orders" });
+    }
+  });
+
+  // Send receipt via email
+  app.post("/api/sales/email-receipt", async (req, res) => {
+    try {
+      const { toEmail, receiptHtml, receiptNo, shopName, customerName, total, currency } = req.body;
+
+      if (!toEmail || !receiptHtml) {
+        return res.status(400).json({ success: false, error: "Email address and receipt data are required" });
+      }
+
+      const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+      const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASS;
+      const fromName = process.env.SMTP_FROM_NAME || shopName || "Pointify POS";
+      const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
+
+      if (!smtpUser || !smtpPass) {
+        return res.status(503).json({
+          success: false,
+          error: "Email service not configured. Please set SMTP_USER and SMTP_PASS environment variables.",
+          notConfigured: true
+        });
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+
+      await transporter.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: toEmail,
+        subject: `Your Receipt #${receiptNo} from ${shopName}`,
+        html: receiptHtml,
+      });
+
+      res.json({ success: true, message: "Receipt sent successfully" });
+    } catch (error: any) {
+      console.error("Email receipt error:", error);
+      res.status(500).json({ success: false, error: error.message || "Failed to send email" });
     }
   });
 

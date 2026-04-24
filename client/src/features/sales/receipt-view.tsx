@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Download, Mail, Printer, ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Download, Mail, Printer, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -22,6 +24,10 @@ export default function ReceiptView() {
   const [sale, setSale] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (!saleId) {
@@ -258,12 +264,46 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
     openReceiptWindow(false);
   };
 
-  const handleEmail = async () => {
-    const customerEmail = prompt("Enter customer email address:");
-    if (!customerEmail) return;
-    const subject = `Receipt #${saleData.receiptNo} - ${saleData.shop.name}`;
-    const body = `Dear ${saleData.customerName},\n\nThank you for your purchase at ${saleData.shop.name}!\n\nReceipt #: ${saleData.receiptNo}\nDate: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}\nTotal: ${fmt(saleData.totalWithDiscount)}\nPayment: ${saleData.paymentTag}\n\nItems:\n${saleData.items.map((i: any) => `- ${i.productName} x${i.quantity} = ${fmt(i.totalPrice)}`).join("\n")}\n\nThank you!`;
-    window.open(`mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  const handleEmail = () => {
+    setEmailInput(saleData.customerEmail || "");
+    setEmailSent(false);
+    setShowEmailDialog(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!emailInput.trim()) return;
+    setIsSendingEmail(true);
+    try {
+      const response = await apiCall("/api/sales/email-receipt", {
+        method: "POST",
+        body: JSON.stringify({
+          toEmail: emailInput.trim(),
+          receiptHtml: getReceiptHtml(),
+          receiptNo: saleData.receiptNo,
+          shopName: saleData.shop.name,
+          customerName: saleData.customerName,
+          total: fmt(saleData.totalWithDiscount),
+          currency,
+        }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setEmailSent(true);
+      } else if (result.notConfigured) {
+        toast({
+          title: "Email not configured",
+          description: "Set SMTP_USER and SMTP_PASS in your environment variables to enable email sending.",
+          variant: "destructive",
+        });
+        setShowEmailDialog(false);
+      } else {
+        toast({ title: "Failed to send", description: result.error || "Unknown error", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message || "Network error", variant: "destructive" });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const isSplit = saleData.paymentTag === "split";
@@ -491,6 +531,68 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
           </div>
         </div>
       </div>
+
+      {/* Email Receipt Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={(open) => { if (!open) { setShowEmailDialog(false); setEmailSent(false); } }}>
+        <DialogContent className="max-w-sm">
+          {emailSent ? (
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <div className="rounded-full bg-green-100 p-4">
+                <CheckCircle2 className="h-10 w-10 text-green-500" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Email Sent!</h2>
+                <p className="text-sm text-gray-500 mt-1">Receipt has been sent to <span className="font-medium text-gray-700">{emailInput}</span></p>
+              </div>
+              <Button className="w-full mt-2" onClick={() => { setShowEmailDialog(false); setEmailSent(false); }}>
+                Done
+              </Button>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-blue-500" />
+                  Email Receipt
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-2 space-y-3">
+                <p className="text-sm text-gray-600">
+                  Send receipt <span className="font-medium">#{saleData.receiptNo}</span> to:
+                </p>
+                <Input
+                  type="email"
+                  placeholder="customer@email.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendEmail()}
+                  autoFocus
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+                <Button
+                  onClick={handleSendEmail}
+                  disabled={!emailInput.trim() || isSendingEmail}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
