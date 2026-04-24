@@ -1007,8 +1007,8 @@ export default function CustomerOverview() {
               <div class="info-value">${currentDate}</div>
             </div>
             <div class="info-section">
-              <div class="info-label">Customer ID:</div>
-              <div class="info-value">${customerOverviewData._id}</div>
+              <div class="info-label">Phone:</div>
+              <div class="info-value">${(customerData as any)?.phonenumber || (customerData as any)?.phone || 'N/A'}</div>
             </div>
           </div>
 
@@ -1058,14 +1058,6 @@ export default function CustomerOverview() {
             </div>
           </div>
 
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
-            };
-          </script>
         </body>
       </html>
     `;
@@ -1073,9 +1065,15 @@ export default function CustomerOverview() {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 
+    // Trigger print after content loads
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 600);
+
     toast({
-      title: "PDF Generated",
-      description: "Customer statement PDF is ready for download/print",
+      title: "Statement Ready",
+      description: "Customer statement is opening for print/save",
     });
   };
 
