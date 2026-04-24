@@ -251,22 +251,34 @@ function SalesList() {
   };
 
   // Fetch sales report analysis data
-  const { data: salesReportData, isLoading: isReportLoading } = useQuery({
+  const { data: salesReportData, isLoading: isReportLoading, refetch: refetchReport } = useQuery({
     queryKey: [`/api/analysis/report/sales?${buildReportParams()}`],
+    staleTime: 0,
+    refetchOnMount: "always",
     // enabled: !!shopId
   });
 
-  // Refresh data when returning to the page (focus only, not on navigation)
+  // Refresh both the sales list and summary stats whenever the user navigates to this page
+  useEffect(() => {
+    const isSalesPage = location === "/sales" || location === "/attendant/sales";
+    if (isSalesPage) {
+      refetch();
+      refetchReport();
+    }
+  }, [location]);
+
+  // Also refresh on window focus (e.g. switching browser tabs back)
   useEffect(() => {
     const handleFocus = () => {
       if (location === "/sales" || location === "/attendant/sales") {
         refetch();
+        refetchReport();
       }
     };
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [location, refetch]);
+  }, [location, refetch, refetchReport]);
 
   const salesData = (salesResponse as any)?.data || [];
   const totalCount = (salesResponse as any)?.count || 0;
