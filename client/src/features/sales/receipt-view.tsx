@@ -1,75 +1,55 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import ReceiptHeader from "@/components/ui/receipt-header";
 import { Download, Mail, Printer, ArrowLeft } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/features/auth/useAuth";
-import type { Sale } from "@shared/schema";
 import { apiCall } from "@/lib/api-config";
 import { toast } from "@/hooks/use-toast";
 
 export default function ReceiptView() {
-  // Try both admin and attendant routes
   const [adminMatch, adminParams] = useRoute("/receipt/:id");
   const [attendantMatch, attendantParams] = useRoute("/attendant/receipt/:id");
-  
-  // Extract sale ID from whichever route matched
+
   const match = adminMatch || attendantMatch;
   const params = adminParams || attendantParams;
   const saleId = params?.id;
-    const adminData = localStorage.getItem('adminData');
+
+  const adminData = localStorage.getItem("adminData");
   const admin = adminData ? JSON.parse(adminData) : null;
-  
-  // Primary shop is nested under admin data
   const primaryShop = admin?.primaryShop;
 
-  // Get sale data from navigation state or fallback to API
   const [sale, setSale] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!saleId) {
-      setError('Sale ID is required');
+      setError("Sale ID is required");
       setIsLoading(false);
       return;
     }
 
-    // Try to get data from window object first (passed from customer overview)
     const passedData = (window as any).__receiptData;
     if (passedData && passedData._id === saleId) {
-      console.log('Using passed receipt data:', passedData);
       setSale(passedData);
       setIsLoading(false);
-      // Clear the data after use
       delete (window as any).__receiptData;
       return;
     }
 
-    // Fallback to API call if no navigation state
     const fetchSaleData = async () => {
       try {
         const response = await fetch(`/api/sales/single/receipt/${saleId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          },
-          credentials: 'include'
+          method: "GET",
+          headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+          credentials: "include",
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch sale data');
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch sale data");
         const data = await response.json();
         setSale(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch sale data');
+        setError(err instanceof Error ? err.message : "Failed to fetch sale data");
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +63,7 @@ export default function ReceiptView() {
       <DashboardLayout title="Loading Receipt...">
         <div className="p-6 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading receipt details...</p>
+          <p className="text-gray-600">Loading receipt details...</p>
         </div>
       </DashboardLayout>
     );
@@ -93,12 +73,8 @@ export default function ReceiptView() {
     return (
       <DashboardLayout title="Receipt Not Found">
         <div className="p-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Receipt Not Found
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            The requested receipt could not be found.
-          </p>
+          <h1 className="text-2xl font-bold mb-4">Receipt Not Found</h1>
+          <p className="text-gray-600">The requested receipt could not be found.</p>
           <Button className="mt-4" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
@@ -107,465 +83,382 @@ export default function ReceiptView() {
       </DashboardLayout>
     );
   }
-  console.log('sale', sale);
- const printThermal = async (receiptData = getPrintData()) => {
-  console.log('Thermal print data:', receiptData);
-  if (receiptData && typeof receiptData.preventDefault === 'function') {
-    receiptData = getPrintData();
-  }
-  if (!receiptData) {
-    receiptData = getPrintData();
-  }
-  try {
-    const response = await apiCall('/api/printer/salereceipt', {
-      method: 'POST',
-      body: JSON.stringify(receiptData)
-    });
-    const respo = await response.json();
-    if (respo.success) {
-      toast({
-        title: "Receipt Printed",
-      });
-    } else {
-      console.log('Thermal printing failed');
-    } 
-  } catch (error) {
-    console.log('Thermal printing error:', error);
-  } 
-};
-   const getPrintData = () => {
-    const date = new Date(sale?.createdAt);
 
-    const readableDate = date.toLocaleDateString(); // e.g. "7/14/2025"
-    const readableTime = date.toLocaleTimeString(); // e.g. "2:01:41 PM"
-    const receiptData = {
-        shopName: primaryShop?.name || 'Business Name',
-        shopAddress: primaryShop?.address || '',
-        receiptNumber: sale?.receiptNo.toString(),
-        date: `${readableDate} ${readableTime}`,
-        currency: primaryShop.currency,
-        items: sale?.items.map((item: { name: any; quantity: any; price: any; total: any; }) => ({
-          name: item?.product?.name,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          total: item.unitPrice * item.quantity,
-          serialnumber: item?.serialnumber
-        })),
-        subtotal: sale?.items.reduce((total, item) => total + item.unitPrice * item.quantity, 0),
-        tax: sale?.totaltax,
-        total: sale?.totalWithDiscount,
-        paymentMethod: sale?.paymentType,
-        customerName: sale?.customerId?.name || 'Walk-in',
-        attendant: sale?.attendantId?.username,
-        // Handle split payments
-        splitPayment: sale?.paymentType === 'split' ? {
-          cash: sale?.amountPaid || 0,
-          mpesa: sale?.mpesaTotal || 0,
-          bank: sale?.bankTotal || 0
-        } : ''
-      };
-      return receiptData;
-  }
-  const handlePrint = () => {
-    // window.print();
-    printThermal();
+  const saleData = {
+    id: sale._id || sale.id,
+    receiptNo: sale.receiptNo || sale._id,
+    customerName: sale.customerId?.name || "Walk-in",
+    totalAmount: sale.totalAmount || 0,
+    totalWithDiscount: sale.totalWithDiscount || sale.totalAmount || 0,
+    totaltax: sale.totaltax || 0,
+    saleDiscount: sale.saleDiscount || 0,
+    saleDate: sale.createdAt || sale.saleDate,
+    status: sale.status === "cashed" ? "COMPLETED" : (sale.status || "").toUpperCase(),
+    paymentTag: sale.paymentTag || sale.paymentType || "cash",
+    saleType: sale.saleType || "Retail",
+    salesnote: sale.salesnote || "",
+    items: (sale.items || []).map((item: any) => ({
+      productName: item.product?.name || item.productName || "Unknown Product",
+      quantity: item.quantity || 0,
+      unitPrice: item.unitPrice || 0,
+      lineDiscount: item.lineDiscount || 0,
+      totalPrice: (item.quantity || 0) * (item.unitPrice || 0),
+    })),
+    attendantName: sale.attendantId?.username || "Unknown",
+    amountPaid: sale.amountPaid || 0,
+    outstandingBalance: sale.outstandingBalance || 0,
+    mpesaTotal: sale.mpesaTotal || sale.mpesaNewTotal || 0,
+    bankTotal: sale.bankTotal || 0,
+    mpesaTransId: sale.mpesaTransId || "",
+    bankTransId: sale.bankTransId || "",
+    shop: {
+      name: sale.shopId?.name || sale.shopId?.shopName || primaryShop?.name || "Shop",
+      address: sale.shopId?.address || primaryShop?.address || "",
+      address_receipt: sale.shopId?.address_receipt || primaryShop?.address_receipt || "",
+      contact: sale.shopId?.contact || sale.shopId?.phone || primaryShop?.contact || "",
+      receiptemail: sale.shopId?.receiptemail || sale.shopId?.email || primaryShop?.receiptemail || "",
+      paybill_account: sale.shopId?.paybill_account || primaryShop?.paybill_account || "",
+      paybill_till: sale.shopId?.paybill_till || primaryShop?.paybill_till || "",
+      currency: sale.shopId?.currency || primaryShop?.currency || "KES",
+    },
+  };
+
+  const currency = saleData.shop.currency;
+  const fmt = (n: number) => `${currency} ${Number(n).toFixed(2)}`;
+  const subtotal = saleData.items.reduce((s: number, i: any) => s + i.totalPrice, 0);
+  const itemDiscounts = saleData.items.reduce((s: number, i: any) => s + (i.lineDiscount || 0), 0);
+  const date = new Date(saleData.saleDate);
+
+  const getPrintData = () => ({
+    shopName: saleData.shop.name,
+    shopAddress: saleData.shop.address,
+    receiptNumber: saleData.receiptNo?.toString(),
+    date: `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+    currency,
+    items: saleData.items.map((item: any) => ({
+      name: item.productName,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.totalPrice,
+    })),
+    subtotal,
+    tax: saleData.totaltax,
+    total: saleData.totalWithDiscount,
+    paymentMethod: saleData.paymentTag,
+    customerName: saleData.customerName,
+    attendant: saleData.attendantName,
+    splitPayment:
+      saleData.paymentTag === "split"
+        ? { cash: saleData.amountPaid, mpesa: saleData.mpesaTotal, bank: saleData.bankTotal }
+        : "",
+  });
+
+  const handlePrint = async () => {
+    try {
+      const response = await apiCall("/api/printer/salereceipt", {
+        method: "POST",
+        body: JSON.stringify(getPrintData()),
+      });
+      const res = await response.json();
+      if (res.success) {
+        toast({ title: "Receipt Printed" });
+      } else {
+        window.print();
+      }
+    } catch {
+      window.print();
+    }
   };
 
   const handleDownload = () => {
-    if (!saleData) return;
-
-    // Create clean HTML for PDF
-    const receiptHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Receipt #${saleData.receiptNo}</title>
-          <meta charset="UTF-8">
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 20px; 
-              line-height: 1.4;
-              color: #333;
-            }
-            .receipt-header { 
-              text-center; 
-              border-bottom: 2px solid #ccc; 
-              padding-bottom: 15px; 
-              margin-bottom: 20px; 
-            }
-            .shop-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-            .shop-details { font-size: 12px; color: #666; }
-            .receipt-details { 
-              display: grid; 
-              grid-template-columns: 1fr 1fr; 
-              gap: 20px; 
-              margin-bottom: 20px; 
-              font-size: 14px;
-            }
-            .section-title { font-weight: bold; margin-bottom: 8px; }
-            .items-table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-bottom: 20px; 
-              font-size: 12px;
-            }
-            .items-table th, .items-table td { 
-              border: 1px solid #ddd; 
-              padding: 8px; 
-              text-align: left; 
-            }
-            .items-table th { 
-              background-color: #f5f5f5; 
-              font-weight: bold;
-            }
-            .items-table .text-right { text-align: right; }
-            .items-table .text-center { text-align: center; }
-            .totals { 
-              margin-top: 20px; 
-              font-size: 14px;
-            }
-            .total-row { 
-              display: flex; 
-              justify-content: space-between; 
-              margin-bottom: 5px;
-            }
-            .total-final { 
-              border-top: 2px solid #000; 
-              font-weight: bold; 
-              font-size: 16px;
-              padding-top: 8px;
-            }
-            .footer { 
-              text-align: center; 
-              margin-top: 30px; 
-              font-size: 12px; 
-              color: #666;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="receipt-header">
-            <div class="shop-name">${saleData.shop?.name || 'Shop Name'}</div>
-            <div class="shop-details">
-              ${saleData.shop?.address ? `<div>${saleData.shop.address}</div>` : ''}
-              ${saleData.shop?.contact ? `<div>Phone: ${saleData.shop.contact}</div>` : ''}
-              ${saleData.shop?.receiptemail ? `<div>Email: ${saleData.shop.receiptemail}</div>` : ''}
-            </div>
-            <h2 style="margin: 15px 0;">Sales Receipt</h2>
-          </div>
-          
-          <div class="receipt-details">
-            <div>
-              <div class="section-title">Receipt Details</div>
-              <div>Receipt #: ${saleData.receiptNo}</div>
-              <div>Date: ${new Date(saleData.saleDate).toLocaleDateString()}</div>
-              <div>Time: ${new Date(saleData.saleDate).toLocaleTimeString()}</div>
-              <div>Status: ${saleData.status?.toUpperCase()}</div>
-            </div>
-            <div>
-              <div class="section-title">Transaction Information</div>
-              <div>Customer: ${saleData.customerName}</div>
-              <div>Payment: ${saleData.paymentTag}</div>
-              <div>Sale Type: ${saleData.saleType}</div>
-              <div>Attendant: ${saleData.attendantName}</div>
-            </div>
-          </div>
-
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th class="text-center">Qty</th>
-                <th class="text-right">Unit Price</th>
-                <th class="text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${saleData.items?.map(item => `
-                <tr>
-                  <td>${item.productName}</td>
-                  <td class="text-center">${item.quantity}</td>
-                  <td class="text-right">${saleData.shop?.currency} ${item.unitPrice.toFixed(2)}</td>
-                  <td class="text-right">${saleData.shop?.currency} ${item.totalPrice.toFixed(2)}</td>
-                </tr>
-              `).join('') || ''}
-            </tbody>
-          </table>
-
-          <div class="totals">
-            <div class="total-row">
-              <span>Subtotal:</span>
-              <span>${saleData.shop?.currency} ${saleData.totalAmount?.toFixed(2)}</span>
-            </div>
-            <div class="total-row">
-              <span>Tax:</span>
-              <span>${saleData.shop?.currency} ${(saleData.totaltax || 0)?.toFixed(2)}</span>
-            </div>
-            <div class="total-row total-final">
-              <span>Total:</span>
-              <span>${saleData.shop?.currency} ${((saleData.totalAmount || 0) + (saleData.totaltax || 0))?.toFixed(2)}</span>
-            </div>
-            ${saleData.paymentTag === 'split' ? `
-              <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd;">
-                <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">Payment Breakdown:</div>
-                ${(sale as any)?.amountPaid > 0 ? `
-                  <div class="total-row" style="font-size: 12px;">
-                    <span>Cash:</span>
-                    <span>${saleData.shop?.currency} ${((sale as any)?.amountPaid || 0).toFixed(2)}</span>
-                  </div>
-                ` : ''}
-                ${(sale as any)?.mpesaNewTotal > 0 ? `
-                  <div class="total-row" style="font-size: 12px;">
-                    <span>M-Pesa:</span>
-                    <span>${saleData.shop?.currency} ${((sale as any)?.mpesaNewTotal || 0).toFixed(2)}</span>
-                  </div>
-                ` : ''}
-                ${(sale as any)?.bankTotal > 0 ? `
-                  <div class="total-row" style="font-size: 12px;">
-                    <span>Bank:</span>
-                    <span>${saleData.shop?.currency} ${((sale as any)?.bankTotal || 0).toFixed(2)}</span>
-                  </div>
-                ` : ''}
-              </div>
-            ` : ''}
-          </div>
-
-          <div class="footer">
-            <div>Thank you for your business!</div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // Open print dialog for PDF saving only
-    const printWindow = window.open('', '', 'width=800,height=600');
+    const receiptHtml = `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
+<style>
+  body{font-family:monospace;margin:0;background:#f5f5f5;display:flex;justify-content:center;padding:20px}
+  .receipt{background:#fff;width:320px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .center{text-align:center}.bold{font-weight:bold}.small{font-size:11px}.divider{border-top:1px dashed #999;margin:8px 0}
+  .row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+  .total-row{display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin:4px 0}
+</style></head><body><div class="receipt">
+<div class="center bold" style="font-size:16px">${saleData.shop.name}</div>
+${saleData.shop.address ? `<div class="center small">${saleData.shop.address}</div>` : ""}
+${saleData.shop.contact ? `<div class="center small">Tel: ${saleData.shop.contact}</div>` : ""}
+${saleData.shop.receiptemail ? `<div class="center small">${saleData.shop.receiptemail}</div>` : ""}
+<div class="divider"></div>
+<div class="center bold">SALES RECEIPT</div>
+<div class="divider"></div>
+<div class="row"><span>Receipt #:</span><span>${saleData.receiptNo}</span></div>
+<div class="row"><span>Date:</span><span>${date.toLocaleDateString()}</span></div>
+<div class="row"><span>Time:</span><span>${date.toLocaleTimeString()}</span></div>
+<div class="row"><span>Customer:</span><span>${saleData.customerName}</span></div>
+<div class="row"><span>Cashier:</span><span>${saleData.attendantName}</span></div>
+<div class="divider"></div>
+${saleData.items.map((item: any) => `
+<div class="row"><span>${item.productName}</span></div>
+<div class="row"><span style="padding-left:8px">${item.quantity} x ${currency} ${item.unitPrice.toFixed(2)}</span><span>${currency} ${item.totalPrice.toFixed(2)}</span></div>
+`).join("")}
+<div class="divider"></div>
+<div class="row"><span>Subtotal:</span><span>${fmt(subtotal)}</span></div>
+${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
+${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
+${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
+<div class="divider"></div>
+<div class="total-row"><span>TOTAL:</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
+<div class="divider"></div>
+<div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
+<div class="row"><span>Status:</span><span>${saleData.status}</span></div>
+<div class="divider"></div>
+<div class="center small" style="margin-top:12px">Thank you for your business!</div>
+</div></body></html>`;
+    const printWindow = window.open("", "", "width=400,height=700");
     if (printWindow) {
       printWindow.document.write(receiptHtml);
       printWindow.document.close();
-      
-      // Wait for content to load, then print
-      printWindow.onload = () => {
-        printWindow.print();
-      };
+      printWindow.onload = () => printWindow.print();
     }
   };
 
   const handleEmail = async () => {
-    // Try to get customer email from sale data or prompt user
-    const customerEmail = prompt('Enter customer email address:');
-    if (!customerEmail) {
-      return;
-    }
-
-    const emailSubject = `Receipt #${saleData?.receiptNo} - ${saleData?.shop?.name}`;
-    const emailBody = `
-Dear ${saleData?.customerName},
-
-Thank you for your purchase at ${saleData?.shop?.name}!
-
-Receipt Details:
-- Receipt #: ${saleData?.receiptNo}
-- Date: ${new Date(saleData?.saleDate).toLocaleDateString()}
-- Time: ${new Date(saleData?.saleDate).toLocaleTimeString()}
-- Total: ${saleData?.shop?.currency} ${((saleData?.totalAmount || 0) + (saleData?.totaltax || 0))?.toFixed(2)}
-- Payment: ${saleData?.paymentTag}
-- Attendant: ${saleData?.attendantName}
-
-Items purchased:
-${saleData?.items?.map(item => 
-  `- ${item.productName} x${item.quantity} @ ${saleData?.shop?.currency} ${item.unitPrice.toFixed(2)} = ${saleData?.shop?.currency} ${item.totalPrice.toFixed(2)}`
-).join('\n')}
-
-Shop Information:
-${saleData?.shop?.name}
-${saleData?.shop?.address}
-${saleData?.shop?.contact ? `Phone: ${saleData.shop.contact}` : ''}
-${saleData?.shop?.receiptemail ? `Email: ${saleData.shop.receiptemail}` : ''}
-
-Thank you for your business!
-    `;
-
-    // Create mailto link with customer email
-    const mailtoLink = `mailto:${customerEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    window.open(mailtoLink);
+    const customerEmail = prompt("Enter customer email address:");
+    if (!customerEmail) return;
+    const subject = `Receipt #${saleData.receiptNo} - ${saleData.shop.name}`;
+    const body = `Dear ${saleData.customerName},\n\nThank you for your purchase at ${saleData.shop.name}!\n\nReceipt #: ${saleData.receiptNo}\nDate: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}\nTotal: ${fmt(saleData.totalWithDiscount)}\nPayment: ${saleData.paymentTag}\n\nItems:\n${saleData.items.map((i: any) => `- ${i.productName} x${i.quantity} = ${fmt(i.totalPrice)}`).join("\n")}\n\nThank you!`;
+    window.open(`mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
-  // Transform API data to match expected format
-  const saleData = sale ? {
-    id: (sale as any)._id || (sale as any).id,
-    receiptNo: (sale as any).receiptNo || (sale as any)._id,
-    customerName: (sale as any).customerId?.name || 'Walk-in',
-    totalAmount: (sale as any).totalAmount || 0,
-    totalWithDiscount: (sale as any).totalWithDiscount || (sale as any).totalAmount || 0,
-    totaltax: (sale as any).totaltax || 0,
-    saleDate: (sale as any).createdAt || (sale as any).saleDate,
-    status: (sale as any).status === 'cashed' ? 'completed' : (sale as any).status,
-    paymentTag: (sale as any).paymentTag || 'cash',
-    saleType: (sale as any).saleType || 'Retail',
-    items: ((sale as any).items || []).map((item: any) => ({
-      productName: item.product?.name || item.productName || 'Unknown Product',
-      quantity: item.quantity || 0,
-      unitPrice: item.unitPrice || 0,
-      totalPrice: (item.quantity || 0) * (item.unitPrice || 0)
-    })),
-    attendantName: (sale as any).attendantId?.username || 'Unknown',
-    // Extract shop details from sale record to match POS receipt format
-    shop: {
-      name: (sale as any).shopId?.name || (sale as any).shopId?.shopName || 'Shop',
-      address: (sale as any).shopId?.address || '',
-      address_receipt: (sale as any).shopId?.address_receipt || '',
-      contact: (sale as any).shopId?.contact || (sale as any).shopId?.phone || (sale as any).shopId?.phoneNumber || '',
-      receiptemail: (sale as any).shopId?.receiptemail || (sale as any).shopId?.email || '',
-      paybill_account: (sale as any).shopId?.paybill_account || (sale as any).shopId?.paybill || '',
-      paybill_till: (sale as any).shopId?.paybill_till || (sale as any).shopId?.tillNumber || '',
-      currency: (sale as any).shopId?.currency || 'KES'
-    }
-  } : null;
+  const isSplit = saleData.paymentTag === "split";
 
   return (
-    <DashboardLayout title={`Receipt #${saleData?.receiptNo}`}>
-      <div className="p-6 w-full">
-        {/* Action Buttons */}
+    <DashboardLayout title={`Receipt #${saleData.receiptNo}`}>
+      <div className="p-4 md:p-6">
+        {/* Action bar */}
         <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => window.history.back()}>
+          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Sales
+            Back
           </Button>
-          
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleEmail}>
+            <Button variant="outline" size="sm" onClick={handleEmail}>
               <Mail className="mr-2 h-4 w-4" />
               Email
             </Button>
-            <Button variant="outline" onClick={handleDownload}>
+            <Button variant="outline" size="sm" onClick={handleDownload}>
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
-            <Button onClick={handlePrint}>
+            <Button size="sm" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
               Print
             </Button>
           </div>
         </div>
 
-        {/* Receipt */}
-        <Card className="print:shadow-none print:border-none receipt-content">
-          <CardHeader className="text-center border-b">
-            <ReceiptHeader 
-              shopData={saleData?.shop || {}}
-              title="Sales Receipt"
+        {/* Receipt paper */}
+        <div className="flex justify-center print:block">
+          <div
+            className="bg-white w-full max-w-sm shadow-lg print:shadow-none receipt-content"
+            style={{ fontFamily: "'Courier New', Courier, monospace" }}
+          >
+            {/* Jagged top edge */}
+            <div
+              className="w-full h-4 bg-gray-100 print:bg-white"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 50% 0%, white 10px, transparent 0), radial-gradient(circle at 50% 100%, #f3f4f6 10px, transparent 0)",
+                backgroundSize: "20px 20px",
+                backgroundPosition: "0 0, 0 0",
+              }}
             />
-          </CardHeader>
-          
-          <CardContent className="p-6">
-            {/* Receipt Header */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div>
-                <h3 className="font-semibold mb-2">Receipt Details</h3>
-                <p className="text-sm"><span className="font-medium">Receipt #:</span> {saleData?.receiptNo}</p>
-                <p className="text-sm"><span className="font-medium">Date:</span> {new Date(saleData?.saleDate).toLocaleDateString()}</p>
-                <p className="text-sm"><span className="font-medium">Time:</span> {new Date(saleData?.saleDate).toLocaleTimeString()}</p>
-                <div className="mt-2">
-                  <Badge variant={saleData?.status === "completed" ? "default" : "secondary"}>
-                    {saleData?.status?.toUpperCase()}
-                  </Badge>
+
+            <div className="px-6 pb-6">
+              {/* Shop header */}
+              <div className="text-center mb-4 mt-2">
+                <div className="font-bold text-base uppercase tracking-wide">
+                  {saleData.shop.name}
                 </div>
+                {saleData.shop.address && (
+                  <div className="text-xs text-gray-600 mt-0.5">{saleData.shop.address}</div>
+                )}
+                {saleData.shop.address_receipt && (
+                  <div className="text-xs text-gray-600">{saleData.shop.address_receipt}</div>
+                )}
+                {saleData.shop.contact && (
+                  <div className="text-xs text-gray-600">Tel: {saleData.shop.contact}</div>
+                )}
+                {saleData.shop.receiptemail && (
+                  <div className="text-xs text-gray-600">{saleData.shop.receiptemail}</div>
+                )}
+                {saleData.shop.paybill_account && (
+                  <div className="text-xs text-gray-600">
+                    Paybill: {saleData.shop.paybill_account}
+                    {saleData.shop.paybill_till && ` / Acc: ${saleData.shop.paybill_till}`}
+                  </div>
+                )}
+                {!saleData.shop.paybill_account && saleData.shop.paybill_till && (
+                  <div className="text-xs text-gray-600">
+                    Buy Goods: {saleData.shop.paybill_till}
+                  </div>
+                )}
               </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Transaction Information</h3>
-                <p className="text-sm"><span className="font-medium">Customer:</span> {saleData?.customerName}</p>
-                <p className="text-sm"><span className="font-medium">Payment:</span> {saleData?.paymentTag}</p>
-                <p className="text-sm"><span className="font-medium">Type:</span> {saleData?.saleType}</p>
-                <p className="text-sm"><span className="font-medium">Attendant:</span> {saleData?.attendantName}</p>
-              </div>
-            </div>
 
-            <Separator className="my-6" />
+              <Dashes />
 
-            {/* Items Table */}
-            <div className="mb-6">
-              <h3 className="font-semibold mb-4">Items Purchased</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 font-medium">Item</th>
-                      <th className="text-center py-2 font-medium">Qty</th>
-                      <th className="text-right py-2 font-medium">Unit Price</th>
-                      <th className="text-right py-2 font-medium">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {saleData?.items?.map((item, index) => (
-                      <tr key={index} className="border-b">
-                        <td className="py-3">{item.productName}</td>
-                        <td className="py-3 text-center">{item.quantity}</td>
-                        <td className="py-3 text-right">{saleData?.shop?.currency} {item.unitPrice.toFixed(2)}</td>
-                        <td className="py-3 text-right font-medium">{saleData?.shop?.currency} {item.totalPrice.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="text-center font-bold text-sm tracking-widest mb-1">
+                SALES RECEIPT
               </div>
-            </div>
 
-            <Separator className="my-6" />
+              <Dashes />
 
-            {/* Totals */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>{saleData?.shop?.currency} {saleData?.totalAmount?.toFixed(2)}</span>
+              {/* Meta */}
+              <div className="text-xs space-y-1 mb-2">
+                <ReceiptRow label="Receipt #" value={saleData.receiptNo} />
+                <ReceiptRow label="Date" value={date.toLocaleDateString()} />
+                <ReceiptRow label="Time" value={date.toLocaleTimeString()} />
+                <ReceiptRow label="Customer" value={saleData.customerName} />
+                <ReceiptRow label="Cashier" value={saleData.attendantName} />
+                <ReceiptRow label="Type" value={saleData.saleType} />
+                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && (
+                  <ReceiptRow label="Note" value={saleData.salesnote} />
+                )}
               </div>
-              <div className="flex justify-between">
-                <span>Tax:</span>
-                <span>{saleData?.shop?.currency} {(saleData?.totaltax || 0)?.toFixed(2)}</span>
+
+              <Dashes />
+
+              {/* Items header */}
+              <div className="flex text-xs font-bold mb-1">
+                <span className="flex-1">ITEM</span>
+                <span className="w-8 text-center">QTY</span>
+                <span className="w-16 text-right">PRICE</span>
+                <span className="w-16 text-right">TOTAL</span>
               </div>
-              <Separator />
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span>{saleData?.shop?.currency} {((saleData?.totalAmount || 0) + (saleData?.totaltax || 0))?.toFixed(2)}</span>
-              </div>
-              
-              {/* Split payment breakdown */}
-              {saleData?.paymentTag === 'split' && (
-                <div className="mt-4 pt-3 border-t space-y-2">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Payment Breakdown:</div>
-                  {(sale as any)?.amountPaid > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>Cash:</span>
-                      <span>{saleData?.shop?.currency} {((sale as any)?.amountPaid || 0).toFixed(2)}</span>
+              <div
+                className="border-t border-dashed border-gray-400 mb-1"
+                style={{ borderTopStyle: "dashed" }}
+              />
+
+              {/* Items */}
+              <div className="space-y-1 mb-2">
+                {saleData.items.map((item: any, idx: number) => (
+                  <div key={idx}>
+                    <div className="flex text-xs">
+                      <span className="flex-1 truncate pr-1">{item.productName}</span>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <span className="w-16 text-right">{item.unitPrice.toFixed(2)}</span>
+                      <span className="w-16 text-right font-medium">
+                        {item.totalPrice.toFixed(2)}
+                      </span>
                     </div>
-                  )}
-                  {(sale as any)?.mpesaNewTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>M-Pesa:</span>
-                      <span>{saleData?.shop?.currency} {((sale as any)?.mpesaNewTotal || 0).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {(sale as any)?.bankTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>Bank:</span>
-                      <span>{saleData?.shop?.currency} {((sale as any)?.bankTotal || 0).toFixed(2)}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                    {item.lineDiscount > 0 && (
+                      <div className="flex text-xs text-gray-500 pl-2">
+                        <span className="flex-1">Discount</span>
+                        <span className="w-16 text-right">-{item.lineDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Dashes />
+
+              {/* Totals */}
+              <div className="text-xs space-y-1 mb-2">
+                <ReceiptRow label="Subtotal" value={fmt(subtotal)} />
+                {itemDiscounts > 0 && (
+                  <ReceiptRow label="Item Discounts" value={`-${fmt(itemDiscounts)}`} />
+                )}
+                {saleData.saleDiscount > 0 && (
+                  <ReceiptRow label="Sale Discount" value={`-${fmt(saleData.saleDiscount)}`} />
+                )}
+                {saleData.totaltax > 0 && (
+                  <ReceiptRow label="Tax" value={fmt(saleData.totaltax)} />
+                )}
+              </div>
+
+              <Dashes />
+
+              <div className="flex justify-between font-bold text-sm my-2">
+                <span>TOTAL</span>
+                <span>{fmt(saleData.totalWithDiscount)}</span>
+              </div>
+
+              <Dashes />
+
+              {/* Payment */}
+              <div className="text-xs space-y-1 mb-2">
+                <ReceiptRow label="Payment" value={saleData.paymentTag.toUpperCase()} />
+                {isSplit && (
+                  <>
+                    {saleData.amountPaid > 0 && (
+                      <ReceiptRow label="  Cash" value={fmt(saleData.amountPaid)} />
+                    )}
+                    {saleData.mpesaTotal > 0 && (
+                      <ReceiptRow label="  M-Pesa" value={fmt(saleData.mpesaTotal)} />
+                    )}
+                    {saleData.bankTotal > 0 && (
+                      <ReceiptRow label="  Bank" value={fmt(saleData.bankTotal)} />
+                    )}
+                  </>
+                )}
+                {!isSplit && saleData.paymentTag === "mpesa" && saleData.mpesaTransId && (
+                  <ReceiptRow label="M-Pesa Ref" value={saleData.mpesaTransId} />
+                )}
+                {!isSplit && saleData.paymentTag === "bank" && saleData.bankTransId && (
+                  <ReceiptRow label="Bank Ref" value={saleData.bankTransId} />
+                )}
+                {saleData.outstandingBalance > 0 && (
+                  <ReceiptRow
+                    label="Balance Due"
+                    value={fmt(saleData.outstandingBalance)}
+                    valueClass="font-bold text-red-600"
+                  />
+                )}
+                <ReceiptRow label="Status" value={saleData.status} />
+              </div>
+
+              <Dashes />
+
+              {/* Footer */}
+              <div className="text-center mt-3 space-y-0.5">
+                <div className="text-xs text-gray-600">Thank you for your business!</div>
+                <div className="text-xs text-gray-400">store.pointifypos.com</div>
+              </div>
             </div>
 
-            <Separator className="my-6" />
-
-            {/* Payment Information */}
-            <div className="text-center text-sm text-muted-foreground">
-              <p className="mb-2">Payment Method: {saleData?.paymentTag}</p>
-              <p className="mb-4">Transaction ID: {saleData?.receiptNo}</p>
-              <p className="font-medium">Thank you for your business!</p>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Jagged bottom edge */}
+            <div
+              className="w-full h-4 bg-gray-100 print:bg-white"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 50% 100%, white 10px, transparent 0), radial-gradient(circle at 50% 0%, #f3f4f6 10px, transparent 0)",
+                backgroundSize: "20px 20px",
+                backgroundPosition: "0 100%, 0 100%",
+              }}
+            />
+          </div>
+        </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+function Dashes() {
+  return (
+    <div className="border-t border-dashed border-gray-400 my-2" />
+  );
+}
+
+function ReceiptRow({
+  label,
+  value,
+  valueClass = "",
+}: {
+  label: string;
+  value: string | number;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-gray-600">{label}:</span>
+      <span className={`text-right ${valueClass}`}>{value}</span>
+    </div>
   );
 }
