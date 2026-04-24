@@ -153,6 +153,81 @@ export default function ReceiptView() {
         : "",
   });
 
+  const getReceiptHtml = (autoPrint = false) => `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:'Courier New',Courier,monospace;margin:0;background:#f5f5f5;display:flex;justify-content:center;padding:20px}
+  .receipt{background:#fff;width:320px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .center{text-align:center}.bold{font-weight:bold}.small{font-size:11px}
+  .divider{border:none;border-top:1px dashed #999;margin:8px 0}
+  .row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
+  .total-row{display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin:4px 0}
+  .item-name{font-size:12px;margin:4px 0 1px}
+  .item-detail{display:flex;justify-content:space-between;font-size:12px;padding-left:8px;color:#444}
+  @media print{body{background:#fff;padding:0}.receipt{box-shadow:none;width:100%}}
+</style>
+${autoPrint ? '<script>window.onload=function(){window.print();}<\/script>' : ''}
+</head><body><div class="receipt">
+<div class="center bold" style="font-size:15px;text-transform:uppercase">${saleData.shop.name}</div>
+${saleData.shop.address ? `<div class="center small">${saleData.shop.address}</div>` : ""}
+${saleData.shop.address_receipt ? `<div class="center small">${saleData.shop.address_receipt}</div>` : ""}
+${saleData.shop.contact ? `<div class="center small">Tel: ${saleData.shop.contact}</div>` : ""}
+${saleData.shop.receiptemail ? `<div class="center small">${saleData.shop.receiptemail}</div>` : ""}
+${saleData.shop.paybill_account ? `<div class="center small">Paybill: ${saleData.shop.paybill_account}${saleData.shop.paybill_till ? ` / Acc: ${saleData.shop.paybill_till}` : ""}</div>` : ""}
+${!saleData.shop.paybill_account && saleData.shop.paybill_till ? `<div class="center small">Buy Goods: ${saleData.shop.paybill_till}</div>` : ""}
+<hr class="divider">
+<div class="center bold" style="letter-spacing:2px">SALES RECEIPT</div>
+<hr class="divider">
+<div class="row"><span>Receipt #:</span><span>${saleData.receiptNo}</span></div>
+<div class="row"><span>Date:</span><span>${date.toLocaleDateString()}</span></div>
+<div class="row"><span>Time:</span><span>${date.toLocaleTimeString()}</span></div>
+<div class="row"><span>Customer:</span><span>${saleData.customerName}</span></div>
+<div class="row"><span>Cashier:</span><span>${saleData.attendantName}</span></div>
+<div class="row"><span>Type:</span><span>${saleData.saleType}</span></div>
+<hr class="divider">
+<div style="display:flex;font-weight:bold;font-size:11px;margin-bottom:4px">
+  <span style="flex:1">ITEM</span><span style="width:30px;text-align:center">QTY</span>
+  <span style="width:55px;text-align:right">PRICE</span><span style="width:55px;text-align:right">TOTAL</span>
+</div>
+<hr class="divider" style="margin-top:2px">
+${saleData.items.map((item: any) => `
+<div style="display:flex;font-size:12px;margin:3px 0">
+  <span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.productName}</span>
+  <span style="width:30px;text-align:center">${item.quantity}</span>
+  <span style="width:55px;text-align:right">${item.unitPrice.toFixed(2)}</span>
+  <span style="width:55px;text-align:right;font-weight:600">${item.totalPrice.toFixed(2)}</span>
+</div>
+${item.lineDiscount > 0 ? `<div class="row" style="color:#888;font-size:11px;padding-left:8px"><span>Discount</span><span>-${item.lineDiscount.toFixed(2)}</span></div>` : ""}
+`).join("")}
+<hr class="divider">
+<div class="row"><span>Subtotal:</span><span>${fmt(subtotal)}</span></div>
+${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
+${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
+${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
+<hr class="divider">
+<div class="total-row"><span>TOTAL</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
+<hr class="divider">
+<div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
+${saleData.paymentTag === "split" ? `
+${saleData.amountPaid > 0 ? `<div class="row" style="padding-left:8px"><span>Cash:</span><span>${fmt(saleData.amountPaid)}</span></div>` : ""}
+${saleData.mpesaTotal > 0 ? `<div class="row" style="padding-left:8px"><span>M-Pesa:</span><span>${fmt(saleData.mpesaTotal)}</span></div>` : ""}
+${saleData.bankTotal > 0 ? `<div class="row" style="padding-left:8px"><span>Bank:</span><span>${fmt(saleData.bankTotal)}</span></div>` : ""}
+` : ""}
+${saleData.outstandingBalance > 0 ? `<div class="row" style="font-weight:bold;color:#c00"><span>Balance Due:</span><span>${fmt(saleData.outstandingBalance)}</span></div>` : ""}
+<div class="row"><span>Status:</span><span>${saleData.status}</span></div>
+<hr class="divider">
+<div class="center small" style="margin-top:12px">Thank you for your business!</div>
+<div class="center" style="font-size:10px;color:#aaa;margin-top:4px">store.pointifypos.com</div>
+</div></body></html>`;
+
+  const openReceiptWindow = (autoPrint: boolean) => {
+    const printWindow = window.open("", "_blank", "width=420,height=750");
+    if (printWindow) {
+      printWindow.document.write(getReceiptHtml(autoPrint));
+      printWindow.document.close();
+    }
+  };
+
   const handlePrint = async () => {
     try {
       const response = await apiCall("/api/printer/salereceipt", {
@@ -163,58 +238,15 @@ export default function ReceiptView() {
       if (res.success) {
         toast({ title: "Receipt Printed" });
       } else {
-        window.print();
+        openReceiptWindow(true);
       }
     } catch {
-      window.print();
+      openReceiptWindow(true);
     }
   };
 
   const handleDownload = () => {
-    const receiptHtml = `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
-<style>
-  body{font-family:monospace;margin:0;background:#f5f5f5;display:flex;justify-content:center;padding:20px}
-  .receipt{background:#fff;width:320px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-  .center{text-align:center}.bold{font-weight:bold}.small{font-size:11px}.divider{border-top:1px dashed #999;margin:8px 0}
-  .row{display:flex;justify-content:space-between;font-size:12px;margin:3px 0}
-  .total-row{display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin:4px 0}
-</style></head><body><div class="receipt">
-<div class="center bold" style="font-size:16px">${saleData.shop.name}</div>
-${saleData.shop.address ? `<div class="center small">${saleData.shop.address}</div>` : ""}
-${saleData.shop.contact ? `<div class="center small">Tel: ${saleData.shop.contact}</div>` : ""}
-${saleData.shop.receiptemail ? `<div class="center small">${saleData.shop.receiptemail}</div>` : ""}
-<div class="divider"></div>
-<div class="center bold">SALES RECEIPT</div>
-<div class="divider"></div>
-<div class="row"><span>Receipt #:</span><span>${saleData.receiptNo}</span></div>
-<div class="row"><span>Date:</span><span>${date.toLocaleDateString()}</span></div>
-<div class="row"><span>Time:</span><span>${date.toLocaleTimeString()}</span></div>
-<div class="row"><span>Customer:</span><span>${saleData.customerName}</span></div>
-<div class="row"><span>Cashier:</span><span>${saleData.attendantName}</span></div>
-<div class="divider"></div>
-${saleData.items.map((item: any) => `
-<div class="row"><span>${item.productName}</span></div>
-<div class="row"><span style="padding-left:8px">${item.quantity} x ${currency} ${item.unitPrice.toFixed(2)}</span><span>${currency} ${item.totalPrice.toFixed(2)}</span></div>
-`).join("")}
-<div class="divider"></div>
-<div class="row"><span>Subtotal:</span><span>${fmt(subtotal)}</span></div>
-${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
-${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
-${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
-<div class="divider"></div>
-<div class="total-row"><span>TOTAL:</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
-<div class="divider"></div>
-<div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
-<div class="row"><span>Status:</span><span>${saleData.status}</span></div>
-<div class="divider"></div>
-<div class="center small" style="margin-top:12px">Thank you for your business!</div>
-</div></body></html>`;
-    const printWindow = window.open("", "", "width=400,height=700");
-    if (printWindow) {
-      printWindow.document.write(receiptHtml);
-      printWindow.document.close();
-      printWindow.onload = () => printWindow.print();
-    }
+    openReceiptWindow(false);
   };
 
   const handleEmail = async () => {
