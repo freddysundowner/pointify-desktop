@@ -698,6 +698,7 @@ export default function ProductGrid({
   const [mainCustomerSearch, setMainCustomerSearch] = useState('');
   const [showMainCustomerDropdown, setShowMainCustomerDropdown] = useState(false);
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
+  const [showHoldReadyDateDialog, setShowHoldReadyDateDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
   const [readyDate, setReadyDate] = useState('');
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
@@ -736,6 +737,11 @@ export default function ProductGrid({
     if (cartItems.length === 0) return;
     if (!selectedCustomerId) {
       setShowHoldCustomerDialog(true);
+      return;
+    }
+    // For laundry shops, always show ready date dialog even when customer is pre-selected
+    if (isLaundryShop) {
+      setShowHoldReadyDateDialog(true);
       return;
     }
     await processTransaction(true);
@@ -2303,6 +2309,47 @@ export default function ProductGrid({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Hold Ready Date Dialog - shown when customer already selected in laundry shop */}
+      <Dialog open={showHoldReadyDateDialog} onOpenChange={(open) => { if (!open) { setShowHoldReadyDateDialog(false); setReadyDate(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <Calendar className="h-5 w-5 text-orange-500" />
+              <span>Set Ready Date</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-600">
+              When will this order be ready for pickup?
+            </p>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 flex items-center space-x-1">
+                <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                <span>Ready Date</span>
+              </label>
+              <Input
+                type="datetime-local"
+                value={readyDate}
+                onChange={(e) => setReadyDate(e.target.value)}
+                className="text-sm mt-1"
+                min={new Date().toISOString().slice(0, 16)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowHoldReadyDateDialog(false); setReadyDate(""); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => { setShowHoldReadyDateDialog(false); await processTransaction(true); }}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              Hold Sale
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add New Customer Dialog */}
       <Dialog open={showAddCustomerDialog} onOpenChange={(open) => { if (!open) { setShowAddCustomerDialog(false); setNewCustomerForm({ name: '', phone: '', email: '', address: '' }); } }}>
         <DialogContent className="max-w-md">
