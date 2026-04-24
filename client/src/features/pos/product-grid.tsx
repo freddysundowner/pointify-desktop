@@ -2492,15 +2492,59 @@ export default function ProductGrid({
             <DialogTitle>Add Custom Item</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
+            <div className="relative">
               <label className="text-sm font-medium text-gray-700 mb-1 block">Item Name</label>
               <Input
-                placeholder="e.g. Delivery fee, Special order..."
+                placeholder="Type to search or create new..."
                 value={customItemName}
                 onChange={(e) => setCustomItemName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomItem()}
                 autoFocus
               />
+              {/* Live product suggestions */}
+              {customItemName.trim().length >= 1 && (() => {
+                const term = customItemName.toLowerCase();
+                const suggestions = allProducts
+                  .filter((p: any) => p.name?.toLowerCase().includes(term))
+                  .slice(0, 6);
+                if (suggestions.length === 0) return null;
+                return (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {suggestions.map((p: any) => {
+                      const isService = p.productType === 'service' || p.virtual;
+                      const outOfStock = !isService && (p.quantity ?? 0) <= 0;
+                      return (
+                        <div
+                          key={p._id}
+                          className={`flex items-center justify-between px-3 py-2 text-sm border-b border-gray-100 last:border-b-0 ${outOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-purple-50'}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            if (outOfStock) return;
+                            onAddToCart(p);
+                            setShowCustomItemDialog(false);
+                            setCustomItemName("");
+                            setCustomItemPrice("");
+                            setCustomItemType("service");
+                            setCustomItemBuyingPrice("");
+                            setCustomItemQuantity("1");
+                            setShowCustomItemOptions(false);
+                            toast({ title: "Added to cart", description: `"${p.name}" added` });
+                          }}
+                        >
+                          <div>
+                            <span className="font-medium text-gray-900">{p.name}</span>
+                            {isService && <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1 rounded">Service</span>}
+                            {outOfStock && <span className="ml-2 text-xs text-red-500">Out of stock</span>}
+                          </div>
+                          <span className="text-green-600 font-semibold ml-3 shrink-0">
+                            Ksh {getPriceForSaleType(p, saleType).toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Price (Ksh)</label>
