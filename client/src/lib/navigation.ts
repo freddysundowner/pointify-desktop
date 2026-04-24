@@ -1,4 +1,4 @@
-import { Home, ScanBarcode, Package, Store, TrendingUp, ShoppingCart, Receipt, Users, Truck, DollarSign, UserCheck, BarChart3, FileText, Shield, User, Settings, Building2, Crown, Plus, ShoppingBag, Printer } from "lucide-react";
+import { Home, ScanBarcode, Package, Store, TrendingUp, ShoppingCart, Receipt, Users, Truck, DollarSign, UserCheck, BarChart3, FileText, Shield, User, Settings, Building2, Crown, Plus, ShoppingBag, Printer, MessageSquare } from "lucide-react";
 import { getNavigationRoute } from "./navigation-utils";
 
 export interface NavItem {
@@ -87,6 +87,7 @@ export const getMenuGroups = (isAttendant: boolean): MenuGroup[] => [
       { href: "/shops", label: "Shops" },
       { href: "/attendants", label: "Attendants" },
       { href: "/printer-config", label: "Printer Setup" },
+      { href: "/sms-settings", label: "SMS Settings" },
       { href: "/subscription", label: "Subscription" },
     ]
   },
@@ -152,6 +153,7 @@ export const menuGroups: MenuGroup[] = [
       { href: "/shops", label: "Shops" },
       { href: "/attendants", label: "Attendants" },
       { href: "/printer-config", label: "Printer Setup" },
+      { href: "/sms-settings", label: "SMS Settings" },
       { href: "/subscription", label: "Subscription" },
     ]
   },
