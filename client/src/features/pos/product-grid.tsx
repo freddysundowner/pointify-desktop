@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -732,10 +732,7 @@ export default function ProductGrid({
     try {
       await createTransactionMutation.mutateAsync(transactionData);
       if (isHold) {
-        toast({
-          title: "Transaction Held",
-          description: "Transaction has been placed on hold successfully",
-        });
+        setShowHoldSuccessDialog(true);
       } else if (selectedPaymentMethod === "credit") {
         toast({
           title: "Credit Sale Created",
@@ -764,6 +761,8 @@ export default function ProductGrid({
   const [showHoldReadyDateDialog, setShowHoldReadyDateDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
   const [readyDate, setReadyDate] = useState('');
+  const [isHoldProcessing, setIsHoldProcessing] = useState(false);
+  const [showHoldSuccessDialog, setShowHoldSuccessDialog] = useState(false);
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({ name: '', phone: '', email: '', address: '' });
 
@@ -819,8 +818,10 @@ export default function ProductGrid({
       });
       return;
     }
-    setShowHoldCustomerDialog(false);
+    setIsHoldProcessing(true);
     await processTransaction(true);
+    setIsHoldProcessing(false);
+    setShowHoldCustomerDialog(false);
   };
 
   const resetPaymentDialog = () => {
@@ -2391,9 +2392,14 @@ export default function ProductGrid({
             <Button
               onClick={handleConfirmHoldWithCustomer}
               className="bg-orange-500 hover:bg-orange-600 text-white"
-              disabled={!selectedCustomerId}
+              disabled={!selectedCustomerId || isHoldProcessing}
             >
-              Hold Sale
+              {isHoldProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Hold Sale"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2445,12 +2451,44 @@ export default function ProductGrid({
               Cancel
             </Button>
             <Button
-              onClick={async () => { setShowHoldReadyDateDialog(false); await processTransaction(true); }}
+              onClick={async () => {
+                setIsHoldProcessing(true);
+                await processTransaction(true);
+                setIsHoldProcessing(false);
+                setShowHoldReadyDateDialog(false);
+              }}
               className="bg-orange-500 hover:bg-orange-600 text-white"
+              disabled={isHoldProcessing}
             >
-              Hold Sale
+              {isHoldProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Hold Sale"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hold Sale Success Dialog */}
+      <Dialog open={showHoldSuccessDialog} onOpenChange={(open) => { if (!open) setShowHoldSuccessDialog(false); }}>
+        <DialogContent className="max-w-xs text-center">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="rounded-full bg-green-100 p-4">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Sale On Hold</h2>
+              <p className="text-sm text-gray-500 mt-1">The transaction has been saved and placed on hold.</p>
+            </div>
+            <Button
+              className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={() => { setShowHoldSuccessDialog(false); setReadyDate(""); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}
+            >
+              Done
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
