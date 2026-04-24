@@ -690,7 +690,7 @@ export function registerSalesRoutes(app: Express) {
   // Send receipt via email (uses Brevo credentials from Pointify API)
   app.post("/api/sales/email-receipt", async (req, res) => {
     try {
-      const { toEmail, receiptHtml, receiptNo, shopName, customerName } = req.body;
+      const { toEmail, receiptHtml, receiptNo, shopName, shopEmail, customerName } = req.body;
 
       if (!toEmail || !receiptHtml) {
         return res.status(400).json({ success: false, error: "Email address and receipt data are required" });
@@ -700,11 +700,22 @@ export function registerSalesRoutes(app: Express) {
       const emailConfig: any = await makePointifyRequest("/settings?type=EMAIL_CONFIG", { method: "GET" });
 
       const apiKey = emailConfig?.BREVO_API_KEY;
-      const senderEmail = emailConfig?.BREVO_SENDER_EMAIL || "info@pointifypos.com";
-      const senderName = emailConfig?.BREVO_SENDER_NAME || shopName || "Pointify POS";
+      const verifiedSenderEmail = emailConfig?.BREVO_SENDER_EMAIL || "info@pointifypos.com";
 
       if (!apiKey) {
         return res.status(503).json({ success: false, error: "Email service credentials not available" });
+      }
+
+      const emailPayload: any = {
+        sender: { name: shopName || "Pointify POS", email: verifiedSenderEmail },
+        to: [{ email: toEmail, name: customerName || toEmail }],
+        subject: `Your Receipt #${receiptNo} from ${shopName}`,
+        htmlContent: receiptHtml,
+      };
+
+      // Use shop's receipt email as reply-to if available
+      if (shopEmail) {
+        emailPayload.replyTo = { email: shopEmail, name: shopName };
       }
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -714,12 +725,7 @@ export function registerSalesRoutes(app: Express) {
           "Content-Type": "application/json",
           "Accept": "application/json",
         },
-        body: JSON.stringify({
-          sender: { name: senderName, email: senderEmail },
-          to: [{ email: toEmail, name: customerName || toEmail }],
-          subject: `Your Receipt #${receiptNo} from ${shopName}`,
-          htmlContent: receiptHtml,
-        }),
+        body: JSON.stringify(emailPayload),
       });
 
       if (!brevoRes.ok) {

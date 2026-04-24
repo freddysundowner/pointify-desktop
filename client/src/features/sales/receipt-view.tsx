@@ -281,6 +281,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
           receiptHtml: getReceiptHtml(),
           receiptNo: saleData.receiptNo,
           shopName: saleData.shop.name,
+          shopEmail: saleData.shop.receiptemail || "",
           customerName: saleData.customerName,
           total: fmt(saleData.totalWithDiscount),
           currency,
