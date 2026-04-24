@@ -8,7 +8,8 @@ module.exports = {
         watch: false,
         env: {
           NODE_ENV: "production",
-          PORT: 1999
+          PORT: 1999,
+          STATIC_DIR: "/var/www/pointify/pos-web/web/client/dist"
         }
       }
     ]

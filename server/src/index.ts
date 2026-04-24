@@ -77,10 +77,15 @@ app.use((req, res, next) => {
   });
 
 
-  let staticPath = process.env.STATIC_DIR || path.resolve(__dirname, "../../client/dist");
-  if(process.env.DEV == 'true'){
-      staticPath = "/var/www/pointify/pos-web/web/client/dist";
-  } 
+  // Use STATIC_DIR env var, then cwd-relative path (reliable with PM2 cwd setting),
+  // then fall back to __dirname-relative path for dev/electron environments
+  let staticPath =
+    process.env.STATIC_DIR ||
+    path.resolve(process.cwd(), "client/dist");
+  if (process.env.DEV == "true") {
+    staticPath = "/var/www/pointify/pos-web/web/client/dist";
+  }
+  console.log(`📁 Serving static files from: ${staticPath}`);
   app.use(express.static(staticPath));
   app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
