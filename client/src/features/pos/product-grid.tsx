@@ -119,6 +119,10 @@ export default function ProductGrid({
   const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
   const [customItemName, setCustomItemName] = useState("");
   const [customItemPrice, setCustomItemPrice] = useState("");
+  const [customItemType, setCustomItemType] = useState("service");
+  const [customItemBuyingPrice, setCustomItemBuyingPrice] = useState("");
+  const [customItemQuantity, setCustomItemQuantity] = useState("1");
+  const [showCustomItemOptions, setShowCustomItemOptions] = useState(false);
   const [isCreatingCustomItem, setIsCreatingCustomItem] = useState(false);
 
   // Local search function
@@ -537,6 +541,9 @@ export default function ProductGrid({
             ? (admin.attendantId as any)._id
             : admin?.attendantId) || admin?._id;
 
+      const buyingPrice = customItemType === "product" ? parseFloat(customItemBuyingPrice || "0") : 0;
+      const quantity = customItemType === "product" ? parseInt(customItemQuantity || "1") : 0;
+
       const response = await apiCall("/api/product", {
         method: "POST",
         body: JSON.stringify({
@@ -547,9 +554,9 @@ export default function ProductGrid({
           sellingPrice: price,
           wholesalePrice: price,
           dealerPrice: price,
-          buyingPrice: 0,
-          quantity: 0,
-          productType: "service",
+          buyingPrice,
+          quantity,
+          productType: customItemType,
         }),
       });
       const product = await response.json();
@@ -557,6 +564,10 @@ export default function ProductGrid({
       setShowCustomItemDialog(false);
       setCustomItemName("");
       setCustomItemPrice("");
+      setCustomItemType("service");
+      setCustomItemBuyingPrice("");
+      setCustomItemQuantity("1");
+      setShowCustomItemOptions(false);
       toast({ title: "Custom item added", description: `"${product.name}" added to cart` });
     } catch (err: any) {
       toast({ title: "Failed to add item", description: err.message || "Could not create custom item", variant: "destructive" });
@@ -2475,7 +2486,7 @@ export default function ProductGrid({
       </Dialog>
 
       {/* Custom Item Dialog */}
-      <Dialog open={showCustomItemDialog} onOpenChange={(open) => { setShowCustomItemDialog(open); if (!open) { setCustomItemName(""); setCustomItemPrice(""); } }}>
+      <Dialog open={showCustomItemDialog} onOpenChange={(open) => { setShowCustomItemDialog(open); if (!open) { setCustomItemName(""); setCustomItemPrice(""); setCustomItemType("service"); setCustomItemBuyingPrice(""); setCustomItemQuantity("1"); setShowCustomItemOptions(false); } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Custom Item</DialogTitle>
@@ -2503,9 +2514,62 @@ export default function ProductGrid({
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateCustomItem()}
               />
             </div>
+
+            {/* Options toggle */}
+            <button
+              type="button"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+              onClick={() => setShowCustomItemOptions(v => !v)}
+            >
+              <span className={`transition-transform ${showCustomItemOptions ? 'rotate-90' : ''}`}>▶</span>
+              {showCustomItemOptions ? 'Hide options' : 'More options'}
+            </button>
+
+            {showCustomItemOptions && (
+              <div className="space-y-3 border-t pt-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">Product Type</label>
+                  <select
+                    className="w-full h-9 rounded-md border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    value={customItemType}
+                    onChange={(e) => setCustomItemType(e.target.value)}
+                  >
+                    <option value="service">Service</option>
+                    <option value="product">Product</option>
+                  </select>
+                </div>
+
+                {customItemType === "product" && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Buying Price (Ksh)</label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        value={customItemBuyingPrice}
+                        onChange={(e) => setCustomItemBuyingPrice(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Quantity</label>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        min="1"
+                        step="1"
+                        value={customItemQuantity}
+                        onChange={(e) => setCustomItemQuantity(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowCustomItemDialog(false); setCustomItemName(""); setCustomItemPrice(""); }}>
+            <Button variant="outline" onClick={() => { setShowCustomItemDialog(false); setCustomItemName(""); setCustomItemPrice(""); setCustomItemType("service"); setCustomItemBuyingPrice(""); setCustomItemQuantity("1"); setShowCustomItemOptions(false); }}>
               Cancel
             </Button>
             <Button
@@ -2513,7 +2577,7 @@ export default function ProductGrid({
               disabled={isCreatingCustomItem || !customItemName.trim() || !customItemPrice}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {isCreatingCustomItem ? 'Adding...' : 'Add to Cart'}
+              {isCreatingCustomItem ? 'Adding...' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
