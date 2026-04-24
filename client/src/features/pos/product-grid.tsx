@@ -537,7 +537,7 @@ export default function ProductGrid({
             ? (admin.attendantId as any)._id
             : admin?.attendantId) || admin?._id;
 
-      const product = await apiCall("/api/product", {
+      const response = await apiCall("/api/product", {
         method: "POST",
         body: JSON.stringify({
           name: customItemName.trim(),
@@ -552,6 +552,7 @@ export default function ProductGrid({
           productType: "service",
         }),
       });
+      const product = await response.json();
       onAddToCart(product);
       setShowCustomItemDialog(false);
       setCustomItemName("");
