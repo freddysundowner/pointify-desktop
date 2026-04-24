@@ -213,9 +213,14 @@ ${saleData.amountPaid > 0 ? `<div class="row" style="padding-left:8px"><span>Cas
 ${saleData.mpesaTotal > 0 ? `<div class="row" style="padding-left:8px"><span>M-Pesa:</span><span>${fmt(saleData.mpesaTotal)}</span></div>` : ""}
 ${saleData.bankTotal > 0 ? `<div class="row" style="padding-left:8px"><span>Bank:</span><span>${fmt(saleData.bankTotal)}</span></div>` : ""}
 ` : ""}
-${saleData.outstandingBalance > 0 ? `<div class="row" style="font-weight:bold;color:#c00"><span>Balance Due:</span><span>${fmt(saleData.outstandingBalance)}</span></div>` : ""}
+${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETED" ? `<div class="row" style="font-weight:bold;color:#c00"><span>Balance Due:</span><span>${fmt(saleData.outstandingBalance)}</span></div>` : ""}
 <div class="row"><span>Status:</span><span>${saleData.status}</span></div>
 <hr class="divider">
+<div style="display:flex;justify-content:center;margin:12px 0">
+  <div style="border:2px solid ${saleData.status.toUpperCase() === "COMPLETED" ? "#16a34a" : "#dc2626"};border-radius:4px;padding:4px 20px;font-weight:bold;letter-spacing:3px;font-size:14px;color:${saleData.status.toUpperCase() === "COMPLETED" ? "#16a34a" : "#dc2626"};transform:rotate(-12deg);display:inline-block">
+    ${saleData.status.toUpperCase() === "COMPLETED" ? "PAID" : "UNPAID"}
+  </div>
+</div>
 <div class="center small" style="margin-top:12px">Thank you for your business!</div>
 <div class="center" style="font-size:10px;color:#aaa;margin-top:4px">store.pointifypos.com</div>
 </div></body></html>`;
@@ -436,7 +441,7 @@ ${saleData.outstandingBalance > 0 ? `<div class="row" style="font-weight:bold;co
                 {!isSplit && saleData.paymentTag === "bank" && saleData.bankTransId && (
                   <ReceiptRow label="Bank Ref" value={saleData.bankTransId} />
                 )}
-                {saleData.outstandingBalance > 0 && (
+                {saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETED" && (
                   <ReceiptRow
                     label="Balance Due"
                     value={fmt(saleData.outstandingBalance)}
@@ -447,6 +452,20 @@ ${saleData.outstandingBalance > 0 ? `<div class="row" style="font-weight:bold;co
               </div>
 
               <Dashes />
+
+              {/* PAID / UNPAID stamp */}
+              <div className="flex justify-center my-3">
+                <div
+                  className={`border-2 rounded px-6 py-1 text-sm font-bold tracking-widest ${
+                    saleData.status.toUpperCase() === "COMPLETED"
+                      ? "border-green-500 text-green-600"
+                      : "border-red-500 text-red-600"
+                  }`}
+                  style={{ transform: "rotate(-12deg)" }}
+                >
+                  {saleData.status.toUpperCase() === "COMPLETED" ? "PAID" : "UNPAID"}
+                </div>
+              </div>
 
               {/* Footer */}
               <div className="text-center mt-3 space-y-0.5">
