@@ -46,3 +46,8 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 run = ["node", "server/dist/index.cjs"]
 build = ["bash", "-c", "cd client && npm install && npm run build && cd ../server && npm install && npm run build"]
+
+[userenv]
+
+[userenv.shared]
+POINTIFY_API_URL = "https://api.pointifypos.com"
