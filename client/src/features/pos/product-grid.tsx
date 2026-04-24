@@ -694,6 +694,37 @@ export default function ProductGrid({
   };
 
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
+  const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({ name: '', phone: '', email: '', address: '' });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: async (data: typeof newCustomerForm) => {
+      const response = await apiCall('/api/customers', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: data.name.trim(),
+          phonenumber: data.phone,
+          email: data.email,
+          address: data.address,
+          wallet: 0,
+          shopId: shopId,
+          adminid: adminId,
+        }),
+      });
+      return response.json();
+    },
+    onSuccess: (createdCustomer: any, variables: any) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      const newId = createdCustomer._id || createdCustomer.id || createdCustomer?.customer?._id;
+      if (newId) setSelectedCustomerId(newId);
+      setNewCustomerForm({ name: '', phone: '', email: '', address: '' });
+      setShowAddCustomerDialog(false);
+      toast({ title: 'Customer created', description: `${variables.name} was added successfully.` });
+    },
+    onError: () => {
+      toast({ title: 'Failed to create customer', variant: 'destructive' });
+    },
+  });
 
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
@@ -2114,7 +2145,7 @@ export default function ProductGrid({
                 <label className="text-sm font-medium text-gray-700">Customer *</label>
                 <button
                   type="button"
-                  onClick={() => window.open('/customers', '_blank')}
+                  onClick={() => setShowAddCustomerDialog(true)}
                   className="flex items-center space-x-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
                 >
                   <Plus className="h-3 w-3" />
@@ -2158,6 +2189,66 @@ export default function ProductGrid({
               disabled={!selectedCustomerId}
             >
               Hold Sale
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Add New Customer Dialog */}
+      <Dialog open={showAddCustomerDialog} onOpenChange={(open) => { if (!open) { setShowAddCustomerDialog(false); setNewCustomerForm({ name: '', phone: '', email: '', address: '' }); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <User className="h-5 w-5 text-purple-500" />
+              <span>Add New Customer</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Name *</label>
+              <Input
+                placeholder="Customer name"
+                value={newCustomerForm.name}
+                onChange={(e) => setNewCustomerForm(f => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Phone</label>
+              <Input
+                placeholder="Phone number"
+                value={newCustomerForm.phone}
+                onChange={(e) => setNewCustomerForm(f => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Email</label>
+              <Input
+                placeholder="Email address"
+                type="email"
+                value={newCustomerForm.email}
+                onChange={(e) => setNewCustomerForm(f => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Address</label>
+              <Input
+                placeholder="Address"
+                value={newCustomerForm.address}
+                onChange={(e) => setNewCustomerForm(f => ({ ...f, address: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowAddCustomerDialog(false); setNewCustomerForm({ name: '', phone: '', email: '', address: '' }); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createCustomerMutation.mutate(newCustomerForm)}
+              disabled={!newCustomerForm.name.trim() || createCustomerMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
             </Button>
           </DialogFooter>
         </DialogContent>
