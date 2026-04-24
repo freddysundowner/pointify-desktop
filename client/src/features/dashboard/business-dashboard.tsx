@@ -240,49 +240,40 @@ export default function BusinessDashboard() {
 
   // Handle shop switching with smooth data refresh
   const handleShopSwitch = async (shopId: string) => {
-    try {
-      dispatch(setSelectedShop(shopId));
-      const selectedShopData = availableShops.find(shop => shop.id === shopId);
-      
-      // Update admin's primary shop via API using PUT method
-      await apiCall(`/api/auth/admin/${admin?._id}`, {
-        method: "PUT",
-        body: JSON.stringify({ shop: shopId }),
-      });
+    // Find the full shop object from the API response so localStorage retains it
+    const fullShopData = Array.isArray(shopsData)
+      ? shopsData.find((s: any) => s._id === shopId)
+      : null;
+    const selectedShopMeta = availableShops.find(shop => shop.id === shopId);
 
-      // Update admin data in localStorage to persist shop selection
-      const currentAdminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const mergedAdminData = { 
-        ...currentAdminData, 
-        primaryShop: shopId,
-        currentShopId: shopId 
-      };
-      localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
-      updateAdmin(mergedAdminData);
-      
-      // Show loading toast
-      toast({
-        title: "Switching Shop",
-        description: `Loading data for ${selectedShopData?.name}...`,
+    dispatch(setSelectedShop(shopId));
+
+    // Persist full shop object so usePrimaryShop keeps shopData after reload
+    const currentAdminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const mergedAdminData = {
+      ...currentAdminData,
+      primaryShop: fullShopData || shopId,
+    };
+    localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
+    updateAdmin(mergedAdminData);
+
+    // Invalidate and refetch all queries for the new shop immediately
+    queryClient.invalidateQueries();
+
+    toast({
+      title: "Switching Shop",
+      description: `Loading data for ${selectedShopMeta?.name || 'selected shop'}...`,
+    });
+
+    try {
+      // Update primary shop on the server so it persists across sessions
+      await apiCall(`/api/admin/${admin?._id}`, {
+        method: "PUT",
+        body: JSON.stringify({ primaryShop: shopId }),
       });
-      
-      // Invalidate and refetch all queries for the new shop
-      queryClient.invalidateQueries();
-      
     } catch (error) {
-      console.error("Error switching shop:", error);
-      // Still update locally even if API fails
-      const currentAdminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-      const mergedAdminData = { 
-        ...currentAdminData, 
-        primaryShop: shopId,
-        currentShopId: shopId 
-      };
-      localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
-      updateAdmin(mergedAdminData);
-      
-      // Invalidate queries even on error
-      queryClient.invalidateQueries();
+      console.error("Error switching shop on server:", error);
+      // Local update already applied above — user stays on correct shop
     }
   };
   // Admin always has full access - no impersonation restrictions
