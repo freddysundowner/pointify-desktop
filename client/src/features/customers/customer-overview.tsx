@@ -801,48 +801,94 @@ export default function CustomerOverview() {
   const downloadStatementPDF = () => {
     const customerName = customerOverviewData.name;
     const currentDate = new Date().toLocaleDateString();
-    const shopName = (typeof admin?.primaryShop === 'object' ? (admin.primaryShop as any)?.name : null) || 'Customer Account Statement';
-    
-    if (!customerPayments || customerPayments.length === 0) {
+    const shopName = (typeof admin?.primaryShop === 'object' ? (admin.primaryShop as any)?.name : null) || 'Shop';
+
+    const allSales: any[] = salesData?.data || [];
+    const allPayments: any[] = (customerPayments as any[]) || [];
+
+    if (allSales.length === 0 && allPayments.length === 0) {
       toast({
-        title: "No Payment History",
-        description: "No payment history available for this customer",
+        title: "No History",
+        description: "No transaction history available for this customer",
         variant: "destructive",
       });
       return;
     }
-    
-    // Create a new window with the PDF content
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
 
-    const transactionRows = customerPayments.map((payment: any) => {
-      const date = new Date(payment.createdAt).toLocaleDateString();
-      const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
-      const amount = payment.totalAmount || 0;
-      const paymentNo = payment.paymentNo || 'N/A';
+    // Build unified transaction list
+    type TxRow = { ts: number; date: string; description: string; ref: string; attendant: string; debit: number; credit: number; };
+    const rows: TxRow[] = [];
+
+    // Add sales
+    allSales.forEach((sale: any) => {
+      const ts = new Date(sale.createdAt || sale.saleDate).getTime();
+      const ref = sale.receiptNo || sale.receiptno || sale._id?.slice(-8) || 'N/A';
+      const attendant = sale.attendantId?.username || '';
+      const amount = Number(sale.totalWithDiscount || sale.totalAmount || 0);
+      const tag = (sale.paymentTag || '').toLowerCase();
+      const productNames = (sale.items || []).map((i: any) => i.productName || i.name || 'Item').join(', ');
+      const description = `Sale${productNames ? ': ' + productNames.substring(0, 60) : ''}`;
+      const payLabel = tag === 'credit' ? 'Credit' : tag === 'wallet' ? 'Wallet' : tag === 'mpesa' ? 'M-Pesa' : tag === 'bank' ? 'Bank' : 'Cash';
+
+      if (tag === 'credit') {
+        // Credit sale — customer owes this amount
+        rows.push({ ts, date: new Date(ts).toLocaleDateString(), description: `${description} [${payLabel}]`, ref, attendant, debit: amount, credit: 0 });
+      } else if (tag === 'wallet') {
+        // Paid from wallet — deducted from wallet
+        rows.push({ ts, date: new Date(ts).toLocaleDateString(), description: `${description} [${payLabel}]`, ref, attendant, debit: amount, credit: 0 });
+      } else {
+        // Cash/M-Pesa/Bank paid sale — show as informational, 0 impact on balance
+        rows.push({ ts, date: new Date(ts).toLocaleDateString(), description: `${description} [${payLabel} - Paid]`, ref, attendant, debit: 0, credit: 0 });
+      }
+    });
+
+    // Add wallet transactions
+    allPayments.forEach((payment: any) => {
+      const ts = new Date(payment.createdAt).getTime();
+      const ref = payment.paymentNo || payment._id?.slice(-8) || 'N/A';
       const attendant = payment.attendantId?.username || 'System';
-      const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
-      const amountColor = payment.type === 'deposit' ? '#059669' : '#dc2626';
-      const sign = payment.type === 'withdraw' ? '-' : '+';
-      
+      const amount = Number(payment.totalAmount || 0);
+      const isDeposit = payment.type === 'deposit';
+      rows.push({
+        ts, date: new Date(ts).toLocaleDateString(),
+        description: isDeposit ? 'Wallet Deposit' : 'Wallet Withdrawal',
+        ref, attendant,
+        debit: isDeposit ? 0 : amount,
+        credit: isDeposit ? amount : 0,
+      });
+    });
+
+    // Sort by date ascending
+    rows.sort((a, b) => a.ts - b.ts);
+
+    // Compute running balance (positive = customer has credit, negative = customer owes)
+    let runningBalance = 0;
+    const transactionRows = rows.map(row => {
+      runningBalance += row.credit - row.debit;
+      const balanceColor = runningBalance < 0 ? '#dc2626' : '#059669';
+      const balanceText = `${currency} ${Math.abs(runningBalance).toFixed(2)}${runningBalance < 0 ? ' (DR)' : ''}`;
+      const debitCell = row.debit > 0
+        ? `<span style="color:#dc2626;font-weight:600;">${currency} ${row.debit.toFixed(2)}</span>`
+        : `<span style="color:#9ca3af;">-</span>`;
+      const creditCell = row.credit > 0
+        ? `<span style="color:#059669;font-weight:600;">${currency} ${row.credit.toFixed(2)}</span>`
+        : `<span style="color:#9ca3af;">-</span>`;
       return `
         <tr>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${date}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">${type}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: ${amountColor}; font-weight: 600;">
-            ${sign}${currency} ${amount.toFixed(2)}
-          </td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd;">
-            <div>${paymentNo}</div>
-            <div style="font-size: 12px; color: #6b7280;">${attendant}</div>
-          </td>
-          <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600;">
-            ${currency} ${Math.abs(balance).toFixed(2)}${balance < 0 ? ' (DR)' : ''}
-          </td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">${row.date}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-size:12px;">${row.description}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">${row.ref}<br/><span style="font-size:11px;color:#6b7280;">${row.attendant}</span></td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">${debitCell}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">${creditCell}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;color:${balanceColor};">${balanceText}</td>
         </tr>
       `;
     }).join('');
+
+    // Summary
+    const totalDebits = rows.reduce((s, r) => s + r.debit, 0);
+    const totalCredits = rows.reduce((s, r) => s + r.credit, 0);
+    const closingBalance = totalCredits - totalDebits;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -965,34 +1011,45 @@ export default function CustomerOverview() {
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th style="text-align: right;">Amount</th>
-                <th>Receipt & Attendant</th>
-                <th style="text-align: right;">Balance</th>
+                <th style="width:90px;">Date</th>
+                <th>Description</th>
+                <th style="width:120px;">Reference</th>
+                <th style="text-align:right;width:100px;">Debit</th>
+                <th style="text-align:right;width:100px;">Credit</th>
+                <th style="text-align:right;width:110px;">Balance</th>
               </tr>
             </thead>
             <tbody>
               ${transactionRows}
             </tbody>
+            <tfoot>
+              <tr style="background:#f1f5f9;font-weight:700;">
+                <td colspan="3" style="padding:10px 8px;border-top:2px solid #2563eb;">Totals</td>
+                <td style="padding:10px 8px;border-top:2px solid #2563eb;text-align:right;color:#dc2626;">${currency} ${totalDebits.toFixed(2)}</td>
+                <td style="padding:10px 8px;border-top:2px solid #2563eb;text-align:right;color:#059669;">${currency} ${totalCredits.toFixed(2)}</td>
+                <td style="padding:10px 8px;border-top:2px solid #2563eb;text-align:right;color:${closingBalance < 0 ? '#dc2626' : '#059669'};">
+                  ${currency} ${Math.abs(closingBalance).toFixed(2)}${closingBalance < 0 ? ' (DR)' : ' (CR)'}
+                </td>
+              </tr>
+            </tfoot>
           </table>
 
           <div class="summary">
             <div class="summary-title">Account Summary</div>
             <div class="summary-grid">
               <div class="summary-item">
-                <div class="summary-value" style="color: #2563eb;">${currency} ${customerOverviewData.totalSpent.toFixed(2)}</div>
-                <div class="summary-label">Total Spent</div>
+                <div class="summary-value" style="color:#dc2626;">${currency} ${totalDebits.toFixed(2)}</div>
+                <div class="summary-label">Total Debits</div>
               </div>
               <div class="summary-item">
-                <div class="summary-value" style="color: ${customerOverviewData.creditBalance < 0 ? '#dc2626' : '#059669'};">
-                  ${currency} ${Math.abs(customerOverviewData.creditBalance || 0).toFixed(2)}
+                <div class="summary-value" style="color:#059669;">${currency} ${totalCredits.toFixed(2)}</div>
+                <div class="summary-label">Total Credits</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-value" style="color:${closingBalance < 0 ? '#dc2626' : '#059669'};">
+                  ${currency} ${Math.abs(closingBalance).toFixed(2)}
                 </div>
-                <div class="summary-label">${customerOverviewData.creditBalance < 0 ? 'Outstanding Balance' : 'Wallet Balance'}</div>
-              </div>
-              <div class="summary-item">
-                <div class="summary-value" style="color: #7c3aed;">${(customerData as any)?.loyaltyPoints ?? 0}</div>
-                <div class="summary-label">Loyalty Points</div>
+                <div class="summary-label">${closingBalance < 0 ? 'Outstanding (DR)' : 'Credit Balance (CR)'}</div>
               </div>
             </div>
           </div>
