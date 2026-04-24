@@ -693,8 +693,27 @@ export default function ProductGrid({
     processTransaction(false);
   };
 
+  const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
+
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
+    if (!selectedCustomerId) {
+      setShowHoldCustomerDialog(true);
+      return;
+    }
+    await processTransaction(true);
+  };
+
+  const handleConfirmHoldWithCustomer = async () => {
+    if (!selectedCustomerId) {
+      toast({
+        title: "Customer Required",
+        description: "Please select a customer to place this sale on hold.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowHoldCustomerDialog(false);
     await processTransaction(true);
   };
 
@@ -2070,6 +2089,65 @@ export default function ProductGrid({
             </Button>
             <Button onClick={handleDiscountUpdate}>
               Apply Discount
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hold Transaction - Customer Required Dialog */}
+      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <UserCheck className="h-5 w-5 text-orange-500" />
+              <span>Select Customer for Hold</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-600">
+              A customer must be selected to place this sale on hold.
+            </p>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Customer *</label>
+              <select
+                className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                value={selectedCustomerId}
+                onChange={(e) => setSelectedCustomerId(e.target.value)}
+              >
+                <option value="">Select a customer...</option>
+                {customers.map((customer: any) => {
+                  const customerId = customer._id || customer.id;
+                  return (
+                    <option key={customerId} value={customerId}>
+                      {customer.name}{customer.phone ? ` (${customer.phone})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {selectedCustomer && (
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+                <p className="font-medium text-gray-900">{selectedCustomer.name}</p>
+                <p className="text-gray-500">
+                  Outstanding: Ksh {Math.abs(selectedCustomer.totalOutstanding || selectedCustomer.balance || 0).toFixed(2)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmHoldWithCustomer}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              disabled={!selectedCustomerId}
+            >
+              Hold Sale
             </Button>
           </DialogFooter>
         </DialogContent>
