@@ -1,6 +1,10 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
-// Removed sync system
+
+const extractToken = (req: any) => {
+  const authHeader = req.headers.authorization;
+  return authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
+};
 
 // Function to fetch categories from local API
 async function fetchLocalCategories() {
@@ -327,18 +331,31 @@ export function registerShopRoutes(app: Express) {
   app.delete("/api/shop/data/:id", async (req, res) => {
     try {
       const shopId = req.params.id;
-      console.log(`Fetching shop details for ID: ${shopId}`);
+      const token = extractToken(req);
+      console.log(`Deleting shop data for ID: ${shopId}`);
+
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
       
       const response = await makePointifyRequest(`/shop/data/${shopId}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       
-      console.log(`Shop details response:`, response);
+      console.log(`Delete shop data response:`, response);
       res.json(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting shop data:", error);
-      res.status(500).json({ 
-        error: "Failed to delete shop data",
+      let errorMessage = "Failed to delete shop data";
+      if (error.responseBody) {
+        try {
+          const parsed = JSON.parse(error.responseBody);
+          if (parsed.error) errorMessage = parsed.error;
+        } catch {}
+      }
+      res.status(error.status || 500).json({ 
+        error: errorMessage,
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }

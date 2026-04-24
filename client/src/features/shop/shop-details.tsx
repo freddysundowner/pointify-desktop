@@ -233,7 +233,7 @@ export default function ShopDetails() {
       inputPlaceholder: "Type DELETE to confirm",
       onConfirm: () => {
         // Call the delete shop data API
-        apiCall(`/shop/data/${id}`, {
+        apiCall(`/api/shop/data/${id}`, {
           method: 'DELETE',
         }).then(() => {
           toast({
