@@ -531,12 +531,18 @@ export default function ProductGrid({
     }
     setIsCreatingCustomItem(true);
     try {
+      const resolvedAttendantId = attendant?._id
+        ? attendant._id
+        : (typeof admin?.attendantId === 'object' && admin?.attendantId
+            ? (admin.attendantId as any)._id
+            : admin?.attendantId) || admin?._id;
+
       const product = await apiCall("/api/product", {
         method: "POST",
         body: JSON.stringify({
           name: customItemName.trim(),
           shopId,
-          attendantId: attendant?._id || (attendant as any)?.id,
+          attendantId: resolvedAttendantId,
           admin: adminId,
           sellingPrice: price,
           wholesalePrice: price,
