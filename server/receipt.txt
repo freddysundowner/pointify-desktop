@@ -2,18 +2,18 @@
          Nakuru, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC511215
-Date: Apr 24, 2026, 11:02 AM
+Receipt #: REC860746
+Date: Apr 24, 2026, 02:05 PM
 Customer: fredrick 
 Attendant: Fredrick
 -------------------------------
-black clothes
+Body butter
  srn: 
-  1 x KES 200.00 = KES200.00
+  1 x KES 300.00 = KES300.00
 -------------------------------
-Subtotal:      KES200.00
+Subtotal:      KES300.00
 Tax:           KES0.00
-TOTAL:         KES200.00
+TOTAL:         KES300.00
 
 Payment Method: credit
 
