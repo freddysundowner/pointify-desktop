@@ -695,6 +695,8 @@ export default function ProductGrid({
   };
 
   const isLaundryShop = (shopData?.shopCategoryId?.name || '').toLowerCase().includes('laundry');
+  const [mainCustomerSearch, setMainCustomerSearch] = useState('');
+  const [showMainCustomerDropdown, setShowMainCustomerDropdown] = useState(false);
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
   const [readyDate, setReadyDate] = useState('');
@@ -877,21 +879,66 @@ export default function ProductGrid({
             <div>
               <label className="text-xs lg:text-sm font-medium text-gray-700 block mb-1 lg:mb-2">Select Customer</label>
               <div className="flex gap-1 lg:gap-2">
-                <select 
-                  className="flex-1 h-8 lg:h-10 px-2 lg:px-3 border border-gray-300 rounded text-xs lg:text-sm"
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                >
-                  <option value="">Walk-in</option>
-                  {customers.map((customer: any) => {
-                    const customerId = customer._id || customer.id;
-                    return (
-                      <option key={customerId} value={customerId}>
-                        {customer.name}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                  <Input
+                    className="h-8 lg:h-10 pl-7 pr-2 text-xs lg:text-sm"
+                    placeholder="Walk-in"
+                    value={showMainCustomerDropdown ? mainCustomerSearch : (selectedCustomer ? selectedCustomer.name : '')}
+                    onFocus={() => {
+                      setMainCustomerSearch('');
+                      setShowMainCustomerDropdown(true);
+                    }}
+                    onChange={(e) => {
+                      setMainCustomerSearch(e.target.value);
+                      setShowMainCustomerDropdown(true);
+                    }}
+                    onBlur={() => setTimeout(() => setShowMainCustomerDropdown(false), 150)}
+                  />
+                  {showMainCustomerDropdown && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                      {/* Walk-in option */}
+                      <div
+                        className={`px-3 py-2 text-xs lg:text-sm cursor-pointer hover:bg-gray-50 ${!selectedCustomerId ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}`}
+                        onMouseDown={() => { setSelectedCustomerId(''); setMainCustomerSearch(''); setShowMainCustomerDropdown(false); }}
+                      >
+                        Walk-in
+                      </div>
+                      {/* Filtered customers */}
+                      {customers
+                        .filter((c: any) => {
+                          if (!mainCustomerSearch) return true;
+                          const term = mainCustomerSearch.toLowerCase();
+                          return (
+                            (c.name || '').toLowerCase().includes(term) ||
+                            (c.phone || '').toLowerCase().includes(term) ||
+                            (c.phonenumber || '').toLowerCase().includes(term)
+                          );
+                        })
+                        .map((customer: any) => {
+                          const cId = customer._id || customer.id;
+                          return (
+                            <div
+                              key={cId}
+                              className={`px-3 py-2 text-xs lg:text-sm cursor-pointer hover:bg-gray-50 ${selectedCustomerId === cId ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}`}
+                              onMouseDown={() => { setSelectedCustomerId(cId); setMainCustomerSearch(''); setShowMainCustomerDropdown(false); }}
+                            >
+                              <div className="font-medium">{customer.name}</div>
+                              {(customer.phone || customer.phonenumber) && (
+                                <div className="text-xs text-gray-400">{customer.phone || customer.phonenumber}</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      {mainCustomerSearch && customers.filter((c: any) => {
+                        const term = mainCustomerSearch.toLowerCase();
+                        return (c.name || '').toLowerCase().includes(term) || (c.phone || '').toLowerCase().includes(term) || (c.phonenumber || '').toLowerCase().includes(term);
+                      }).length === 0 && (
+                        <div className="px-3 py-3 text-xs text-gray-400 text-center">No customers found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {/* Add Customer Button - Only show if attendant has customers manage permission */}
                 {hasAttendantPermission('customers', 'manage') && (
                   <Button 
