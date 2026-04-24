@@ -2110,7 +2110,17 @@ export default function ProductGrid({
             </p>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Customer *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-gray-700">Customer *</label>
+                <button
+                  type="button"
+                  onClick={() => window.open('/customers', '_blank')}
+                  className="flex items-center space-x-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add new customer</span>
+                </button>
+              </div>
               <select
                 className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 value={selectedCustomerId}
