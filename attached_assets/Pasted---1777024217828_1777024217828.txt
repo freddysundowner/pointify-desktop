@@ -1,0 +1,14 @@
+┌────┬────────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                   │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 46 │ app                    │ default     │ 0.0.0   │ fork    │ 3302209  │ 3D     │ 282  │ online    │ 0%       │ 224.4mb  │ root     │ disabled │
+│ 68 │ app                    │ default     │ 1.0.0   │ fork    │ 0        │ 0      │ 14   │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 69 │ app                    │ default     │ 1.0.0   │ fork    │ 3402463  │ 43h    │ 9    │ online    │ 0%       │ 257.7mb  │ root     │ disabled │
+│ 55 │ index                  │ default     │ 1.0.0   │ fork    │ 3805938  │ 4M     │ 0    │ online    │ 0%       │ 84.6mb   │ root     │ disabled │
+│ 49 │ pointify-web           │ default     │ N/A     │ fork    │ 666615   │ 5M     │ 4    │ online    │ 0%       │ 97.9mb   │ root     │ disabled │
+│ 75 │ pointify-website       │ default     │ N/A     │ fork    │ 2894777  │ 7D     │ 0    │ online    │ 0%       │ 68.4mb   │ root     │ disabled │
+│ 66 │ reggycodas             │ default     │ 1.0.0   │ fork    │ 4170716  │ 51D    │ 2    │ online    │ 0%       │ 84.6mb   │ root     │ disabled │
+│ 61 │ sunpay                 │ default     │ 1.0.0   │ fork    │ 1002570  │ 37D    │ 38   │ online    │ 0%       │ 73.6mb   │ root     │ disabled │
+│ 62 │ tokshop-admin          │ default     │ 1.0.0   │ cluster │ 484155   │ 44D    │ 14   │ online    │ 0%       │ 111.4mb  │ root     │ disabled │
+│ 58 │ tokshop-doc-web        │ default     │ 1.0.0   │ fork    │ 486628   │ 44D    │ 34   │ online    │ 0%       │ 74.9mb   │ root     │ disabled │
+│ 52 │ tokshop-marketplace    │ default     │ 1.0.0   │ cluster │ 484154   │ 44D    │ 40   │ online    │ 0%       │ 119.7mb  │ root     │ disabled │
