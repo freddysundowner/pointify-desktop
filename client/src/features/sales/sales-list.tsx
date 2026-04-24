@@ -30,6 +30,8 @@ import {
   MoreHorizontal,
   RotateCcw,
   ArrowLeft,
+  FileText,
+  CheckCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -115,6 +117,14 @@ function SalesList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Complete Sale (hold → cashed) state
+  const [completeSaleOpen, setCompleteSaleOpen] = useState(false);
+  const [saleToComplete, setSaleToComplete] = useState<any>(null);
+  const [completePaymentMethod, setCompletePaymentMethod] = useState("cash");
+  const [completeAmountPaid, setCompleteAmountPaid] = useState("");
+  const [isCompleting, setIsCompleting] = useState(false);
+
   const { toast } = useToast();
 
   // Get shop and admin details using usePrimaryShop hook
@@ -393,6 +403,188 @@ function SalesList() {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
       setSaleToDelete(null);
+    }
+  };
+
+  // Complete Sale handlers
+  const handleCompleteSale = (sale: any) => {
+    setSaleToComplete(sale);
+    setCompleteAmountPaid(sale.totalAmount.toFixed(2));
+    setCompletePaymentMethod("cash");
+    setCompleteSaleOpen(true);
+  };
+
+  const confirmCompleteSale = async () => {
+    if (!saleToComplete) return;
+    setIsCompleting(true);
+    try {
+      const response = await fetch(`/api/sales/${saleToComplete.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          status: "cashed",
+          paymentTag: completePaymentMethod,
+          amountPaid: parseFloat(completeAmountPaid) || saleToComplete.totalAmount,
+        }),
+      });
+      if (response.ok) {
+        refetch();
+        toast({
+          title: "Sale Completed",
+          description: `Sale #${saleToComplete.receiptNo} has been marked as completed.`,
+        });
+        setCompleteSaleOpen(false);
+        setSaleToComplete(null);
+      } else {
+        const err = await response.json().catch(() => ({ error: "Unknown error" }));
+        toast({
+          title: "Failed to Complete Sale",
+          description: err.error || "An error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to Complete Sale",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  // Quotation PDF generator
+  const generateQuotationPDF = (sale: any) => {
+    try {
+      const originalSale = salesData.find((s: any) => s._id === sale.id);
+      const shop = originalSale?.shopId || {};
+      const currency = shop.currency || primaryShopCurrency;
+      const items: any[] = originalSale?.items || sale.items || [];
+
+      const doc = new jsPDF();
+      let y = 20;
+
+      // Shop header
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text((shop.name || "Shop").toUpperCase(), 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      if (shop.location || shop.address) {
+        doc.text(shop.location || shop.address, 20, y);
+        y += 6;
+      }
+      if (shop.contact || shop.phone) {
+        doc.text(`Tel: ${shop.contact || shop.phone}`, 20, y);
+        y += 6;
+      }
+      if (shop.receiptemail || shop.email) {
+        doc.text(`Email: ${shop.receiptemail || shop.email}`, 20, y);
+        y += 6;
+      }
+      if (shop.paybillTill || shop.paybill_till) {
+        doc.text(`PayBill/Till: ${shop.paybillTill || shop.paybill_till}`, 20, y);
+        y += 6;
+      }
+
+      y += 4;
+      // Title
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text("QUOTATION", 105, y, { align: "center" });
+      y += 10;
+
+      // Date and number row
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Date: ${new Date(sale.saleDate).toLocaleDateString()}`, 20, y);
+      doc.text(`No: ${sale.receiptNo}`, 190, y, { align: "right" });
+      y += 8;
+
+      // Customer
+      if (sale.customerName && sale.customerName !== "Walk-in") {
+        doc.text(`Customer: ${sale.customerName}`, 20, y);
+        y += 7;
+      }
+
+      y += 4;
+
+      // Table header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, y - 4, 170, 8, "F");
+      doc.setFont("helvetica", "bold");
+      doc.text("Item", 22, y);
+      doc.text("Qty", 110, y, { align: "right" });
+      doc.text("Unit Price", 145, y, { align: "right" });
+      doc.text("Total", 188, y, { align: "right" });
+      y += 8;
+      doc.line(20, y - 2, 190, y - 2);
+      doc.setFont("helvetica", "normal");
+
+      // Items
+      items.forEach((item: any) => {
+        const name = item.productName || item.name || "Item";
+        const qty = item.quantity || 1;
+        const unitPrice = item.unitPrice || item.sellingPrice || 0;
+        const total = item.totalPrice || qty * unitPrice;
+
+        const lines = doc.splitTextToSize(name, 82);
+        doc.text(lines, 22, y);
+        doc.text(String(qty), 110, y, { align: "right" });
+        doc.text(`${currency} ${Number(unitPrice).toFixed(2)}`, 145, y, { align: "right" });
+        doc.text(`${currency} ${Number(total).toFixed(2)}`, 188, y, { align: "right" });
+        y += lines.length > 1 ? lines.length * 6 : 8;
+        if (y > 250) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      y += 2;
+      doc.line(20, y, 190, y);
+      y += 8;
+
+      // Subtotal
+      const subtotal = originalSale?.totalAmount || sale.totalAmount || 0;
+      const tax = originalSale?.totaltax || 0;
+      const discount = originalSale?.discount || 0;
+      const grandTotal = originalSale?.totalWithDiscount || subtotal;
+
+      doc.text("Subtotal:", 145, y, { align: "right" });
+      doc.text(`${currency} ${Number(subtotal).toFixed(2)}`, 188, y, { align: "right" });
+      y += 7;
+
+      if (tax > 0) {
+        doc.text("Tax:", 145, y, { align: "right" });
+        doc.text(`${currency} ${Number(tax).toFixed(2)}`, 188, y, { align: "right" });
+        y += 7;
+      }
+      if (discount > 0) {
+        doc.text("Discount:", 145, y, { align: "right" });
+        doc.text(`- ${currency} ${Number(discount).toFixed(2)}`, 188, y, { align: "right" });
+        y += 7;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.text("TOTAL:", 145, y, { align: "right" });
+      doc.text(`${currency} ${Number(grandTotal).toFixed(2)}`, 188, y, { align: "right" });
+
+      y += 12;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.text("Thank you for your business!", 105, y, { align: "center" });
+
+      doc.save(`quotation-${sale.receiptNo}.pdf`);
+      toast({ title: "Quotation Generated", description: `Quotation #${sale.receiptNo} downloaded.` });
+    } catch (err) {
+      console.error("Quotation PDF error:", err);
+      toast({ title: "PDF Error", description: "Failed to generate quotation.", variant: "destructive" });
     }
   };
 
@@ -1060,14 +1252,31 @@ function SalesList() {
                                   <Eye className="mr-2 h-4 w-4" />
                                   View Receipt
                                 </DropdownMenuItem>
-                                {/* <PermissionGuard permission="sales_edit">
-                                  <DropdownMenuItem onClick={() => handleEditSale(sale)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit Sale
-                                  </DropdownMenuItem>
-                                </PermissionGuard> */}
-                                {/* Return Sale - Show for all admins or attendants with sales return permission */}
-                                {(userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
+
+                                {/* Print Quotation - available for all sales */}
+                                <DropdownMenuItem
+                                  onClick={() => generateQuotationPDF(sale)}
+                                >
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Print Quotation
+                                </DropdownMenuItem>
+
+                                {/* Complete Sale - only for hold status */}
+                                {sale.status === "hold" && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleCompleteSale(sale)}
+                                      className="text-green-600 focus:text-green-600"
+                                    >
+                                      <CheckCircle className="mr-2 h-4 w-4" />
+                                      Complete Sale
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+
+                                {/* Return Sale - Show for completed sales, for all admins or attendants with return permission */}
+                                {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
                                   <DropdownMenuItem
                                     onClick={() => handleReturnSale(sale)}
                                   >
@@ -1086,19 +1295,6 @@ function SalesList() {
                                     >
                                       <Trash2 className="mr-2 h-4 w-4" />
                                       Delete Sale
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                
-                                {/* View Profit - Show for all admins or attendants with permission */}
-                                {(userType === 'admin' || hasAttendantPermission('sales', 'view_profit')) && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => console.log('View profit for sale:', sale._id)}
-                                    >
-                                      <TrendingUp className="mr-2 h-4 w-4" />
-                                      View Profit
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -1186,6 +1382,69 @@ function SalesList() {
           </Card>
         </div>
       </div>
+
+      {/* Complete Sale Dialog */}
+      <Dialog open={completeSaleOpen} onOpenChange={setCompleteSaleOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Complete Sale #{saleToComplete?.receiptNo}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 flex justify-between items-center">
+              <span className="text-sm font-medium text-green-800 dark:text-green-200">Total Amount Due</span>
+              <span className="text-xl font-bold text-green-700 dark:text-green-300">
+                {primaryShopCurrency} {Number(saleToComplete?.totalAmount || 0).toFixed(2)}
+              </span>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Payment Method</Label>
+              <Select value={completePaymentMethod} onValueChange={setCompletePaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="mpesa">M-Pesa</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="credit">Credit</SelectItem>
+                  <SelectItem value="wallet">Wallet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Amount Paid</Label>
+              <Input
+                type="number"
+                value={completeAmountPaid}
+                onChange={(e) => setCompleteAmountPaid(e.target.value)}
+                placeholder="Enter amount paid"
+                min={0}
+                step="0.01"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setCompleteSaleOpen(false)}
+                disabled={isCompleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={confirmCompleteSale}
+                disabled={isCompleting}
+              >
+                {isCompleting ? "Processing..." : "Complete Sale"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
