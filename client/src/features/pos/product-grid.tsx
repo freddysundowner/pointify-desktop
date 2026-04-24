@@ -923,29 +923,30 @@ export default function ProductGrid({
                         <p className="text-sm">No products found</p>
                       </div>
                     ) : (
-                      products.slice(0, 8).map((product: any) => (
+                      products.slice(0, 8).map((product: any) => {
+                        const isService = product?.productType === 'service' || product?.virtual === true;
+                        const isOutOfStock = !isService && (product.quantity === 0);
+                        return (
                         <div
                           key={product._id}
-                          onClick={product.quantity === 0 ? undefined : () => {
+                          onClick={isOutOfStock ? undefined : () => {
                             onAddToCart(product);
                             onSearchChange(''); // Clear search after adding
                           }}
-                          className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className={`flex items-center justify-between p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         >
                           <div className="flex-1">
                             <h4 className="text-sm font-medium text-gray-900 truncate">
                               {product.name}
                             </h4>
                             <div className="flex items-center space-x-3 mt-1">
-                              {
-                                product.quantity === 0 && product?.productType == 'product' ? (
-                                  <span className="text-xs text-red-600">
-                                    Out of stock
-                                  </span>
-                                ) :(<span className="text-xs text-gray-500">
-                                  Stock: {product.quantity || 0}
-                                </span>)
-                              }
+                              {isService ? (
+                                <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Service</span>
+                              ) : isOutOfStock ? (
+                                <span className="text-xs text-red-600">Out of stock</span>
+                              ) : (
+                                <span className="text-xs text-gray-500">Stock: {product.quantity || 0}</span>
+                              )}
                               {product.barcode && (
                                 <span className="text-xs text-purple-600 font-mono">
                                   {product.barcode}
@@ -959,7 +960,8 @@ export default function ProductGrid({
                             </span>
                           </div>
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 )}
