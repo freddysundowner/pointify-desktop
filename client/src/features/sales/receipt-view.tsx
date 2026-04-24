@@ -225,7 +225,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 </div></body></html>`;
 
   const openReceiptWindow = (autoPrint: boolean) => {
-    const printWindow = window.open("", "_blank", "width=420,height=750");
+    const printWindow = window.open("", "_blank", "width=700,height=900");
     if (!printWindow) return;
     printWindow.document.write(getReceiptHtml());
     printWindow.document.close();
