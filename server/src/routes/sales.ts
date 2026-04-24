@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
-import nodemailer from "nodemailer";
 
 // Authentication middleware to extract token from Authorization header
 const extractToken = (req: any) => {
@@ -688,43 +687,46 @@ export function registerSalesRoutes(app: Express) {
     }
   });
 
-  // Send receipt via email
+  // Send receipt via email (uses Brevo credentials from Pointify API)
   app.post("/api/sales/email-receipt", async (req, res) => {
     try {
-      const { toEmail, receiptHtml, receiptNo, shopName, customerName, total, currency } = req.body;
+      const { toEmail, receiptHtml, receiptNo, shopName, customerName } = req.body;
 
       if (!toEmail || !receiptHtml) {
         return res.status(400).json({ success: false, error: "Email address and receipt data are required" });
       }
 
-      const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-      const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-      const smtpUser = process.env.SMTP_USER;
-      const smtpPass = process.env.SMTP_PASS;
-      const fromName = process.env.SMTP_FROM_NAME || shopName || "Pointify POS";
-      const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
+      // Fetch Brevo credentials from Pointify API
+      const emailConfig: any = await makePointifyRequest("/settings?type=EMAIL_CONFIG", { method: "GET" });
 
-      if (!smtpUser || !smtpPass) {
-        return res.status(503).json({
-          success: false,
-          error: "Email service not configured. Please set SMTP_USER and SMTP_PASS environment variables.",
-          notConfigured: true
-        });
+      const apiKey = emailConfig?.BREVO_API_KEY;
+      const senderEmail = emailConfig?.BREVO_SENDER_EMAIL || "info@pointifypos.com";
+      const senderName = emailConfig?.BREVO_SENDER_NAME || shopName || "Pointify POS";
+
+      if (!apiKey) {
+        return res.status(503).json({ success: false, error: "Email service credentials not available" });
       }
 
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: { user: smtpUser, pass: smtpPass },
+      const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: toEmail, name: customerName || toEmail }],
+          subject: `Your Receipt #${receiptNo} from ${shopName}`,
+          htmlContent: receiptHtml,
+        }),
       });
 
-      await transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
-        to: toEmail,
-        subject: `Your Receipt #${receiptNo} from ${shopName}`,
-        html: receiptHtml,
-      });
+      if (!brevoRes.ok) {
+        const errBody = await brevoRes.text();
+        console.error("Brevo send error:", errBody);
+        return res.status(500).json({ success: false, error: "Failed to send email via Brevo" });
+      }
 
       res.json({ success: true, message: "Receipt sent successfully" });
     } catch (error: any) {
