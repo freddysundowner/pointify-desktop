@@ -47,7 +47,7 @@ export function registerSettingsRoutes(app: Express) {
         success: true,
         data: {
           apiMode: 'hybrid',
-          onlineApiUrl: 'https://api.pointifypos.com',
+          onlineApiUrl: 'https://staging.pointifypos.com',
           localApiUrl: 'http://localhost:3000',
           syncEnabled: true,
         autoPrint:  true,
@@ -109,7 +109,7 @@ export function registerSettingsRoutes(app: Express) {
         success: true,
         data: {
           apiMode: apiMode,
-          onlineApiUrl: 'https://api.pointifypos.com',
+          onlineApiUrl: 'https://staging.pointifypos.com',
           localApiUrl: 'http://localhost:3000',
           syncEnabled: apiMode !== 'offline',
           syncInterval: finalSyncInterval,
