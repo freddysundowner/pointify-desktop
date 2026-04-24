@@ -1,4 +1,4 @@
-import { ScanBarcode, Package, History, BarChart, LogOut, User, Home, Settings, Store, ChevronDown, ChevronRight, TrendingUp, Hash, AlertTriangle, ArrowRightLeft, BarChart3, ShoppingCart } from "lucide-react";
+import { ScanBarcode, Package, History, BarChart, LogOut, User, Home, Settings, Store, ChevronDown, ChevronRight, TrendingUp, Hash, AlertTriangle, ArrowRightLeft, BarChart3, ShoppingCart, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 // import { useAuth } from "@/features/auth/useAuth"; // Removed for attendant POS
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +52,16 @@ export default function ExpandedSidebar() {
       items: [
         { href: "/shops", label: "All Shops" },
         { href: "/shop-setup", label: "Add New Shop" },
+      ]
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      icon: Settings,
+      items: [
+        { href: "/settings", label: "Account Settings" },
+        { href: "/sms-settings", label: "SMS Settings" },
+        { href: "/printer-config", label: "Printer Config" },
       ]
     },
   ];

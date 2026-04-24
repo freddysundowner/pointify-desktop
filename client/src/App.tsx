@@ -68,6 +68,7 @@ import ProfitLossPage from "@/pages/profit-loss";
 import DebtorsPage from "@/pages/debtors";
 import PrinterConfigPage from "@/pages/printer-config";
 import SettingsPage from "@/pages/settings";
+import SmsSettingsPage from "@/pages/sms-settings";
 
 import AttendantsPage from "@/features/attendants/attendants";
 
@@ -444,6 +445,7 @@ function AppContent() {
             <Route path="/debtors" component={DebtorsPage} />
             <Route path="/printer-config" component={PrinterConfigPage} />
             <Route path="/settings" component={SettingsPage} />
+            <Route path="/sms-settings" component={SmsSettingsPage} />
 
             <Route path="/discount-reports" component={DiscountReports} />
             <Route path="/stock-report" component={StockReport} />
