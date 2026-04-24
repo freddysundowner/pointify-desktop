@@ -642,11 +642,12 @@ export default function ProductGrid({
       createdAt: (!isHold && isCustomDateTime && customDateTime) ? customDateTime : new Date().toISOString(),
       status: isHold ? "hold" : "cashed",
       totaltax: parseFloat(totals.tax.toString()),
-      salesnote: isHold ? "HOLD TRANSACTION" : "",
+      salesnote: "",
       orderId: orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
+      ready_date: "",
       batchTrack: shouldTrackBatches,
-      allownegativeselling: false, // Default for attendant POS
+      allownegativeselling: false,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
                    !isHold && selectedPaymentMethod === "split" && splitAmounts.mpesa > 0 ? `SPLIT_${Date.now()}` : "",
       mpesaTotal: !isHold && selectedPaymentMethod === "mpesa" ? parseFloat(totals.total.toString()) :
@@ -658,8 +659,8 @@ export default function ProductGrid({
       amountPaid: isHold || selectedPaymentMethod === "credit" ? 0.0 : 
                  selectedPaymentMethod === "split" ? splitAmounts.cash : parseFloat(totals.total.toString()),
       outstandingBalance: isHold || selectedPaymentMethod === "credit" ? parseFloat(totals.total.toString()) : 0.0,
-      paymentType: isHold ? "hold" : selectedPaymentMethod,
-      paymentTag: isHold ? "hold" : selectedPaymentMethod,
+      paymentType: isHold ? "cash" : selectedPaymentMethod,
+      paymentTag: isHold ? "cash" : selectedPaymentMethod,
       totalDiscount: parseFloat(totals.discount.toString()),
       customerId: selectedCustomerId || null,
       saleDiscount: 0.0
