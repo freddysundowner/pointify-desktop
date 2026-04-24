@@ -890,6 +890,10 @@ export default function CustomerOverview() {
     const totalCredits = rows.reduce((s, r) => s + r.credit, 0);
     const closingBalance = totalCredits - totalDebits;
 
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
