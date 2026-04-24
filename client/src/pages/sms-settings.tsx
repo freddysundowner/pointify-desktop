@@ -117,7 +117,7 @@ export default function SmsSettingsPage() {
       const res = await fetch("/api/sms/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ phone, amount, userId }),
+        body: JSON.stringify({ phone, amount, userid: userId }),
       });
       const data = await res.json();
       if (data?.error) throw new Error(data.error);

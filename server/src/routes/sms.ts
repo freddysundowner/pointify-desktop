@@ -5,7 +5,7 @@ export function registerSmsRoutes(app: Express) {
   // Top up SMS credits via M-Pesa STK push
   app.post("/api/sms/topup", async (req, res) => {
     try {
-      const { phone, amount, userId } = req.body;
+      const { phone, amount, userid } = req.body;
       const token = req.headers.authorization;
 
       const response = await makePointifyRequest("/sms/topup", {
@@ -14,7 +14,7 @@ export function registerSmsRoutes(app: Express) {
           "Content-Type": "application/json",
           ...(token ? { Authorization: token } : {}),
         },
-        body: JSON.stringify({ phone, amount, userId }),
+        body: JSON.stringify({ phone, amount, userid }),
       });
 
       res.json(response);
