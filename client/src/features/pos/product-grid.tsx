@@ -658,7 +658,7 @@ export default function ProductGrid({
                   !isHold && selectedPaymentMethod === "split" && splitAmounts.bank > 0 ? `BANK_${Date.now()}` : "",
       amountPaid: isHold || selectedPaymentMethod === "credit" ? 0.0 : 
                  selectedPaymentMethod === "split" ? splitAmounts.cash : parseFloat(totals.total.toString()),
-      outstandingBalance: selectedPaymentMethod === "credit" ? parseFloat(totals.total.toString()) : 0.0,
+      outstandingBalance: isHold || selectedPaymentMethod === "credit" ? parseFloat(totals.total.toString()) : 0.0,
       paymentType: isHold ? "cash" : selectedPaymentMethod,
       paymentTag: isHold ? "cash" : selectedPaymentMethod,
       totalDiscount: parseFloat(totals.discount.toString()),
