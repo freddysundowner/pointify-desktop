@@ -43,7 +43,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import type { RootState, AppDispatch } from "@/store";
-import { setSelectedShop, setAvailableShops, initializeSelectedShop } from "@/store/shopSlice";
+import { setSelectedShop, setSelectedShopData, setAvailableShops, initializeSelectedShop } from "@/store/shopSlice";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { formatCurrency, formatDate, formatTime, useCurrency } from "@/utils";
 
@@ -229,6 +229,8 @@ export default function BusinessDashboard() {
 
       const currentShopBelongsToAdmin = availableShops.find(shop => shop.id === selectedShopId);
 
+      let resolvedShopId = selectedShopId;
+
       if (!selectedShopId || !currentShopBelongsToAdmin) {
         // Prefer: stored user selection → API primaryShop → first shop
         const preferredId = storedBelongsToAdmin
@@ -240,13 +242,24 @@ export default function BusinessDashboard() {
           const shopToSelect = shopExists ? preferredId : availableShops[0]?.id;
           if (shopToSelect) {
             dispatch(setSelectedShop(shopToSelect));
+            resolvedShopId = shopToSelect;
           }
         } else if (availableShops[0]?.id) {
           dispatch(setSelectedShop(availableShops[0].id));
+          resolvedShopId = availableShops[0].id;
+        }
+      }
+
+      // Always ensure Redux + localStorage have the full shop object for the resolved shop
+      // so usePrimaryShop can derive shopCategoryId (e.g. for laundry features) reactively
+      if (resolvedShopId && Array.isArray(shopsData)) {
+        const fullShop = (shopsData as any[]).find((s: any) => s._id === resolvedShopId);
+        if (fullShop) {
+          dispatch(setSelectedShopData(fullShop));
         }
       }
     }
-  }, [availableShops, selectedShopId, admin?._id, admin?.primaryShop, dispatch]);
+  }, [availableShops, selectedShopId, admin?._id, admin?.primaryShop, shopsData, dispatch]);
 
   // Handle shop switching with smooth data refresh
   const handleShopSwitch = async (shopId: string) => {
@@ -258,7 +271,12 @@ export default function BusinessDashboard() {
 
     dispatch(setSelectedShop(shopId));
 
-    // Persist full shop object so usePrimaryShop keeps shopData after reload
+    // Push full shop object into Redux so usePrimaryShop picks it up immediately
+    if (fullShopData) {
+      dispatch(setSelectedShopData(fullShopData));
+    }
+
+    // Also patch adminData so the current in-memory admin reflects the new shop
     const currentAdminData = JSON.parse(localStorage.getItem('adminData') || '{}');
     const mergedAdminData = {
       ...currentAdminData,

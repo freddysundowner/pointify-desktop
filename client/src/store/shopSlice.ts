@@ -9,13 +9,28 @@ interface Shop {
 
 interface ShopState {
   selectedShopId: string | null;
+  selectedShopData: any | null;
   availableShops: Shop[];
   isLoading: boolean;
   error: string | null;
 }
 
+const loadStoredShopData = (): any | null => {
+  try {
+    const raw = localStorage.getItem('selectedShopData');
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const storedId = localStorage.getItem('selectedShopId');
+    if (storedId && (data._id === storedId || data.id === storedId)) return data;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 const initialState: ShopState = {
   selectedShopId: localStorage.getItem('selectedShopId') || null,
+  selectedShopData: loadStoredShopData(),
   availableShops: [],
   isLoading: false,
   error: null,
@@ -27,14 +42,18 @@ const shopSlice = createSlice({
   reducers: {
     setSelectedShop: (state, action: PayloadAction<string>) => {
       state.selectedShopId = action.payload;
-      // Persist to localStorage for session recovery
       localStorage.setItem('selectedShopId', action.payload);
+    },
+    setSelectedShopData: (state, action: PayloadAction<any>) => {
+      state.selectedShopData = action.payload;
+      if (action.payload) {
+        localStorage.setItem('selectedShopData', JSON.stringify(action.payload));
+      }
     },
     setAvailableShops: (state, action: PayloadAction<Shop[]>) => {
       state.availableShops = action.payload;
     },
     initializeSelectedShop: (state, action: PayloadAction<string | null>) => {
-      // Initialize from localStorage or admin data
       const storedShopId = localStorage.getItem('selectedShopId');
       state.selectedShopId = storedShopId || action.payload;
     },
@@ -44,18 +63,20 @@ const shopSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
-
     clearShopData: (state) => {
       state.selectedShopId = null;
+      state.selectedShopData = null;
       state.availableShops = [];
       state.error = null;
       localStorage.removeItem('selectedShopId');
+      localStorage.removeItem('selectedShopData');
     },
   },
 });
 
 export const {
   setSelectedShop,
+  setSelectedShopData,
   setAvailableShops,
   initializeSelectedShop,
   setLoading,
