@@ -2,7 +2,7 @@ import { X, Printer, Mail, Plus, Check, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Transaction, CartItem } from "@shared/schema";
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
 import { useEffect, useState } from "react";

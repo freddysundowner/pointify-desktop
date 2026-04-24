@@ -67,7 +67,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Sale } from "@shared/schema";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";

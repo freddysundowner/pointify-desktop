@@ -13,7 +13,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useAuth } from "@/features/auth/useAuth";
 import { useLocation } from "wouter";
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCurrency } from "@/utils";
 

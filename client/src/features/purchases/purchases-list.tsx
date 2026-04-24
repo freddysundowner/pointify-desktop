@@ -56,7 +56,7 @@ import PurchaseOrderDialog from "./purchase-order-dialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCurrency } from "@/utils";
 
