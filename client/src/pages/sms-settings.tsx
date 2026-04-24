@@ -59,9 +59,10 @@ export default function SmsSettingsPage() {
 
   useEffect(() => {
     if (shopData) {
-      setSmsEnabled(shopData.saleSmsEnabled ?? false);
-      setSenderName(shopData.saleSmsSender || "POINTIFY");
-      setTemplate(shopData.saleSmsTemplate || DEFAULT_TEMPLATE);
+      const admin = shopData.adminId;
+      setSmsEnabled(shopData.saleSmsEnabled ?? admin?.saleSmsEnabled ?? false);
+      setSenderName(shopData.saleSmsSender || admin?.saleSmsSender || "POINTIFY");
+      setTemplate(shopData.saleSmsTemplate || admin?.saleSmsTemplate || DEFAULT_TEMPLATE);
     }
   }, [shopData]);
 
@@ -93,7 +94,7 @@ export default function SmsSettingsPage() {
     },
   });
 
-  const smsCredits: number = shopData?.smsCredits ?? 0;
+  const smsCredits: number = shopData?.adminId?.smscredit ?? shopData?.smscredit ?? 0;
 
   return (
     <DashboardLayout>
