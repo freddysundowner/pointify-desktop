@@ -270,10 +270,67 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
     setShowEmailDialog(true);
   };
 
+  const generateReceiptPdfBase64 = (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "380px";
+      iframe.style.height = "1200px";
+      iframe.style.border = "none";
+      document.body.appendChild(iframe);
+
+      iframe.onload = async () => {
+        try {
+          await new Promise((r) => setTimeout(r, 300));
+          const html2canvas = (await import("html2canvas")).default;
+          const { jsPDF } = await import("jspdf");
+
+          const receiptEl = iframe.contentDocument?.querySelector(".receipt") as HTMLElement;
+          if (!receiptEl) throw new Error("Receipt element not found");
+
+          const canvas = await html2canvas(receiptEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+          });
+
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          const widthMm = 80;
+          const heightMm = (canvas.height * widthMm) / canvas.width;
+
+          const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: [widthMm + 10, heightMm + 10],
+          });
+          doc.addImage(imgData, "JPEG", 5, 5, widthMm, heightMm);
+
+          const base64 = doc.output("datauristring").split(",")[1];
+          resolve(base64);
+        } catch (err) {
+          reject(err);
+        } finally {
+          document.body.removeChild(iframe);
+        }
+      };
+
+      iframe.srcdoc = getReceiptHtml();
+    });
+  };
+
   const handleSendEmail = async () => {
     if (!emailInput.trim()) return;
     setIsSendingEmail(true);
     try {
+      let pdfBase64 = "";
+      try {
+        pdfBase64 = await generateReceiptPdfBase64();
+      } catch (pdfErr) {
+        console.warn("PDF generation failed, sending HTML only:", pdfErr);
+      }
+
       const response = await apiCall("/api/sales/email-receipt", {
         method: "POST",
         body: JSON.stringify({
@@ -283,20 +340,12 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
           shopName: saleData.shop.name,
           shopEmail: saleData.shop.receiptemail || "",
           customerName: saleData.customerName,
-          total: fmt(saleData.totalWithDiscount),
-          currency,
+          pdfBase64,
         }),
       });
       const result = await response.json();
       if (result.success) {
         setEmailSent(true);
-      } else if (result.notConfigured) {
-        toast({
-          title: "Email not configured",
-          description: "Set SMTP_USER and SMTP_PASS in your environment variables to enable email sending.",
-          variant: "destructive",
-        });
-        setShowEmailDialog(false);
       } else {
         toast({ title: "Failed to send", description: result.error || "Unknown error", variant: "destructive" });
       }

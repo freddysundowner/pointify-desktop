@@ -690,7 +690,7 @@ export function registerSalesRoutes(app: Express) {
   // Send receipt via email (uses Brevo credentials from Pointify API)
   app.post("/api/sales/email-receipt", async (req, res) => {
     try {
-      const { toEmail, receiptHtml, receiptNo, shopName, shopEmail, customerName } = req.body;
+      const { toEmail, receiptHtml, receiptNo, shopName, shopEmail, customerName, pdfBase64 } = req.body;
 
       if (!toEmail || !receiptHtml) {
         return res.status(400).json({ success: false, error: "Email address and receipt data are required" });
@@ -716,6 +716,16 @@ export function registerSalesRoutes(app: Express) {
       // Use shop's receipt email as reply-to if available
       if (shopEmail) {
         emailPayload.replyTo = { email: shopEmail, name: shopName };
+      }
+
+      // Attach PDF if generated on client
+      if (pdfBase64) {
+        emailPayload.attachment = [
+          {
+            content: pdfBase64,
+            name: `Receipt-${receiptNo}.pdf`,
+          },
+        ];
       }
 
       const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
