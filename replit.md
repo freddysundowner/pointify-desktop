@@ -29,6 +29,13 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
 
 ## Key Configuration
 
+### PWA (Progressive Web App)
+- Plugin: `vite-plugin-pwa` with Workbox `generateSW` strategy
+- Icons: `client/public/icon-192.png`, `client/public/icon-512.png`, `client/public/icon.svg`
+- Manifest: auto-generated as `/manifest.webmanifest`
+- Service worker: NetworkFirst for `/api/*`, precaches static assets
+- Supports install-to-home-screen on Android/iOS/Desktop Chrome
+
 ### Vite Config (client/vite.config.ts)
 - `host: '0.0.0.0'` — required for Replit proxy
 - `allowedHosts: true` — required for Replit iframe preview
