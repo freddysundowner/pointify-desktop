@@ -102,7 +102,7 @@ export function PwaInstallWidget() {
           Install Pointify
         </p>
         <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#6b7280", lineHeight: 1.3 }}>
-          Add to home screen for quick access
+          Works offline. No app store needed.
         </p>
       </div>
 
