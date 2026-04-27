@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import path from "path";
+import fs from "fs";
 import { performDataSync } from "./network-status-handler.js";
 const __dirname = path.dirname(process.argv[1]);
 
@@ -85,13 +86,23 @@ app.use((req, res, next) => {
   if (process.env.DEV == "true") {
     staticPath = "/var/www/pointify/pos-web/web/client/dist";
   }
-  console.log(`📁 Serving static files from: ${staticPath}`);
-  app.use(express.static(staticPath));
-  app.get("*", (req, res) => {
-    if (!req.path.startsWith("/api")) {
-      res.sendFile(path.join(staticPath, "index.html"));
-    }
-  });
+  const indexHtmlPath = path.join(staticPath, "index.html");
+  const staticExists = fs.existsSync(indexHtmlPath);
+  console.log(`📁 Serving static files from: ${staticPath} (exists: ${staticExists})`);
+  if (staticExists) {
+    app.use(express.static(staticPath));
+    app.get("*", (req, res, next) => {
+      if (!req.path.startsWith("/api")) {
+        res.sendFile(indexHtmlPath, (err) => {
+          if (err) next(err);
+        });
+      } else {
+        next();
+      }
+    });
+  } else {
+    console.log("ℹ️  No client/dist found — running in API-only / dev mode");
+  }
 
 
   const port = 1999;
