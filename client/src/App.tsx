@@ -3,6 +3,7 @@ import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { PwaInstallWidget } from "@/components/PwaInstallWidget";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/AuthProvider";
 import { ProductsProvider } from "@/contexts/ProductsContext";
@@ -594,6 +595,7 @@ function App() {
                 <AppContent />
               </PermissionsInit>
               <Toaster />
+              <PwaInstallWidget />
             </TooltipProvider>
           </ProductsProvider>
         </AttendantAuthProvider>
