@@ -473,14 +473,20 @@ function SalesList() {
 
   // Invoice / Quotation PDF generator (shared layout, switchable title)
   const generateSalePDF = (sale: any, docType: "QUOTATION" | "INVOICE" = "QUOTATION") => {
+    // Coerce any value into a plain printable string (jsPDF rejects objects)
+    const asString = (v: any): string => {
+      if (v === null || v === undefined) return "";
+      if (typeof v === "string") return v;
+      if (typeof v === "number" || typeof v === "boolean") return String(v);
+      return "";
+    };
+
     try {
-      console.log(`[${docType}] Generating PDF for sale:`, sale);
       const originalSale = Array.isArray(salesData)
         ? salesData.find((s: any) => s?._id === sale?.id)
         : null;
-      console.log(`[${docType}] Found originalSale:`, originalSale);
       const shop = (originalSale && typeof originalSale.shopId === "object" ? originalSale.shopId : null) || {};
-      const currency = shop.currency || primaryShopCurrency || "";
+      const currency = asString(shop.currency) || primaryShopCurrency || "";
       const items: any[] = (originalSale?.items as any[]) || (sale?.items as any[]) || [];
 
       const doc = new jsPDF();
@@ -489,24 +495,29 @@ function SalesList() {
       // Shop header
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text((shop.name || "Shop").toUpperCase(), 20, y);
+      doc.text((asString(shop.name) || "Shop").toUpperCase(), 20, y);
       y += 7;
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      if (shop.location || shop.address) {
-        doc.text(shop.location || shop.address, 20, y);
+      // shop.location is often a GeoJSON object — only print if it's a string, otherwise fall back to address
+      const shopAddress = asString(shop.address) || asString(shop.location);
+      if (shopAddress) {
+        doc.text(shopAddress, 20, y);
         y += 6;
       }
-      if (shop.contact || shop.phone) {
-        doc.text(`Tel: ${shop.contact || shop.phone}`, 20, y);
+      const shopPhone = asString(shop.contact) || asString(shop.phone);
+      if (shopPhone) {
+        doc.text(`Tel: ${shopPhone}`, 20, y);
         y += 6;
       }
-      if (shop.receiptemail || shop.email) {
-        doc.text(`Email: ${shop.receiptemail || shop.email}`, 20, y);
+      const shopEmail = asString(shop.receiptemail) || asString(shop.email);
+      if (shopEmail) {
+        doc.text(`Email: ${shopEmail}`, 20, y);
         y += 6;
       }
-      if (shop.paybillTill || shop.paybill_till) {
-        doc.text(`PayBill/Till: ${shop.paybillTill || shop.paybill_till}`, 20, y);
+      const shopPaybill = asString(shop.paybillTill) || asString(shop.paybill_till);
+      if (shopPaybill) {
+        doc.text(`PayBill/Till: ${shopPaybill}`, 20, y);
         y += 6;
       }
 
@@ -520,14 +531,19 @@ function SalesList() {
       // Date and number row
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${new Date(sale.saleDate).toLocaleDateString()}`, 20, y);
+      const saleDateRaw = sale?.saleDate ? new Date(sale.saleDate) : new Date();
+      const dateStr = isNaN(saleDateRaw.getTime())
+        ? "—"
+        : saleDateRaw.toLocaleDateString();
+      doc.text(`Date: ${dateStr}`, 20, y);
       const numberLabel = docType === "INVOICE" ? "Invoice No" : "No";
-      doc.text(`${numberLabel}: ${sale.receiptNo}`, 190, y, { align: "right" });
+      doc.text(`${numberLabel}: ${asString(sale?.receiptNo) || "—"}`, 190, y, { align: "right" });
       y += 8;
 
       // Customer
-      if (sale.customerName && sale.customerName !== "Walk-in") {
-        doc.text(`Customer: ${sale.customerName}`, 20, y);
+      const customerName = asString(sale?.customerName);
+      if (customerName && customerName !== "Walk-in") {
+        doc.text(`Customer: ${customerName}`, 20, y);
         y += 7;
       }
 
@@ -623,135 +639,8 @@ function SalesList() {
     }
   };
 
-  // Quotation PDF generator
-  const generateQuotationPDF = (sale: any) => {
-    try {
-      const originalSale = salesData.find((s: any) => s._id === sale.id);
-      const shop = originalSale?.shopId || {};
-      const currency = shop.currency || primaryShopCurrency;
-      const items: any[] = originalSale?.items || sale.items || [];
-
-      const doc = new jsPDF();
-      let y = 20;
-
-      // Shop header
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text((shop.name || "Shop").toUpperCase(), 20, y);
-      y += 7;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      if (shop.location || shop.address) {
-        doc.text(shop.location || shop.address, 20, y);
-        y += 6;
-      }
-      if (shop.contact || shop.phone) {
-        doc.text(`Tel: ${shop.contact || shop.phone}`, 20, y);
-        y += 6;
-      }
-      if (shop.receiptemail || shop.email) {
-        doc.text(`Email: ${shop.receiptemail || shop.email}`, 20, y);
-        y += 6;
-      }
-      if (shop.paybillTill || shop.paybill_till) {
-        doc.text(`PayBill/Till: ${shop.paybillTill || shop.paybill_till}`, 20, y);
-        y += 6;
-      }
-
-      y += 4;
-      // Title
-      doc.setFontSize(22);
-      doc.setFont("helvetica", "bold");
-      doc.text("QUOTATION", 105, y, { align: "center" });
-      y += 10;
-
-      // Date and number row
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${new Date(sale.saleDate).toLocaleDateString()}`, 20, y);
-      doc.text(`No: ${sale.receiptNo}`, 190, y, { align: "right" });
-      y += 8;
-
-      // Customer
-      if (sale.customerName && sale.customerName !== "Walk-in") {
-        doc.text(`Customer: ${sale.customerName}`, 20, y);
-        y += 7;
-      }
-
-      y += 4;
-
-      // Table header
-      doc.setFillColor(240, 240, 240);
-      doc.rect(20, y - 4, 170, 8, "F");
-      doc.setFont("helvetica", "bold");
-      doc.text("Item", 22, y);
-      doc.text("Qty", 110, y, { align: "right" });
-      doc.text("Unit Price", 145, y, { align: "right" });
-      doc.text("Total", 188, y, { align: "right" });
-      y += 8;
-      doc.line(20, y - 2, 190, y - 2);
-      doc.setFont("helvetica", "normal");
-
-      // Items
-      items.forEach((item: any) => {
-        const name = item.productName || item.name || "Item";
-        const qty = item.quantity || 1;
-        const unitPrice = item.unitPrice || item.sellingPrice || 0;
-        const total = item.totalPrice || qty * unitPrice;
-
-        const lines = doc.splitTextToSize(name, 82);
-        doc.text(lines, 22, y);
-        doc.text(String(qty), 110, y, { align: "right" });
-        doc.text(`${currency} ${Number(unitPrice).toFixed(2)}`, 145, y, { align: "right" });
-        doc.text(`${currency} ${Number(total).toFixed(2)}`, 188, y, { align: "right" });
-        y += lines.length > 1 ? lines.length * 6 : 8;
-        if (y > 250) {
-          doc.addPage();
-          y = 20;
-        }
-      });
-
-      y += 2;
-      doc.line(20, y, 190, y);
-      y += 8;
-
-      // Subtotal
-      const subtotal = originalSale?.totalAmount || sale.totalAmount || 0;
-      const tax = originalSale?.totaltax || 0;
-      const discount = originalSale?.discount || 0;
-      const grandTotal = originalSale?.totalWithDiscount || subtotal;
-
-      doc.text("Subtotal:", 145, y, { align: "right" });
-      doc.text(`${currency} ${Number(subtotal).toFixed(2)}`, 188, y, { align: "right" });
-      y += 7;
-
-      if (tax > 0) {
-        doc.text("Tax:", 145, y, { align: "right" });
-        doc.text(`${currency} ${Number(tax).toFixed(2)}`, 188, y, { align: "right" });
-        y += 7;
-      }
-      if (discount > 0) {
-        doc.text("Discount:", 145, y, { align: "right" });
-        doc.text(`- ${currency} ${Number(discount).toFixed(2)}`, 188, y, { align: "right" });
-        y += 7;
-      }
-
-      doc.setFont("helvetica", "bold");
-      doc.text("TOTAL:", 145, y, { align: "right" });
-      doc.text(`${currency} ${Number(grandTotal).toFixed(2)}`, 188, y, { align: "right" });
-
-      y += 12;
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(9);
-      doc.text("Thank you for your business!", 105, y, { align: "center" });
-
-      doc.save(`quotation-${sale.receiptNo}.pdf`);
-      toast({ title: "Quotation Generated", description: `Quotation #${sale.receiptNo} downloaded.` });
-    } catch (err) {
-      console.error("Quotation PDF error:", err);
-      toast({ title: "PDF Error", description: "Failed to generate quotation.", variant: "destructive" });
-    }
-  };
+  // Quotation PDF generator (delegates to shared generator)
+  const generateQuotationPDF = (sale: any) => generateSalePDF(sale, "QUOTATION");
 
   // PDF Export function
   const exportToPDF = () => {
