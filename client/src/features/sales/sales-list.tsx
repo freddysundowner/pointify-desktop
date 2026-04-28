@@ -474,10 +474,14 @@ function SalesList() {
   // Invoice / Quotation PDF generator (shared layout, switchable title)
   const generateSalePDF = (sale: any, docType: "QUOTATION" | "INVOICE" = "QUOTATION") => {
     try {
-      const originalSale = salesData.find((s: any) => s._id === sale.id);
-      const shop = originalSale?.shopId || {};
-      const currency = shop.currency || primaryShopCurrency;
-      const items: any[] = originalSale?.items || sale.items || [];
+      console.log(`[${docType}] Generating PDF for sale:`, sale);
+      const originalSale = Array.isArray(salesData)
+        ? salesData.find((s: any) => s?._id === sale?.id)
+        : null;
+      console.log(`[${docType}] Found originalSale:`, originalSale);
+      const shop = (originalSale && typeof originalSale.shopId === "object" ? originalSale.shopId : null) || {};
+      const currency = shop.currency || primaryShopCurrency || "";
+      const items: any[] = (originalSale?.items as any[]) || (sale?.items as any[]) || [];
 
       const doc = new jsPDF();
       let y = 20;
