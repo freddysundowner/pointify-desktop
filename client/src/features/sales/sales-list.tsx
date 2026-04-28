@@ -613,11 +613,11 @@ function SalesList() {
         title: `${docType === "INVOICE" ? "Invoice" : "Quotation"} Generated`,
         description: `${docType === "INVOICE" ? "Invoice" : "Quotation"} #${sale.receiptNo} downloaded.`,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error(`${docType} PDF error:`, err);
       toast({
         title: "PDF Error",
-        description: `Failed to generate ${docType.toLowerCase()}.`,
+        description: `Failed to generate ${docType.toLowerCase()}: ${err?.message || String(err)}`,
         variant: "destructive",
       });
     }
