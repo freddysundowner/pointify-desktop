@@ -135,6 +135,13 @@ function SalesList() {
   const [invoiceEmail, setInvoiceEmail] = useState("");
   const [isSendingInvoice, setIsSendingInvoice] = useState(false);
 
+  // Quotation (download / email) dialog state
+  const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
+  const [quotationSale, setQuotationSale] = useState<any>(null);
+  const [quotationMode, setQuotationMode] = useState<"choose" | "email">("choose");
+  const [quotationEmail, setQuotationEmail] = useState("");
+  const [isSendingQuotation, setIsSendingQuotation] = useState(false);
+
   const { toast } = useToast();
 
   // Get shop and admin details using usePrimaryShop hook
@@ -836,6 +843,60 @@ function SalesList() {
   // Quotation PDF generator (delegates to shared generator)
   const generateQuotationPDF = (sale: any) => generateSalePDF(sale, "QUOTATION");
 
+  const openQuotationDialog = (sale: any) => {
+    const originalSale = Array.isArray(salesData)
+      ? salesData.find((s: any) => s?._id === sale?.id)
+      : null;
+    const customerEmail =
+      originalSale?.customerId?.email || originalSale?.customerEmail || "";
+    setQuotationSale(sale);
+    setQuotationEmail(customerEmail);
+    setQuotationMode("choose");
+    setQuotationDialogOpen(true);
+  };
+
+  const handleEmailQuotation = async () => {
+    if (!quotationSale || !quotationEmail.trim()) return;
+    setIsSendingQuotation(true);
+    try {
+      let pdfBase64 = "";
+      try {
+        pdfBase64 = generateSalePDF(quotationSale, "QUOTATION", "base64") || "";
+      } catch (pdfErr) {
+        console.warn("Quotation PDF generation failed, sending HTML only:", pdfErr);
+      }
+      const originalSale = Array.isArray(salesData)
+        ? salesData.find((s: any) => s?._id === quotationSale?.id)
+        : null;
+      await fetch("/api/sales/email-receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toEmail: quotationEmail.trim(),
+          receiptHtml: buildInvoiceEmailHtml(quotationSale),
+          receiptNo: quotationSale.receiptNo,
+          shopId: originalSale?.shopId?._id || originalSale?.shopId || "",
+          customerName: quotationSale.customerName || "",
+          pdfBase64,
+          subject: `Quotation #${quotationSale.receiptNo}`,
+        }),
+      });
+      toast({
+        title: "Quotation Sent",
+        description: `Quotation #${quotationSale.receiptNo} emailed to ${quotationEmail.trim()}.`,
+      });
+      setQuotationDialogOpen(false);
+    } catch {
+      toast({
+        title: "Failed to send quotation",
+        description: "Please check the email address and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingQuotation(false);
+    }
+  };
+
   // PDF Export function
   const exportToPDF = () => {
     try {
@@ -1501,12 +1562,12 @@ function SalesList() {
                                   View Receipt
                                 </DropdownMenuItem>
 
-                                {/* Print Quotation - available for all sales */}
+                                {/* Quotation (Download / Email) - available for all sales */}
                                 <DropdownMenuItem
-                                  onClick={() => generateQuotationPDF(sale)}
+                                  onClick={() => openQuotationDialog(sale)}
                                 >
                                   <FileText className="mr-2 h-4 w-4" />
-                                  Print Quotation
+                                  Quotation
                                 </DropdownMenuItem>
 
                                 {/* Invoice (Download / Email) - only for hold (unpaid) sales */}
@@ -1772,6 +1833,81 @@ function SalesList() {
                   disabled={isSendingInvoice || !invoiceEmail.trim()}
                 >
                   {isSendingInvoice ? "Sending..." : "Send Invoice"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quotation Dialog (Download / Email) */}
+      <Dialog open={quotationDialogOpen} onOpenChange={setQuotationDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Quotation #{quotationSale?.receiptNo}
+            </DialogTitle>
+          </DialogHeader>
+
+          {quotationMode === "choose" ? (
+            <div className="space-y-3 pt-2">
+              <p className="text-sm text-muted-foreground">
+                How would you like to share this quotation?
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={() => {
+                    if (quotationSale) generateSalePDF(quotationSale, "QUOTATION", "download");
+                    setQuotationDialogOpen(false);
+                  }}
+                >
+                  <Download className="h-5 w-5" />
+                  <span>Download</span>
+                </Button>
+                <Button
+                  className="h-20 flex-col gap-2"
+                  onClick={() => setQuotationMode("email")}
+                >
+                  <Mail className="h-5 w-5" />
+                  <span>Email</span>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  Customer Email
+                </Label>
+                <Input
+                  type="email"
+                  value={quotationEmail}
+                  onChange={(e) => setQuotationEmail(e.target.value)}
+                  placeholder="customer@example.com"
+                  disabled={isSendingQuotation}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  The quotation PDF will be attached to the email.
+                </p>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setQuotationMode("choose")}
+                  disabled={isSendingQuotation}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleEmailQuotation}
+                  disabled={isSendingQuotation || !quotationEmail.trim()}
+                >
+                  {isSendingQuotation ? "Sending..." : "Send Quotation"}
                 </Button>
               </div>
             </div>
