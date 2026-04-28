@@ -71,7 +71,7 @@ export default function ShopDetails() {
   // Shop settings form state
   const [formData, setFormData] = useState({
     name: "",
-    email_receipt: "",
+    receiptemail: "",
     tax: 0,
     shopCategoryId: "",
     address: "",
@@ -136,7 +136,7 @@ export default function ShopDetails() {
       console.log('Shop category:', shop.shopCategoryId?.name);
       setFormData({
         name: shop.name || "",
-        email_receipt: shop.email_receipt || "",
+        receiptemail: shop.receiptemail || shop.email_receipt || "",
         tax: shop.tax || 0,
         shopCategoryId: shop.shopCategoryId?._id || "",
         address: shop.address || "",
@@ -196,7 +196,7 @@ export default function ShopDetails() {
   const handleSaveSettings = () => {
     const updateData = {
       name: formData.name,
-      email_receipt: formData.email_receipt,
+      receiptemail: formData.receiptemail,
       shopCategoryId: formData.shopCategoryId,
       address: formData.address,
       tax: formData.tax,
@@ -465,8 +465,8 @@ export default function ShopDetails() {
                     <div className="space-y-2">
                       <Label className="text-sm">Receipt Email</Label>
                       <Input
-                        value={formData.email_receipt}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email_receipt: e.target.value }))}
+                        value={formData.receiptemail}
+                        onChange={(e) => setFormData(prev => ({ ...prev, receiptemail: e.target.value }))}
                         placeholder="email@company.com"
                         type="email"
                         className="h-9"
