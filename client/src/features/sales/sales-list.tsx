@@ -529,9 +529,17 @@ function SalesList() {
         doc.text(`Email: ${shopEmail}`, 20, y);
         y += 6;
       }
-      const shopPaybill = asString(shop.paybillTill) || asString(shop.paybill_till);
-      if (shopPaybill) {
-        doc.text(`PayBill/Till: ${shopPaybill}`, 20, y);
+      const paybillAccount = asString(shop.paybill_account);
+      const paybillTill = asString(shop.paybill_till) || asString(shop.paybillTill);
+      if (paybillAccount) {
+        doc.text(`Paybill: ${paybillAccount}`, 20, y);
+        y += 6;
+        if (paybillTill) {
+          doc.text(`Account: ${paybillTill}`, 20, y);
+          y += 6;
+        }
+      } else if (paybillTill) {
+        doc.text(`Buy Goods: ${paybillTill}`, 20, y);
         y += 6;
       }
 
@@ -699,9 +707,26 @@ function SalesList() {
       })
       .join("");
 
+    const shopAddress =
+      (typeof shop?.address === "string" && shop.address) ||
+      (typeof shop?.location === "string" && shop.location) ||
+      "";
+    const shopPhone = shop?.contact || shop?.phone || "";
+    const shopEmail = shop?.receiptemail || shop?.email || "";
+    const paybillAccount = shop?.paybill_account || "";
+    const paybillTill = shop?.paybill_till || shop?.paybillTill || "";
+    const paybillLine = paybillAccount
+      ? `Paybill: <strong>${paybillAccount}</strong>${paybillTill ? ` &nbsp;·&nbsp; Account: <strong>${paybillTill}</strong>` : ""}`
+      : paybillTill
+      ? `Buy Goods: <strong>${paybillTill}</strong>`
+      : "";
+
     return `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:640px;margin:auto;padding:16px">
       <h2 style="margin:0 0 4px 0">${shop?.name || "Your Shop"}</h2>
-      ${shop?.address ? `<div style="color:#666;font-size:13px">${shop.address}</div>` : ""}
+      ${shopAddress ? `<div style="color:#666;font-size:13px">${shopAddress}</div>` : ""}
+      ${shopPhone ? `<div style="color:#666;font-size:13px">Tel: ${shopPhone}</div>` : ""}
+      ${shopEmail ? `<div style="color:#666;font-size:13px">Email: ${shopEmail}</div>` : ""}
+      ${paybillLine ? `<div style="color:#666;font-size:13px">${paybillLine}</div>` : ""}
       <h1 style="text-align:center;margin:24px 0 8px 0;letter-spacing:2px">INVOICE</h1>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#444">
         <div>Date: ${dateStr}</div>
