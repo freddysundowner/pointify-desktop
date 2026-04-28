@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   FileText,
   CheckCircle,
+  Receipt,
 } from "lucide-react";
 import {
   Dialog,
@@ -467,6 +468,154 @@ function SalesList() {
       });
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  // Invoice / Quotation PDF generator (shared layout, switchable title)
+  const generateSalePDF = (sale: any, docType: "QUOTATION" | "INVOICE" = "QUOTATION") => {
+    try {
+      const originalSale = salesData.find((s: any) => s._id === sale.id);
+      const shop = originalSale?.shopId || {};
+      const currency = shop.currency || primaryShopCurrency;
+      const items: any[] = originalSale?.items || sale.items || [];
+
+      const doc = new jsPDF();
+      let y = 20;
+
+      // Shop header
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text((shop.name || "Shop").toUpperCase(), 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      if (shop.location || shop.address) {
+        doc.text(shop.location || shop.address, 20, y);
+        y += 6;
+      }
+      if (shop.contact || shop.phone) {
+        doc.text(`Tel: ${shop.contact || shop.phone}`, 20, y);
+        y += 6;
+      }
+      if (shop.receiptemail || shop.email) {
+        doc.text(`Email: ${shop.receiptemail || shop.email}`, 20, y);
+        y += 6;
+      }
+      if (shop.paybillTill || shop.paybill_till) {
+        doc.text(`PayBill/Till: ${shop.paybillTill || shop.paybill_till}`, 20, y);
+        y += 6;
+      }
+
+      y += 4;
+      // Title
+      doc.setFontSize(22);
+      doc.setFont("helvetica", "bold");
+      doc.text(docType, 105, y, { align: "center" });
+      y += 10;
+
+      // Date and number row
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Date: ${new Date(sale.saleDate).toLocaleDateString()}`, 20, y);
+      const numberLabel = docType === "INVOICE" ? "Invoice No" : "No";
+      doc.text(`${numberLabel}: ${sale.receiptNo}`, 190, y, { align: "right" });
+      y += 8;
+
+      // Customer
+      if (sale.customerName && sale.customerName !== "Walk-in") {
+        doc.text(`Customer: ${sale.customerName}`, 20, y);
+        y += 7;
+      }
+
+      y += 4;
+
+      // Table header
+      doc.setFillColor(240, 240, 240);
+      doc.rect(20, y - 4, 170, 8, "F");
+      doc.setFont("helvetica", "bold");
+      doc.text("Item", 22, y);
+      doc.text("Qty", 110, y, { align: "right" });
+      doc.text("Unit Price", 145, y, { align: "right" });
+      doc.text("Total", 188, y, { align: "right" });
+      y += 8;
+      doc.line(20, y - 2, 190, y - 2);
+      doc.setFont("helvetica", "normal");
+
+      // Items
+      items.forEach((item: any) => {
+        const name = item.productName || item.name || "Item";
+        const qty = item.quantity || 1;
+        const unitPrice = item.unitPrice || item.sellingPrice || 0;
+        const total = item.totalPrice || qty * unitPrice;
+
+        const lines = doc.splitTextToSize(name, 82);
+        doc.text(lines, 22, y);
+        doc.text(String(qty), 110, y, { align: "right" });
+        doc.text(`${currency} ${Number(unitPrice).toFixed(2)}`, 145, y, { align: "right" });
+        doc.text(`${currency} ${Number(total).toFixed(2)}`, 188, y, { align: "right" });
+        y += lines.length > 1 ? lines.length * 6 : 8;
+        if (y > 250) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      y += 2;
+      doc.line(20, y, 190, y);
+      y += 8;
+
+      // Subtotal
+      const subtotal = originalSale?.totalAmount || sale.totalAmount || 0;
+      const tax = originalSale?.totaltax || 0;
+      const discount = originalSale?.discount || 0;
+      const grandTotal = originalSale?.totalWithDiscount || subtotal;
+
+      doc.text("Subtotal:", 145, y, { align: "right" });
+      doc.text(`${currency} ${Number(subtotal).toFixed(2)}`, 188, y, { align: "right" });
+      y += 7;
+
+      if (tax > 0) {
+        doc.text("Tax:", 145, y, { align: "right" });
+        doc.text(`${currency} ${Number(tax).toFixed(2)}`, 188, y, { align: "right" });
+        y += 7;
+      }
+      if (discount > 0) {
+        doc.text("Discount:", 145, y, { align: "right" });
+        doc.text(`- ${currency} ${Number(discount).toFixed(2)}`, 188, y, { align: "right" });
+        y += 7;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.text("TOTAL:", 145, y, { align: "right" });
+      doc.text(`${currency} ${Number(grandTotal).toFixed(2)}`, 188, y, { align: "right" });
+
+      if (docType === "INVOICE") {
+        y += 12;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Status: Pending Payment", 20, y);
+        y += 6;
+        doc.text("Please settle this invoice at your earliest convenience.", 20, y);
+      }
+
+      y += 12;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.text("Thank you for your business!", 105, y, { align: "center" });
+
+      const fileLabel = docType === "INVOICE" ? "invoice" : "quotation";
+      doc.save(`${fileLabel}-${sale.receiptNo}.pdf`);
+      toast({
+        title: `${docType === "INVOICE" ? "Invoice" : "Quotation"} Generated`,
+        description: `${docType === "INVOICE" ? "Invoice" : "Quotation"} #${sale.receiptNo} downloaded.`,
+      });
+    } catch (err) {
+      console.error(`${docType} PDF error:`, err);
+      toast({
+        title: "PDF Error",
+        description: `Failed to generate ${docType.toLowerCase()}.`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -1272,6 +1421,16 @@ function SalesList() {
                                   <FileText className="mr-2 h-4 w-4" />
                                   Print Quotation
                                 </DropdownMenuItem>
+
+                                {/* Print Invoice - only for hold (unpaid) sales */}
+                                {sale.status === "hold" && (
+                                  <DropdownMenuItem
+                                    onClick={() => generateSalePDF(sale, "INVOICE")}
+                                  >
+                                    <Receipt className="mr-2 h-4 w-4" />
+                                    Print Invoice
+                                  </DropdownMenuItem>
+                                )}
 
                                 {/* Complete Sale - only for hold status */}
                                 {sale.status === "hold" && (
