@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pointify-v1';
+const CACHE_NAME = 'pointify-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
