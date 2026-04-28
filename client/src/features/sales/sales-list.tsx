@@ -563,16 +563,20 @@ function SalesList() {
 
       // Items
       items.forEach((item: any) => {
-        const name = item.productName || item.name || "Item";
-        const qty = item.quantity || 1;
-        const unitPrice = item.unitPrice || item.sellingPrice || 0;
-        const total = item.totalPrice || qty * unitPrice;
+        const name =
+          asString(item?.productName) ||
+          asString(item?.product?.name) ||
+          asString(item?.name) ||
+          "Unknown Product";
+        const qty = Number(item?.quantity) || 1;
+        const unitPrice = Number(item?.unitPrice ?? item?.sellingPrice) || 0;
+        const total = Number(item?.totalPrice) || qty * unitPrice;
 
         const lines = doc.splitTextToSize(name, 82);
         doc.text(lines, 22, y);
         doc.text(String(qty), 110, y, { align: "right" });
-        doc.text(`${currency} ${Number(unitPrice).toFixed(2)}`, 145, y, { align: "right" });
-        doc.text(`${currency} ${Number(total).toFixed(2)}`, 188, y, { align: "right" });
+        doc.text(`${currency} ${unitPrice.toFixed(2)}`, 145, y, { align: "right" });
+        doc.text(`${currency} ${total.toFixed(2)}`, 188, y, { align: "right" });
         y += lines.length > 1 ? lines.length * 6 : 8;
         if (y > 250) {
           doc.addPage();
@@ -585,10 +589,10 @@ function SalesList() {
       y += 8;
 
       // Subtotal
-      const subtotal = originalSale?.totalAmount || sale.totalAmount || 0;
-      const tax = originalSale?.totaltax || 0;
-      const discount = originalSale?.discount || 0;
-      const grandTotal = originalSale?.totalWithDiscount || subtotal;
+      const subtotal = Number(originalSale?.totalAmount ?? sale?.totalAmount) || 0;
+      const tax = Number(originalSale?.totaltax) || 0;
+      const discount = Number(originalSale?.discount) || 0;
+      const grandTotal = Number(originalSale?.totalWithDiscount) || subtotal;
 
       doc.text("Subtotal:", 145, y, { align: "right" });
       doc.text(`${currency} ${Number(subtotal).toFixed(2)}`, 188, y, { align: "right" });
