@@ -513,8 +513,11 @@ function SalesList() {
       y += 7;
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      // shop.location is often a GeoJSON object — only print if it's a string, otherwise fall back to address
-      const shopAddress = asString(shop.address) || asString(shop.location);
+      // Prefer the shop's "Receipt Address" field; fall back to address/location (GeoJSON-safe)
+      const shopAddress =
+        asString(shop.address_receipt) ||
+        asString(shop.address) ||
+        asString(shop.location);
       if (shopAddress) {
         doc.text(shopAddress, 20, y);
         y += 6;
@@ -524,7 +527,11 @@ function SalesList() {
         doc.text(`Tel: ${shopPhone}`, 20, y);
         y += 6;
       }
-      const shopEmail = asString(shop.receiptemail) || asString(shop.email);
+      // Receipt-settings field is saved as `email_receipt`; legacy code uses `receiptemail`
+      const shopEmail =
+        asString(shop.email_receipt) ||
+        asString(shop.receiptemail) ||
+        asString(shop.email);
       if (shopEmail) {
         doc.text(`Email: ${shopEmail}`, 20, y);
         y += 6;
@@ -708,11 +715,13 @@ function SalesList() {
       .join("");
 
     const shopAddress =
+      (typeof shop?.address_receipt === "string" && shop.address_receipt) ||
       (typeof shop?.address === "string" && shop.address) ||
       (typeof shop?.location === "string" && shop.location) ||
       "";
     const shopPhone = shop?.contact || shop?.phone || "";
-    const shopEmail = shop?.receiptemail || shop?.email || "";
+    const shopEmail =
+      shop?.email_receipt || shop?.receiptemail || shop?.email || "";
     const paybillAccount = shop?.paybill_account || "";
     const paybillTill = shop?.paybill_till || shop?.paybillTill || "";
     const paybillLine = paybillAccount
@@ -782,7 +791,7 @@ function SalesList() {
           receiptHtml: buildInvoiceEmailHtml(invoiceSale),
           receiptNo: invoiceSale.receiptNo,
           shopName: shop?.name || "",
-          shopEmail: shop?.receiptemail || shop?.email || "",
+          shopEmail: shop?.email_receipt || shop?.receiptemail || shop?.email || "",
           customerName: invoiceSale.customerName || "",
           pdfBase64,
         }),
