@@ -125,8 +125,12 @@ export default function ReceiptModal({
     if (primaryShop?.contact) {
       doc.text(`Phone: ${primaryShop.contact}`, 105, 35, { align: 'center' });
     }
-    if (primaryShop?.receiptemail) {
-      doc.text(`Email: ${primaryShop.receiptemail}`, 105, 40, { align: 'center' });
+    const shopEmailForReceipt =
+      (primaryShop as any)?.email_receipt ||
+      primaryShop?.receiptemail ||
+      (primaryShop as any)?.email;
+    if (shopEmailForReceipt) {
+      doc.text(`Email: ${shopEmailForReceipt}`, 105, 40, { align: 'center' });
     }
     
     // Receipt title
@@ -247,8 +251,10 @@ export default function ReceiptModal({
               {primaryShop?.contact && (
                 <p className="text-sm text-gray-600">Phone: {primaryShop.contact}</p>
               )}
-              {primaryShop?.receiptemail && (
-                <p className="text-sm text-gray-600">Email: {primaryShop.receiptemail}</p>
+              {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email) && (
+                <p className="text-sm text-gray-600">
+                  Email: {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email}
+                </p>
               )}
               {(primaryShop?.paybill_account || primaryShop?.paybill_till) && (
                 <div className="mt-2 pt-2 border-t border-gray-100">
@@ -368,8 +374,10 @@ export default function ReceiptModal({
             <div className="text-center mt-4 pt-3 border-t border-gray-200 text-gray-600">
               <p className="font-medium text-sm">Thank you for your business!</p>
               <p className="text-xs">Visit us again soon</p>
-              {primaryShop?.receiptemail && (
-                <p className="text-xs mt-1">Questions? Email: {primaryShop.receiptemail}</p>
+              {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email) && (
+                <p className="text-xs mt-1">
+                  Questions? Email: {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email}
+                </p>
               )}
             </div>
           </div>

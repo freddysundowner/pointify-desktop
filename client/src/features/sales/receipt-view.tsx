@@ -122,7 +122,13 @@ export default function ReceiptView() {
       address: sale.shopId?.address || primaryShop?.address || "",
       address_receipt: sale.shopId?.address_receipt || primaryShop?.address_receipt || "",
       contact: sale.shopId?.contact || sale.shopId?.phone || primaryShop?.contact || "",
-      receiptemail: sale.shopId?.receiptemail || sale.shopId?.email || primaryShop?.receiptemail || "",
+      receiptemail:
+        sale.shopId?.email_receipt ||
+        sale.shopId?.receiptemail ||
+        sale.shopId?.email ||
+        primaryShop?.email_receipt ||
+        primaryShop?.receiptemail ||
+        "",
       paybill_account: sale.shopId?.paybill_account || primaryShop?.paybill_account || "",
       paybill_till: sale.shopId?.paybill_till || primaryShop?.paybill_till || "",
       currency: sale.shopId?.currency || primaryShop?.currency || "KES",

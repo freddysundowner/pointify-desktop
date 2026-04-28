@@ -7,6 +7,7 @@ interface ReceiptHeaderProps {
     address_receipt?: string;
     contact?: string;
     phone?: string;
+    email_receipt?: string;
     receiptemail?: string;
     email?: string;
     paybill_account?: string;
@@ -49,9 +50,9 @@ export default function ReceiptHeader({
         </p>
       )}
       
-      {(shopData?.receiptemail || shopData?.email) && (
+      {(shopData?.email_receipt || shopData?.receiptemail || shopData?.email) && (
         <p className="text-sm text-gray-600">
-          Email: {shopData.receiptemail || shopData.email}
+          Email: {shopData.email_receipt || shopData.receiptemail || shopData.email}
         </p>
       )}
       
