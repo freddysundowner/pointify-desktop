@@ -163,6 +163,13 @@ export function registerShopRoutes(app: Express) {
     try {
       const { id } = req.params;
 
+      console.log(
+        `🛠️  PUT /api/shop/${id} receiptemail=`,
+        (req.body as any)?.receiptemail,
+        "email_receipt=",
+        (req.body as any)?.email_receipt,
+      );
+
       const response = await makePointifyRequest(`/shop/${id}`, {
         method: "PUT",
         body: JSON.stringify(req.body),
