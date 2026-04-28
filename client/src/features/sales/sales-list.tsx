@@ -33,6 +33,8 @@ import {
   FileText,
   CheckCircle,
   Receipt,
+  Mail,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -125,6 +127,13 @@ function SalesList() {
   const [completePaymentMethod, setCompletePaymentMethod] = useState("cash");
   const [completeAmountPaid, setCompleteAmountPaid] = useState("");
   const [isCompleting, setIsCompleting] = useState(false);
+
+  // Invoice (download / email) dialog state
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [invoiceSale, setInvoiceSale] = useState<any>(null);
+  const [invoiceMode, setInvoiceMode] = useState<"choose" | "email">("choose");
+  const [invoiceEmail, setInvoiceEmail] = useState("");
+  const [isSendingInvoice, setIsSendingInvoice] = useState(false);
 
   const { toast } = useToast();
 
@@ -472,7 +481,12 @@ function SalesList() {
   };
 
   // Invoice / Quotation PDF generator (shared layout, switchable title)
-  const generateSalePDF = (sale: any, docType: "QUOTATION" | "INVOICE" = "QUOTATION") => {
+  // When `mode === "base64"` the PDF is returned as a base64 string instead of being downloaded.
+  const generateSalePDF = (
+    sale: any,
+    docType: "QUOTATION" | "INVOICE" = "QUOTATION",
+    mode: "download" | "base64" = "download",
+  ): string | null => {
     // Coerce any value into a plain printable string (jsPDF rejects objects)
     const asString = (v: any): string => {
       if (v === null || v === undefined) return "";
@@ -629,11 +643,18 @@ function SalesList() {
       doc.text("Thank you for your business!", 105, y, { align: "center" });
 
       const fileLabel = docType === "INVOICE" ? "invoice" : "quotation";
+
+      if (mode === "base64") {
+        const dataUri = doc.output("datauristring");
+        return dataUri.split(",")[1] || null;
+      }
+
       doc.save(`${fileLabel}-${sale.receiptNo}.pdf`);
       toast({
         title: `${docType === "INVOICE" ? "Invoice" : "Quotation"} Generated`,
         description: `${docType === "INVOICE" ? "Invoice" : "Quotation"} #${sale.receiptNo} downloaded.`,
       });
+      return null;
     } catch (err: any) {
       console.error(`${docType} PDF error:`, err);
       toast({
@@ -641,7 +662,141 @@ function SalesList() {
         description: `Failed to generate ${docType.toLowerCase()}: ${err?.message || String(err)}`,
         variant: "destructive",
       });
+      return null;
     }
+  };
+
+  // Build a simple HTML body for invoice email
+  const buildInvoiceEmailHtml = (sale: any): string => {
+    const originalSale = Array.isArray(salesData)
+      ? salesData.find((s: any) => s?._id === sale?.id)
+      : null;
+    const shop: any =
+      originalSale && typeof originalSale.shopId === "object" ? originalSale.shopId : {};
+    const currency = (typeof shop?.currency === "string" && shop.currency) || primaryShopCurrency || "";
+    const items: any[] = (originalSale?.items as any[]) || (sale?.items as any[]) || [];
+    const grandTotal =
+      Number(originalSale?.totalWithDiscount) ||
+      Number(originalSale?.totalAmount ?? sale?.totalAmount) ||
+      0;
+    const dateStr = sale?.saleDate ? new Date(sale.saleDate).toLocaleDateString() : "";
+    const customerName =
+      sale?.customerName && sale.customerName !== "Walk-in" ? sale.customerName : "";
+
+    const rows = items
+      .map((item: any) => {
+        const name =
+          item?.productName || item?.product?.name || item?.name || "Unknown Product";
+        const qty = Number(item?.quantity) || 1;
+        const unitPrice = Number(item?.unitPrice ?? item?.sellingPrice) || 0;
+        const total = Number(item?.totalPrice) || qty * unitPrice;
+        return `<tr>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee">${name}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${qty}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${currency} ${unitPrice.toFixed(2)}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">${currency} ${total.toFixed(2)}</td>
+        </tr>`;
+      })
+      .join("");
+
+    return `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:640px;margin:auto;padding:16px">
+      <h2 style="margin:0 0 4px 0">${shop?.name || "Your Shop"}</h2>
+      ${shop?.address ? `<div style="color:#666;font-size:13px">${shop.address}</div>` : ""}
+      <h1 style="text-align:center;margin:24px 0 8px 0;letter-spacing:2px">INVOICE</h1>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#444">
+        <div>Date: ${dateStr}</div>
+        <div>Invoice No: ${sale?.receiptNo || ""}</div>
+      </div>
+      ${customerName ? `<div style="margin-top:8px;font-size:13px">Customer: <strong>${customerName}</strong></div>` : ""}
+      <table style="width:100%;border-collapse:collapse;margin-top:16px;font-size:13px">
+        <thead>
+          <tr style="background:#f3f3f3">
+            <th style="padding:8px;text-align:left">Item</th>
+            <th style="padding:8px;text-align:right">Qty</th>
+            <th style="padding:8px;text-align:right">Unit Price</th>
+            <th style="padding:8px;text-align:right">Total</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="padding:10px 8px;text-align:right;font-weight:bold">TOTAL</td>
+            <td style="padding:10px 8px;text-align:right;font-weight:bold">${currency} ${grandTotal.toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p style="margin-top:20px;font-size:13px"><strong>Status:</strong> Pending Payment</p>
+      <p style="font-size:13px">Please settle this invoice at your earliest convenience. The full PDF invoice is attached.</p>
+      <p style="margin-top:24px;font-size:12px;color:#777;text-align:center">Thank you for your business!</p>
+    </body></html>`;
+  };
+
+  // Email an invoice for an on-hold sale via existing /api/sales/email-receipt endpoint
+  const handleEmailInvoice = async () => {
+    if (!invoiceSale || !invoiceEmail.trim()) return;
+    setIsSendingInvoice(true);
+    try {
+      let pdfBase64 = "";
+      try {
+        pdfBase64 = generateSalePDF(invoiceSale, "INVOICE", "base64") || "";
+      } catch (pdfErr) {
+        console.warn("Invoice PDF generation failed, sending HTML only:", pdfErr);
+      }
+
+      const originalSale = Array.isArray(salesData)
+        ? salesData.find((s: any) => s?._id === invoiceSale?.id)
+        : null;
+      const shop: any =
+        originalSale && typeof originalSale.shopId === "object" ? originalSale.shopId : {};
+
+      const response = await fetch("/api/sales/email-receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toEmail: invoiceEmail.trim(),
+          receiptHtml: buildInvoiceEmailHtml(invoiceSale),
+          receiptNo: invoiceSale.receiptNo,
+          shopName: shop?.name || "",
+          shopEmail: shop?.receiptemail || shop?.email || "",
+          customerName: invoiceSale.customerName || "",
+          pdfBase64,
+        }),
+      });
+      const result = await response.json();
+      if (response.ok && result?.success) {
+        toast({
+          title: "Invoice Sent",
+          description: `Invoice #${invoiceSale.receiptNo} emailed to ${invoiceEmail.trim()}.`,
+        });
+        setInvoiceDialogOpen(false);
+      } else {
+        toast({
+          title: "Failed to send invoice",
+          description: result?.error || "Unknown error",
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Failed to send invoice",
+        description: err?.message || "Network error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingInvoice(false);
+    }
+  };
+
+  const openInvoiceDialog = (sale: any) => {
+    const originalSale = Array.isArray(salesData)
+      ? salesData.find((s: any) => s?._id === sale?.id)
+      : null;
+    const customerEmail =
+      originalSale?.customerId?.email || originalSale?.customerEmail || "";
+    setInvoiceSale(sale);
+    setInvoiceEmail(customerEmail);
+    setInvoiceMode("choose");
+    setInvoiceDialogOpen(true);
   };
 
   // Quotation PDF generator (delegates to shared generator)
@@ -1320,13 +1475,13 @@ function SalesList() {
                                   Print Quotation
                                 </DropdownMenuItem>
 
-                                {/* Print Invoice - only for hold (unpaid) sales */}
+                                {/* Invoice (Download / Email) - only for hold (unpaid) sales */}
                                 {sale.status === "hold" && (
                                   <DropdownMenuItem
-                                    onClick={() => generateSalePDF(sale, "INVOICE")}
+                                    onClick={() => openInvoiceDialog(sale)}
                                   >
                                     <Receipt className="mr-2 h-4 w-4" />
-                                    Print Invoice
+                                    Invoice
                                   </DropdownMenuItem>
                                 )}
 
@@ -1512,6 +1667,81 @@ function SalesList() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invoice Dialog (Download / Email) */}
+      <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Invoice #{invoiceSale?.receiptNo}
+            </DialogTitle>
+          </DialogHeader>
+
+          {invoiceMode === "choose" ? (
+            <div className="space-y-3 pt-2">
+              <p className="text-sm text-muted-foreground">
+                How would you like to share this invoice?
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col gap-2"
+                  onClick={() => {
+                    if (invoiceSale) generateSalePDF(invoiceSale, "INVOICE", "download");
+                    setInvoiceDialogOpen(false);
+                  }}
+                >
+                  <Download className="h-5 w-5" />
+                  <span>Download</span>
+                </Button>
+                <Button
+                  className="h-20 flex-col gap-2"
+                  onClick={() => setInvoiceMode("email")}
+                >
+                  <Mail className="h-5 w-5" />
+                  <span>Email</span>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  Customer Email
+                </Label>
+                <Input
+                  type="email"
+                  value={invoiceEmail}
+                  onChange={(e) => setInvoiceEmail(e.target.value)}
+                  placeholder="customer@example.com"
+                  disabled={isSendingInvoice}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  The invoice PDF will be attached to the email.
+                </p>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setInvoiceMode("choose")}
+                  disabled={isSendingInvoice}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleEmailInvoice}
+                  disabled={isSendingInvoice || !invoiceEmail.trim()}
+                >
+                  {isSendingInvoice ? "Sending..." : "Send Invoice"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
