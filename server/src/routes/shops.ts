@@ -162,12 +162,32 @@ export function registerShopRoutes(app: Express) {
   app.put("/api/shop/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
+      console.log(`🛠️  PUT /api/shop/${id} body:`, JSON.stringify(req.body, null, 2));
+
       const response = await makePointifyRequest(`/shop/${id}`, {
         method: "PUT",
         body: JSON.stringify(req.body),
       });
-      
+
+      console.log(
+        `🛠️  PUT /api/shop/${id} response (selected receipt fields):`,
+        JSON.stringify(
+          {
+            email_receipt: (response as any)?.email_receipt,
+            receiptemail: (response as any)?.receiptemail,
+            email: (response as any)?.email,
+            address_receipt: (response as any)?.address_receipt,
+            contact: (response as any)?.contact,
+            paybill_account: (response as any)?.paybill_account,
+            paybill_till: (response as any)?.paybill_till,
+            allKeys: response && typeof response === "object" ? Object.keys(response as any) : null,
+          },
+          null,
+          2,
+        ),
+      );
+
       res.json(response);
     } catch (error) {
       console.error("Shop update error:", error);
