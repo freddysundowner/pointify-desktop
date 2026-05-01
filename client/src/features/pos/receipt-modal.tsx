@@ -1,5 +1,5 @@
 import { X, Printer, Mail, Plus, Check, Download } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Transaction, CartItem } from "@shared/schema";
 import { jsPDF } from 'jspdf';
@@ -220,203 +220,151 @@ export default function ReceiptModal({
   };
 
 
+  const currency = primaryShop?.currency || 'KES';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full max-h-[90vh] bg-white/95 backdrop-blur-md border-0 shadow-2xl overflow-hidden">
-        <DialogHeader className="pb-2">
-          <DialogTitle className="text-xl font-bold">
-            <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Transaction Complete
-            </span>
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {/* Success Indicator */}
-          <div className="text-center py-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
-              <Check className="h-6 w-6 text-white" />
+      <DialogContent className="max-w-md w-full max-h-[92dvh] bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0">
+
+        {/* Fixed header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
+          <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            Transaction Complete
+          </h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+            <X className="h-3.5 w-3.5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+
+          {/* Success strip */}
+          <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shrink-0">
+              <Check className="h-4 w-4 text-white" />
             </div>
-            <p className="text-base font-semibold text-gray-800">Payment Successful!</p>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Payment Successful!</p>
+              <p className="text-xs text-gray-500">{transactionDate.toLocaleDateString()} · {transactionDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+            </div>
+            <span className="ml-auto text-xs font-mono text-gray-400">#{transaction.id || 'N/A'}</span>
           </div>
 
-          {/* Receipt Content */}
-          <div className="bg-white border-2 border-gray-100 rounded-xl p-4 shadow-sm">
-            <div className="text-center mb-4 pb-3 border-b border-gray-200">
-              <h4 className="font-bold text-lg text-gray-800 mb-1">{primaryShop?.name || 'Store Name'}</h4>
-              <p className="text-sm text-gray-600">{primaryShop?.address || 'Store Address'}</p>
-              {primaryShop?.address_receipt && (
-                <p className="text-sm text-gray-600">{primaryShop.address_receipt}</p>
-              )}
-              {primaryShop?.contact && (
-                <p className="text-sm text-gray-600">Phone: {primaryShop.contact}</p>
-              )}
-              {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email) && (
-                <p className="text-sm text-gray-600">
-                  Email: {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email}
+          {/* Receipt card */}
+          <div className="border border-gray-200 rounded-xl overflow-hidden text-sm">
+
+            {/* Store header */}
+            <div className="bg-gray-50 px-4 py-3 text-center border-b border-gray-200">
+              <p className="font-bold text-gray-900">{primaryShop?.name || 'Store Name'}</p>
+              {primaryShop?.address && <p className="text-xs text-gray-500 mt-0.5">{primaryShop.address}</p>}
+              <div className="flex flex-wrap justify-center gap-x-3 mt-0.5">
+                {primaryShop?.contact && <span className="text-xs text-gray-500">📞 {primaryShop.contact}</span>}
+                {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail) && (
+                  <span className="text-xs text-gray-500">✉ {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail}</span>
+                )}
+              </div>
+              {(primaryShop?.paybill_account || primaryShop?.paybill_till) && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {primaryShop?.paybill_account ? `Paybill: ${primaryShop.paybill_account}` : `Buy Goods: ${primaryShop.paybill_till}`}
+                  {primaryShop?.paybill_account && primaryShop?.paybill_till && ` · Acc: ${primaryShop.paybill_till}`}
                 </p>
               )}
-              {(primaryShop?.paybill_account || primaryShop?.paybill_till) && (
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  {primaryShop?.paybill_account ? (
-                    // Show paybill with account number
-                    <>
-                      <p className="text-xs text-gray-500">Paybill: {primaryShop.paybill_account}</p>
-                      {primaryShop?.paybill_till && (
-                        <p className="text-xs text-gray-500">Account: {primaryShop.paybill_till}</p>
-                      )}
-                    </>
-                  ) : (
-                    // Show only till as Buy Goods
-                    primaryShop?.paybill_till && (
-                      <p className="text-xs text-gray-500">Buy Goods: {primaryShop.paybill_till}</p>
-                    )
-                  )}
-                </div>
-              )}
             </div>
-            
-            <div className="space-y-2 mb-4 pb-3 border-b border-gray-200">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Date:</span>
-                <span className="font-medium">{transactionDate.toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Time:</span>
-                <span className="font-medium">{transactionDate.toLocaleTimeString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Transaction:</span>
-                <span className="font-medium">#{transaction.id || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Served by:</span>
-                <span className="font-medium">{attendantName}</span>
-              </div>
+
+            {/* Transaction meta */}
+            <div className="px-4 py-2.5 border-b border-dashed border-gray-200 grid grid-cols-2 gap-y-1">
+              <span className="text-gray-500">Transaction</span>
+              <span className="text-right font-medium">#{transaction.id || 'N/A'}</span>
+              <span className="text-gray-500">Served by</span>
+              <span className="text-right font-medium">{attendantName}</span>
             </div>
-            
-            <div className="space-y-3 mb-4 pb-3 border-b border-gray-200">
+
+            {/* Items */}
+            <div className="px-4 py-2.5 border-b border-dashed border-gray-200 space-y-1.5">
               {items.map((item, index) => (
-                <div key={`${item.id}-${index}`} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <div className="flex-1">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-gray-500 ml-2">x{item.quantity}</span>
-                      <span className="text-gray-500 ml-2">@ Ksh {Number(item.price).toFixed(2)}</span>
-                    </div>
-                    <span className="font-semibold">Ksh {Number(item.total).toFixed(2)}</span>
+                <div key={`${item.id}-${index}`}>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-800 flex-1 truncate pr-2">{item.name}
+                      <span className="text-gray-400 font-normal"> x{item.quantity} @ {currency} {Number(item.price).toFixed(2)}</span>
+                    </span>
+                    <span className="font-semibold shrink-0">{currency} {Number(item.total).toFixed(2)}</span>
                   </div>
-                  {(item.discount && Number(item.discount) > 0) ? (
-                    <div className="flex justify-between ml-4 text-xs">
-                      <span className="text-green-600">Discount</span>
-                      <span className="text-green-600">-Ksh {(Number(item.discount) * Number(item.quantity)).toFixed(2)}</span>
+                  {Number(item.discount) > 0 && (
+                    <div className="flex justify-between text-xs text-green-600 pl-2">
+                      <span>Discount</span>
+                      <span>-{currency} {(Number(item.discount) * Number(item.quantity)).toFixed(2)}</span>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               ))}
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="font-semibold">{primaryShop?.currency || 'KES'} {Number(transaction.subtotal).toFixed(2)}</span>
+
+            {/* Totals */}
+            <div className="px-4 py-2.5 space-y-1">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal</span>
+                <span className="font-medium">{currency} {Number(transaction.subtotal).toFixed(2)}</span>
               </div>
-              {/* Show total discount if any items have discounts */}
-              {items.some(item => item.discount && item.discount > 0) && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-green-600">Total Discount:</span>
-                  <span className="font-semibold text-green-600">-{primaryShop?.currency || 'KES'} {items.reduce((sum, item) => sum + ((item.discount || 0) * item.quantity), 0).toFixed(2)}</span>
+              {items.some(item => Number(item.discount) > 0) && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span className="font-medium">-{currency} {items.reduce((s, i) => s + (Number(i.discount) || 0) * i.quantity, 0).toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Tax ({shopTaxRate}%):</span>
-                <span className="font-semibold">{primaryShop?.currency || 'KES'} {Number(transaction.tax).toFixed(2)}</span>
+              <div className="flex justify-between text-gray-600">
+                <span>Tax ({shopTaxRate}%)</span>
+                <span className="font-medium">{currency} {Number(transaction.tax).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
-                <span>Total:</span>
-                <span className="text-primary">{primaryShop?.currency || 'KES'} {Number(transaction.total).toFixed(2)}</span>
+              <div className="flex justify-between font-bold text-base pt-1.5 border-t border-gray-200 mt-1">
+                <span>Total</span>
+                <span className="text-primary">{currency} {Number(transaction.total).toFixed(2)}</span>
               </div>
-              
-              {/* Split payment breakdown */}
-              {transaction.paymentMethod === 'split' && (
-                <div className="mt-3 pt-2 border-t border-gray-200 space-y-1">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Payment Breakdown:</div>
-                  {transaction.amountPaid > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Cash:</span>
-                      <span className="font-semibold">{primaryShop?.currency || 'KES'} {Number(transaction.amountPaid).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {(transaction as any).mpesaNewTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">M-Pesa:</span>
-                      <span className="font-semibold">{primaryShop?.currency || 'KES'} {Number((transaction as any).mpesaNewTotal).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {(transaction as any).bankTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Bank:</span>
-                      <span className="font-semibold">{primaryShop?.currency || 'KES'} {Number((transaction as any).bankTotal).toFixed(2)}</span>
-                    </div>
-                  )}
+
+              {/* Payment method */}
+              {transaction.paymentMethod !== 'split' ? (
+                <div className="flex justify-between text-gray-500 text-xs pt-1">
+                  <span>Payment Method</span>
+                  <span className="capitalize font-medium">{transaction.paymentMethod}</span>
                 </div>
-              )}
-              
-              {/* Regular payment method for non-split payments */}
-              {transaction.paymentMethod !== 'split' && (
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="text-gray-600">Payment Method:</span>
-                  <span className="font-semibold capitalize">{transaction.paymentMethod}</span>
+              ) : (
+                <div className="pt-1 space-y-0.5">
+                  <p className="text-xs text-gray-500 font-medium">Split Payment</p>
+                  {transaction.amountPaid > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">Cash</span><span>{currency} {Number(transaction.amountPaid).toFixed(2)}</span></div>}
+                  {(transaction as any).mpesaNewTotal > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">M-Pesa</span><span>{currency} {Number((transaction as any).mpesaNewTotal).toFixed(2)}</span></div>}
+                  {(transaction as any).bankTotal > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">Bank</span><span>{currency} {Number((transaction as any).bankTotal).toFixed(2)}</span></div>}
                 </div>
               )}
             </div>
-            
-            <div className="text-center mt-4 pt-3 border-t border-gray-200 text-gray-600">
-              <p className="font-medium text-sm">Thank you for your business!</p>
-              <p className="text-xs">Visit us again soon</p>
-              {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email) && (
-                <p className="text-xs mt-1">
-                  Questions? Email: {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email}
-                </p>
-              )}
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-4 py-2 text-center border-t border-gray-200">
+              <p className="text-xs text-gray-400">Thank you for your business!</p>
             </div>
           </div>
-          
-          {/* Receipt Actions */}
+        </div>
+
+        {/* Fixed action buttons */}
+        <div className="px-5 pb-4 pt-2 space-y-2 shrink-0 border-t border-gray-100">
           <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl border-gray-200 hover:bg-gray-50 text-sm"
-              onClick={printThermal}
-            >
-              <Printer className="mr-1 h-3 w-3" />
-              Print
+            <Button variant="outline" className="h-9 rounded-xl text-xs" onClick={printThermal}>
+              <Printer className="mr-1 h-3.5 w-3.5" /> Print
             </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl border-gray-200 hover:bg-gray-50 text-sm"
-              onClick={generatePDF}
-            >
-              <Download className="mr-1 h-3 w-3" />
-              PDF
+            <Button variant="outline" className="h-9 rounded-xl text-xs" onClick={generatePDF}>
+              <Download className="mr-1 h-3.5 w-3.5" /> PDF
             </Button>
-            <Button
-              variant="outline"
-              className="h-10 rounded-xl border-gray-200 hover:bg-gray-50 text-sm"
-            >
-              <Mail className="mr-1 h-3 w-3" />
-              Email
+            <Button variant="outline" className="h-9 rounded-xl text-xs">
+              <Mail className="mr-1 h-3.5 w-3.5" /> Email
             </Button>
           </div>
-          
           <Button
             onClick={onNewTransaction}
-            className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 font-semibold text-sm shadow-lg"
+            className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 font-semibold text-sm"
           >
-            <Plus className="mr-1 h-4 w-4" />
-            Start New Transaction
+            <Plus className="mr-1 h-4 w-4" /> New Transaction
           </Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );

@@ -1,18 +1,21 @@
  Riverside cosmetics  branch 1
          SALES RECEIPT
 -------------------------------
-Receipt #: REC324666
-Date: May 1, 2026, 12:06 PM
+Receipt #: REC185811
+Date: May 1, 2026, 12:50 PM
 Customer: Walk-in
 Attendant: Fredrick
 -------------------------------
+test one
+ srn: 
+  1 x KES 400.00 = KES400.00
 white jeans
  srn: 
   1 x KES 200.00 = KES200.00
 -------------------------------
-Subtotal:      KES200.00
+Subtotal:      KES600.00
 Tax:           KES0.00
-TOTAL:         KES200.00
+TOTAL:         KES600.00
 
 Payment Method: cash
 
