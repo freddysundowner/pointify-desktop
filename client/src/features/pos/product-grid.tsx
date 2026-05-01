@@ -960,23 +960,20 @@ export default function ProductGrid({
       <div className="hidden md:block bg-white shadow-sm border-b border-gray-200">
         <div className="px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-lg font-semibold text-gray-800"></h1>
-              {/* Keyboard shortcut hints */}
-              <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400">
-                {[
-                  { key: "F2", label: "Pay" },
-                  { key: "F3", label: "Search" },
-                  { key: "F4", label: "Clear cart" },
-                  { key: "Esc", label: "Close" },
-                  { key: "Enter", label: "Confirm" },
-                ].map(({ key, label }) => (
-                  <span key={key} className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600">{key}</kbd>
-                    <span>{label}</span>
-                  </span>
-                ))}
-              </div>
+            {/* Keyboard shortcut hints — centered so they clear the absolute Back button */}
+            <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400 pl-48">
+              {[
+                { key: "F2", label: "Pay" },
+                { key: "F3", label: "Search" },
+                { key: "F4", label: "Clear cart" },
+                { key: "Esc", label: "Close" },
+                { key: "Enter", label: "Confirm" },
+              ].map(({ key, label }) => (
+                <span key={key} className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600">{key}</kbd>
+                  <span>{label}</span>
+                </span>
+              ))}
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
