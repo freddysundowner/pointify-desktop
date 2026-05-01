@@ -1738,115 +1738,103 @@ export default function ProductGrid({
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={resetPaymentDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary text-center">Payment</DialogTitle>
-          </DialogHeader>
-          
-          {showCardInterface ? (
-            /* Card Payment Interface */
-            <div className="space-y-8 py-6">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-primary mb-2">
-                  Ksh {totals.total.toFixed(2)}
-                </div>
-                <p className="text-gray-600 text-lg">Total Amount Due</p>
-              </div>
-              
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 border-4 border-primary rounded-lg flex items-center justify-center">
-                  <CreditCard className="h-12 w-12 text-primary" />
-                </div>
-                
-                <div className="text-center">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-2">Card Payment</h3>
-                  {isProcessingCard ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      </div>
-                      <p className="text-lg text-gray-600">Waiting for card...</p>
-                      <p className="text-sm text-gray-500">Please insert, tap, or swipe your card</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <p className="text-lg text-green-600 font-semibold">✓ Card detected</p>
-                      <p className="text-sm text-gray-500">Ready to process payment</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <Button 
-                  variant="outline" 
-                  onClick={resetPaymentDialog}
-                  className="flex-1 py-4 text-lg"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCompletePayment}
-                  disabled={isProcessingCard || createTransactionMutation.isPending}
-                  className="flex-1 py-4 text-lg bg-green-500 hover:bg-green-600 text-white"
-                >
-                  {createTransactionMutation.isPending ? "Processing..." : "Complete Payment"}
-                </Button>
-              </div>
+        <DialogContent className="p-0 gap-0 w-full sm:max-w-md border-0 shadow-2xl overflow-hidden
+          fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0
+          rounded-t-2xl sm:rounded-2xl
+          sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2
+          max-h-[92dvh] sm:max-h-[88dvh] overflow-y-auto">
+
+          {/* Drag handle (mobile) */}
+          <div className="flex justify-center pt-2 pb-1 sm:hidden">
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          </div>
+
+          <div className="px-4 pt-2 pb-4 sm:px-5 sm:pt-4 sm:pb-5 space-y-3">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-green-500">Payment</h2>
+              <button
+                onClick={resetPaymentDialog}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <X className="h-3.5 w-3.5 text-gray-500" />
+              </button>
             </div>
-          ) : (
-            /* Payment Method Selection */
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-semibold">Total Amount:</span>
-                  <span className="text-2xl font-bold text-green-600">Ksh {totals.total.toFixed(2)}</span>
+
+            {/* Total */}
+            <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
+              <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
+              <span className="text-xl font-extrabold text-green-500">Ksh {totals.total.toFixed(2)}</span>
+            </div>
+
+            {showCardInterface ? (
+              /* Card interface */
+              <div className="space-y-4 py-2">
+                <div className="flex flex-col items-center gap-3 py-4">
+                  <div className="w-16 h-16 border-4 border-primary rounded-xl flex items-center justify-center">
+                    <CreditCard className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-800">Card Payment</p>
+                    {isProcessingCard ? (
+                      <p className="text-sm text-gray-500 mt-1">Insert, tap, or swipe your card…</p>
+                    ) : (
+                      <p className="text-sm text-green-600 font-medium mt-1">✓ Card detected</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={resetPaymentDialog} className="flex-1">Cancel</Button>
+                  <Button
+                    onClick={handleCompletePayment}
+                    disabled={isProcessingCard || createTransactionMutation.isPending}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    {createTransactionMutation.isPending ? "Processing…" : "Complete Payment"}
+                  </Button>
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Select Payment Method:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: "cash",   label: "Cash",   icon: <Banknote className="h-4 w-4" /> },
-                    { id: "wallet", label: "Wallet", icon: <Wallet className="h-4 w-4" /> },
-                    { id: "split",  label: "Split",  icon: <Split className="h-4 w-4" /> },
-                    { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-4 w-4" /> },
-                    { id: "bank",   label: "Bank",   icon: <Building className="h-4 w-4" /> },
-                    { id: "card",   label: "Card",   icon: <CreditCard className="h-4 w-4" /> },
-                    { id: "credit", label: "Credit", icon: <UserCheck className="h-4 w-4" />, accent: true },
-                  ].map(({ id, label, icon, accent }) => {
-                    const selected = selectedPaymentMethod === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => handlePaymentMethodSelect(id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
-                          selected
-                            ? accent
-                              ? "bg-orange-500 border-orange-500 text-white"
-                              : "bg-green-500 border-green-500 text-white"
-                            : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
-                        }`}
-                      >
-                        {icon}
-                        {label}
-                      </button>
-                    );
-                  })}
+            ) : (
+              <>
+                {/* Payment method pills */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-gray-500">Select Payment Method:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: "cash",   label: "Cash",   icon: <Banknote className="h-3.5 w-3.5" /> },
+                      { id: "wallet", label: "Wallet", icon: <Wallet className="h-3.5 w-3.5" /> },
+                      { id: "split",  label: "Split",  icon: <Split className="h-3.5 w-3.5" /> },
+                      { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-3.5 w-3.5" /> },
+                      { id: "bank",   label: "Bank",   icon: <Building className="h-3.5 w-3.5" /> },
+                      { id: "card",   label: "Card",   icon: <CreditCard className="h-3.5 w-3.5" /> },
+                      { id: "credit", label: "Credit", icon: <UserCheck className="h-3.5 w-3.5" />, accent: true },
+                    ].map(({ id, label, icon, accent }) => {
+                      const selected = selectedPaymentMethod === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => handlePaymentMethodSelect(id)}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                            selected
+                              ? accent ? "bg-orange-500 border-orange-500 text-white" : "bg-green-500 border-green-500 text-white"
+                              : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
+                          }`}
+                        >
+                          {icon}{label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              
-              {/* Cash received + change */}
-              {selectedPaymentMethod === "cash" && (
-                <div className="space-y-3 bg-gray-50 p-4 rounded-xl">
-                  <div>
-                    <label className="text-sm font-semibold text-gray-700 mb-2 block">Cash Received</label>
+
+                {/* Cash panel */}
+                {selectedPaymentMethod === "cash" && (
+                  <div className="space-y-2 bg-gray-50 rounded-xl p-3">
+                    <label className="text-xs font-semibold text-gray-600 block">Cash Received</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-lg pointer-events-none">Ksh</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">Ksh</span>
                       <Input
                         type="number"
                         step="0.01"
@@ -1854,291 +1842,209 @@ export default function ProductGrid({
                         placeholder="0.00"
                         value={cashReceived}
                         onChange={(e) => setCashReceived(e.target.value)}
-                        className="h-14 rounded-xl text-xl font-bold pl-14 border-gray-200 focus:border-green-400 bg-white"
+                        className="h-11 rounded-lg text-lg font-bold pl-12 border-gray-200 focus:border-green-400 bg-white"
                         autoFocus
                       />
                     </div>
-                  </div>
-
-                  {/* Quick preset amounts */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      Math.ceil(totals.total / 50) * 50,
-                      Math.ceil(totals.total / 100) * 100,
-                      Math.ceil(totals.total / 500) * 500,
-                      Math.ceil(totals.total / 1000) * 1000,
-                    ]
-                      .filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01)
-                      .slice(0, 4)
-                      .map((amount) => (
-                        <button
-                          key={amount}
-                          type="button"
-                          onClick={() => setCashReceived(String(amount))}
-                          className={`py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
-                            parseFloat(cashReceived) === amount
-                              ? "border-green-400 bg-green-50 text-green-700"
-                              : "border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50"
-                          }`}
-                        >
-                          {amount}
-                        </button>
-                      ))}
-                  </div>
-
-                  {/* Change due */}
-                  <div className={`flex justify-between items-center rounded-xl px-4 py-3 border-2 transition-colors ${
-                    parseFloat(cashReceived) >= totals.total
-                      ? "bg-green-50 border-green-300"
-                      : "bg-white border-gray-200"
-                  }`}>
-                    <span className="font-semibold text-gray-700">Change Due:</span>
-                    <span className={`text-2xl font-extrabold ${
-                      parseFloat(cashReceived) >= totals.total ? "text-green-600" : "text-gray-300"
+                    <div className="flex gap-2">
+                      {[
+                        Math.ceil(totals.total / 50) * 50,
+                        Math.ceil(totals.total / 100) * 100,
+                        Math.ceil(totals.total / 500) * 500,
+                        Math.ceil(totals.total / 1000) * 1000,
+                      ]
+                        .filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01)
+                        .slice(0, 4)
+                        .map((amount) => (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => setCashReceived(String(amount))}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                              parseFloat(cashReceived) === amount
+                                ? "border-green-400 bg-green-50 text-green-700"
+                                : "border-gray-200 bg-white text-gray-600 hover:border-green-300"
+                            }`}
+                          >
+                            {amount}
+                          </button>
+                        ))}
+                    </div>
+                    <div className={`flex justify-between items-center rounded-lg px-3 py-2 border transition-colors ${
+                      parseFloat(cashReceived) >= totals.total ? "bg-green-50 border-green-300" : "bg-white border-gray-200"
                     }`}>
-                      Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - totals.total).toFixed(2)}
-                    </span>
+                      <span className="text-sm font-semibold text-gray-700">Change Due:</span>
+                      <span className={`text-xl font-extrabold ${
+                        parseFloat(cashReceived) >= totals.total ? "text-green-600" : "text-gray-300"
+                      }`}>
+                        Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - totals.total).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Payment-specific input fields */}
-              {selectedPaymentMethod === "mpesa" && (
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Smartphone className="h-5 w-5 text-green-600" />
-                    <span className="font-medium text-green-800">M-Pesa Payment</span>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Transaction ID <span className="text-gray-400 font-normal">(optional)</span></label>
+                {/* M-Pesa panel */}
+                {selectedPaymentMethod === "mpesa" && (
+                  <div className="bg-green-50 p-3 rounded-xl border border-green-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">M-Pesa Transaction ID <span className="text-gray-400 font-normal">(optional)</span></span>
+                    </div>
                     <Input
                       type="text"
-                      placeholder="Enter M-Pesa transaction ID"
+                      placeholder="e.g. RI704H61SX"
                       value={mpesaTransactionId}
                       onChange={(e) => setMpesaTransactionId(e.target.value)}
-                      className="w-full"
+                      className="h-9 text-sm bg-white"
                     />
-                    <p className="text-xs text-gray-500">Example: RI704H61SX</p>
                   </div>
-                </div>
-              )}
-              
-              {selectedPaymentMethod === "bank" && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Building className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium text-blue-800">Bank Transfer</span>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Transaction ID *</label>
+                )}
+
+                {/* Bank panel */}
+                {selectedPaymentMethod === "bank" && (
+                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Bank Transaction ID *</span>
+                    </div>
                     <Input
                       type="text"
-                      placeholder="Enter bank transaction ID"
+                      placeholder="e.g. TXN123456789"
                       value={bankTransactionId}
                       onChange={(e) => setBankTransactionId(e.target.value)}
-                      className="w-full"
+                      className="h-9 text-sm bg-white"
                     />
-                    <p className="text-xs text-gray-500">Example: TXN123456789</p>
                   </div>
-                </div>
-              )}
-              
-              {selectedPaymentMethod === "credit" && (
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <UserCheck className="h-5 w-5 text-orange-600" />
-                    <span className="font-medium text-orange-800">Credit Sale</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Customer *</label>
-                      <select 
-                        className="w-full h-10 px-3 border border-orange-200 rounded text-sm focus:border-orange-500"
-                        value={selectedCustomerId}
-                        onChange={(e) => setSelectedCustomerId(e.target.value)}
-                      >
-                        <option value="">Select a customer...</option>
-                        {customers.map((customer: any) => {
-                          const customerId = customer._id || customer.id;
-                          return (
-                            <option key={customerId} value={customerId}>
-                              {customer.name} {customer.phone ? `(${customer.phone})` : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
+                )}
+
+                {/* Credit panel */}
+                {selectedPaymentMethod === "credit" && (
+                  <div className="bg-orange-50 p-3 rounded-xl border border-orange-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4 text-orange-600" />
+                      <span className="text-sm font-medium text-orange-800">Credit Sale</span>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Due Date *</label>
-                      <Input
-                        type="date"
-                        value={creditDueDate}
-                        onChange={(e) => setCreditDueDate(e.target.value)}
-                        className="w-full border-orange-200 focus:border-orange-500"
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    </div>
+                    <select
+                      className="w-full h-9 px-3 border border-orange-200 rounded-lg text-sm bg-white focus:border-orange-400 focus:outline-none"
+                      value={selectedCustomerId}
+                      onChange={(e) => setSelectedCustomerId(e.target.value)}
+                    >
+                      <option value="">Select a customer…</option>
+                      {customers.map((customer: any) => {
+                        const customerId = customer._id || customer.id;
+                        return (
+                          <option key={customerId} value={customerId}>
+                            {customer.name}{customer.phone ? ` (${customer.phone})` : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <Input
+                      type="date"
+                      value={creditDueDate}
+                      onChange={(e) => setCreditDueDate(e.target.value)}
+                      className="h-9 text-sm border-orange-200 bg-white focus:border-orange-400"
+                      min={new Date().toISOString().split("T")[0]}
+                    />
                     {selectedCustomer && (
-                      <div className="bg-white p-3 rounded border border-orange-200">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-900">{selectedCustomer.name}</p>
-                          <p className="text-gray-600">
-                            Total Outstanding: Ksh {Math.abs(selectedCustomer.totalOutstanding || selectedCustomer.balance || 0).toFixed(2)}
-                            {(selectedCustomer.totalOutstanding || selectedCustomer.balance || 0) > 0 ? ' (Owes)' : ' (Clear)'}
-                          </p>
-                          {selectedCustomer.wallet && (
-                            <p className="text-gray-500 text-xs">
-                              Wallet Balance: Ksh {parseFloat(selectedCustomer.wallet).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
+                      <div className="bg-white p-2 rounded-lg border border-orange-200 text-xs">
+                        <p className="font-semibold text-gray-900">{selectedCustomer.name}</p>
+                        <p className="text-gray-500">Outstanding: Ksh {Math.abs(selectedCustomer.totalOutstanding || selectedCustomer.balance || 0).toFixed(2)}</p>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {selectedPaymentMethod === "split" && (
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Split className="h-5 w-5 text-yellow-600" />
-                    <span className="font-medium text-yellow-800">Split Payment</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">Cash</label>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={splitAmounts.cash || ""}
-                          onChange={(e) => setSplitAmounts(prev => ({ 
-                            ...prev, 
-                            cash: parseFloat(e.target.value) || 0 
-                          }))}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">M-Pesa</label>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={splitAmounts.mpesa || ""}
-                          onChange={(e) => setSplitAmounts(prev => ({ 
-                            ...prev, 
-                            mpesa: parseFloat(e.target.value) || 0 
-                          }))}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-700">Bank</label>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={splitAmounts.bank || ""}
-                          onChange={(e) => setSplitAmounts(prev => ({ 
-                            ...prev, 
-                            bank: parseFloat(e.target.value) || 0 
-                          }))}
-                          className="w-full text-sm"
-                        />
-                      </div>
+                {/* Split panel */}
+                {selectedPaymentMethod === "split" && (
+                  <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-200 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Split className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-800">Split Payment</span>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Total Split:</span>
-                      <span className="font-medium">
-                        Ksh {(splitAmounts.cash + splitAmounts.mpesa + splitAmounts.bank).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">Required:</span>
-                      <span className="font-medium text-green-600">
-                        Ksh {totals.total.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Manual Date/Time Setting - Only visible with permission */}
-              {canSetSaleDate && (
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5 text-purple-600" />
-                      <span className="font-medium text-purple-800">Set Custom Date/Time</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="customDateTime"
-                        checked={isCustomDateTime}
-                        onChange={(e) => setIsCustomDateTime(e.target.checked)}
-                        className="rounded"
-                      />
-                      <label htmlFor="customDateTime" className="text-sm text-purple-700">
-                        Override
-                      </label>
-                    </div>
-                  </div>
-                  
-                  {isCustomDateTime && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Date & Time (ISO Format) *
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        value={customDateTime ? new Date(customDateTime).toISOString().slice(0, 16) : ""}
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            // Convert local datetime to ISO string
-                            const localDate = new Date(e.target.value);
-                            setCustomDateTime(localDate.toISOString());
-                          } else {
-                            setCustomDateTime("");
-                          }
-                        }}
-                        className="w-full"
-                      />
-                      <div className="flex items-center space-x-2 text-xs text-gray-500">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          Current: {new Date().toISOString().slice(0, 19)}Z
-                        </span>
-                      </div>
-                      {customDateTime && (
-                        <div className="text-xs text-purple-600">
-                          Will save as: {customDateTime}
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { key: "cash" as const, label: "Cash" },
+                        { key: "mpesa" as const, label: "M-Pesa" },
+                        { key: "bank" as const, label: "Bank" },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="text-xs font-medium text-gray-600 mb-1 block">{label}</label>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={splitAmounts[key] || ""}
+                            onChange={(e) => setSplitAmounts(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                            className="h-9 text-sm bg-white"
+                          />
                         </div>
-                      )}
+                      ))}
                     </div>
-                  )}
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-gray-600">Total: Ksh {(splitAmounts.cash + splitAmounts.mpesa + splitAmounts.bank).toFixed(2)}</span>
+                      <span className="text-green-600">Required: Ksh {totals.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom date/time */}
+                {canSetSaleDate && (
+                  <div className="bg-purple-50 p-3 rounded-xl border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-800">Custom Date/Time</span>
+                      </div>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isCustomDateTime}
+                          onChange={(e) => setIsCustomDateTime(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-xs text-purple-700">Override</span>
+                      </label>
+                    </div>
+                    {isCustomDateTime && (
+                      <div className="mt-2 space-y-1">
+                        <Input
+                          type="datetime-local"
+                          value={customDateTime ? new Date(customDateTime).toISOString().slice(0, 16) : ""}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              setCustomDateTime(new Date(e.target.value).toISOString());
+                            } else {
+                              setCustomDateTime("");
+                            }
+                          }}
+                          className="h-9 text-sm w-full bg-white"
+                        />
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Current: {new Date().toISOString().slice(0, 19)}Z
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-3 pt-1">
+                  <Button variant="outline" onClick={resetPaymentDialog} className="flex-1 h-11 rounded-xl">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCompletePayment}
+                    disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
+                      (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate))}
+                    className="flex-1 h-11 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold"
+                  >
+                    {createTransactionMutation.isPending ? "Processing…" :
+                      selectedPaymentMethod === "credit" ? "Create Credit Sale" : "Complete Payment"}
+                  </Button>
                 </div>
-              )}
-              
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={resetPaymentDialog}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCompletePayment}
-                  disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
-                    (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate))}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  {createTransactionMutation.isPending ? "Processing..." : 
-                   selectedPaymentMethod === "credit" ? "Create Credit Sale" : "Complete Payment"}
-                </Button>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
