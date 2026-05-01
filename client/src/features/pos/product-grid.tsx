@@ -1800,15 +1800,15 @@ export default function ProductGrid({
                 {/* Payment method pills */}
                 <div className="space-y-1.5">
                   <p className="text-xs font-medium text-gray-500">Select Payment Method:</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {[
-                      { id: "cash",   label: "Cash",   icon: <Banknote className="h-3.5 w-3.5" /> },
-                      { id: "wallet", label: "Wallet", icon: <Wallet className="h-3.5 w-3.5" /> },
-                      { id: "split",  label: "Split",  icon: <Split className="h-3.5 w-3.5" /> },
-                      { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-3.5 w-3.5" /> },
-                      { id: "bank",   label: "Bank",   icon: <Building className="h-3.5 w-3.5" /> },
-                      { id: "card",   label: "Card",   icon: <CreditCard className="h-3.5 w-3.5" /> },
-                      { id: "credit", label: "Credit", icon: <UserCheck className="h-3.5 w-3.5" />, accent: true },
+                      { id: "cash",   label: "Cash",   icon: <Banknote className="h-4 w-4" /> },
+                      { id: "wallet", label: "Wallet", icon: <Wallet className="h-4 w-4" /> },
+                      { id: "split",  label: "Split",  icon: <Split className="h-4 w-4" /> },
+                      { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-4 w-4" /> },
+                      { id: "bank",   label: "Bank",   icon: <Building className="h-4 w-4" /> },
+                      { id: "card",   label: "Card",   icon: <CreditCard className="h-4 w-4" /> },
+                      { id: "credit", label: "Credit", icon: <UserCheck className="h-4 w-4" />, accent: true },
                     ].map(({ id, label, icon, accent }) => {
                       const selected = selectedPaymentMethod === id;
                       return (
@@ -1816,7 +1816,7 @@ export default function ProductGrid({
                           key={id}
                           type="button"
                           onClick={() => handlePaymentMethodSelect(id)}
-                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                          className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
                             selected
                               ? accent ? "bg-orange-500 border-orange-500 text-white" : "bg-purple-600 border-purple-600 text-white"
                               : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
