@@ -199,20 +199,56 @@ export default function CheckoutModal({
                 <Label htmlFor="cashReceived" className="text-sm font-semibold text-gray-700 mb-2 block">
                   Cash Received
                 </Label>
-                <Input
-                  id="cashReceived"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={cashReceived}
-                  onChange={(e) => setCashReceived(e.target.value)}
-                  className="h-12 rounded-xl text-lg border-gray-200 focus:border-green-400 bg-white"
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-lg">Ksh</span>
+                  <Input
+                    id="cashReceived"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    className="h-14 rounded-xl text-xl font-bold pl-14 border-gray-200 focus:border-green-400 bg-white"
+                    autoFocus
+                  />
+                </div>
               </div>
-              <div className="flex justify-between items-center bg-white rounded-xl px-4 py-3 border border-gray-200">
+
+              {/* Quick amount presets */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  Math.ceil(totals.total / 50) * 50,
+                  Math.ceil(totals.total / 100) * 100,
+                  Math.ceil(totals.total / 500) * 500,
+                  Math.ceil(totals.total / 1000) * 1000,
+                ].filter((v, i, arr) => arr.indexOf(v) === i && v > totals.total - 0.01)
+                  .slice(0, 4)
+                  .map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setCashReceived(String(amount))}
+                      className={`py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                        parseFloat(cashReceived) === amount
+                          ? "border-green-400 bg-green-50 text-green-700"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50"
+                      }`}
+                    >
+                      {amount}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Change */}
+              <div className={`flex justify-between items-center rounded-xl px-4 py-3 border-2 transition-colors ${
+                parseFloat(cashReceived) >= totals.total
+                  ? "bg-green-50 border-green-200"
+                  : "bg-white border-gray-200"
+              }`}>
                 <span className="font-semibold text-gray-700">Change Due:</span>
-                <span className="text-lg font-bold text-green-600">
+                <span className={`text-2xl font-extrabold ${
+                  parseFloat(cashReceived) >= totals.total ? "text-green-600" : "text-gray-300"
+                }`}>
                   Ksh {calculateChange().toFixed(2)}
                 </span>
               </div>
