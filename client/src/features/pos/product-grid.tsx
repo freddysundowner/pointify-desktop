@@ -215,6 +215,72 @@ export default function ProductGrid({
   }, [searchQuery, shopId, adminId]);
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+
+      // F2 → open payment dialog (only when cart has items and no dialog open)
+      if (e.key === "F2") {
+        e.preventDefault();
+        if (cartItems.length > 0 && !showPaymentDialog) {
+          setShowPaymentDialog(true);
+        }
+        return;
+      }
+
+      // F3 or "/" → focus search bar
+      if (e.key === "F3" || (e.key === "/" && !inInput)) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      // F4 → clear cart
+      if (e.key === "F4") {
+        e.preventDefault();
+        if (cartItems.length > 0) onClearCart();
+        return;
+      }
+
+      // Escape → close dialogs (handled by Radix, but ensure payment dialog closes)
+      if (e.key === "Escape" && showPaymentDialog) {
+        resetPaymentDialog();
+        return;
+      }
+
+      // When payment dialog is open:
+      if (showPaymentDialog) {
+        // Enter → complete payment
+        if (e.key === "Enter" && !inInput) {
+          e.preventDefault();
+          handleCompletePayment();
+          return;
+        }
+
+        // 1/2/3/4 → select cash preset (when cash method selected)
+        if (selectedPaymentMethod === "cash" && ["1","2","3","4"].includes(e.key) && !inInput) {
+          e.preventDefault();
+          const presets = [
+            Math.ceil(totals.total / 50) * 50,
+            Math.ceil(totals.total / 100) * 100,
+            Math.ceil(totals.total / 500) * 500,
+            Math.ceil(totals.total / 1000) * 1000,
+          ].filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01).slice(0, 4);
+          const idx = parseInt(e.key) - 1;
+          if (presets[idx] !== undefined) setCashReceived(String(presets[idx]));
+          return;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [cartItems, showPaymentDialog, selectedPaymentMethod, totals, onClearCart, resetPaymentDialog, handleCompletePayment, setCashReceived]);
 
   useEffect(() => {
     if (!loaderRef.current || !hasMore) return;
@@ -882,6 +948,21 @@ export default function ProductGrid({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-4">
               <h1 className="text-lg font-semibold text-gray-800"></h1>
+              {/* Keyboard shortcut hints */}
+              <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400">
+                {[
+                  { key: "F2", label: "Pay" },
+                  { key: "F3", label: "Search" },
+                  { key: "F4", label: "Clear cart" },
+                  { key: "Esc", label: "Close" },
+                  { key: "Enter", label: "Confirm" },
+                ].map(({ key, label }) => (
+                  <span key={key} className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600">{key}</kbd>
+                    <span>{label}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
@@ -1064,6 +1145,7 @@ export default function ProductGrid({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Scan barcode or search products..."
                   value={searchQuery}
@@ -1539,6 +1621,7 @@ export default function ProductGrid({
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     type="text"
+                    ref={searchInputRef}
                     placeholder="Search products..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
