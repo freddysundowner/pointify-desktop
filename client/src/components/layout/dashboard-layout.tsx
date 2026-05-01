@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock } from "lucide-react";
+import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -360,76 +360,99 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </div>
       )}
 
-      {/* Top Header Bar */}
-      <div className={`fixed top-0 w-full z-20 bg-white shadow-sm border-b ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center">
-            {/* Mobile Menu Button - Hidden for attendant routes */}
-            {!isAttendantRoute && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-2 mr-2"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-            )}
-            
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+      {/* ── Mobile App Header (hidden on desktop) ─────────────────────────── */}
+      {!isAttendantRoute && (
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between px-4 h-14">
+            {/* Brand */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center shadow-sm">
                 <Store className="h-4 w-4 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Welcome {admin?.username}
-                </h1>
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  <span>{formatDate(currentTime)}</span>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span className="font-medium">{formatTime(currentTime)}</span>
+              <span className="text-lg font-bold text-gray-900 tracking-tight">Pointify</span>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-gray-100 transition-colors">
+                    <div className="text-right hidden xs:block">
+                      <p className="text-xs font-semibold text-gray-800 leading-none">{admin?.username || 'Admin'}</p>
+                    </div>
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-white text-xs font-bold">
+                        {(admin?.username || admin?.email || 'A')[0].toUpperCase()}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="text-sm font-semibold text-gray-900">{admin?.username || 'Admin'}</p>
+                    <p className="text-xs text-gray-500 truncate">{admin?.email}</p>
                   </div>
+                  <DropdownMenuItem onClick={() => setLocation('/edit-profile')}>
+                    <Edit className="w-4 h-4 mr-2" /> Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setLocation('/settings')}>
+                    <Settings className="w-4 h-4 mr-2" /> Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Desktop Header Bar (hidden on mobile) ──────────────────────────── */}
+      <div className={`hidden lg:block fixed top-0 w-full z-20 bg-white shadow-sm border-b ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Store className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Welcome {admin?.username}</h1>
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <span>{formatDate(currentTime)}</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span className="font-medium">{formatTime(currentTime)}</span>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Profile & Logout - Top Right */}
           <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div className="hidden sm:block">
+              <div>
                 <p className="text-sm font-medium text-gray-900">{admin?.email?.split('@')[0] || 'Admin User'}</p>
                 <p className="text-xs text-gray-500">{admin?.email || 'admin@pointify.com'}</p>
               </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                >
+                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                   <User className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => setLocation('/edit-profile')}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
+                  <Edit className="w-4 h-4 mr-2" /> Edit Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocation('/settings')}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
+                  <Settings className="w-4 h-4 mr-2" /> Settings
                 </DropdownMenuItem>
-
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -437,12 +460,87 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Attendant route header (when isAttendantRoute, show a minimal header on mobile too) */}
+      {isAttendantRoute && (
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between px-4 h-14">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+                <Store className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-gray-900">Pointify</span>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">
+                    {(admin?.username || 'A')[0].toUpperCase()}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Content ───────────────────────────────────────────────────── */}
       <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="pt-16 p-6 w-full max-w-none overflow-x-hidden">
+        <div className="pt-14 lg:pt-16 pb-24 lg:pb-6 px-3 lg:px-6 py-3 lg:py-6 w-full max-w-none overflow-x-hidden">
           {children}
         </div>
       </div>
+
+      {/* ── Mobile Bottom Tab Bar ──────────────────────────────────────────── */}
+      {!isAttendantRoute && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="flex items-stretch">
+            {[
+              { href: dashboardRoute, icon: Home,          label: "Home" },
+              { href: posRoute,       icon: ScanBarcode,   label: "POS" },
+              { href: "/sales",       icon: Receipt,        label: "Sales" },
+              { href: "/stock/products", icon: Package,    label: "Products" },
+            ].map(({ href, icon: Icon, label }) => {
+              const active = location === href || location.startsWith(href + '/');
+              return (
+                <Link key={href} href={href}>
+                  <div className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 w-[calc(100vw/5)] cursor-pointer transition-colors ${
+                    active ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
+                  }`}>
+                    <div className={`p-1 rounded-xl transition-all ${active ? 'bg-purple-50' : ''}`}>
+                      <Icon className={`h-5 w-5 ${active ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
+                    </div>
+                    <span className={`text-[10px] leading-none font-medium ${active ? 'text-purple-600' : 'text-gray-400'}`}>
+                      {label}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+
+            {/* More tab → opens full slide-out menu */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 flex-1 w-[calc(100vw/5)] transition-colors ${
+                isMobileMenuOpen ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
+              }`}
+            >
+              <div className={`p-1 rounded-xl transition-all ${isMobileMenuOpen ? 'bg-purple-50' : ''}`}>
+                <MoreHorizontal className={`h-5 w-5 ${isMobileMenuOpen ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
+              </div>
+              <span className={`text-[10px] leading-none font-medium ${isMobileMenuOpen ? 'text-purple-600' : 'text-gray-400'}`}>
+                More
+              </span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
