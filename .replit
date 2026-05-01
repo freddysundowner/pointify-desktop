@@ -32,7 +32,7 @@ waitForPort = 5000
 
 [[ports]]
 localPort = 1999
-externalPort = 80
+externalPort = 3001
 exposeLocalhost = true
 
 [[ports]]

@@ -37,11 +37,6 @@ export default function BusinessLogin() {
     try {
       await login(formData.email, formData.password);
 
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to Pointify!",
-      });
-
       setLocation("/");
     } catch (error) {
       // Stay on login page and show error
