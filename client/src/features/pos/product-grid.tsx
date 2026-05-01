@@ -98,6 +98,7 @@ export default function ProductGrid({
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
   const [bankTransactionId, setBankTransactionId] = useState("");
   const [creditDueDate, setCreditDueDate] = useState("");
+  const [cashReceived, setCashReceived] = useState<string>("");
   const [splitAmounts, setSplitAmounts] = useState({
     cash: 0,
     mpesa: 0,
@@ -825,6 +826,7 @@ export default function ProductGrid({
     setBankTransactionId("");
     setCreditDueDate("");
     setSplitAmounts({ cash: 0, mpesa: 0, bank: 0 });
+    setCashReceived("");
     setIsCustomDateTime(false);
     setCustomDateTime("");
   };
@@ -1873,6 +1875,68 @@ export default function ProductGrid({
                 </div>
               </div>
               
+              {/* Cash received + change */}
+              {selectedPaymentMethod === "cash" && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-xl">
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 block">Cash Received</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-lg pointer-events-none">Ksh</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                        className="h-14 rounded-xl text-xl font-bold pl-14 border-gray-200 focus:border-green-400 bg-white"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick preset amounts */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      Math.ceil(totals.total / 50) * 50,
+                      Math.ceil(totals.total / 100) * 100,
+                      Math.ceil(totals.total / 500) * 500,
+                      Math.ceil(totals.total / 1000) * 1000,
+                    ]
+                      .filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01)
+                      .slice(0, 4)
+                      .map((amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          onClick={() => setCashReceived(String(amount))}
+                          className={`py-2 rounded-xl text-sm font-semibold border-2 transition-colors ${
+                            parseFloat(cashReceived) === amount
+                              ? "border-green-400 bg-green-50 text-green-700"
+                              : "border-gray-200 bg-white text-gray-600 hover:border-green-300 hover:bg-green-50"
+                          }`}
+                        >
+                          {amount}
+                        </button>
+                      ))}
+                  </div>
+
+                  {/* Change due */}
+                  <div className={`flex justify-between items-center rounded-xl px-4 py-3 border-2 transition-colors ${
+                    parseFloat(cashReceived) >= totals.total
+                      ? "bg-green-50 border-green-300"
+                      : "bg-white border-gray-200"
+                  }`}>
+                    <span className="font-semibold text-gray-700">Change Due:</span>
+                    <span className={`text-2xl font-extrabold ${
+                      parseFloat(cashReceived) >= totals.total ? "text-green-600" : "text-gray-300"
+                    }`}>
+                      Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - totals.total).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* Payment-specific input fields */}
               {selectedPaymentMethod === "mpesa" && (
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
