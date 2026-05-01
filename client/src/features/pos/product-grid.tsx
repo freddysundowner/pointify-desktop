@@ -314,20 +314,35 @@ export default function ProductGrid({
   // ── Dropdown arrow-key navigation ─────────────────────────────────────────
   const dropdownItemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const isDropdownItemSelectable = (item: any) => {
+    const isService = item?.productType === 'service' || item?.virtual === true;
+    return isService || (item.quantity ?? 0) > 0;
+  };
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, dropdownItems: any[]) => {
     if (!dropdownItems.length) return;
+
+    const findNext = (from: number, dir: 1 | -1) => {
+      const len = dropdownItems.length;
+      for (let i = 1; i <= len; i++) {
+        const idx = (from + dir * i + len) % len;
+        if (isDropdownItemSelectable(dropdownItems[idx])) return idx;
+      }
+      return -1; // all out of stock
+    };
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setDropdownHighlight(prev => {
-        const next = prev < dropdownItems.length - 1 ? prev + 1 : 0;
-        dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
+        const next = findNext(prev === -1 ? -1 : prev, 1);
+        if (next >= 0) dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
         return next;
       });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setDropdownHighlight(prev => {
-        const next = prev > 0 ? prev - 1 : dropdownItems.length - 1;
-        dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
+        const next = findNext(prev === -1 ? dropdownItems.length : prev, -1);
+        if (next >= 0) dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
         return next;
       });
     } else if (e.key === "Enter" && dropdownHighlight >= 0) {
