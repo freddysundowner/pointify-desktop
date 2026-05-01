@@ -569,9 +569,10 @@ export default function BusinessDashboard() {
         </div>
         
         {/* Today's Key Metrics */}
-        <div className="grid grid-cols-2 gap-2 md:gap-4 lg:grid-cols-4 w-full">
-          <Link href="/sales">
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer">
+        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-4 md:overflow-visible md:pb-0 w-full scrollbar-none"
+             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <Link href="/sales" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-blue-100">Today's Sales</CardTitle>
                 <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4 text-blue-200 shrink-0" />
@@ -592,8 +593,8 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/reports">
-            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all cursor-pointer">
+          <Link href="/reports" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-green-100">Today's Profit</CardTitle>
                 <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-green-200 shrink-0" />
@@ -614,8 +615,8 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/expenses">
-            <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all cursor-pointer">
+          <Link href="/expenses" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+            <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-red-100">Today's Expenses</CardTitle>
                 <TrendingDown className="h-3.5 w-3.5 md:h-4 md:w-4 text-red-200 shrink-0" />
@@ -636,8 +637,8 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/stock?filter=alerts">
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all cursor-pointer">
+          <Link href="/stock?filter=alerts" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-orange-100">Stock Alerts</CardTitle>
                 <AlertTriangle className="h-3.5 w-3.5 md:h-4 md:w-4 text-orange-200 shrink-0" />
