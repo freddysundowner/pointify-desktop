@@ -236,24 +236,25 @@ export default function ProductGrid({
       const tag = (e.target as HTMLElement).tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
       const { cartItems, showPaymentDialog, selectedPaymentMethod, totals } = shortcutStateRef.current;
+      const meta = e.metaKey || e.ctrlKey;
 
-      // F2 → open payment dialog
-      if (e.key === "F2") {
+      // F2 or Cmd/Ctrl+P → open payment dialog
+      if (e.key === "F2" || (meta && e.key === "p")) {
         e.preventDefault();
         if (cartItems.length > 0 && !showPaymentDialog) setShowPaymentDialog(true);
         return;
       }
 
-      // F3 or "/" → focus search bar
-      if (e.key === "F3" || (e.key === "/" && !inInput)) {
+      // F3, "/" or Cmd/Ctrl+K → focus search bar
+      if (e.key === "F3" || (e.key === "/" && !inInput) || (meta && e.key === "k")) {
         e.preventDefault();
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
         return;
       }
 
-      // F4 → clear cart
-      if (e.key === "F4") {
+      // F4 or Cmd/Ctrl+Backspace → clear cart
+      if (e.key === "F4" || (meta && e.key === "Backspace")) {
         e.preventDefault();
         if (cartItems.length > 0) onClearCart();
         return;
@@ -960,21 +961,35 @@ export default function ProductGrid({
       <div className="hidden md:block bg-white shadow-sm border-b border-gray-200">
         <div className="px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-            {/* Keyboard shortcut hints — centered so they clear the absolute Back button */}
-            <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400 pl-48">
-              {[
-                { key: "F2", label: "Pay" },
-                { key: "F3", label: "Search" },
-                { key: "F4", label: "Clear cart" },
-                { key: "Esc", label: "Close" },
-                { key: "Enter", label: "Confirm" },
-              ].map(({ key, label }) => (
-                <span key={key} className="flex items-center gap-1">
-                  <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600">{key}</kbd>
-                  <span>{label}</span>
-                </span>
-              ))}
-            </div>
+            {/* Keyboard shortcut hints — offset to clear the absolute Back button */}
+            {(() => {
+              const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
+              const hints = isMac
+                ? [
+                    { key: "⌘P", label: "Pay" },
+                    { key: "⌘K", label: "Search" },
+                    { key: "⌘⌫", label: "Clear cart" },
+                    { key: "Esc", label: "Close" },
+                    { key: "↩", label: "Confirm" },
+                  ]
+                : [
+                    { key: "F2", label: "Pay" },
+                    { key: "F3", label: "Search" },
+                    { key: "F4", label: "Clear cart" },
+                    { key: "Esc", label: "Close" },
+                    { key: "Enter", label: "Confirm" },
+                  ];
+              return (
+                <div className="hidden lg:flex items-center gap-3 text-xs text-gray-400 pl-48">
+                  {hints.map(({ key, label }) => (
+                    <span key={key} className="flex items-center gap-1">
+                      <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600">{key}</kbd>
+                      <span>{label}</span>
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               {/* View Toggle */}
