@@ -1571,38 +1571,34 @@ export default function ProductGrid({
                     return (
                       <div
                         key={productId}
-                        className={`p-3 rounded-xl cursor-pointer transition-all duration-300 text-center shadow-sm hover:shadow-lg hover:scale-105 ${
-                          isOutOfStock 
-                            ? "bg-red-100 hover:bg-red-200" 
-                            : isLowStock 
-                            ? "bg-amber-100 hover:bg-amber-200" 
-                            : "bg-white hover:bg-gray-50"
+                        className={`rounded-xl cursor-pointer transition-all duration-200 overflow-hidden border ${
+                          isOutOfStock
+                            ? "bg-red-50 border-red-200 opacity-60 pointer-events-none"
+                            : isLowStock
+                            ? "bg-amber-50 border-amber-200 hover:border-amber-400 hover:shadow-md"
+                            : "bg-white border-gray-200 hover:border-purple-300 hover:shadow-md"
                         }`}
-                        onClick={() => onAddToCart(product)}
+                        onClick={() => !isOutOfStock && onAddToCart(product)}
                       >
-                        <div className="w-12 h-12 bg-gray-200 rounded mx-auto mb-2"></div>
-                        <p className="text-xs font-medium text-gray-800 truncate">{productName}</p>
-                        <p className="text-xs text-gray-500">Ksh {price.toFixed(2)}</p>
-                        <div className="mt-1 flex items-center justify-center space-x-1">
-                          {isVirtual ? (
-                            <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                              Service
-                            </span>
-                          ) : (
-                            <>
-                              <span className={`text-xs font-medium ${
-                                isOutOfStock ? "text-red-600" : isLowStock ? "text-orange-600" : "text-green-600"
-                              }`}>
-                                Qty: {quantity}
-                              </span>
-                              {isOutOfStock && (
-                                <span className="text-xs text-red-600 font-medium">(Out of Stock)</span>
-                              )}
-                              {isLowStock && (
-                                <span className="text-xs text-orange-600 font-medium">(Low Stock)</span>
-                              )}
-                            </>
-                          )}
+                        {/* Image area */}
+                        <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                          <Package className="h-10 w-10 text-gray-300" />
+                        </div>
+                        {/* Content */}
+                        <div className="p-2.5">
+                          <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{productName}</p>
+                          <p className="text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
+                          <div className="mt-1.5">
+                            {isVirtual ? (
+                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">Service</span>
+                            ) : isOutOfStock ? (
+                              <span className="text-xs text-red-600 bg-red-100 px-1.5 py-0.5 rounded font-medium">Out of stock</span>
+                            ) : isLowStock ? (
+                              <span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium">Low: {quantity}</span>
+                            ) : (
+                              <span className="text-xs text-gray-400">Qty: {quantity}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
