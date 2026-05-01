@@ -1738,7 +1738,7 @@ export default function ProductGrid({
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={resetPaymentDialog}>
-        <DialogContent className="p-0 gap-0 w-full sm:max-w-md border-0 shadow-2xl overflow-hidden
+        <DialogContent className="p-0 gap-0 w-full sm:max-w-xl border-0 shadow-2xl overflow-hidden
           fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0
           rounded-t-2xl sm:rounded-2xl
           sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2
