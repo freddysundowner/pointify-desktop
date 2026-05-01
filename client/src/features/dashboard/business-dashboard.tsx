@@ -36,7 +36,12 @@ import {
   RefreshCw,
   UserCheck,
   Settings,
-  X
+  X,
+  ScanBarcode,
+  BarChart3,
+  Banknote,
+  Truck,
+  Receipt
 } from "lucide-react";
 import { Link } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
@@ -326,6 +331,16 @@ export default function BusinessDashboard() {
 
   // Calculate low stock and out of stock products from real data, excluding virtual products (services)
   const products = Array.isArray(productsData?.data) ? productsData.data : [];
+
+  // Inventory insight counts for mobile dashboard
+  const outOfStockCount = products.filter((p: any) => !p.virtual && (p.quantity || 0) === 0).length;
+  const runningLowCount = products.filter((p: any) => {
+    if (p.virtual) return false;
+    const qty = p.quantity || 0;
+    const reorder = p.reorderLevel || p.lowStockThreshold || 0;
+    return qty > 0 && reorder > 0 && qty <= reorder;
+  }).length;
+
   const lowStockProducts = products
     .filter((product: any) => {
       // Exclude virtual products (services) from stock alerts
@@ -427,44 +442,33 @@ export default function BusinessDashboard() {
           
           {/* Mobile Compact Layout */}
           <div className="block md:hidden">
-            {/* Top row: greeting + refresh */}
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">Welcome to Pointify</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(currentTime)} · {formatTime(currentTime)}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={refreshDashboardData}
-                className="h-8 w-8 p-0 text-gray-500"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            {/* Shop selector — compact, no label */}
-            <Select value={selectedShopId || ""} onValueChange={handleShopSwitch}>
-              <SelectTrigger className="w-full h-9 text-sm bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Store className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                  <span className="truncate font-medium text-sm">{currentShopData?.name}</span>
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white">Current Shop</h2>
+                  <span className="text-[10px] font-semibold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">Active</span>
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                {availableShops.map((shop) => (
-                  <SelectItem key={shop.id} value={shop.id}>
-                    <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4 text-purple-500" />
-                      <div>
-                        <div className="font-medium">{shop.name}</div>
-                        <div className="text-xs text-gray-500">{shop.type} · {shop.location}</div>
+                <p className="text-sm text-purple-600 font-medium truncate">{currentShopData?.name || "—"}</p>
+              </div>
+              <Select value={selectedShopId || ""} onValueChange={handleShopSwitch}>
+                <SelectTrigger className="h-8 w-auto border border-purple-300 text-purple-700 text-xs font-semibold px-3 rounded-full bg-white shrink-0 ml-2">
+                  <span>Switch Shop</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableShops.map((shop) => (
+                    <SelectItem key={shop.id} value={shop.id}>
+                      <div className="flex items-center gap-2">
+                        <Store className="h-4 w-4 text-purple-500" />
+                        <div>
+                          <div className="font-medium">{shop.name}</div>
+                          <div className="text-xs text-gray-500">{shop.type} · {shop.location}</div>
+                        </div>
                       </div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Desktop Layout */}
@@ -571,7 +575,7 @@ export default function BusinessDashboard() {
         {/* Today's Key Metrics */}
         <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-4 md:overflow-visible md:pb-0 w-full scrollbar-none"
              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <Link href="/sales" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+          <Link href="/sales" className="shrink-0 w-[45vw] snap-start md:w-auto md:shrink">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-blue-100">Today's Sales</CardTitle>
@@ -593,7 +597,7 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/reports" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+          <Link href="/reports" className="shrink-0 w-[45vw] snap-start md:w-auto md:shrink">
             <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-green-100">Today's Profit</CardTitle>
@@ -615,7 +619,7 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/expenses" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+          <Link href="/expenses" className="shrink-0 w-[45vw] snap-start md:w-auto md:shrink">
             <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-red-100">Today's Expenses</CardTitle>
@@ -637,7 +641,7 @@ export default function BusinessDashboard() {
             </Card>
           </Link>
 
-          <Link href="/stock?filter=alerts" className="shrink-0 w-40 snap-start md:w-auto md:shrink">
+          <Link href="/stock?filter=alerts" className="shrink-0 w-[45vw] snap-start md:w-auto md:shrink">
             <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1 md:p-6 md:pb-2">
                 <CardTitle className="text-xs md:text-sm font-medium text-orange-100">Stock Alerts</CardTitle>
@@ -651,8 +655,61 @@ export default function BusinessDashboard() {
           </Link>
         </div>
 
-        {/* Recent Sales and Stock Alerts */}
-        <div className="grid gap-3 md:gap-6 lg:grid-cols-3 w-full">
+        {/* ── Mobile-only: Inventory Insights ───────────────────────────── */}
+        <div className="block md:hidden bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+          <p className="text-sm font-bold text-purple-700 dark:text-purple-300 mb-2">Inventory Insights</p>
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            <Link href="/stock/products?filter=low">
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-2.5 py-1 cursor-pointer">
+                <span className="font-bold">{runningLowCount}</span> Running low
+              </span>
+            </Link>
+            <Link href="/stock/products?filter=out">
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-full px-2.5 py-1 cursor-pointer">
+                <span className="font-bold">{outOfStockCount}</span> Out of stock
+              </span>
+            </Link>
+            <Link href="/stock/products">
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-1 cursor-pointer">
+                <span className="font-bold">{Math.max(0, products.length - outOfStockCount - runningLowCount)}</span> In stock
+              </span>
+            </Link>
+          </div>
+          <Link href="/stock/products">
+            <p className="text-xs text-purple-600 font-medium mt-2 flex items-center gap-0.5">
+              See all products <ChevronRight className="h-3 w-3" />
+            </p>
+          </Link>
+        </div>
+
+        {/* ── Mobile-only: Enterprise Operations grid ────────────────────── */}
+        <div className="block md:hidden bg-purple-700 dark:bg-purple-900 rounded-xl p-4">
+          <p className="text-sm font-bold text-white mb-4">Enterprise Operations</p>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { href: "/pos",            icon: ScanBarcode, label: "POS" },
+              { href: "/stock/products", icon: Package,     label: "Stock" },
+              { href: "/sales",          icon: Receipt,     label: "Sales" },
+              { href: "/suppliers",      icon: Truck,       label: "Suppliers" },
+              { href: "/customers",      icon: Users,       label: "Customers" },
+              { href: "/reports",        icon: BarChart3,   label: "Reports" },
+              { href: "/cashflow",       icon: Banknote,    label: "Cashflow" },
+              { href: "/expenses",       icon: TrendingDown, label: "Expenses" },
+            ].map(({ href, icon: Icon, label }) => (
+              <Link key={href} href={href}>
+                <div className="flex flex-col items-center gap-1.5 cursor-pointer group">
+                  <div className="w-12 h-12 bg-white/15 group-active:bg-white/25 rounded-xl flex items-center justify-center transition-colors">
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-[10px] text-white/90 font-medium text-center leading-tight">{label}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Sales and Stock Alerts — desktop only */}
+        <div className="hidden md:grid gap-3 md:gap-6 lg:grid-cols-3 w-full">
           
           {/* Recent Sales Table - Left Side (2/3 width) */}
           <div className="lg:col-span-2">
