@@ -137,7 +137,7 @@ export default function CheckoutModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden rounded-3xl border-0 shadow-2xl bg-white gap-0">
+      <DialogContent className="max-w-md p-0 overflow-y-auto max-h-[90vh] rounded-3xl border-0 shadow-2xl bg-white gap-0">
 
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 text-center">
