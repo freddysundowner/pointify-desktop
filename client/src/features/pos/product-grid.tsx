@@ -216,19 +216,31 @@ export default function ProductGrid({
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  // Refs used by the keyboard shortcut handler (avoids temporal-dead-zone crash
+  // because handleCompletePayment / resetPaymentDialog are defined later in the file)
+  const handleCompletePaymentRef = useRef<(() => void) | null>(null);
+  const resetPaymentDialogRef    = useRef<(() => void) | null>(null);
+  const shortcutStateRef = useRef({
+    cartItems,
+    showPaymentDialog,
+    selectedPaymentMethod,
+    totals,
+  });
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  // Keep shortcut state ref current every render (no extra effect needed)
+  shortcutStateRef.current = { cartItems, showPaymentDialog, selectedPaymentMethod, totals };
+
+  // ── Keyboard shortcuts (registered once, reads state via refs) ────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      const { cartItems, showPaymentDialog, selectedPaymentMethod, totals } = shortcutStateRef.current;
 
-      // F2 → open payment dialog (only when cart has items and no dialog open)
+      // F2 → open payment dialog
       if (e.key === "F2") {
         e.preventDefault();
-        if (cartItems.length > 0 && !showPaymentDialog) {
-          setShowPaymentDialog(true);
-        }
+        if (cartItems.length > 0 && !showPaymentDialog) setShowPaymentDialog(true);
         return;
       }
 
@@ -247,9 +259,9 @@ export default function ProductGrid({
         return;
       }
 
-      // Escape → close dialogs (handled by Radix, but ensure payment dialog closes)
+      // Escape → close payment dialog
       if (e.key === "Escape" && showPaymentDialog) {
-        resetPaymentDialog();
+        resetPaymentDialogRef.current?.();
         return;
       }
 
@@ -258,11 +270,11 @@ export default function ProductGrid({
         // Enter → complete payment
         if (e.key === "Enter" && !inInput) {
           e.preventDefault();
-          handleCompletePayment();
+          handleCompletePaymentRef.current?.();
           return;
         }
 
-        // 1/2/3/4 → select cash preset (when cash method selected)
+        // 1/2/3/4 → select cash preset
         if (selectedPaymentMethod === "cash" && ["1","2","3","4"].includes(e.key) && !inInput) {
           e.preventDefault();
           const presets = [
@@ -280,7 +292,8 @@ export default function ProductGrid({
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [cartItems, showPaymentDialog, selectedPaymentMethod, totals, onClearCart, resetPaymentDialog, handleCompletePayment, setCashReceived]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClearCart]);
 
   useEffect(() => {
     if (!loaderRef.current || !hasMore) return;
@@ -812,6 +825,7 @@ export default function ProductGrid({
   const handleCompletePayment = () => {
     processTransaction(false);
   };
+  handleCompletePaymentRef.current = handleCompletePayment;
 
   const isLaundryShop = (shopData?.shopCategoryId?.name || '').toLowerCase().includes('laundry');
   const [mainCustomerSearch, setMainCustomerSearch] = useState('');
@@ -896,7 +910,7 @@ export default function ProductGrid({
     setIsCustomDateTime(false);
     setCustomDateTime("");
   };
-
+  resetPaymentDialogRef.current = resetPaymentDialog;
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
