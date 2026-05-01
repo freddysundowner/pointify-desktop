@@ -1581,8 +1581,8 @@ export default function ProductGrid({
                         onClick={() => !isOutOfStock && onAddToCart(product)}
                       >
                         {/* Image area */}
-                        <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                          <Package className="h-10 w-10 text-gray-300" />
+                        <div className="h-24 bg-gray-100 flex items-center justify-center">
+                          <Package className="h-8 w-8 text-gray-300" />
                         </div>
                         {/* Content */}
                         <div className="p-2.5">
