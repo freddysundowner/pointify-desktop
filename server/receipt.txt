@@ -1,19 +1,18 @@
  Riverside cosmetics  branch 1
-         Nakuru, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC63320
-Date: 4/24/2026 3:35:00 PM
-Customer: Fredrick Mundia
+Receipt #: REC324666
+Date: May 1, 2026, 12:06 PM
+Customer: Walk-in
 Attendant: Fredrick
 -------------------------------
 white jeans
- srn: undefined
-  1 x KES 20.00 = KES20.00
+ srn: 
+  1 x KES 200.00 = KES200.00
 -------------------------------
-Subtotal:      KES20.00
+Subtotal:      KES200.00
 Tax:           KES0.00
-TOTAL:         KES20.00
+TOTAL:         KES200.00
 
 Payment Method: cash
 
