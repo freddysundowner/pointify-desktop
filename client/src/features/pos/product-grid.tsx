@@ -276,6 +276,20 @@ export default function ProductGrid({
           return;
         }
 
+        // Letter shortcuts → select payment method
+        if (!inInput) {
+          const methodMap: Record<string, string> = {
+            c: "cash", w: "wallet", s: "split",
+            m: "mpesa", b: "bank", d: "card", r: "credit",
+          };
+          const method = methodMap[e.key.toLowerCase()];
+          if (method && !meta) {
+            e.preventDefault();
+            setSelectedPaymentMethod(method);
+            return;
+          }
+        }
+
         // 1/2/3/4 → select cash preset
         if (selectedPaymentMethod === "cash" && ["1","2","3","4"].includes(e.key) && !inInput) {
           e.preventDefault();
@@ -1913,6 +1927,26 @@ export default function ProductGrid({
               </button>
             </div>
 
+            {/* Keyboard shortcut hints */}
+            <div className="hidden sm:flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400 border border-dashed border-gray-200 rounded-lg px-3 py-2 bg-gray-50">
+              {[
+                { key: "C", label: "Cash" },
+                { key: "W", label: "Wallet" },
+                { key: "S", label: "Split" },
+                { key: "M", label: "M-Pesa" },
+                { key: "B", label: "Bank" },
+                { key: "D", label: "Card" },
+                { key: "R", label: "Credit" },
+                { key: "↩", label: "Confirm" },
+                { key: "Esc", label: "Close" },
+              ].map(({ key, label }) => (
+                <span key={key} className="flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 bg-white border border-gray-300 rounded text-xs font-mono text-gray-500 shadow-sm">{key}</kbd>
+                  <span>{label}</span>
+                </span>
+              ))}
+            </div>
+
             {/* Total */}
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
               <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
@@ -1953,14 +1987,14 @@ export default function ProductGrid({
                   <p className="text-xs font-medium text-gray-500">Select Payment Method:</p>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { id: "cash",   label: "Cash",   icon: <Banknote className="h-4 w-4" /> },
-                      { id: "wallet", label: "Wallet", icon: <Wallet className="h-4 w-4" /> },
-                      { id: "split",  label: "Split",  icon: <Split className="h-4 w-4" /> },
-                      { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-4 w-4" /> },
-                      { id: "bank",   label: "Bank",   icon: <Building className="h-4 w-4" /> },
-                      { id: "card",   label: "Card",   icon: <CreditCard className="h-4 w-4" /> },
-                      { id: "credit", label: "Credit", icon: <UserCheck className="h-4 w-4" />, accent: true },
-                    ].map(({ id, label, icon, accent }) => {
+                      { id: "cash",   label: "Cash",   shortcut: "C", icon: <Banknote className="h-4 w-4" /> },
+                      { id: "wallet", label: "Wallet", shortcut: "W", icon: <Wallet className="h-4 w-4" /> },
+                      { id: "split",  label: "Split",  shortcut: "S", icon: <Split className="h-4 w-4" /> },
+                      { id: "mpesa",  label: "M-Pesa", shortcut: "M", icon: <Smartphone className="h-4 w-4" /> },
+                      { id: "bank",   label: "Bank",   shortcut: "B", icon: <Building className="h-4 w-4" /> },
+                      { id: "card",   label: "Card",   shortcut: "D", icon: <CreditCard className="h-4 w-4" /> },
+                      { id: "credit", label: "Credit", shortcut: "R", icon: <UserCheck className="h-4 w-4" />, accent: true },
+                    ].map(({ id, label, shortcut, icon, accent }) => {
                       const selected = selectedPaymentMethod === id;
                       return (
                         <button
@@ -1974,6 +2008,9 @@ export default function ProductGrid({
                           }`}
                         >
                           {icon}{label}
+                          <kbd className={`hidden sm:inline-block ml-0.5 px-1 py-0 rounded text-[10px] font-mono leading-4 ${
+                            selected ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400 border border-gray-200"
+                          }`}>{shortcut}</kbd>
                         </button>
                       );
                     })}
