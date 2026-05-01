@@ -1390,7 +1390,7 @@ export default function ProductGrid({
               </div>
               
               {/* Grand Total */}
-              <div className="bg-green-600 text-white p-2 lg:p-4 rounded-lg mt-2 lg:mt-3">
+              <div className="bg-purple-600 text-white p-2 lg:p-4 rounded-lg mt-2 lg:mt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm lg:text-lg font-semibold">Grand Total:</span>
                   <span className="text-lg lg:text-xl font-bold">Ksh {totals.total.toFixed(2)}</span>
@@ -1403,7 +1403,7 @@ export default function ProductGrid({
               <div className="grid grid-cols-3 gap-2 lg:gap-3">
                 <Button 
                   onClick={() => setShowPaymentDialog(true)}
-                  className="bg-green-600 hover:bg-green-700 text-white py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
+                  className="bg-purple-600 hover:bg-purple-700 text-white py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
                   disabled={cartItems.length === 0}
                 >
                   Cash-In
@@ -1693,7 +1693,7 @@ export default function ProductGrid({
                 </div>
                 
                 {/* Grand Total */}
-                <div className="bg-green-600 text-white p-4 lg:p-6 rounded-lg mt-4 lg:mt-6">
+                <div className="bg-purple-600 text-white p-4 lg:p-6 rounded-lg mt-4 lg:mt-6">
                   <div className="flex justify-between items-center">
                     <span className="text-lg lg:text-xl font-semibold">Grand Total:</span>
                     <span className="text-xl lg:text-2xl font-bold">Ksh {totals.total.toFixed(2)}</span>
@@ -1706,7 +1706,7 @@ export default function ProductGrid({
                 <div className="space-y-3">
                   <Button 
                     onClick={() => setShowPaymentDialog(true)}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 lg:py-4 text-base lg:text-lg font-semibold rounded-lg"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 lg:py-4 text-base lg:text-lg font-semibold rounded-lg"
                     disabled={cartItems.length === 0}
                   >
                     Cash-In
@@ -1753,7 +1753,7 @@ export default function ProductGrid({
 
             {/* Header */}
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-green-500">Payment</h2>
+              <h2 className="text-lg font-bold text-purple-600">Payment</h2>
               <button
                 onClick={resetPaymentDialog}
                 className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
@@ -1765,7 +1765,7 @@ export default function ProductGrid({
             {/* Total */}
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
               <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
-              <span className="text-xl font-extrabold text-green-500">Ksh {totals.total.toFixed(2)}</span>
+              <span className="text-xl font-extrabold text-purple-600">Ksh {totals.total.toFixed(2)}</span>
             </div>
 
             {showCardInterface ? (
@@ -1780,7 +1780,7 @@ export default function ProductGrid({
                     {isProcessingCard ? (
                       <p className="text-sm text-gray-500 mt-1">Insert, tap, or swipe your card…</p>
                     ) : (
-                      <p className="text-sm text-green-600 font-medium mt-1">✓ Card detected</p>
+                      <p className="text-sm text-purple-600 font-medium mt-1">✓ Card detected</p>
                     )}
                   </div>
                 </div>
@@ -1789,7 +1789,7 @@ export default function ProductGrid({
                   <Button
                     onClick={handleCompletePayment}
                     disabled={isProcessingCard || createTransactionMutation.isPending}
-                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
                   >
                     {createTransactionMutation.isPending ? "Processing…" : "Complete Payment"}
                   </Button>
@@ -1818,7 +1818,7 @@ export default function ProductGrid({
                           onClick={() => handlePaymentMethodSelect(id)}
                           className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
                             selected
-                              ? accent ? "bg-orange-500 border-orange-500 text-white" : "bg-green-500 border-green-500 text-white"
+                              ? accent ? "bg-orange-500 border-orange-500 text-white" : "bg-purple-600 border-purple-600 text-white"
                               : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
                           }`}
                         >
@@ -1842,7 +1842,7 @@ export default function ProductGrid({
                         placeholder="0.00"
                         value={cashReceived}
                         onChange={(e) => setCashReceived(e.target.value)}
-                        className="h-11 rounded-lg text-lg font-bold pl-12 border-gray-200 focus:border-green-400 bg-white"
+                        className="h-11 rounded-lg text-lg font-bold pl-12 border-gray-200 focus:border-purple-400 bg-white"
                         autoFocus
                       />
                     </div>
@@ -1862,8 +1862,8 @@ export default function ProductGrid({
                             onClick={() => setCashReceived(String(amount))}
                             className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
                               parseFloat(cashReceived) === amount
-                                ? "border-green-400 bg-green-50 text-green-700"
-                                : "border-gray-200 bg-white text-gray-600 hover:border-green-300"
+                                ? "border-purple-400 bg-purple-50 text-purple-700"
+                                : "border-gray-200 bg-white text-gray-600 hover:border-purple-300"
                             }`}
                           >
                             {amount}
@@ -1871,11 +1871,11 @@ export default function ProductGrid({
                         ))}
                     </div>
                     <div className={`flex justify-between items-center rounded-lg px-3 py-2 border transition-colors ${
-                      parseFloat(cashReceived) >= totals.total ? "bg-green-50 border-green-300" : "bg-white border-gray-200"
+                      parseFloat(cashReceived) >= totals.total ? "bg-purple-50 border-purple-300" : "bg-white border-gray-200"
                     }`}>
                       <span className="text-sm font-semibold text-gray-700">Change Due:</span>
                       <span className={`text-xl font-extrabold ${
-                        parseFloat(cashReceived) >= totals.total ? "text-green-600" : "text-gray-300"
+                        parseFloat(cashReceived) >= totals.total ? "text-purple-600" : "text-gray-300"
                       }`}>
                         Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - totals.total).toFixed(2)}
                       </span>
@@ -1885,10 +1885,10 @@ export default function ProductGrid({
 
                 {/* M-Pesa panel */}
                 {selectedPaymentMethod === "mpesa" && (
-                  <div className="bg-green-50 p-3 rounded-xl border border-green-200 space-y-2">
+                  <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">M-Pesa Transaction ID <span className="text-gray-400 font-normal">(optional)</span></span>
+                      <Smartphone className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-purple-800">M-Pesa Transaction ID <span className="text-gray-400 font-normal">(optional)</span></span>
                     </div>
                     <Input
                       type="text"
@@ -1982,7 +1982,7 @@ export default function ProductGrid({
                     </div>
                     <div className="flex justify-between text-xs font-medium">
                       <span className="text-gray-600">Total: Ksh {(splitAmounts.cash + splitAmounts.mpesa + splitAmounts.bank).toFixed(2)}</span>
-                      <span className="text-green-600">Required: Ksh {totals.total.toFixed(2)}</span>
+                      <span className="text-purple-600">Required: Ksh {totals.total.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
@@ -2036,7 +2036,7 @@ export default function ProductGrid({
                     onClick={handleCompletePayment}
                     disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
                       (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate))}
-                    className="flex-1 h-11 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold"
+                    className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                   >
                     {createTransactionMutation.isPending ? "Processing…" :
                       selectedPaymentMethod === "credit" ? "Create Credit Sale" : "Complete Payment"}
@@ -2531,7 +2531,7 @@ export default function ProductGrid({
                             {isService && <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1 rounded">Service</span>}
                             {outOfStock && <span className="ml-2 text-xs text-red-500">Out of stock</span>}
                           </div>
-                          <span className="text-green-600 font-semibold ml-3 shrink-0">
+                          <span className="text-purple-600 font-semibold ml-3 shrink-0">
                             Ksh {getPriceForSaleType(p, saleType).toFixed(2)}
                           </span>
                         </div>

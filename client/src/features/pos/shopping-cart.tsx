@@ -87,7 +87,7 @@ export default function ShoppingCart({
                       variant="outline"
                       size="sm"
                       onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-xl border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600"
+                      className="w-8 h-8 sm:w-10 sm:h-10 p-0 rounded-xl border-gray-200 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600"
                     >
                       <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
