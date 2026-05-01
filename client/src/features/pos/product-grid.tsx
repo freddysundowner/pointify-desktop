@@ -115,6 +115,7 @@ export default function ProductGrid({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
+  const [dropdownHighlight, setDropdownHighlight] = useState(-1);
 
   // Custom item states
   const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
@@ -295,6 +296,43 @@ export default function ProductGrid({
     return () => window.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClearCart]);
+
+  // ── Dropdown arrow-key navigation ─────────────────────────────────────────
+  const dropdownItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, dropdownItems: any[]) => {
+    if (!dropdownItems.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setDropdownHighlight(prev => {
+        const next = prev < dropdownItems.length - 1 ? prev + 1 : 0;
+        dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
+        return next;
+      });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setDropdownHighlight(prev => {
+        const next = prev > 0 ? prev - 1 : dropdownItems.length - 1;
+        dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
+        return next;
+      });
+    } else if (e.key === "Enter" && dropdownHighlight >= 0) {
+      e.preventDefault();
+      const item = dropdownItems[dropdownHighlight];
+      if (item) {
+        const isService = item?.productType === 'service' || item?.virtual === true;
+        const isOutOfStock = !isService && (item.quantity ?? 0) === 0;
+        if (!isOutOfStock) {
+          onAddToCart(item);
+          onSearchChange('');
+          setDropdownHighlight(-1);
+        }
+      }
+    } else if (e.key === "Escape") {
+      onSearchChange('');
+      setDropdownHighlight(-1);
+    }
+  };
 
   useEffect(() => {
     if (!loaderRef.current || !hasMore) return;
@@ -1175,7 +1213,8 @@ export default function ProductGrid({
                   type="text"
                   placeholder="Scan barcode or search products..."
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
+                  onKeyDown={(e) => handleSearchKeyDown(e, products.slice(0, 8))}
                   className="pl-10 h-10 text-sm border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   autoFocus
                 />
@@ -1197,17 +1236,20 @@ export default function ProductGrid({
                         <p className="text-sm">No products found</p>
                       </div>
                     ) : (
-                      products.slice(0, 8).map((product: any) => {
+                      products.slice(0, 8).map((product: any, idx: number) => {
                         const isService = product?.productType === 'service' || product?.virtual === true;
                         const isOutOfStock = !isService && (product.quantity === 0);
+                        const isHighlighted = idx === dropdownHighlight;
                         return (
                         <div
                           key={product._id}
+                          ref={el => { dropdownItemRefs.current[idx] = el; }}
                           onClick={isOutOfStock ? undefined : () => {
                             onAddToCart(product);
-                            onSearchChange(''); // Clear search after adding
+                            onSearchChange('');
+                            setDropdownHighlight(-1);
                           }}
-                          className={`flex items-center justify-between p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          className={`flex items-center justify-between p-3 border-b border-gray-100 last:border-b-0 ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${isHighlighted ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'hover:bg-gray-50'}`}
                         >
                           <div className="flex-1">
                             <h4 className="text-sm font-medium text-gray-900 truncate">
@@ -1552,7 +1594,8 @@ export default function ProductGrid({
                   type="text"
                   placeholder="Search products to add..."
                   value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
+                  onKeyDown={(e) => handleSearchKeyDown(e, products)}
                   className="pl-8 h-8 text-sm border-gray-300 bg-white"
                 />
                 
@@ -1573,24 +1616,27 @@ export default function ProductGrid({
                         <p className="text-xs">{searchQuery ? "No products found for your search" : "No products found"}</p>
                       </div>
                     ) : (
-                      products.map((product: any) => {
+                      products.map((product: any, idx: number) => {
                         const price = getPriceForSaleType(product, saleType);
                         const productId = product._id || product.id;
                         const productName = product.name || product.title;
                         const quantity = product.quantity || 0;
                         const isVirtual = product.virtual;
                         const isOutOfStock = !isVirtual && quantity === 0;
+                        const isHighlighted = idx === dropdownHighlight;
                         
                         return (
                           <div
                             key={productId}
-                            className={`p-2 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            ref={el => { dropdownItemRefs.current[idx] = el; }}
+                            className={`p-2 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
                               isOutOfStock ? "opacity-50" : ""
-                            }`}
+                            } ${isHighlighted ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'hover:bg-gray-50'}`}
                             onClick={() => {
                               if (!isOutOfStock) {
                                 onAddToCart(product);
-                                onSearchChange(""); // Clear search after adding
+                                onSearchChange("");
+                                setDropdownHighlight(-1);
                               }
                             }}
                           >
