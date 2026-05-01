@@ -1806,72 +1806,37 @@ export default function ProductGrid({
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-gray-700">Select Payment Method:</h3>
-                
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant={selectedPaymentMethod === "cash" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("cash")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <Banknote className="h-5 w-5" />
-                    <span className="text-xs">Cash</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "wallet" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("wallet")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <Wallet className="h-5 w-5" />
-                    <span className="text-xs">Wallet</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "split" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("split")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <Split className="h-5 w-5" />
-                    <span className="text-xs">Split</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "mpesa" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("mpesa")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <Smartphone className="h-5 w-5" />
-                    <span className="text-xs">M-Pesa</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "bank" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("bank")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <Building className="h-5 w-5" />
-                    <span className="text-xs">Bank</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "card" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("card")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    <span className="text-xs">Card</span>
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPaymentMethod === "credit" ? "default" : "outline"}
-                    onClick={() => handlePaymentMethodSelect("credit")}
-                    className="h-14 flex flex-col items-center justify-center space-y-1"
-                  >
-                    <UserCheck className="h-5 w-5" />
-                    <span className="text-xs">Credit</span>
-                  </Button>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-500">Select Payment Method:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: "cash",   label: "Cash",   icon: <Banknote className="h-4 w-4" /> },
+                    { id: "wallet", label: "Wallet", icon: <Wallet className="h-4 w-4" /> },
+                    { id: "split",  label: "Split",  icon: <Split className="h-4 w-4" /> },
+                    { id: "mpesa",  label: "M-Pesa", icon: <Smartphone className="h-4 w-4" /> },
+                    { id: "bank",   label: "Bank",   icon: <Building className="h-4 w-4" /> },
+                    { id: "card",   label: "Card",   icon: <CreditCard className="h-4 w-4" /> },
+                    { id: "credit", label: "Credit", icon: <UserCheck className="h-4 w-4" />, accent: true },
+                  ].map(({ id, label, icon, accent }) => {
+                    const selected = selectedPaymentMethod === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => handlePaymentMethodSelect(id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                          selected
+                            ? accent
+                              ? "bg-orange-500 border-orange-500 text-white"
+                              : "bg-green-500 border-green-500 text-white"
+                            : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
+                        }`}
+                      >
+                        {icon}
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               
