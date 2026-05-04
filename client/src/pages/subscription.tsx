@@ -271,8 +271,7 @@ export default function SubscriptionPage() {
 
       console.log('Creating subscription:', subscriptionPayload);
 
-      // Call the online subscription API instead of local
-      const response = await fetch('https://api.pointifypos.com/api/subscriptions', {
+      const response = await fetch('/api/subscriptions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
