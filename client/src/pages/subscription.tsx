@@ -77,7 +77,7 @@ export default function SubscriptionPage() {
   // Fetch packages from API
   const { data: packagesData, isLoading: isLoadingPackages, error: packagesError, refetch: refetchPackages } = useQuery({
     queryKey: ['/api/packages', resolvedUserId],
-    queryFn: () => fetch(`/api/packages?page=1&limit=20&admin=true&userId=${resolvedUserId}`).then(res => res.json()),
+    queryFn: () => fetch(`/api/packages?page=1&limit=20&admin=true&id=${resolvedUserId}`).then(res => res.json()),
   });
 
   // Fetch real shops data from API
