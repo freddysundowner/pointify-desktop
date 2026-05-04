@@ -490,7 +490,7 @@ export default function SubscriptionPage() {
               </div>
 
               <div className="space-y-2">
-                {plan.features.map((feature, index) => (
+                {plan.features.filter((f: string) => !/\d+\s+shop/i.test(f)).map((feature, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span className="text-sm text-gray-700">{feature}</span>
