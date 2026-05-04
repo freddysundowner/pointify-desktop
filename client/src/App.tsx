@@ -466,6 +466,7 @@ function AppContent() {
             <Route path="/stock/edit-product/:id" component={ProductForm} />
             <Route path="/product/:id/history" component={ProductHistory} />
             <Route path="/product/adjustment-history/:id" component={AdjustmentHistoryPage} />
+            <Route path="/subscription/:id" component={SubscriptionPage} />
             <Route path="/subscription" component={SubscriptionPage} />
             <Route path="/payment-waiting" component={PaymentWaiting} />
             <Route path="/edit-profile" component={EditProfilePage} />

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X, Check, Store, Clock, Users, Zap, Crown, Star, ArrowLeft, Phone, CreditCard, Smartphone, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 const formatCurrency = (amount: number) => {
@@ -44,6 +44,7 @@ interface Shop {
 
 export default function SubscriptionPage() {
   const [location, setLocation] = useLocation();
+  const params = useParams<{ id?: string }>();
   const { toast } = useToast();
   const [step, setStep] = useState(1); // 1: Plans, 2: Shop Selection, 3: Payment
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
@@ -70,6 +71,9 @@ export default function SubscriptionPage() {
 
   const adminData = getAdminData();
 
+  // Use the ID from the route param if provided, otherwise fall back to adminData._id
+  const resolvedUserId = params.id || adminData?._id;
+
   // Fetch packages from API
   const { data: packagesData, isLoading: isLoadingPackages, error: packagesError, refetch: refetchPackages } = useQuery({
     queryKey: ['/api/packages'],
@@ -78,12 +82,12 @@ export default function SubscriptionPage() {
 
   // Fetch real shops data from API
   const { data: shopsData, isLoading: isLoadingShops } = useQuery({
-    queryKey: ['/api/shop/admin', adminData?._id],
+    queryKey: ['/api/shop/admin', resolvedUserId],
     queryFn: () => {
-      if (!adminData?._id) return Promise.resolve([]);
-      return fetch(`/api/shop/admin/${adminData._id}`).then(res => res.json());
+      if (!resolvedUserId) return Promise.resolve([]);
+      return fetch(`/api/shop/admin/${resolvedUserId}`).then(res => res.json());
     },
-    enabled: !!adminData?._id,
+    enabled: !!resolvedUserId,
   });
   
   // Get current subscription from primaryShop
@@ -255,7 +259,7 @@ export default function SubscriptionPage() {
     try {
       // Prepare the subscription payload
       const subscriptionPayload = {
-        userId: adminData._id,
+        userId: resolvedUserId,
         shops: selectedShops.map((shop) => shop.id),
         email: adminData.email,
         phonenumber: phoneNumber,
