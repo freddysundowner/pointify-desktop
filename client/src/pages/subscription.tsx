@@ -422,7 +422,7 @@ export default function SubscriptionPage() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {subscriptionPlans.map((plan: SubscriptionPlan) => (
+          {subscriptionPlans.map((plan: SubscriptionPlan, planIndex: number) => (
           <Card 
             key={plan.id} 
             className={`relative transition-all duration-300 hover:shadow-lg cursor-pointer ${
@@ -486,7 +486,9 @@ export default function SubscriptionPage() {
 
               <div className="flex items-center space-x-2">
                 <Store className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                <span className="text-sm text-gray-700">{plan.maxShops} {plan.maxShops === 1 ? 'shop' : 'shops'} max</span>
+                <span className="text-sm text-gray-700">
+                  {planIndex === subscriptionPlans.length - 1 ? '11+ shops' : `${plan.maxShops} ${plan.maxShops === 1 ? 'shop' : 'shops'} max`}
+                </span>
               </div>
 
               <div className="space-y-2">
