@@ -131,7 +131,7 @@ export default function SubscriptionPage() {
       current: isCurrentPlan,
       color: pkg.type === 'trial' ? 'green' : 'blue',
       type: pkg.type,
-      description: pkg.description || `Perfect for ${pkg.type === 'trial' ? 'testing' : 'business'} needs`,
+      description: pkg.description,
       daysRemaining: daysRemaining
     };
   }) || [];
@@ -455,7 +455,7 @@ export default function SubscriptionPage() {
               </div>
               <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
               <CardDescription className="text-gray-600">
-                Perfect for {plan.maxShops <= 3 ? 'small' : plan.maxShops <= 10 ? 'medium' : 'large'} businesses
+                {plan.description}
               </CardDescription>
             </CardHeader>
 
