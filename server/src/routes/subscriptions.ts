@@ -3,10 +3,10 @@ import { makePointifyRequest } from "../config.js";
 
 export function registerSubscriptionRoutes(app: Express) {
   // Create/renew subscription
-  app.post("/api/subscriptions", async (req: Request, res: Response) => {
+  app.post("/api/subscriptions/:id", async (req: Request, res: Response) => {
     try {
+      const userId = req.params.id;
       const {
-        userId,
         shops,
         email,
         phonenumber,
@@ -19,7 +19,7 @@ export function registerSubscriptionRoutes(app: Express) {
       // Validate required fields
       if (!userId || !shops || !email || !packageId || !paymentType || !amount) {
         return res.status(400).json({
-          error: "Missing required fields: userId, shops, email, package, paymentType, amount"
+          error: "Missing required fields: userId (in URL), shops, email, package, paymentType, amount"
         });
       }
 

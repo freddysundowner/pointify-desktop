@@ -271,7 +271,7 @@ export default function SubscriptionPage() {
 
       console.log('Creating subscription:', subscriptionPayload);
 
-      const response = await fetch('/api/subscriptions', {
+      const response = await fetch(`/api/subscriptions/${resolvedUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
