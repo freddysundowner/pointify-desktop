@@ -47,4 +47,4 @@ build = ["bash", "-c", "cd client && npm install && npm run build && cd ../serve
 [userenv]
 
 [userenv.shared]
-POINTIFY_API_URL = "https://staging.pointifypos.com"
+POINTIFY_API_URL = "https://sandbox.pointifypos.com"
