@@ -118,7 +118,7 @@ export default function SubscriptionPage() {
       name: pkg.title,
       price: pkg.amount,
       duration: `${pkg.durationValue} ${pkg.durationUnit}`,
-      maxShops: pkg.type === 'trial' ? 1 : (pkg.durationValue === 30 ? 3 : 5),
+      maxShops: pkg.maxShops ?? pkg.shopLimit ?? pkg.numberOfShops ?? (pkg.type === 'trial' ? 1 : (pkg.durationValue === 30 ? 3 : 5)),
       features: pkg.features?.length > 0 ? pkg.features : [
         pkg.type === 'trial' ? 'Trial access' : 'Full access',
         'Basic inventory management',
