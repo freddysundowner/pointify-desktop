@@ -118,10 +118,7 @@ export default function SubscriptionPage() {
       name: pkg.title,
       price: pkg.amount,
       duration: `${pkg.durationValue} ${pkg.durationUnit}`,
-      maxShops: (() => {
-        const shopsFeature = pkg.features?.find((f: string) => /\d+\s+shop/i.test(f));
-        return shopsFeature ? parseInt(shopsFeature) : pkg.maxShops;
-      })(),
+      maxShops: pkg.maxShops,
       features: pkg.features?.length > 0 ? pkg.features : [
         pkg.type === 'trial' ? 'Trial access' : 'Full access',
         'Basic inventory management',
