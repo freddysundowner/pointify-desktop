@@ -484,6 +484,11 @@ export default function SubscriptionPage() {
                 )}
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Store className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                <span className="text-sm text-gray-700">{plan.maxShops} {plan.maxShops === 1 ? 'shop' : 'shops'} max</span>
+              </div>
+
               <div className="space-y-2">
                 {plan.features.map((feature, index) => (
                   <div key={index} className="flex items-center space-x-2">
