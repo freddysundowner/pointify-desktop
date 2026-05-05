@@ -2,8 +2,8 @@
         Nyahururu, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC753128
-Date: May 5, 2026, 12:55 PM
+Receipt #: REC426183
+Date: May 5, 2026, 12:56 PM
 Customer: Walk-in
 Attendant: test
 -------------------------------

@@ -389,9 +389,14 @@ export default function ProductGrid({
       if (target) observer.unobserve(target);
     };
   }, [hasMore, fetchMoreProducts]);
-  
-  
-  
+
+  // Auto-switch back to Products tab on mobile when cart becomes empty
+  useEffect(() => {
+    if (showMobileCart && cartItems.length === 0) {
+      setShowMobileCart(false);
+    }
+  }, [cartItems.length, showMobileCart]);
+
   // Filter products based on category and search query
   const products = useMemo(() => {
     // If user is searching, use search results instead of local filtering
