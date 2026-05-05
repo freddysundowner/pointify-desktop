@@ -11,6 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   TrendingUp,
   DollarSign,
   ShoppingCart,
@@ -35,6 +41,8 @@ import {
   Receipt,
   Mail,
   Download,
+  SlidersHorizontal,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -100,6 +108,7 @@ function SalesList() {
     }
   };
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Initialize dates from URL parameters if available
   const urlParams = new URLSearchParams(window.location.search);
@@ -1023,61 +1032,69 @@ function SalesList() {
   return (
     <DashboardLayout title="Sales Reports">
       <div className="w-full">
-        <div className="w-full">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBackClick}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                  Sales Reports
-                </h1>
-                <div className="text-gray-600 dark:text-gray-400 mt-1">
-                  <p className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
-                    {!startDate && !endDate
-                      ? "Showing all sales transactions"
-                      : startDate === endDate
-                        ? `Showing transactions for ${new Date(startDate).toLocaleDateString()}`
-                        : `Showing transactions from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`}
-                  </p>
-                </div>
-              </div>
+        <div className="space-y-3">
+          {/* Header row */}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleBackClick}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">Sales Reports</h1>
+              <p className="hidden sm:block text-xs font-medium text-blue-600 dark:text-blue-400 mt-0.5">
+                {!startDate && !endDate
+                  ? "Showing all sales transactions"
+                  : startDate === endDate
+                    ? `Transactions for ${new Date(startDate).toLocaleDateString()}`
+                    : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
+              </p>
             </div>
-
-            {/* Action Buttons - Permission Controlled */}
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-1.5 shrink-0">
               <PermissionGuard permission="create_sales">
-                <Button
-                  className="flex items-center gap-2"
-                  onClick={() => setLocation("/pos")}
-                >
-                  <Plus className="h-4 w-4" />
-                  New Sale
+                <Button size="sm" className="h-8 text-sm" onClick={() => setLocation("/pos")}>
+                  <Plus className="h-4 w-4 mr-1" /><span className="hidden sm:inline">New </span>Sale
                 </Button>
               </PermissionGuard>
-
               <PermissionGuard permission="sales_reports">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={exportToPDF}
-                >
-                  <TrendingUp className="h-4 w-4" />
-                  Export PDF
+                <Button variant="outline" size="sm" className="hidden sm:flex h-8 text-sm items-center gap-1.5" onClick={exportToPDF}>
+                  <TrendingUp className="h-4 w-4" />Export PDF
                 </Button>
               </PermissionGuard>
             </div>
           </div>
 
-          {/* Filters Section */}
-          <Card className="mb-3">
+          {/* ── Mobile: compact search + filter button row ── */}
+          <div className="flex gap-2 sm:hidden">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by receipt..."
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 h-8 text-sm"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className={`h-8 w-8 shrink-0 relative ${
+                (statusFilter !== "all" || attendantFilter !== "all" || startDate || endDate)
+                  ? "border-purple-500 text-purple-600"
+                  : ""
+              }`}
+              onClick={() => setFilterSheetOpen(true)}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {(statusFilter !== "all" || attendantFilter !== "all" || startDate || endDate) && (
+                <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-purple-600 text-white text-[9px] flex items-center justify-center font-bold">
+                  {[statusFilter !== "all", attendantFilter !== "all", !!(startDate || endDate)].filter(Boolean).length}
+                </span>
+              )}
+            </Button>
+          </div>
+
+          {/* ── Desktop: full filter card ── */}
+          <Card className="hidden sm:block">
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -1096,203 +1113,197 @@ function SalesList() {
                     setDateFilter("all");
                     setCurrentPage(1);
                   }}
-                  className="h-8 px-3 text-xs"
+                  className="h-7 px-2 text-xs"
                 >
                   Clear All
                 </Button>
               </div>
-
               <div className="space-y-3">
                 {/* Search */}
-                <div>
-                  <Label className="text-xs font-medium mb-1 block">
-                    Search
-                  </Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Search by receipt number..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        className="pl-10 h-9"
-                      />
-                    </div>
-                    {searchQuery && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSearchChange("")}
-                        className="h-9 px-3"
-                      >
-                        Clear
-                      </Button>
-                    )}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search by receipt number..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-9 h-8 text-sm"
+                    />
                   </div>
                   {searchQuery && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Found {transformedSales.length} results for "{searchQuery}
-                      "
-                    </p>
+                    <Button variant="outline" size="sm" onClick={() => handleSearchChange("")} className="h-8 px-2 text-xs">
+                      Clear
+                    </Button>
                   )}
                 </div>
-
-                {/* Attendant Filter - Only show for admin users */}
-                {userType === "admin" && (
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">
-                      Filter by Attendant
-                    </Label>
-                    <Select
-                      value={attendantFilter}
-                      onValueChange={handleAttendantFilter}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select attendant..." />
+                {/* Attendant + Status */}
+                <div className="flex flex-wrap gap-2">
+                  {userType === "admin" && (
+                    <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
+                      <SelectTrigger className="h-8 text-xs w-44">
+                        <SelectValue placeholder="All Attendants" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Attendants</SelectItem>
-                        {uniqueAttendants.map((attendant: any) => (
-                          <SelectItem key={attendant._id} value={attendant._id}>
-                            {attendant.username}
-                          </SelectItem>
+                        {uniqueAttendants.map((a: any) => (
+                          <SelectItem key={a._id} value={a._id}>{a.username}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {attendantFilter !== "all" && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Filtering by:{" "}
-                        {
-                          uniqueAttendants.find(
-                            (a: any) => a._id === attendantFilter,
-                          )?.username
-                        }
-                      </p>
-                    )}
-                  </div>
-                )}
-
+                  )}
+                  <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                    <SelectTrigger className="h-8 text-xs w-44">
+                      <SelectValue placeholder="All Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      <SelectItem value="hold">Hold</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="mpesa">M-Pesa</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                      <SelectItem value="wallet">Wallet</SelectItem>
+                      <SelectItem value="bank">Bank</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {/* Date Range */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Date Range
-                  </Label>
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Date Inputs */}
-                    <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                      <div className="flex-1">
-                        <Label
-                          htmlFor="start-date"
-                          className="text-xs text-muted-foreground mb-1 block"
-                        >
-                          Start Date
-                        </Label>
-                        <Input
-                          id="start-date"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          placeholder="dd/mm/yyyy"
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label
-                          htmlFor="end-date"
-                          className="text-xs text-muted-foreground mb-1 block"
-                        >
-                          End Date
-                        </Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          placeholder="dd/mm/yyyy"
-                          className="h-9"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quick Date Buttons */}
-                    <div className="flex flex-wrap gap-2 items-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(7)}
-                        className="h-9"
-                      >
-                        Last 7 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(30)}
-                        className="h-9"
-                      >
-                        Last 30 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(90)}
-                        className="h-9"
-                      >
-                        Last 90 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={clearDateFilters}
-                        disabled={!startDate && !endDate}
-                        className="flex items-center gap-1 h-9"
-                      >
-                        <Calendar className="h-3 w-3" />
-                        Clear Dates
-                      </Button>
-                    </div>
+                <div className="flex flex-wrap gap-2 items-end">
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">From</Label>
+                    <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-xs w-36" />
                   </div>
-
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">To</Label>
+                    <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 text-xs w-36" />
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(7)} className="h-8 text-xs">7d</Button>
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(30)} className="h-8 text-xs">30d</Button>
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(90)} className="h-8 text-xs">90d</Button>
                   {(startDate || endDate) && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Showing {transformedSales.length} results from{" "}
-                      {startDate || "beginning"} to {endDate || "now"}
-                    </p>
+                    <Button variant="outline" size="sm" onClick={clearDateFilters} className="h-8 text-xs">Clear dates</Button>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* ── Filter Bottom Sheet (mobile) ── */}
+          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+            <SheetContent side="bottom" className="p-0 rounded-t-2xl max-h-[85vh] overflow-y-auto">
+              <SheetHeader className="px-5 pt-5 pb-3 border-b sticky top-0 bg-background z-10">
+                <div className="flex items-center justify-between">
+                  <SheetTitle className="text-sm font-semibold">Filters</SheetTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-muted-foreground"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                      setAttendantFilter("all");
+                      setStartDate("");
+                      setEndDate("");
+                      setDateFilter("all");
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </SheetHeader>
+
+              <div className="px-5 py-4 space-y-5">
+                {/* Payment / Status */}
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Payment Method</Label>
+                  <div className="space-y-1">
+                    {(["all","cash","mpesa","credit","wallet","bank","hold"] as const).map((v) => (
+                      <button
+                        key={v}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                          statusFilter === v ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handleStatusFilter(v)}
+                      >
+                        <span className="capitalize">{v === "all" ? "All Transactions" : v === "mpesa" ? "M-Pesa" : v}</span>
+                        {statusFilter === v && <Check className="h-4 w-4 text-purple-600" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Attendant (admin only) */}
+                {userType === "admin" && (
+                  <div>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Attendant</Label>
+                    <div className="space-y-1">
+                      <button
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm ${attendantFilter === "all" ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
+                        onClick={() => handleAttendantFilter("all")}
+                      >
+                        <span>All Attendants</span>
+                        {attendantFilter === "all" && <Check className="h-4 w-4 text-purple-600" />}
+                      </button>
+                      {uniqueAttendants.map((a: any) => (
+                        <button
+                          key={a._id}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm ${attendantFilter === a._id ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
+                          onClick={() => handleAttendantFilter(a._id)}
+                        >
+                          <span>{a.username}</span>
+                          {attendantFilter === a._id && <Check className="h-4 w-4 text-purple-600" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Date Range */}
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Date Range</Label>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">From</Label>
+                        <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">To</Label>
+                        <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1 h-9 text-sm" onClick={() => setDateRange(7)}>Last 7 Days</Button>
+                      <Button variant="outline" size="sm" className="flex-1 h-9 text-sm" onClick={() => setDateRange(30)}>Last 30 Days</Button>
+                      <Button variant="outline" size="sm" className="flex-1 h-9 text-sm" onClick={() => setDateRange(90)}>Last 90 Days</Button>
+                    </div>
+                    {(startDate || endDate) && (
+                      <Button variant="outline" size="sm" className="w-full h-9 text-sm" onClick={clearDateFilters}>
+                        <Calendar className="h-3.5 w-3.5 mr-1.5" />Clear Dates
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 pb-6 pt-2 border-t">
+                <Button className="w-full h-10" onClick={() => setFilterSheetOpen(false)}>
+                  Apply Filters
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+
           {/* Summary Stats */}
-          <div className="space-y-4 mb-4">
-            {/* Date Range Header */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold">Summary Stats</h2>
-                <span className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                  {!startDate && !endDate
-                    ? "All Time"
-                    : startDate === endDate
-                      ? `${new Date(startDate).toLocaleDateString()}`
-                      : `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`}
+                <h2 className="text-sm sm:text-base font-semibold">Summary</h2>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">
+                  {!startDate && !endDate ? "All Time" : startDate === endDate ? `${new Date(startDate).toLocaleDateString()}` : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
                 </span>
               </div>
-              <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="w-full sm:w-44 h-8 text-sm">
-                  <SelectValue placeholder="Filter by payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Transactions</SelectItem>
-                  <SelectItem value="hold">Hold</SelectItem>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="mpesa">M-Pesa</SelectItem>
-                  <SelectItem value="credit">Credit</SelectItem>
-                  <SelectItem value="wallet">Wallet</SelectItem>
-                  <SelectItem value="bank">Bank</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Summary Stats - Permission Controlled */}
