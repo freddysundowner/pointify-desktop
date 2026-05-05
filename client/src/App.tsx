@@ -55,6 +55,7 @@ import Expenses from "@/features/expenses/expenses";
 import StaffPermissions from "@/features/attendants/staff-permissions";
 import PermissionsInit from "@/components/PermissionsInit";
 import CashFlow from "@/features/cashflow/cashflow";
+import ReportsHub from "@/features/shop/reports";
 import IncomeReports from "@/features/reports/income-reports";
 import ProfitAnalysis from "@/features/reports/profit-analysis";
 import DiscountReports from "@/features/reports/discount-reports";
@@ -440,6 +441,7 @@ function AppContent() {
             <Route path="/staff-permissions" component={StaffPermissions} />
             <Route path="/cashflow" component={CashFlow} />
             <Route path="/cashflow-categories" component={CashflowCategories} />
+            <Route path="/reports" component={ReportsHub} />
             <Route path="/income-reports" component={IncomeReports} />
             <Route path="/profit-analysis" component={ProfitAnalysis} />
             <Route path="/profit-loss" component={ProfitLossPage} />
