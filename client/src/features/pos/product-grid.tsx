@@ -1733,11 +1733,11 @@ export default function ProductGrid({
             )}
           </div>
 
-          {/* Desktop Product Grid */}
-          <div className="hidden lg:flex lg:flex-col bg-white rounded-2xl p-4 shadow-lg h-full">
+          {/* Product Grid — shown on all sizes */}
+          <div className="flex flex-col bg-white rounded-xl lg:rounded-2xl p-2 lg:p-4 shadow-sm lg:shadow-lg lg:flex-1 lg:min-h-0 lg:overflow-hidden">
             {viewMode === 'grid' && (
-              /* Desktop Search Bar - Only in Cards Mode */
-              <div className="mb-4">
+              /* Desktop Search Bar — mobile uses the bar above */
+              <div className="hidden lg:block mb-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
@@ -1753,7 +1753,7 @@ export default function ProductGrid({
             )}
             
             {/* Product Display - Grid or Table View */}
-            <div className="flex-1 min-h-0 overflow-y-auto max-h-[calc(100vh-200px)]">
+            <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:max-h-[calc(100vh-200px)]">
               {isLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
@@ -1761,7 +1761,7 @@ export default function ProductGrid({
                 </div>
               ) : viewMode === 'grid' ? (
                 /* Grid View - Restaurant Style Cards */
-                <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 pb-4">
+                <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-3 pb-4">
                   {products.map((product: any) => {
                     const price = getPriceForSaleType(product, saleType);
                     const productId = product._id || product.id;
@@ -1775,7 +1775,7 @@ export default function ProductGrid({
                     return (
                       <div
                         key={productId}
-                        className={`rounded-xl cursor-pointer transition-all duration-200 overflow-hidden border ${
+                        className={`rounded-lg lg:rounded-xl cursor-pointer transition-all duration-200 overflow-hidden border ${
                           isOutOfStock
                             ? "bg-red-50 border-red-200 opacity-60 pointer-events-none"
                             : isLowStock
@@ -1784,23 +1784,23 @@ export default function ProductGrid({
                         }`}
                         onClick={() => !isOutOfStock && onAddToCart(product)}
                       >
-                        {/* Image area */}
-                        <div className="h-24 bg-gray-100 flex items-center justify-center">
-                          <Package className="h-8 w-8 text-gray-300" />
+                        {/* Image area — shorter on mobile */}
+                        <div className="h-16 lg:h-24 bg-gray-100 flex items-center justify-center">
+                          <Package className="h-6 w-6 lg:h-8 lg:w-8 text-gray-300" />
                         </div>
                         {/* Content */}
-                        <div className="p-2.5">
-                          <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{productName}</p>
-                          <p className="text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
-                          <div className="mt-1.5">
+                        <div className="p-2 lg:p-2.5">
+                          <p className="text-xs lg:text-sm font-semibold text-gray-800 truncate leading-tight">{productName}</p>
+                          <p className="text-xs lg:text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
+                          <div className="mt-1">
                             {isVirtual ? (
-                              <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">Service</span>
+                              <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded font-medium">Service</span>
                             ) : isOutOfStock ? (
-                              <span className="text-xs text-red-600 bg-red-100 px-1.5 py-0.5 rounded font-medium">Out of stock</span>
+                              <span className="text-xs text-red-600 bg-red-100 px-1 py-0.5 rounded font-medium">Out</span>
                             ) : isLowStock ? (
-                              <span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium">Low: {quantity}</span>
+                              <span className="text-xs text-orange-600 bg-orange-50 px-1 py-0.5 rounded font-medium">Low:{quantity}</span>
                             ) : (
-                              <span className="text-xs text-gray-400">Qty: {quantity}</span>
+                              <span className="text-xs text-gray-400">x{quantity}</span>
                             )}
                           </div>
                         </div>
