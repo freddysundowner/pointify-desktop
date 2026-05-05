@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Calendar, Filter, Download, Eye, BarChart3, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Calendar, Filter, Download, Eye, BarChart3, FileText, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Link } from 'wouter';
+import { useNavigationRoute } from '@/lib/navigation-utils';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 
 interface ProfitData {
@@ -291,6 +293,7 @@ export default function ProfitAnalysis() {
   };
 
   const categories = Array.from(new Set(profitData.map(item => item.category)));
+  const reportsRoute = useNavigationRoute('reports');
 
   // Calculate totals
   const totalRevenue = filteredData.reduce((sum, item) => sum + item.totalSales, 0);
@@ -327,80 +330,69 @@ export default function ProfitAnalysis() {
   return (
     <DashboardLayout title="Profit Analysis">
       <div className="space-y-3 sm:space-y-5">
+        {/* Header */}
+        <div className="flex items-center gap-2">
+          <Link href={reportsRoute}>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h2 className="text-base sm:text-xl font-bold leading-tight">Profit Analysis</h2>
+        </div>
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-4 gap-1.5">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold truncate">{formatCurrency(totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">From {filteredData.length} products</p>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Revenue</div>
+              <div className="text-xs sm:text-sm font-bold truncate">{formatCurrency(totalRevenue)}</div>
+              <div className="text-[10px] text-muted-foreground">{filteredData.length} products</div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-green-600 truncate">{formatCurrency(totalGrossProfit)}</div>
-              <p className="text-xs text-muted-foreground">
-                {((totalGrossProfit / totalRevenue) * 100).toFixed(1)}% margin
-              </p>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Gross Profit</div>
+              <div className="text-xs sm:text-sm font-bold text-green-600 truncate">{formatCurrency(totalGrossProfit)}</div>
+              <div className="text-[10px] text-muted-foreground">{((totalGrossProfit / totalRevenue) * 100).toFixed(1)}% margin</div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-red-600 truncate">{formatCurrency(totalCosts)}</div>
-              <p className="text-xs text-muted-foreground">Cost of goods sold</p>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Total Costs</div>
+              <div className="text-xs sm:text-sm font-bold text-red-600 truncate">{formatCurrency(totalCosts)}</div>
+              <div className="text-[10px] text-muted-foreground">Cost of goods</div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Profit Margin</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{averageProfitMargin.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">Across all products</p>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Avg Margin</div>
+              <div className="text-xs sm:text-sm font-bold">{averageProfitMargin.toFixed(1)}%</div>
+              <div className="text-[10px] text-muted-foreground">All products</div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="products" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="products">Product Analysis</TabsTrigger>
-            <TabsTrigger value="periods">Period Analysis</TabsTrigger>
-            <TabsTrigger value="insights">Insights</TabsTrigger>
+        <Tabs defaultValue="products" className="space-y-3">
+          <TabsList className="h-8 text-xs">
+            <TabsTrigger value="products" className="text-xs px-3">Products</TabsTrigger>
+            <TabsTrigger value="periods" className="text-xs px-3">Periods</TabsTrigger>
+            <TabsTrigger value="insights" className="text-xs px-3">Insights</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="products" className="space-y-4">
-            {/* Filters */}
+          <TabsContent value="products" className="space-y-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Product Profit Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                  <div className="flex-1">
+              <CardHeader className="py-2 px-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative flex-1 min-w-32">
                     <Input
                       placeholder="Search products..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-8 text-xs"
                     />
                   </div>
-                  
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="h-8 text-xs w-36">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -410,211 +402,185 @@ export default function ProfitAnalysis() {
                       ))}
                     </SelectContent>
                   </Select>
-
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="h-8 text-xs w-32">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="grossProfit">Gross Profit</SelectItem>
-                      <SelectItem value="profitMargin">Profit Margin</SelectItem>
-                      <SelectItem value="totalSales">Total Sales</SelectItem>
+                      <SelectItem value="profitMargin">Margin %</SelectItem>
+                      <SelectItem value="totalSales">Sales</SelectItem>
                       <SelectItem value="unitsSold">Units Sold</SelectItem>
                     </SelectContent>
                   </Select>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                  >
-                    {sortOrder === 'desc' ? 'High to Low' : 'Low to High'}
+                  <Button variant="outline" size="sm" className="h-8 text-xs"
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
+                    {sortOrder === 'desc' ? '↓ High–Low' : '↑ Low–High'}
                   </Button>
-                  
-                  <div className="flex gap-2 ml-auto">
-                    <Button onClick={exportToExcel} variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Excel
+                  <div className="flex gap-1 ml-auto">
+                    <Button onClick={exportToExcel} variant="outline" size="sm" className="h-8 text-xs">
+                      <Download className="h-3 w-3 mr-1" />CSV
                     </Button>
-                    <Button onClick={exportToPDF} variant="outline" size="sm">
-                      <FileText className="h-4 w-4 mr-2" />
-                      PDF
+                    <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 text-xs">
+                      <FileText className="h-3 w-3 mr-1" />PDF
                     </Button>
                   </div>
                 </div>
-
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-right">Sales</TableHead>
-                        <TableHead className="text-right">Costs</TableHead>
-                        <TableHead className="text-right">Gross Profit</TableHead>
-                        <TableHead className="text-right">Margin %</TableHead>
-                        <TableHead className="text-right">Units Sold</TableHead>
-                        <TableHead className="text-right">Profit/Unit</TableHead>
-                        <TableHead className="text-right">Trend</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">
-                            <div>
-                              <div>{item.productName}</div>
-                              <div className="text-sm text-gray-500">Last sold: {item.lastSold}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{item.category}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(item.totalSales)}
-                          </TableCell>
-                          <TableCell className="text-right text-red-600">
-                            {formatCurrency(item.totalCost)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium text-green-600">
-                            {formatCurrency(item.grossProfit)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={item.profitMargin >= 40 ? "default" : item.profitMargin >= 30 ? "secondary" : "destructive"}>
-                              {item.profitMargin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{item.unitsSold}</TableCell>
-                          <TableCell className="text-right text-green-600">
-                            {formatCurrency(item.profitPerUnit)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className={`flex items-center justify-end gap-1 ${getTrendColor(item.trend)}`}>
-                              {getTrendIcon(item.trend)}
-                              <span className="text-sm font-medium">{item.trendPercentage}%</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="periods" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Period Profit Analysis</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Period</TableHead>
-                        <TableHead className="text-right">Revenue</TableHead>
-                        <TableHead className="text-right">Costs</TableHead>
-                        <TableHead className="text-right">Expenses</TableHead>
-                        <TableHead className="text-right">Gross Profit</TableHead>
-                        <TableHead className="text-right">Net Profit</TableHead>
-                        <TableHead className="text-right">Margin %</TableHead>
-                        <TableHead className="text-right">Items Sold</TableHead>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-xs py-2">Product</TableHead>
+                      <TableHead className="text-xs py-2 hidden sm:table-cell">Category</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Sales</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden sm:table-cell">Costs</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Profit</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Margin</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden md:table-cell">Units</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden md:table-cell">Profit/Unit</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden sm:table-cell">Trend</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <div className="text-xs font-medium">{item.productName}</div>
+                          <div className="sm:hidden text-[10px] text-gray-400">{item.category}</div>
+                        </TableCell>
+                        <TableCell className="py-2 hidden sm:table-cell">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{item.category}</Badge>
+                        </TableCell>
+                        <TableCell className="py-2 text-right text-xs font-medium">{formatCurrency(item.totalSales)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-red-600 hidden sm:table-cell">{formatCurrency(item.totalCost)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs font-medium text-green-600">{formatCurrency(item.grossProfit)}</TableCell>
+                        <TableCell className="py-2 text-right">
+                          <Badge variant={item.profitMargin >= 40 ? "default" : item.profitMargin >= 30 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0">
+                            {item.profitMargin.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-2 text-right text-xs hidden md:table-cell">{item.unitsSold}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-green-600 hidden md:table-cell">{formatCurrency(item.profitPerUnit)}</TableCell>
+                        <TableCell className="py-2 text-right hidden sm:table-cell">
+                          <div className={`flex items-center justify-end gap-1 ${getTrendColor(item.trend)}`}>
+                            {getTrendIcon(item.trend)}
+                            <span className="text-xs">{item.trendPercentage}%</span>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {periodData.map((period, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{period.period}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(period.revenue)}</TableCell>
-                          <TableCell className="text-right text-red-600">{formatCurrency(period.costs)}</TableCell>
-                          <TableCell className="text-right text-orange-600">{formatCurrency(period.expenses)}</TableCell>
-                          <TableCell className="text-right text-green-600 font-medium">{formatCurrency(period.grossProfit)}</TableCell>
-                          <TableCell className="text-right text-green-700 font-bold">{formatCurrency(period.netProfit)}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant={period.profitMargin >= 35 ? "default" : period.profitMargin >= 25 ? "secondary" : "destructive"}>
-                              {period.profitMargin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{period.itemsSold}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="insights" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <TabsContent value="periods" className="space-y-3">
+            <Card>
+              <CardHeader className="py-2 px-3">
+                <CardTitle className="text-sm font-semibold">Period Profit Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-xs py-2">Period</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Revenue</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden sm:table-cell">Costs</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden md:table-cell">Expenses</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden sm:table-cell">Gross Profit</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Net Profit</TableHead>
+                      <TableHead className="text-xs py-2 text-right">Margin</TableHead>
+                      <TableHead className="text-xs py-2 text-right hidden md:table-cell">Items</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {periodData.map((period, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="py-2 text-xs font-medium">{period.period}</TableCell>
+                        <TableCell className="py-2 text-right text-xs">{formatCurrency(period.revenue)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-red-600 hidden sm:table-cell">{formatCurrency(period.costs)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-orange-600 hidden md:table-cell">{formatCurrency(period.expenses)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-green-600 font-medium hidden sm:table-cell">{formatCurrency(period.grossProfit)}</TableCell>
+                        <TableCell className="py-2 text-right text-xs text-green-700 font-bold">{formatCurrency(period.netProfit)}</TableCell>
+                        <TableCell className="py-2 text-right">
+                          <Badge variant={period.profitMargin >= 35 ? "default" : period.profitMargin >= 25 ? "secondary" : "destructive"} className="text-[10px] px-1.5 py-0">
+                            {period.profitMargin.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-2 text-right text-xs hidden md:table-cell">{period.itemsSold}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg text-green-600">Top Performers</CardTitle>
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-sm font-semibold text-green-600">Top Performers</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium">Highest Profit Margin</h4>
-                      <p className="text-sm text-gray-600">Smartphone Case (50.0%)</p>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="divide-y divide-gray-100">
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Highest Profit Margin</div>
+                      <div className="text-xs text-gray-500">Smartphone Case (50.0%)</div>
                     </div>
-                    <div>
-                      <h4 className="font-medium">Highest Gross Profit</h4>
-                      <p className="text-sm text-gray-600">Wireless Headphones ({formatCurrency(30000)})</p>
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Highest Gross Profit</div>
+                      <div className="text-xs text-gray-500">Wireless Headphones ({formatCurrency(30000)})</div>
                     </div>
-                    <div>
-                      <h4 className="font-medium">Best Selling</h4>
-                      <p className="text-sm text-gray-600">Premium Coffee Beans (150 units)</p>
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Best Selling</div>
+                      <div className="text-xs text-gray-500">Premium Coffee Beans (150 units)</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg text-red-600">Areas for Improvement</CardTitle>
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-sm font-semibold text-red-600">Areas for Improvement</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium">Lowest Profit Margin</h4>
-                      <p className="text-sm text-gray-600">Notebook Set (30.0%)</p>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="divide-y divide-gray-100">
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Lowest Profit Margin</div>
+                      <div className="text-xs text-gray-500">Notebook Set (30.0%)</div>
                     </div>
-                    <div>
-                      <h4 className="font-medium">Declining Trend</h4>
-                      <p className="text-sm text-gray-600">Designer T-Shirt (-5.2%)</p>
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Declining Trend</div>
+                      <div className="text-xs text-gray-500">Designer T-Shirt (-5.2%)</div>
                     </div>
-                    <div>
-                      <h4 className="font-medium">Low Volume, High Margin</h4>
-                      <p className="text-sm text-gray-600">Consider promoting Smartphone Case</p>
+                    <div className="py-2">
+                      <div className="text-xs font-medium">Low Volume, High Margin</div>
+                      <div className="text-xs text-gray-500">Consider promoting Smartphone Case</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-lg">Profit Analysis Summary</CardTitle>
+              <Card className="sm:col-span-2">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-sm font-semibold">Profit Analysis Summary</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <h4 className="font-medium text-green-800 dark:text-green-200">Strong Performance</h4>
-                      <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                        Electronics category showing consistent 35%+ margins with strong sales volume
-                      </p>
+                <CardContent className="px-3 pb-3 pt-0">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <div className="text-xs font-medium text-green-800">Strong Performance</div>
+                      <p className="text-[10px] text-green-600 mt-1">Electronics showing consistent 35%+ margins with strong volume</p>
                     </div>
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <h4 className="font-medium text-yellow-800 dark:text-yellow-200">Optimization Opportunity</h4>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
-                        Food and Beverages showing good margins but could increase volume through promotions
-                      </p>
+                    <div className="p-3 bg-yellow-50 rounded-lg">
+                      <div className="text-xs font-medium text-yellow-800">Optimization Opportunity</div>
+                      <p className="text-[10px] text-yellow-600 mt-1">F&B showing good margins — increase volume through promotions</p>
                     </div>
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <h4 className="font-medium text-blue-800 dark:text-blue-200">Growth Potential</h4>
-                      <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                        High-margin products like Smartphone Case have low sales volume - consider marketing push
-                      </p>
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <div className="text-xs font-medium text-blue-800">Growth Potential</div>
+                      <p className="text-[10px] text-blue-600 mt-1">High-margin Smartphone Case has low volume — consider marketing</p>
                     </div>
                   </div>
                 </CardContent>
@@ -624,18 +590,15 @@ export default function ProfitAnalysis() {
         </Tabs>
 
         {/* Action Buttons */}
-        <div className="flex gap-4">
-          <Button>
-            <Download className="h-4 w-4 mr-2" />
-            Export Profit Report
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" className="h-8 text-xs" onClick={exportToExcel}>
+            <Download className="h-3.5 w-3.5 mr-1.5" />Export Report
           </Button>
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Schedule Report
+          <Button variant="outline" size="sm" className="h-8 text-xs">
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />Schedule
           </Button>
-          <Button variant="outline">
-            <Eye className="h-4 w-4 mr-2" />
-            View Detailed Analysis
+          <Button variant="outline" size="sm" className="h-8 text-xs">
+            <Eye className="h-3.5 w-3.5 mr-1.5" />Detailed View
           </Button>
         </div>
       </div>
