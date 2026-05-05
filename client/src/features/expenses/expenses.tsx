@@ -398,20 +398,16 @@ export default function Expenses() {
     <DashboardLayout title="Expenses">
       <div className="space-y-3 sm:space-y-5">
         {/* Header with Add Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div className="flex items-center gap-3">
-            {attendant && (
-              <Link href={dashboardRoute}>
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-              </Link>
-            )}
-            <div>
-              <h2 className="text-lg sm:text-2xl font-bold">Expenses</h2>
-            </div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Link href={dashboardRoute}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <h2 className="text-base sm:text-xl font-bold leading-tight">Expenses</h2>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-1.5 flex-shrink-0">
             <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expense-categories' : '/expense-categories'}>
               <Button variant="outline" size="sm" className="h-8 text-xs">
                 <Settings className="w-3.5 h-3.5 sm:mr-1.5" />
@@ -551,30 +547,29 @@ export default function Expenses() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 gap-1.5">
           <Card>
-            <CardContent className="p-3">
-              <div className="text-xs text-gray-600">Expenses</div>
-              <div className="text-lg sm:text-2xl font-bold">{expenseStats?.summary?.totalCount || 0}</div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Count</div>
+              <div className="text-sm sm:text-base font-bold">{expenseStats?.summary?.totalCount || 0}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
-              <div className="text-xs text-gray-600">Total Amount</div>
-              <div className="text-base sm:text-2xl font-bold truncate">{currency} {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Total</div>
+              <div className="text-xs sm:text-sm font-bold truncate text-red-600">{currency} {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
-              <div className="text-xs text-gray-600">Categories</div>
-              <div className="text-lg sm:text-2xl font-bold">{expenseStats?.byCategory?.length || 0}</div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Categories</div>
+              <div className="text-sm sm:text-base font-bold">{expenseStats?.byCategory?.length || 0}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
-              <div className="text-xs text-gray-600">Top Category</div>
-              <div className="text-sm sm:text-lg font-bold truncate">{expenseStats?.byCategory?.[0]?.category || 'None'}</div>
-              <div className="text-xs text-gray-500 truncate">{currency} {(expenseStats?.byCategory?.[0]?.totalAmount || 0).toLocaleString()}</div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500 leading-tight">Top</div>
+              <div className="text-xs font-bold truncate leading-tight">{expenseStats?.byCategory?.[0]?.category || '—'}</div>
             </CardContent>
           </Card>
         </div>
@@ -582,39 +577,31 @@ export default function Expenses() {
         {/* Category Breakdown - Collapsible */}
         {expenseStats?.byCategory && expenseStats.byCategory.length > 0 && (
           <Card>
-            <CardHeader 
-              className="cursor-pointer hover:bg-gray-50 transition-colors py-3"
+            <CardHeader
+              className="cursor-pointer hover:bg-gray-50 transition-colors py-2 px-3"
               onClick={() => setShowCategoryBreakdown(!showCategoryBreakdown)}
             >
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Expense by Category</CardTitle>
-                <Button variant="ghost" size="sm" className="p-1">
-                  {showCategoryBreakdown ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
+                <CardTitle className="text-sm font-semibold">Expense by Category</CardTitle>
+                {showCategoryBreakdown ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </div>
             </CardHeader>
             {showCategoryBreakdown && (
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pt-0 px-3 pb-3">
+                <div className="divide-y divide-gray-100 border rounded-lg overflow-hidden">
                   {expenseStats.byCategory.map((categoryData: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <div>
-                          <div className="font-medium">{categoryData.category}</div>
-                          <div className="text-sm text-gray-500">{categoryData.count} expense{categoryData.count !== 1 ? 's' : ''}</div>
+                    <div key={index} className="flex items-center justify-between px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium truncate">{categoryData.category}</div>
+                          <div className="text-[10px] text-gray-400">{categoryData.count} item{categoryData.count !== 1 ? 's' : ''}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold">{currency} {categoryData.totalAmount.toLocaleString()}</div>
-                        <div className="text-xs text-gray-500">
-                          {expenseStats.summary.totalAmount > 0 
-                            ? Math.round((categoryData.totalAmount / expenseStats.summary.totalAmount) * 100)
-                            : 0}%
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-xs font-semibold">{currency} {categoryData.totalAmount.toLocaleString()}</div>
+                        <div className="text-[10px] text-gray-400">
+                          {expenseStats.summary.totalAmount > 0 ? Math.round((categoryData.totalAmount / expenseStats.summary.totalAmount) * 100) : 0}%
                         </div>
                       </div>
                     </div>
@@ -626,76 +613,62 @@ export default function Expenses() {
         )}
 
         {/* Filters */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Start Date:</label>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2 p-2.5 bg-gray-50 rounded-lg border">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <label className="text-xs font-medium text-gray-600 whitespace-nowrap">From:</label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 h-7"
               />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">End Date:</label>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <label className="text-xs font-medium text-gray-600 whitespace-nowrap">To:</label>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 h-7"
               />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Category:</label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {Array.isArray(categories) && categories.map((category: ExpenseCategory) => (
-                    <SelectItem key={category._id} value={category._id}>{category.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="h-7 text-xs w-36">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {Array.isArray(categories) && categories.map((category: ExpenseCategory) => (
+                  <SelectItem key={category._id} value={category._id}>{category.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {(customStartDate || customEndDate || selectedCategory !== 'all') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setCustomStartDate('');
-                  setCustomEndDate('');
-                  setSelectedCategory('all');
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                Clear All Filters
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-500"
+                onClick={() => { setCustomStartDate(''); setCustomEndDate(''); setSelectedCategory('all'); }}>
+                Clear
               </Button>
             )}
           </div>
 
           {/* Active Filters Display */}
           {(customStartDate || customEndDate || selectedCategory !== 'all') && (
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-gray-600">Active filters:</span>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              <span className="text-xs text-gray-500">Filters:</span>
               {customStartDate && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-800">
                   From: {new Date(customStartDate).toLocaleDateString()}
                 </span>
               )}
               {customEndDate && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-800">
                   To: {new Date(customEndDate).toLocaleDateString()}
                 </span>
               )}
               {selectedCategory !== 'all' && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                  Category: {categories.find((cat: ExpenseCategory) => cat._id === selectedCategory)?.name || selectedCategory}
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-green-100 text-green-800">
+                  {categories.find((cat: ExpenseCategory) => cat._id === selectedCategory)?.name || selectedCategory}
                 </span>
               )}
             </div>
@@ -704,80 +677,67 @@ export default function Expenses() {
 
         {/* Expenses Table */}
         <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Frequency</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="w-20">Actions</TableHead>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="text-xs py-2">Description</TableHead>
+                  <TableHead className="text-xs py-2 hidden sm:table-cell">Category</TableHead>
+                  <TableHead className="text-xs py-2 hidden sm:table-cell">Date</TableHead>
+                  <TableHead className="text-xs py-2 hidden md:table-cell">Frequency</TableHead>
+                  <TableHead className="text-xs py-2 text-right">Amount</TableHead>
+                  <TableHead className="text-xs py-2 w-16">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedExpenses.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500 text-sm">
                       No expenses found matching your criteria.
                     </TableCell>
                   </TableRow>
                 ) : (
                   paginatedExpenses.data.map((expense) => (
                     <TableRow key={expense._id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{expense.description}</div>
-                          {expense.receiptNumber && (
-                            <div className="text-sm text-gray-500">#{expense.receiptNumber}</div>
-                          )}
+                      <TableCell className="py-2 px-2 sm:px-4">
+                        <div className="font-medium text-xs sm:text-sm">{expense.description}</div>
+                        <div className="sm:hidden text-[10px] text-gray-400 mt-0.5 space-y-0.5">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                            {typeof expense.category === 'string' ? getCategoryName(expense.category) : expense.category?.name || 'Unknown'}
+                          </span>
+                          {expense.createAt && <span className="block">{format(new Date(expense.createAt), 'MMM dd, yyyy')}</span>}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                      <TableCell className="py-2 hidden sm:table-cell">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
                           {typeof expense.category === 'string' ? getCategoryName(expense.category) : expense.category?.name || 'Unknown'}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        {expense.createAt 
-                          ? format(new Date(expense.createAt), 'MMM dd, yyyy HH:mm')
-                          : '-'
-                        }
+                      <TableCell className="py-2 text-xs hidden sm:table-cell">
+                        {expense.createAt ? format(new Date(expense.createAt), 'MMM dd, yyyy') : '-'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2 hidden md:table-cell">
                         {expense.frequency ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 text-xs">
                             <RefreshCw className="w-3 h-3" />
-                            <span className="text-sm capitalize">{expense.frequency}</span>
+                            <span className="capitalize">{expense.frequency}</span>
                           </div>
-                        ) : (
-                          <span className="text-gray-400">One-time</span>
-                        )}
+                        ) : <span className="text-xs text-gray-400">One-time</span>}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-medium text-red-600">
+                      <TableCell className="py-2 px-2 sm:px-4 text-right">
+                        <span className="text-xs sm:text-sm font-medium text-red-600">
                           {currency} {expense.amount.toLocaleString()}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(expense)}
-                          >
-                            <Edit2 className="w-4 h-4" />
+                      <TableCell className="py-2 px-2 sm:px-4">
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(expense)} className="h-7 w-7 p-0">
+                            <Edit2 className="w-3 h-3" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
+                              <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-red-600 hover:text-red-700">
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -789,10 +749,7 @@ export default function Expenses() {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteExpenseMutation.mutate(expense._id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
+                                <AlertDialogAction onClick={() => deleteExpenseMutation.mutate(expense._id)} className="bg-red-600 hover:bg-red-700">
                                   Delete
                                 </AlertDialogAction>
                               </AlertDialogFooter>
@@ -805,17 +762,15 @@ export default function Expenses() {
                 )}
               </TableBody>
             </Table>
-            </div>
           </CardContent>
         </Card>
 
         {/* Pagination */}
         {paginatedExpenses.totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
               <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-16 h-7 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -825,27 +780,16 @@ export default function Expenses() {
                   <SelectItem value="50">50</SelectItem>
                 </SelectContent>
               </Select>
-              <span className="text-sm text-gray-600">per page</span>
+              <span className="text-xs text-gray-500">/ page</span>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>
+                Prev
               </Button>
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {paginatedExpenses.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(paginatedExpenses.totalPages, currentPage + 1))}
-                disabled={currentPage === paginatedExpenses.totalPages}
-              >
+              <span className="text-xs text-gray-500">{currentPage}/{paginatedExpenses.totalPages}</span>
+              <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                onClick={() => setCurrentPage(Math.min(paginatedExpenses.totalPages, currentPage + 1))} disabled={currentPage === paginatedExpenses.totalPages}>
                 Next
               </Button>
             </div>
