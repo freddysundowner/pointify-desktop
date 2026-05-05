@@ -354,222 +354,58 @@ export default function ShopDetails() {
   return (
     <DashboardLayout>
       <div className="h-full bg-gray-50">
-        {/* Header */}
+        {/* Compact Header */}
         <div className="bg-white border-b shadow-sm">
-          <div className="px-4 sm:px-8 py-4 sm:py-6">
-            <div className="flex items-center gap-4">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
               <Link href="/shops">
-                <Button variant="ghost" size="sm" className="p-2">
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
               </Link>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{shop.name}</h1>
-                <p className="text-sm text-gray-600">Manage your shop settings and configuration</p>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-gray-900 truncate">{shop.name}</h1>
+                <p className="text-xs text-gray-500">Shop Settings</p>
               </div>
             </div>
+            <Button
+              size="sm"
+              onClick={handleSaveSettings}
+              disabled={updateShopMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700 flex-shrink-0"
+            >
+              {updateShopMutation.isPending ? "Saving..." : "Save"}
+            </Button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-4 sm:px-8 py-4 sm:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Quick Actions Sidebar */}
-            <div className="lg:col-span-1 space-y-6">
-              <Card className="shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg">Quick Actions</CardTitle>
-                  <CardDescription>Manage shop settings efficiently</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full justify-start h-10 bg-yellow-500 hover:bg-yellow-600 text-white"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Backup
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-10"
-                    onClick={() => setExpandedSections(prev => ({ ...prev, backup: !prev.backup }))}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Backup Settings
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-10"
-                    onClick={() => setExpandedSections(prev => ({ ...prev, receipt: !prev.receipt }))}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Receipt Settings
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* Content — single column, stacked sections */}
+        <div className="px-3 py-3 space-y-3 max-w-3xl mx-auto">
 
-              {/* Conditional Settings Panels */}
-              {expandedSections.backup && (
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Backup Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm">Auto Backup</Label>
-                      <Switch
-                        checked={formData.allowBackup}
-                        onCheckedChange={(checked) => 
-                          setFormData(prev => ({ ...prev, allowBackup: checked }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Backup Email</Label>
-                      <Input
-                        type="email"
-                        value={admin?.email || ''}
-                        readOnly
-                        className="h-9 bg-gray-50"
-                      />
-                      <p className="text-xs text-gray-500">Uses your admin email address</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Interval</Label>
-                      <Select
-                        value={formData.backupInterval}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, backupInterval: value }))}
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="daily">Every day</SelectItem>
-                          <SelectItem value="end_of_month">Every End of Month</SelectItem>
-                          <SelectItem value="weekly">Every End of Week</SelectItem>
-                          <SelectItem value="yearly">Every End of Year</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {expandedSections.receipt && (
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg">Receipt Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      <Label className="text-sm">Receipt Email</Label>
-                      <Input
-                        value={formData.receiptemail}
-                        onChange={(e) => setFormData(prev => ({ ...prev, receiptemail: e.target.value }))}
-                        placeholder="email@company.com"
-                        type="email"
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Contact</Label>
-                      <Input
-                        value={formData.contact}
-                        onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
-                        placeholder="Contact info"
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">M-Pesa Paybill/Till</Label>
-                      <Input
-                        value={formData.paybill_till}
-                        onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))}
-                        placeholder="Paybill or Till number"
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Paybill Account</Label>
-                      <Input
-                        value={formData.paybill_account}
-                        onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))}
-                        placeholder="Account number"
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Receipt Address</Label>
-                      <Input
-                        value={formData.address_receipt}
-                        onChange={(e) => setFormData(prev => ({ ...prev, address_receipt: e.target.value }))}
-                        placeholder="Address to show on receipts"
-                        className="h-9"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Main Settings Form */}
-            <div className="lg:col-span-3 space-y-6">
-              <Card className="shadow-sm">
-                <CardHeader className="pb-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Settings className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">Shop Information</CardTitle>
-                        <CardDescription>Basic shop details and configuration</CardDescription>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleSaveSettings}
-                      disabled={updateShopMutation.isPending}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      {updateShopMutation.isPending ? "Saving..." : "Save Settings"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Basic Information Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="shopName" className="text-sm font-medium">Shop Name</Label>
+          {/* Basic Info */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Basic Info</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="shopName" className="text-xs font-medium text-gray-600">Shop Name</Label>
                       <Input
                         id="shopName"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="Enter your shop name"
-                        className="h-10"
+                        placeholder="Shop name"
+                        className="h-9 text-sm"
                       />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="tax" className="text-sm font-medium">Tax Rate (%)</Label>
-                      <Input
-                        id="tax"
-                        type="number"
-                        step="0.01"
-                        value={formData.tax}
-                        onChange={(e) => setFormData(prev => ({ ...prev, tax: parseFloat(e.target.value) || 0 }))}
-                        placeholder="0.0"
-                        className="h-10"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="businessType" className="text-sm font-medium">Business Category</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="businessType" className="text-xs font-medium text-gray-600">Business Category</Label>
                       <Select
                         value={formData.shopCategoryId}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, shopCategoryId: value }))}
                       >
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9 text-sm">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -581,27 +417,24 @@ export default function ShopDetails() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="location" className="text-sm font-medium">Shop Address</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="location" className="text-xs font-medium text-gray-600">Address</Label>
                       <Input
                         id="location"
                         value={formData.address}
                         onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                        placeholder="Enter your shop's physical address"
-                        className="h-10"
+                        placeholder="Shop address"
+                        className="h-9 text-sm"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="currency" className="text-xs font-medium text-gray-600">Currency</Label>
                       <Select
                         value={formData.currency}
                         onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
                       >
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-9 text-sm">
                           <SelectValue placeholder="Select currency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -612,161 +445,176 @@ export default function ShopDetails() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
 
-                  {/* Operational Settings */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Operational Settings</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div>
-                          <Label className="text-sm font-medium text-red-800">Negative Selling</Label>
-                          <p className="text-xs text-red-600">Allow out-of-stock sales</p>
-                        </div>
-                        <Switch
-                          checked={formData.allownegativeselling}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, allownegativeselling: checked }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div>
-                          <Label className="text-sm font-medium text-blue-800">Batch Tracking</Label>
-                          <p className="text-xs text-blue-600">Track product batches</p>
-                        </div>
-                        <Switch
-                          checked={formData.trackbatches}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, trackbatches: checked }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
-                        <div>
-                          <Label className="text-sm font-medium text-purple-800">Warehouse Mode</Label>
-                          <p className="text-xs text-purple-600">Use warehouse system</p>
-                        </div>
-                        <Switch
-                          checked={formData.useWarehouse}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, useWarehouse: checked }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div>
-                          <Label className="text-sm font-medium text-green-800">Online Selling</Label>
-                          <p className="text-xs text-green-600">Enable e-commerce</p>
-                        </div>
-                        <Switch
-                          checked={formData.allowOnlineSelling}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, allowOnlineSelling: checked }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div>
-                          <Label className="text-sm font-medium text-orange-800">Show Stock Online</Label>
-                          <p className="text-xs text-orange-600">Display stock levels on online store</p>
-                        </div>
-                        <Switch
-                          checked={formData.showstockonline}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, showstockonline: checked }))
-                          }
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-teal-50 rounded-lg border border-teal-200">
-                        <div>
-                          <Label className="text-sm font-medium text-teal-800">Show Prices Online</Label>
-                          <p className="text-xs text-teal-600">Display product prices on online store</p>
-                        </div>
-                        <Switch
-                          checked={formData.showpriceonline}
-                          onCheckedChange={(checked) => 
-                            setFormData(prev => ({ ...prev, showpriceonline: checked }))
-                          }
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="tax" className="text-xs font-medium text-gray-600">Tax Rate (%)</Label>
+                      <Input
+                        id="tax"
+                        type="number"
+                        step="0.01"
+                        value={formData.tax}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tax: parseFloat(e.target.value) || 0 }))}
+                        placeholder="0.0"
+                        className="h-9 text-sm"
+                      />
                     </div>
                   </div>
+            </CardContent>
+          </Card>
 
-
-                </CardContent>
-              </Card>
-
-              {/* Danger Zone - Delete Shop */}
-              <Card className="shadow-sm border-red-200">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
-                    </div>
+          {/* Operational Toggles */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Operational Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <div className="divide-y divide-gray-100">
+                {[
+                  { key: "allownegativeselling", label: "Negative Selling", desc: "Allow out-of-stock sales" },
+                  { key: "trackbatches",         label: "Batch Tracking",   desc: "Track product batches" },
+                  { key: "useWarehouse",          label: "Warehouse Mode",   desc: "Use warehouse system" },
+                  { key: "allowOnlineSelling",    label: "Online Selling",   desc: "Enable e-commerce" },
+                  { key: "showstockonline",       label: "Show Stock Online", desc: "Display stock levels online" },
+                  { key: "showpriceonline",       label: "Show Prices Online", desc: "Display prices on online store" },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between py-2.5">
                     <div>
-                      <h3 className="text-lg font-semibold text-red-800">Danger Zone</h3>
-                      <p className="text-sm text-red-600">Irreversible actions that will permanently delete data</p>
+                      <p className="text-sm font-medium text-gray-800">{label}</p>
+                      <p className="text-xs text-gray-500">{desc}</p>
                     </div>
+                    <Switch
+                      checked={!!(formData as any)[key]}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [key]: checked }))}
+                    />
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-red-800 mb-1">Delete Shop Data</h4>
-                        <p className="text-xs text-red-600 mb-3">
-                          Permanently delete all products, transactions, and sales data for this shop. 
-                          This action cannot be undone.
-                        </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-red-300 text-red-700 hover:bg-red-100"
-                          onClick={() => handleDeleteShopData()}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Shop Data
-                        </Button>
-                      </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Receipt Settings */}
+          <Card className="shadow-sm">
+            <button
+              className="w-full text-left"
+              onClick={() => toggleSection("receipt")}
+            >
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Receipt Settings</span>
+                </div>
+                {expandedSections.receipt ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              </div>
+            </button>
+            {expandedSections.receipt && (
+              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Receipt Email</Label>
+                    <Input value={formData.receiptemail} onChange={(e) => setFormData(prev => ({ ...prev, receiptemail: e.target.value }))} placeholder="email@company.com" type="email" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Contact</Label>
+                    <Input value={formData.contact} onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))} placeholder="Contact info" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">M-Pesa Paybill/Till</Label>
+                    <Input value={formData.paybill_till} onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))} placeholder="Paybill or Till number" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Paybill Account</Label>
+                    <Input value={formData.paybill_account} onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))} placeholder="Account number" className="h-9 text-sm" />
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs font-medium text-gray-600">Receipt Address</Label>
+                    <Input value={formData.address_receipt} onChange={(e) => setFormData(prev => ({ ...prev, address_receipt: e.target.value }))} placeholder="Address shown on receipts" className="h-9 text-sm" />
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Backup Settings */}
+          <Card className="shadow-sm">
+            <button
+              className="w-full text-left"
+              onClick={() => toggleSection("backup")}
+            >
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Backup Settings</span>
+                </div>
+                {expandedSections.backup ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              </div>
+            </button>
+            {expandedSections.backup && (
+              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
+                <div className="pt-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Auto Backup</p>
+                      <p className="text-xs text-gray-500">Automatically back up shop data</p>
                     </div>
+                    <Switch checked={formData.allowBackup} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allowBackup: checked }))} />
                   </div>
-
-                  <div className="p-4 bg-red-100 rounded-lg border border-red-300">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-red-900 mb-1">Delete Entire Shop</h4>
-                        <p className="text-xs text-red-700 mb-3">
-                          Permanently delete this shop and all associated data including products, 
-                          sales, customers, and settings. This action is irreversible.
-                        </p>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteShop()}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Shop
-                        </Button>
-                      </div>
-                    </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Backup Email</Label>
+                    <Input type="email" value={admin?.email || ''} readOnly className="h-9 text-sm bg-gray-50" />
+                    <p className="text-xs text-gray-400">Uses your admin email</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Interval</Label>
+                    <Select value={formData.backupInterval} onValueChange={(value) => setFormData(prev => ({ ...prev, backupInterval: value }))}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Every day</SelectItem>
+                        <SelectItem value="weekly">Every End of Week</SelectItem>
+                        <SelectItem value="end_of_month">Every End of Month</SelectItem>
+                        <SelectItem value="yearly">Every End of Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
 
+          {/* Danger Zone */}
+          <Card className="shadow-sm border-red-200">
+            <CardHeader className="pb-2 pt-3 px-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+                <CardTitle className="text-sm font-semibold text-red-700 uppercase tracking-wide">Danger Zone</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2">
+              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-red-800">Delete Shop Data</p>
+                  <p className="text-xs text-red-600">Remove all products, sales &amp; transactions</p>
+                </div>
+                <Button variant="outline" size="sm" className="ml-3 flex-shrink-0 border-red-300 text-red-700 hover:bg-red-100" onClick={handleDeleteShopData}>
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete Data
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-red-100 rounded-lg border border-red-300">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-red-900">Delete Entire Shop</p>
+                  <p className="text-xs text-red-700">Permanently remove this shop</p>
+                </div>
+                <Button variant="destructive" size="sm" className="ml-3 flex-shrink-0" onClick={handleDeleteShop}>
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  Delete Shop
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          </div>
         </div>
       </div>
 
-      {/* Alert Modal for confirmations */}
       <AlertModal
         isOpen={alertModal.isOpen}
         onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
