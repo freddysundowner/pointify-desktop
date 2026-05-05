@@ -105,157 +105,120 @@ export default function Shops() {
   return (
     <DashboardLayout title="My Shops">
       <div className="h-full bg-gray-50">
-        {/* Header Section */}
+        {/* Header */}
         <div className="bg-white border-b shadow-sm">
-          <div className="px-4 sm:px-8 py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Shops</h1>
-                <p className="text-sm sm:text-lg text-gray-600 mt-1">
-                  Manage all your shop locations and settings
-                </p>
+                <h1 className="text-lg font-bold text-gray-900">My Shops</h1>
+                <p className="text-xs text-gray-500">{shops.length} shop{shops.length !== 1 ? 's' : ''}</p>
               </div>
               <Link href="/shop-setup">
-                <Button size="sm" className="bg-purple-600 hover:bg-purple-700 flex-shrink-0">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Shop
+                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Shop
                 </Button>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Content Section */}
-        <div className="px-4 sm:px-8 py-4 sm:py-8">
+        {/* Content */}
+        <div className="px-3 py-3">
           {/* Search Bar */}
-          <div className="mb-8">
-            <div className="relative max-w-md">
+          <div className="mb-3">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 type="text"
                 placeholder="Search shops..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9 h-9 text-sm"
               />
             </div>
           </div>
 
           {/* Shops Grid */}
           {filteredShops.length === 0 ? (
-            <div className="text-center py-16">
-              <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="text-center py-12">
+              <Store className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">
                 {searchQuery ? "No shops found" : "No shops yet"}
               </h3>
-              <p className="text-gray-600 mb-6">
-                {searchQuery 
-                  ? "Try adjusting your search terms" 
-                  : "Get started by creating your first shop"
-                }
+              <p className="text-xs text-gray-500 mb-4">
+                {searchQuery ? "Try adjusting your search" : "Create your first shop to get started"}
               </p>
               {!searchQuery && (
                 <Link href="/shop-setup">
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Your First Shop
+                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Shop
                   </Button>
                 </Link>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               {filteredShops.map((shop: Shop) => (
-                <Card key={shop._id} className="hover:shadow-lg transition-shadow duration-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-semibold text-gray-900 mb-1">
-                          {shop.name}
-                        </CardTitle>
-                        <CardDescription className="flex items-center text-sm text-gray-600">
-                          <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-                          {shop.address}
-                        </CardDescription>
-                      </div>
-                      {admin?.primaryShop === shop._id && (
-                        <Badge variant="default" className="bg-purple-100 text-purple-800 border-purple-200">
-                          Primary
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="py-3">
-                    <div className="space-y-2">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Category:</span> {shop.shopCategoryId?.name || 'N/A'}
-                      </div>
-                      {shop.contact && (
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">Contact:</span> {shop.contact}
-                        </div>
-                      )}
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Currency:</span> {shop.currency}
-                      </div>
-                      {shop.subscription && (
+                <Link key={shop._id} href={`/shop/${shop._id}`}>
+                  <div className="bg-white rounded-lg border hover:shadow-md hover:border-purple-200 transition-all duration-150 p-3 cursor-pointer">
+                    <div className="flex items-start justify-between mb-1.5">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={shop.subscription.status ? "default" : "secondary"}
-                            className={shop.subscription.status ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"}
-                          >
-                            {shop.subscription.packageId?.title || 'Unknown Plan'}
-                          </Badge>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{shop.name}</p>
+                          {admin?.primaryShop === shop._id && (
+                            <Badge className="bg-purple-100 text-purple-700 border-0 text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                              Primary
+                            </Badge>
+                          )}
                         </div>
-                      )}
-
+                        <p className="text-xs text-gray-500 flex items-center gap-0.5 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          {shop.address}
+                        </p>
+                      </div>
                     </div>
-                  </CardContent>
-
-                  <CardFooter className="pt-3 flex gap-2">
-                    <Link href={`/shop/${shop._id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </Button>
-                    </Link>
-                    <Link href={`/shop/${shop._id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span>{shop.shopCategoryId?.name || 'N/A'}</span>
+                      <span className="text-gray-300">·</span>
+                      <span>{shop.currency}</span>
+                      {shop.subscription && (
+                        <>
+                          <span className="text-gray-300">·</span>
+                          <span className={shop.subscription.status ? "text-green-600 font-medium" : "text-gray-400"}>
+                            {shop.subscription.status ? "Active" : "Inactive"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           )}
 
           {/* Summary Stats */}
           {filteredShops.length > 0 && (
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg border">
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="bg-white p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Shops</p>
-                    <p className="text-2xl font-bold text-gray-900">{shops.length}</p>
+                    <p className="text-xs text-gray-500">Total Shops</p>
+                    <p className="text-xl font-bold text-gray-900">{shops.length}</p>
                   </div>
-                  <Store className="w-8 h-8 text-purple-600" />
+                  <Store className="w-6 h-6 text-purple-500" />
                 </div>
               </div>
-              
-              <div className="bg-white p-6 rounded-lg border">
+              <div className="bg-white p-3 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Primary Shop</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-xs text-gray-500">Primary</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
                       {shops.find((shop: Shop) => shop._id === primaryShopId)?.name || "None"}
                     </p>
                   </div>
-                  <Badge className="bg-purple-100 text-purple-800">
-                    Primary
-                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">P</Badge>
                 </div>
               </div>
             </div>
