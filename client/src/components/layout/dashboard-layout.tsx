@@ -502,10 +502,10 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-stretch">
             {[
-              { href: dashboardRoute, icon: Home,          label: "Home" },
-              { href: posRoute,       icon: ScanBarcode,   label: "POS" },
-              { href: "/sales",       icon: Receipt,        label: "Sales" },
-              { href: "/stock/products", icon: Package,    label: "Products" },
+              { href: dashboardRoute, icon: Home,   label: "Home" },
+              { href: "/shops",       icon: Store,  label: "Shops" },
+              { href: "/attendants",  icon: Users,  label: "Staff" },
+              { href: "/edit-profile", icon: User,  label: "Profile" },
             ].map(({ href, icon: Icon, label }) => {
               const active = location === href || location.startsWith(href + '/');
               return (
