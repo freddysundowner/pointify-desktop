@@ -28,6 +28,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Search,
   Plus,
   Package,
@@ -42,6 +48,8 @@ import {
   ArrowLeft,
   FileText,
   Download,
+  SlidersHorizontal,
+  Check,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { apiCall } from "@/lib/api-config";
@@ -87,6 +95,7 @@ export default function StockProducts() {
   const [stockFilter, setStockFilter] = useState<
     "all" | "outofstock" | "lowstock"
   >("all");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const { currency, shop } = useShop();
   const { admin } = useAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
@@ -605,7 +614,7 @@ export default function StockProducts() {
             <CardTitle className="text-base sm:text-lg">Product Inventory</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+            <div className="flex gap-2 mb-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <Input
@@ -615,10 +624,20 @@ export default function StockProducts() {
                   className="pl-9 h-8 text-sm"
                 />
               </div>
-              
-              {/* Stock Status Filter */}
+
+              {/* Mobile: filter icon button → bottom sheet */}
+              <Button
+                variant="outline"
+                size="icon"
+                className={`h-8 w-8 shrink-0 sm:hidden ${stockFilter !== "all" ? "border-purple-500 text-purple-600" : ""}`}
+                onClick={() => setFilterSheetOpen(true)}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </Button>
+
+              {/* Desktop: inline Select */}
               <Select value={stockFilter} onValueChange={(value: "all" | "outofstock" | "lowstock") => setStockFilter(value)}>
-                <SelectTrigger className="w-full sm:w-44 h-8 text-sm">
+                <SelectTrigger className="hidden sm:flex w-44 h-8 text-sm">
                   <SelectValue placeholder="Stock status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -627,7 +646,7 @@ export default function StockProducts() {
                   <SelectItem value="lowstock">Running Low</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               {(hasPermission("inventory_add") ||
                 hasAttendantPermission("stocks", "add_products") ||
                 hasAttendantPermission("products", "add")) && (
@@ -639,6 +658,49 @@ export default function StockProducts() {
                 </Link>
               )}
             </div>
+
+            {/* Filter Bottom Sheet (mobile) */}
+            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+              <SheetContent side="bottom" className="p-0 rounded-t-2xl">
+                <SheetHeader className="px-5 pt-5 pb-3 border-b">
+                  <SheetTitle className="text-sm font-semibold">Filter by Stock Status</SheetTitle>
+                </SheetHeader>
+                <div className="py-2">
+                  {(
+                    [
+                      { value: "all", label: "All Products" },
+                      { value: "outofstock", label: "Out of Stock" },
+                      { value: "lowstock", label: "Running Low" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
+                        stockFilter === opt.value
+                          ? "bg-purple-50 text-purple-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                      onClick={() => {
+                        setStockFilter(opt.value);
+                        setFilterSheetOpen(false);
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {stockFilter === opt.value && <Check className="h-4 w-4 text-purple-600" />}
+                    </button>
+                  ))}
+                </div>
+                <div className="px-5 pb-6 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    onClick={() => setFilterSheetOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
 
             {/* Products Table */}
             <div className="rounded-md border">
