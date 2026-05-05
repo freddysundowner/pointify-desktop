@@ -251,40 +251,31 @@ export default function StockCount() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             {attendant && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setLocation(backRoute)}
-                className="flex items-center gap-2"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setLocation(backRoute)}>
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
               </Button>
             )}
-            <div>
-              <h1 className="text-2xl font-bold">Stock Count</h1>
-              <p className="text-gray-600">Count and verify your inventory</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold">Stock Count</h1>
           </div>
           <div className="flex gap-2">
             <Button 
               onClick={() => setLocation(attendant ? "/attendant/stock/count-history" : "/stock/count-history")}
-              variant="outline"
+              variant="outline" size="sm"
             >
-              <History className="h-4 w-4 mr-2" />
-              Stock Count History
+              <History className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">History</span>
             </Button>
             <Button 
               onClick={handleReset} 
-              variant="outline"
+              variant="outline" size="sm"
               disabled={Object.keys(preservedCounts).length === 0}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="h-4 w-4" />
               Reset
             </Button>
             <Button 

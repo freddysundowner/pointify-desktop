@@ -216,40 +216,33 @@ export default function SupplierOverview() {
 
   return (
     <DashboardLayout title={`${supplier.name} - Overview`}>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header with back button */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2">
           <Link href="/suppliers">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Suppliers
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-xl sm:text-3xl font-bold">{supplier.name}</h1>
-            <p className="text-sm text-gray-600">{supplier.contact}</p>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold truncate">{supplier.name}</h1>
+            <p className="text-xs text-gray-500">{supplier.contact}</p>
           </div>
         </div>
 
         {/* Supplier Info Summary */}
         <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {supplier.totalOrders || 0}
-            </div>
-            <div className="text-sm text-gray-600">Total Orders</div>
+            <div className="text-lg sm:text-2xl font-bold text-blue-600">{supplier.totalOrders || 0}</div>
+            <div className="text-xs text-gray-600">Orders</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              ${(supplier.totalAmount || 0).toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-600">Total Amount</div>
+            <div className="text-sm sm:text-2xl font-bold text-green-600 truncate">${(supplier.totalAmount || 0).toLocaleString()}</div>
+            <div className="text-xs text-gray-600">Amount</div>
           </div>
           <div className="text-center">
-            <div className={`text-2xl font-bold ${supplier.status === 'active' ? 'text-green-600' : 'text-gray-600'}`}>
-              {supplier.status.toUpperCase()}
-            </div>
-            <div className="text-sm text-gray-600">Status</div>
+            <div className={`text-sm sm:text-2xl font-bold ${supplier.status === 'active' ? 'text-green-600' : 'text-gray-600'}`}>{supplier.status.toUpperCase()}</div>
+            <div className="text-xs text-gray-600">Status</div>
           </div>
         </div>
 
@@ -365,30 +358,30 @@ export default function SupplierOverview() {
           <TabsContent value="stats" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-blue-600">{supplier.totalOrders || 0}</div>
+                <CardContent className="p-3">
+                  <div className="text-lg sm:text-2xl font-bold text-blue-600">{supplier.totalOrders || 0}</div>
                   <p className="text-sm text-gray-600">Total Orders</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-green-600">
+                <CardContent className="p-3">
+                  <div className="text-sm sm:text-2xl font-bold text-green-600 truncate">
                     ${(supplier.totalAmount || 0).toLocaleString()}
                   </div>
                   <p className="text-sm text-gray-600">Total Amount</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-purple-600">
+                <CardContent className="p-3">
+                  <div className="text-sm sm:text-2xl font-bold text-purple-600 truncate">
                     {mockSupplierPurchases.filter(p => p.status === 'pending').length}
                   </div>
                   <p className="text-sm text-gray-600">Pending Orders</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-6">
-                  <div className="text-2xl font-bold text-orange-600">
+                <CardContent className="p-3">
+                  <div className="text-sm sm:text-2xl font-bold text-orange-600 truncate">
                     {supplier.lastOrder ? new Date(supplier.lastOrder).toLocaleDateString() : 'Never'}
                   </div>
                   <p className="text-sm text-gray-600">Last Order</p>

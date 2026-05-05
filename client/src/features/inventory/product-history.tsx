@@ -163,48 +163,39 @@ export default function ProductHistory() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleGoBack}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">
-                {productLoading ? "Loading..." : product?.name || "Product History"}
-              </h1>
-              <p className="text-gray-600">
-                {selectedMonth}/{selectedYear} • Stock movements and transactions
-              </p>
-            </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={handleGoBack} className="shrink-0">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold truncate">
+              {productLoading ? "Loading..." : product?.name || "Product History"}
+            </h1>
+            <p className="text-xs text-gray-500">{selectedMonth}/{selectedYear}</p>
           </div>
         </div>
 
         {/* Summary Cards */}
         {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Total Sales</p>
-                    <p className="text-2xl font-bold">{currency} {summary.totalSales?.toFixed(2) || "0.00"}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-600">Total Sales</p>
+                    <p className="text-sm sm:text-xl font-bold truncate">{currency} {summary.totalSales?.toFixed(2) || "0.00"}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Units Sold</p>
-                    <p className="text-2xl font-bold">{summary.totalUnitsSold || 0}</p>
+                    <p className="text-xs font-medium text-gray-600">Units Sold</p>
+                    <p className="text-lg sm:text-2xl font-bold">{summary.totalUnitsSold || 0}</p>
                   </div>
                 </div>
               </CardContent>

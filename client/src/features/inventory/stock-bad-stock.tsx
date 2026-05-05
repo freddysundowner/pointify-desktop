@@ -194,7 +194,7 @@ export default function StockBadStock() {
   if (!canManageBadStock) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
+        <div className="space-y-3 sm:space-y-5">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button 
@@ -226,55 +226,47 @@ export default function StockBadStock() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/bad-stock")}
-            className="flex items-center gap-2"
-          >
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/bad-stock")}>
             <ArrowLeft className="h-4 w-4" />
-            {attendant ? "Back to Dashboard" : "Back"}
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bad Stock Management</h1>
-            <p className="text-gray-600">Report and manage damaged or expired inventory</p>
-          </div>
+          <h1 className="text-base sm:text-xl font-bold text-gray-900">Bad Stock</h1>
         </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Bad Stock Value</p>
-                  <p className="text-2xl font-bold text-red-600">{currency} {badStockValue.toLocaleString()}</p>
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-600">Bad Stock Value</p>
+                  <p className="text-sm sm:text-xl font-bold text-red-600 truncate">{currency} {badStockValue.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-gray-600" />
+                <AlertTriangle className="h-4 w-4 text-gray-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Items</p>
-                  <p className="text-2xl font-bold">{badStockCount}</p>
+                  <p className="text-xs font-medium text-gray-600">Items</p>
+                  <p className="text-lg sm:text-2xl font-bold">{badStockCount}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Quantity</p>
-                  <p className="text-2xl font-bold">{totalQuantity}</p>
+                  <p className="text-xs font-medium text-gray-600">Qty</p>
+                  <p className="text-lg sm:text-2xl font-bold">{totalQuantity}</p>
                 </div>
               </div>
             </CardContent>
@@ -282,14 +274,11 @@ export default function StockBadStock() {
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5" />
+          <CardHeader className="py-3">
+            <CardTitle className="text-base flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4" />
               <span>Bad Stock Items</span>
             </CardTitle>
-            <CardDescription>
-              Track and manage damaged, expired, or unusable inventory
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {/* Date Filters */}

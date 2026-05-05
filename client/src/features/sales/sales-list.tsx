@@ -1022,9 +1022,9 @@ function SalesList() {
 
   return (
     <DashboardLayout title="Sales Reports">
-      <div className="p-4">
+      <div className="w-full">
         <div className="w-full">
-          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start gap-3">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -1077,12 +1077,12 @@ function SalesList() {
           </div>
 
           {/* Filters Section */}
-          <Card className="mb-4">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
+          <Card className="mb-3">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <span className="font-medium">Filters</span>
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="text-sm font-medium">Filters</span>
                 </div>
                 <Button
                   variant="outline"
@@ -1102,11 +1102,11 @@ function SalesList() {
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Search */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Search by Receipt Number
+                  <Label className="text-xs font-medium mb-1 block">
+                    Search
                   </Label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
@@ -1280,7 +1280,7 @@ function SalesList() {
                 </span>
               </div>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-44 h-8 text-sm">
                   <SelectValue placeholder="Filter by payment method" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1297,119 +1297,38 @@ function SalesList() {
 
             {/* Summary Stats - Permission Controlled */}
             {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {/* Main Metrics */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Total Sales
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.totalSales?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                    <DollarSign className="h-5 w-5 text-muted-foreground" />
-                  </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Total Sales</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.totalSales?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Sales Count
-                      </p>
-                      <p className="text-2xl font-bold">{filteredSalesCount}</p>
-                    </div>
-                    <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Count</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5">{filteredSalesCount}</p>
                 </Card>
-
-                {/* Payment Method Cards */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Cash
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.cashtransactions?.toFixed(2) ||
-                          "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Cash</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.cashtransactions?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        M-Pesa
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.mpesa?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">M-Pesa</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.mpesa?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Credit
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.credit?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Credit</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.credit?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Wallet
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.wallet?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Wallet</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.wallet?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Hold
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.hold?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Hold</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.hold?.toFixed(2) || "0.00"}</p>
                 </Card>
-
-                <Card className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Bank
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {primaryShopCurrency}{" "}
-                        {salesReportData?.bank?.toFixed(2) || "0.00"}
-                      </p>
-                    </div>
-                  </div>
+                <Card className="p-3">
+                  <p className="text-xs font-medium text-muted-foreground">Bank</p>
+                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.bank?.toFixed(2) || "0.00"}</p>
                 </Card>
               </div>
             )}

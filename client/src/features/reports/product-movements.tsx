@@ -210,22 +210,19 @@ export default function ProductMovements() {
 
   return (
     <DashboardLayout title="Product Movements">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
+              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
             <div>
-              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600" />
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
                 Product Movements
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Track all inventory movements</p>
+              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Track all inventory movements</p>
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -249,7 +246,7 @@ export default function ProductMovements() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">Total Movements</p>
                   <p className="text-2xl font-bold text-blue-600">{totalMovements}</p>
                 </div>
-                <RotateCcw className="h-8 w-8 text-blue-600" />
+                <RotateCcw className="hidden sm:block h-7 w-7 text-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -257,10 +254,10 @@ export default function ProductMovements() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Items In</p>
-                  <p className="text-2xl font-bold text-green-600">{itemsIn}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Items In</p>
+                  <p className="text-lg sm:text-2xl font-bold text-green-600">{itemsIn}</p>
                 </div>
-                <ArrowUpRight className="h-8 w-8 text-green-600" />
+                <ArrowUpRight className="hidden sm:block h-7 w-7 text-green-600" />
               </div>
             </CardContent>
           </Card>
@@ -268,10 +265,10 @@ export default function ProductMovements() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Items Out</p>
-                  <p className="text-2xl font-bold text-red-600">{itemsOut}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Items Out</p>
+                  <p className="text-lg sm:text-2xl font-bold text-red-600">{itemsOut}</p>
                 </div>
-                <ArrowDownRight className="h-8 w-8 text-red-600" />
+                <ArrowDownRight className="hidden sm:block h-7 w-7 text-red-600" />
               </div>
             </CardContent>
           </Card>
@@ -279,8 +276,8 @@ export default function ProductMovements() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Net Movement</p>
-                  <p className={`text-2xl font-bold ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Net Movement</p>
+                  <p className={`text-lg sm:text-2xl font-bold ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {netMovement >= 0 ? '+' : ''}{netMovement}
                   </p>
                 </div>

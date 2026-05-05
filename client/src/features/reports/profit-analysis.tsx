@@ -326,7 +326,7 @@ export default function ProfitAnalysis() {
 
   return (
     <DashboardLayout title="Profit Analysis">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -335,7 +335,7 @@ export default function ProfitAnalysis() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+              <div className="text-lg sm:text-2xl font-bold truncate">{formatCurrency(totalRevenue)}</div>
               <p className="text-xs text-muted-foreground">From {filteredData.length} products</p>
             </CardContent>
           </Card>
@@ -346,7 +346,7 @@ export default function ProfitAnalysis() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalGrossProfit)}</div>
+              <div className="text-lg sm:text-2xl font-bold text-green-600 truncate">{formatCurrency(totalGrossProfit)}</div>
               <p className="text-xs text-muted-foreground">
                 {((totalGrossProfit / totalRevenue) * 100).toFixed(1)}% margin
               </p>
@@ -359,7 +359,7 @@ export default function ProfitAnalysis() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCosts)}</div>
+              <div className="text-lg sm:text-2xl font-bold text-red-600 truncate">{formatCurrency(totalCosts)}</div>
               <p className="text-xs text-muted-foreground">Cost of goods sold</p>
             </CardContent>
           </Card>

@@ -499,15 +499,10 @@ export default function Attendants() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Staff Management</h1>
-            <p className="text-sm text-gray-600">
-              Manage attendants for {selectedShop?.name || 'your shops'}
-            </p>
-          </div>
+          <h1 className="text-base sm:text-xl font-bold text-gray-900">Staff</h1>
           <Button onClick={handleCreate} size="sm" className="flex items-center gap-2 flex-shrink-0">
             <UserPlus className="h-4 w-4" />
             Add Attendant
@@ -517,50 +512,49 @@ export default function Attendants() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-purple-600">{filteredAttendants.length}</div>
-              <div className="text-sm text-gray-600">Total Staff</div>
+            <CardContent className="p-3">
+              <div className="text-lg sm:text-2xl font-bold text-purple-600">{filteredAttendants.length}</div>
+              <div className="text-xs text-gray-600">Total Staff</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{activeAttendants}</div>
-              <div className="text-sm text-gray-600">Active Staff</div>
+            <CardContent className="p-3">
+              <div className="text-lg sm:text-2xl font-bold text-green-600">{activeAttendants}</div>
+              <div className="text-xs text-gray-600">Active</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-orange-600">
+            <CardContent className="p-3">
+              <div className="text-lg sm:text-2xl font-bold text-orange-600">
                 {attendants.filter((a: Attendant) => a.status === 'on_leave').length}
               </div>
-              <div className="text-sm text-gray-600">On Leave</div>
+              <div className="text-xs text-gray-600">On Leave</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-lg sm:text-2xl font-bold text-red-600">
                 {attendants.filter((a: Attendant) => a.status === 'inactive').length}
               </div>
-              <div className="text-sm text-gray-600">Inactive</div>
+              <div className="text-xs text-gray-600">Inactive</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Search and Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Staff Members</CardTitle>
-            <CardDescription>Manage your store attendants and their permissions</CardDescription>
+          <CardHeader className="py-3">
+            <CardTitle className="text-base">Staff Members</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
                 <Input
-                  placeholder="Search by name or PIN..."
+                  placeholder="Search staff..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 h-8 text-sm"
                 />
               </div>
             </div>

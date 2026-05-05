@@ -215,54 +215,25 @@ export default function StockCountHistoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="space-y-4">
-          {/* Back Button */}
-          <div className="flex items-center">
-            <Button 
-              variant="outline" 
-              onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/count")}
-              className="flex items-center gap-2"
-            >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/count")}>
               <ArrowLeft className="h-4 w-4" />
-              {attendant ? "Back to Dashboard" : "Back to Stock Count"}
             </Button>
+            <h1 className="text-base sm:text-xl font-bold text-gray-900">Stock Count History</h1>
           </div>
-          
-          {/* Header with Title and Action Buttons */}
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Stock Count History</h1>
-              <p className="text-gray-600">View and manage past stock count sessions</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsAnalysisDialogOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <BarChart3 className="h-4 w-4" />
-                View Count Analysis
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => handleExport('csv')}
-                className="flex items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => handleExport('pdf')}
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export PDF
-              </Button>
-            </div>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" onClick={() => setIsAnalysisDialogOpen(true)}>
+              <BarChart3 className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
+              <FileText className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+              <Download className="h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
 

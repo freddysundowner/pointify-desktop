@@ -145,20 +145,15 @@ export default function PurchasePaymentPage() {
 
   return (
     <DashboardLayout title="Make Payment">
-      <div className="w-full space-y-6">
+      <div className="w-full space-y-3">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setLocation(purchasesRoute)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Purchases
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setLocation(purchasesRoute)}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Make Payment</h1>
-            <p className="text-muted-foreground">Purchase Order #{purchase.purchaseNo}</p>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold">Make Payment</h1>
+            <p className="text-xs text-muted-foreground">#{purchase.purchaseNo}</p>
           </div>
         </div>
 

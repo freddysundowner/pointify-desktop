@@ -147,22 +147,19 @@ export default function IncomeReports() {
 
   return (
     <DashboardLayout title="Income Reports">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
+              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
             <div>
-              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <DollarSign className="h-6 sm:h-8 w-6 sm:w-8 text-green-600" />
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
                 Income Reports
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Revenue analysis by payment method</p>
+              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Revenue analysis by payment method</p>
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">

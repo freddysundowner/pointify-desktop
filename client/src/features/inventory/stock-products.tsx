@@ -505,7 +505,7 @@ export default function StockProducts() {
 
   return (
     <DashboardLayout title="Stock Products">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-6">
         {/* Back button */}
         <div className="flex items-center space-x-4 mb-4">
           <Button
@@ -534,17 +534,17 @@ export default function StockProducts() {
         </div>
         {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
         {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Low Quantity
+                      <p className="text-xs sm:text-sm font-medium text-gray-600">
+                        Low Qty
                       </p>
-                      <p className="text-2xl font-bold text-orange-600">
+                      <p className="text-lg sm:text-2xl font-bold text-orange-600">
                         {lowQuantityProducts}
                       </p>
                     </div>
@@ -566,15 +566,15 @@ export default function StockProducts() {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600">
                         Out of Stock
                       </p>
-                      <p className="text-2xl font-bold text-red-600">
+                      <p className="text-lg sm:text-2xl font-bold text-red-600">
                         {outOfStockProducts}
                       </p>
                     </div>
@@ -596,14 +596,14 @@ export default function StockProducts() {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Total Stock Value
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">
+                      Stock Value
                     </p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-sm sm:text-xl font-bold text-green-600 truncate">
                       {currency} {totalStockValue.toLocaleString()}
                     </p>
                   </div>
@@ -612,14 +612,14 @@ export default function StockProducts() {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Profit Estimate
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">
+                      Profit Est.
                     </p>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-sm sm:text-xl font-bold text-purple-600 truncate">
                       {currency} {profitEstimate.toLocaleString()}
                     </p>
                   </div>
@@ -628,17 +628,16 @@ export default function StockProducts() {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center space-x-2">
-                  <Package className="h-5 w-5 text-indigo-600" />
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">
                       Total Stock
                     </p>
-                    <p className="text-2xl font-bold text-indigo-600">
+                    <p className="text-lg sm:text-2xl font-bold text-indigo-600">
                       {totalStockCount}
                     </p>
-                    <p className="text-xs text-gray-500">warehouse included</p>
                   </div>
                 </div>
               </CardContent>
@@ -648,28 +647,25 @@ export default function StockProducts() {
 
         {/* Filters and Search */}
         <Card>
-          <CardHeader>
-            <CardTitle>Product Inventory</CardTitle>
-            <CardDescription>
-              Manage your product stock levels and information
-            </CardDescription>
+          <CardHeader className="py-3 sm:py-6">
+            <CardTitle className="text-base sm:text-lg">Product Inventory</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <CardContent className="pt-0">
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <Input
-                  placeholder="Search products by name, serial number or barcode..."
+                  placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-9 h-8 text-sm"
                 />
               </div>
               
               {/* Stock Status Filter */}
               <Select value={stockFilter} onValueChange={(value: "all" | "outofstock" | "lowstock") => setStockFilter(value)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by stock status" />
+                <SelectTrigger className="w-full sm:w-44 h-8 text-sm">
+                  <SelectValue placeholder="Stock status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Products</SelectItem>
@@ -682,9 +678,9 @@ export default function StockProducts() {
                 hasAttendantPermission("stocks", "add_products") ||
                 hasAttendantPermission("products", "add")) && (
                 <Link href={addProductRoute}>
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
+                  <Button className="bg-purple-600 hover:bg-purple-700 h-8 text-sm">
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    <span className="hidden sm:inline">Add </span>Product
                   </Button>
                 </Link>
               )}
@@ -696,17 +692,17 @@ export default function StockProducts() {
                 <table className="w-full">
                   <thead className="border-b bg-gray-50">
                     <tr>
-                      <th className="text-left p-4 font-medium">Product</th>
-                      <th className="text-left p-4 font-medium">SKU</th>
-                      <th className="text-left p-4 font-medium">Selling Price</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Product</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">SKU</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Price</th>
                       {(hasPermission("inventory_view") ||
                         hasAttendantPermission(
                           "stocks",
                           "view_buying_price",
                         )) && <th className="text-left p-4 font-medium">Buying Price</th>}
-                      <th className="text-left p-4 font-medium">Quantity</th>
-                      <th className="text-left p-4 font-medium">Status</th>
-                      <th className="text-left p-4 font-medium">Actions</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Qty</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">Status</th>
+                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -756,20 +752,20 @@ export default function StockProducts() {
                             key={product._id}
                             className={`border-b hover:bg-gray-50 ${rowBgClass}`}
                           >
-                            <td className="p-4">
+                            <td className="p-2 sm:p-4">
                               <div>
-                                <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-gray-500">
+                                <p className="font-medium text-sm">{product.name}</p>
+                                <p className="text-xs text-gray-500">
                                   {(product as any).productCategoryId?.name ||
                                     product.category ||
                                     "No Category"}
                                 </p>
                               </div>
                             </td>
-                            <td className="p-4 text-sm text-gray-600">
+                            <td className="p-2 sm:p-4 text-xs text-gray-600 hidden sm:table-cell">
                               {(product as any).barcode || "-"}
                             </td>
-                            <td className="p-4 font-medium">
+                            <td className="p-2 sm:p-4 font-medium text-sm">
                               {currency}{" "}
                               {(
                                 (product as any).sellingPrice ||
@@ -782,7 +778,7 @@ export default function StockProducts() {
                                 "stocks",
                                 "view_buying_price",
                               )) && (
-                              <td className="p-4 font-medium">
+                              <td className="p-2 sm:p-4 font-medium text-sm hidden sm:table-cell">
                                 {currency}{" "}
                                 {(
                                   (product as any).buyingPrice ||
@@ -790,9 +786,9 @@ export default function StockProducts() {
                                 ).toLocaleString()}
                               </td>
                             )}
-                            <td className="p-4">
+                            <td className="p-2 sm:p-4">
                               {isVirtual ? (
-                                <span className="text-gray-500 font-medium">
+                                <span className="text-gray-500 font-medium text-sm">
                                   N/A
                                 </span>
                               ) : (
@@ -809,12 +805,12 @@ export default function StockProducts() {
                                 </span>
                               )}
                             </td>
-                            <td className="p-4">
-                              <Badge variant={stockStatus.variant}>
+                            <td className="p-2 sm:p-4 hidden sm:table-cell">
+                              <Badge variant={stockStatus.variant} className="text-xs">
                                 {stockStatus.label}
                               </Badge>
                             </td>
-                            <td className="p-4">
+                            <td className="p-2 sm:p-4">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button

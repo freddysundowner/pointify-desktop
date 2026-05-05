@@ -268,20 +268,12 @@ export default function Customers() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-2">
-            <Link href={dashboardRoute}>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Customer Management</h1>
-          </div>
+      <div className="space-y-3 sm:space-y-5">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-base sm:text-xl font-bold text-gray-900">Customers</h1>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Customer
               </Button>

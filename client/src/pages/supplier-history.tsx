@@ -541,7 +541,7 @@ export default function SupplierHistoryPage() {
 
   return (
     <DashboardLayout title={`Purchase History - ${supplierName}`}>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Button 
@@ -570,7 +570,7 @@ export default function SupplierHistoryPage() {
                 <Package className="h-4 w-4 text-blue-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-bold">{totalCount}</p>
+                  <p className="text-lg sm:text-2xl font-bold">{totalCount}</p>
                 </div>
               </div>
             </CardContent>
@@ -581,7 +581,7 @@ export default function SupplierHistoryPage() {
                 <DollarSign className="h-4 w-4 text-green-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-2xl font-bold">{shopCurrency} {totalAmount.toFixed(2)}</p>
+                  <p className="text-sm sm:text-2xl font-bold truncate">{shopCurrency} {totalAmount.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -592,7 +592,7 @@ export default function SupplierHistoryPage() {
                 <CreditCard className="h-4 w-4 text-purple-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Amount Paid</p>
-                  <p className="text-2xl font-bold">{shopCurrency} {totalPaid.toFixed(2)}</p>
+                  <p className="text-sm sm:text-2xl font-bold truncate">{shopCurrency} {totalPaid.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -603,7 +603,7 @@ export default function SupplierHistoryPage() {
                 <Receipt className="h-4 w-4 text-red-600" />
                 <div>
                   <p className="text-sm text-muted-foreground">Outstanding</p>
-                  <p className="text-2xl font-bold text-red-600">{shopCurrency} {totalOutstanding.toFixed(2)}</p>
+                  <p className="text-sm sm:text-2xl font-bold text-red-600 truncate">{shopCurrency} {totalOutstanding.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>

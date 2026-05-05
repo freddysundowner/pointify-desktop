@@ -521,24 +521,19 @@ export default function StockTransfer() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
+      <div className="space-y-3 sm:space-y-5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {userType === 'attendant' && (
-              <Button
-                variant="outline"
-                onClick={() => setLocation('/attendant/dashboard')}
-                className="flex items-center gap-2"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setLocation('/attendant/dashboard')}>
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
               </Button>
             )}
-            <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Stock Transfer</h1>
+            <h1 className="text-base sm:text-xl font-bold tracking-tight">Stock Transfer</h1>
           </div>
-          <Button onClick={() => setShowCreateForm(true)} className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Transfer
+          <Button onClick={() => setShowCreateForm(true)} size="sm" className="bg-purple-600 hover:bg-purple-700">
+            <Plus className="h-4 w-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">New </span>Transfer
           </Button>
         </div>
 

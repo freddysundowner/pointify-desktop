@@ -721,7 +721,7 @@ export default function BusinessDashboard() {
                 </CardTitle>
                 <CardDescription className="text-blue-600">Latest transactions and sales activity</CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-2 sm:p-4">
                 {/* Sales Table */}
                 {currentSales.length > 0 ? <div className="overflow-x-auto">
                   <table className="w-full">
@@ -888,7 +888,7 @@ export default function BusinessDashboard() {
                 }
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-5">
               {overdueCustomersData?.totalOverdueCustomers > 0 ? (
                 <>
                   <div className="mb-6 text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">

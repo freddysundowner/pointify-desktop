@@ -275,49 +275,35 @@ function ReturnsList() {
 
   return (
     <DashboardLayout title="Sales Returns">
-      <div className="p-4">
+      <div className="w-full">
         <div className="w-full">
-          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start gap-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                Sales Returns
-              </h1>
-              <div className="text-gray-600 dark:text-gray-400 mt-1">
-                <p className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
-                  {!startDate && !endDate ? 
-                    `Showing today's returns (${new Date().toLocaleDateString()})` : 
-                    startDate === endDate ? 
-                      `Showing returns for ${new Date(startDate).toLocaleDateString()}` :
-                      `Showing returns from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`
-                  }
-                </p>
-              </div>
-            </div>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Returns</h1>
             
             {/* Action Buttons - Permission Controlled */}
             <div className="flex gap-2 flex-shrink-0">
               <PermissionGuard permission="returns_create">
-                <Button className="flex items-center gap-2">
+                <Button size="sm" className="flex items-center gap-1.5">
                   <Plus className="h-4 w-4" />
-                  New Return
+                  <span className="hidden sm:inline">New </span>Return
                 </Button>
               </PermissionGuard>
             </div>
           </div>
 
           {/* Filters Section */}
-          <Card className="mb-4">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Filter className="h-4 w-4" />
-                <span className="font-medium">Filters</span>
+          <Card className="mb-3">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Filter className="h-3.5 w-3.5" />
+                <span className="text-sm font-medium">Filters</span>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
 
                 {/* Attendant Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Filter by Attendant</Label>
+                  <Label className="text-xs font-medium mb-1 block">Attendant</Label>
                   <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="Select attendant..." />
@@ -340,7 +326,7 @@ function ReturnsList() {
 
                 {/* Date Range */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Date Range</Label>
+                  <Label className="text-xs font-medium mb-1 block">Date Range</Label>
                   <div className="flex flex-col lg:flex-row gap-4">
                     {/* Date Inputs */}
                     <div className="flex flex-col sm:flex-row gap-3 flex-1">

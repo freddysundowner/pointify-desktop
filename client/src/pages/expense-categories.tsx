@@ -192,26 +192,20 @@ export default function ExpenseCategories() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expenses' : '/expenses'}>
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Expenses
-              </Button>
+              <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4" /></Button>
             </Link>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Expense Categories</h1>
-              <p className="text-gray-600">Manage your expense categories for better organization</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold text-gray-900">Expense Categories</h1>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Category
+              <Button size="sm">
+                <Plus className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Add </span>Category
               </Button>
             </DialogTrigger>
             <DialogContent>

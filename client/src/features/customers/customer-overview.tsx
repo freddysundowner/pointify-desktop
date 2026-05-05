@@ -1108,17 +1108,14 @@ export default function CustomerOverview() {
 
   return (
     <DashboardLayout title="Customer Overview">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-          <div className="space-y-2">
-            <Link href={customersRoute}>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Customers
-              </Button>
-            </Link>
-            <h1 className="text-2xl sm:text-3xl font-bold">Customer Overview</h1>
-          </div>
+      <div className="space-y-3 sm:space-y-5">
+        <div className="flex items-center gap-2">
+          <Link href={customersRoute}>
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-base sm:text-xl font-bold">Customer Overview</h1>
         </div>
 
         {/* Customer Header - Mobile Responsive */}

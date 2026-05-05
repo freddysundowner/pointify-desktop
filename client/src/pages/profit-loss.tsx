@@ -153,44 +153,27 @@ export default function ProfitLossPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-3 sm:p-6 space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleBack}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Profit & Loss Report</h1>
-              <p className="text-sm text-gray-600 mt-1">Financial analysis and performance metrics</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Calculator className="h-5 w-5 text-blue-600" />
-            <Badge variant="outline" className="text-blue-600 border-blue-200">
-              Financial Report
-            </Badge>
-          </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-base sm:text-xl font-bold text-gray-900">Profit & Loss</h1>
         </div>
 
         {/* Filters */}
         <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <CalendarDays className="h-5 w-5" />
-              Report Filters
+          <CardHeader className="py-2 px-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
+            <CardTitle className="text-sm flex items-center gap-2 text-blue-800">
+              <CalendarDays className="h-4 w-4" />
+              Filters
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${user ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
-              <div className="space-y-2">
-                <Label htmlFor="fromDate">From Date</Label>
+          <CardContent className="p-3">
+            <div className={`grid gap-2 grid-cols-2 ${user ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+              <div className="space-y-1">
+                <Label htmlFor="fromDate" className="text-xs">From</Label>
                 <Input
                   id="fromDate"
                   type="date"
@@ -198,8 +181,8 @@ export default function ProfitLossPage() {
                   onChange={(e) => setFromDate(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="toDate">To Date</Label>
+              <div className="space-y-1">
+                <Label htmlFor="toDate" className="text-xs">To</Label>
                 <Input
                   id="toDate"
                   type="date"
@@ -208,8 +191,8 @@ export default function ProfitLossPage() {
                 />
               </div>
               {user && (
-                <div className="space-y-2">
-                  <Label htmlFor="attendant">Attendant (Optional)</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="attendant" className="text-xs">Attendant</Label>
                   <Select value={selectedAttendant} onValueChange={setSelectedAttendant}>
                     <SelectTrigger>
                       <SelectValue placeholder="All attendants" />
@@ -225,18 +208,19 @@ export default function ProfitLossPage() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label>&nbsp;</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">&nbsp;</Label>
                 <Button 
                   onClick={handleApplyFilters}
+                  size="sm"
                   className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
                 >
-                  Apply Filters
+                  Apply
                 </Button>
               </div>
             </div>
-            <div className="mt-4 text-sm text-gray-600">
-              <p>Report Period: {formatDate(fromDate)} to {formatDate(toDate)}</p>
+            <div className="mt-2 text-xs text-gray-600">
+              <p>Period: {formatDate(fromDate)} to {formatDate(toDate)}</p>
               {selectedAttendant && selectedAttendant !== "all" && (
                 <p>Filtered by: {attendants.find(a => a._id === selectedAttendant)?.username || "Selected attendant"}</p>
               )}
@@ -263,36 +247,36 @@ export default function ProfitLossPage() {
         {profitLossData && (
           <>
             {/* Key Metrics Summary */}
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
               <Card className="shadow-lg border-0">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Gross Profit</p>
-                      <p className="text-2xl font-bold text-green-600">
+                      <p className="text-xs font-medium text-gray-600">Gross Profit</p>
+                      <p className="text-sm sm:text-2xl font-bold text-green-600 truncate">
                         {formatCurrency(profitLossData.gross)}
                       </p>
                     </div>
-                    <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <TrendingUp className="h-6 w-6 text-green-600" />
+                    <div className="hidden sm:flex h-10 w-10 bg-green-100 rounded-full items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="shadow-lg border-0">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Net Profit</p>
-                      <p className={`text-2xl font-bold ${profitLossData.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className="text-xs font-medium text-gray-600">Net Profit</p>
+                      <p className={`text-sm sm:text-2xl font-bold truncate ${profitLossData.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(profitLossData.net)}
                       </p>
                     </div>
-                    <div className={`h-12 w-12 ${profitLossData.net >= 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
+                    <div className={`hidden sm:flex h-10 w-10 ${profitLossData.net >= 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full items-center justify-center`}>
                       {profitLossData.net >= 0 ? 
-                        <TrendingUp className="h-6 w-6 text-green-600" /> : 
-                        <TrendingDown className="h-6 w-6 text-red-600" />
+                        <TrendingUp className="h-5 w-5 text-green-600" /> : 
+                        <TrendingDown className="h-5 w-5 text-red-600" />
                       }
                     </div>
                   </div>
@@ -300,32 +284,32 @@ export default function ProfitLossPage() {
               </Card>
 
               <Card className="shadow-lg border-0">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Total Sales</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-xs font-medium text-gray-600">Total Sales</p>
+                      <p className="text-sm sm:text-2xl font-bold text-blue-600 truncate">
                         {formatCurrency(profitLossData.totalProfitAndSalesValue.totalSales)}
                       </p>
                     </div>
-                    <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <ShoppingCart className="h-6 w-6 text-blue-600" />
+                    <div className="hidden sm:flex h-10 w-10 bg-blue-100 rounded-full items-center justify-center">
+                      <ShoppingCart className="h-5 w-5 text-blue-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="shadow-lg border-0">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                      <p className="text-2xl font-bold text-orange-600">
+                      <p className="text-xs font-medium text-gray-600">Total Expenses</p>
+                      <p className="text-sm sm:text-2xl font-bold text-orange-600 truncate">
                         {formatCurrency(profitLossData.totalExpenses.totalExpenses)}
                       </p>
                     </div>
-                    <div className="h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center">
-                      <Receipt className="h-6 w-6 text-orange-600" />
+                    <div className="hidden sm:flex h-10 w-10 bg-orange-100 rounded-full items-center justify-center">
+                      <Receipt className="h-5 w-5 text-orange-600" />
                     </div>
                   </div>
                 </CardContent>
@@ -333,7 +317,7 @@ export default function ProfitLossPage() {
             </div>
 
             {/* Detailed Breakdown */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-2">
               {/* Revenue Breakdown */}
               <Card className="shadow-lg border-0">
                 <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b">
@@ -342,7 +326,7 @@ export default function ProfitLossPage() {
                     Revenue Breakdown
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-3 sm:p-5 space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600">Total Sales</span>
                     <span className="font-semibold">{formatCurrency(profitLossData.totalProfitAndSalesValue.totalSales)}</span>
@@ -376,7 +360,7 @@ export default function ProfitLossPage() {
                     Cost Breakdown
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-3 sm:p-5 space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-gray-100">
                     <span className="text-gray-600">Total Purchases</span>
                     <span className="font-semibold">{formatCurrency(profitLossData.totalProfitAndSalesValue.totalPurchases)}</span>

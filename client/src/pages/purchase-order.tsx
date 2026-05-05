@@ -261,27 +261,19 @@ export default function PurchaseOrderPage() {
 
   return (
     <DashboardLayout title="Create Purchase Order">
-      <div className="p-4 w-full">
+      <div className="w-full">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/purchases')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Create Purchase Order</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Order #{purchaseOrderNumber}</p>
-            </div>
+        <div className="flex items-center gap-2 mb-3">
+          <Button variant="ghost" size="sm" onClick={() => setLocation('/purchases')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Create Purchase Order</h1>
+            <p className="text-xs text-gray-500">#{purchaseOrderNumber}</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Payment Method */}
           <Card>
             <CardHeader>

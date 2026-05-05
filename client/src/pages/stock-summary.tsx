@@ -56,9 +56,9 @@ export default function StockSummary() {
   if (!canViewStockSummary) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div>
           <Card>
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 text-center">
               <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
               <p className="text-gray-600">
@@ -89,9 +89,9 @@ export default function StockSummary() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="p-6">
+        <div>
           <Card>
-            <CardContent className="p-8 text-center">
+            <CardContent className="p-6 text-center">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-400" />
               <h3 className="text-lg font-semibold mb-2">Error Loading Data</h3>
               <p className="text-gray-600">
@@ -171,60 +171,40 @@ export default function StockSummary() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              // Determine the correct back route based on user type
-              const attendantData = localStorage.getItem('attendantData');
-              const backRoute = attendantData ? '/attendant/dashboard' : '/dashboard';
-              setLocation(backRoute);
-            }}
-            className="flex items-center gap-2"
-          >
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => { const a=localStorage.getItem('attendantData'); setLocation(a?'/attendant/dashboard':'/dashboard'); }}>
             <ArrowLeft className="h-4 w-4" />
-            Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Stock Summary</h1>
-            <p className="text-gray-600">Overview of your inventory status and value</p>
-          </div>
+          <h1 className="text-base sm:text-xl font-bold">Stock Summary</h1>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* Total Stock Value */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Stock Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium">Stock Value</CardTitle>
+              <DollarSign className="h-3.5 w-3.5 text-green-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
+            <CardContent className="p-3 pt-1">
+              <div className="text-sm sm:text-xl font-bold text-green-600 truncate">
                 {formatCurrency(stockData?.totalStockValue || 0)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Current inventory value
-              </p>
             </CardContent>
           </Card>
 
           {/* Profit Estimate */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profit Estimate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium">Profit Est.</CardTitle>
+              <TrendingUp className="h-3.5 w-3.5 text-blue-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
+            <CardContent className="p-3 pt-1">
+              <div className="text-sm sm:text-xl font-bold text-blue-600 truncate">
                 {formatCurrency(stockData?.profitEstimate || 0)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Estimated profit margin
-              </p>
             </CardContent>
           </Card>
 
@@ -235,7 +215,7 @@ export default function StockSummary() {
               <Package className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-lg sm:text-2xl font-bold">
                 {stockData?.totalstock || 0}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -249,20 +229,16 @@ export default function StockSummary() {
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigateToProducts('lowstock')}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                Low Stock 
-                <MousePointer className="h-3 w-3 text-orange-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1">
+                Low Stock <MousePointer className="h-3 w-3 text-orange-600" />
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <AlertTriangle className="h-3.5 w-3.5 text-orange-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
+            <CardContent className="p-3 pt-1">
+              <div className="text-lg sm:text-2xl font-bold text-orange-600">
                 {stockData?.lowstock || 0}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Products running low · Click to view
-              </p>
             </CardContent>
           </Card>
 
@@ -271,52 +247,39 @@ export default function StockSummary() {
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => navigateToProducts('outofstock')}
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                Out of Stock 
-                <MousePointer className="h-3 w-3 text-red-600" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-1">
+                Out of Stock <MousePointer className="h-3 w-3 text-red-600" />
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    downloadStockData('outofstock');
-                  }}
-                  className="h-7 px-2 text-xs hover:bg-red-50 border-red-200 text-red-600"
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  Download
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); downloadStockData('outofstock'); }} className="h-6 px-2 text-xs text-red-600 border-red-200">
+                  <Download className="h-3 w-3" />
                 </Button>
-                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertTriangle className="h-3.5 w-3.5 text-red-600" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
+            <CardContent className="p-3 pt-1">
+              <div className="text-lg sm:text-2xl font-bold text-red-600">
                 {stockData?.outofstock || 0}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Products out of stock · Click to view
-              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Additional Insights */}
         {stockData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Stock Health */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Stock Health Overview
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Stock Health
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pt-0">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Healthy Stock</span>
+                  <span className="text-xs">Healthy Stock</span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-green-600 border-green-600">
                       {stockData.totalstock - stockData.lowstock - stockData.outofstock} products
@@ -324,7 +287,7 @@ export default function StockSummary() {
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Low Stock Alert</span>
+                  <span className="text-xs">Low Stock Alert</span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-orange-600 border-orange-600">
                       {stockData.lowstock} products
@@ -332,7 +295,7 @@ export default function StockSummary() {
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Critical (Out of Stock)</span>
+                  <span className="text-xs">Critical (OOS)</span>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-red-600 border-red-600">
                       {stockData.outofstock} products
@@ -344,27 +307,27 @@ export default function StockSummary() {
 
             {/* Financial Insights */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
                   Financial Insights
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pt-0">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Total Investment</span>
+                  <span className="text-xs">Investment</span>
                   <span className="font-semibold">
                     {formatCurrency(stockData.totalStockValue)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Expected Profit</span>
+                  <span className="text-xs">Expected Profit</span>
                   <span className="font-semibold text-green-600">
                     {formatCurrency(stockData.profitEstimate)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Profit Margin</span>
+                  <span className="text-xs">Profit Margin</span>
                   <span className="font-semibold text-blue-600">
                     {stockData.totalStockValue > 0 
                       ? `${((stockData.profitEstimate / stockData.totalStockValue) * 100).toFixed(1)}%`

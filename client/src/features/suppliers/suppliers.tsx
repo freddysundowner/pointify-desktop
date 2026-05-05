@@ -300,25 +300,16 @@ export default function SuppliersPage() {
 
   return (
     <DashboardLayout title="Suppliers">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
             {isAttendantRoute && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBack}
-                className="flex items-center gap-2"
-              >
+              <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4" />
-                Back
               </Button>
             )}
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Suppliers</h1>
-              <p className="text-sm text-muted-foreground">Manage your suppliers and vendor relationships</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold">Suppliers</h1>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
@@ -385,20 +376,20 @@ export default function SuppliersPage() {
         {/* Search */}
         <div className="flex items-center space-x-2">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Search suppliers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 h-8 text-sm"
             />
           </div>
         </div>
 
         {/* Suppliers Table */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="py-3">
+            <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-5 w-5" />
               Suppliers ({filteredSuppliers.length})
             </CardTitle>

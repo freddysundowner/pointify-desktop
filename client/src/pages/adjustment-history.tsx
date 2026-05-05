@@ -197,24 +197,21 @@ export default function AdjustmentHistoryPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={goBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={goBack}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Adjustment History</h1>
-              <p className="text-sm text-gray-600">
-                {product?.name || 'Product'}
-              </p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold tracking-tight">Adjustment History</h1>
+              <p className="text-xs text-gray-500 truncate">{product?.name || 'Product'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button variant="outline" size="sm" onClick={fetchAdjustmentHistory} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline" size="sm" onClick={exportToCsv} disabled={adjustmentHistory.length === 0}>

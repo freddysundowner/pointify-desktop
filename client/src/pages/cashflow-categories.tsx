@@ -222,28 +222,20 @@ export default function CashflowCategories() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setLocation(attendant ? '/attendant/cashflow' : '/cashflow')}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Cashflow
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? '/attendant/cashflow' : '/cashflow')}>
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Cashflow Categories</h1>
-              <p className="text-gray-600">Manage categories for cash inflows and outflows</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold text-gray-900">Cashflow Categories</h1>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={handleAddNew} className="w-full sm:w-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Category
+              <Button onClick={handleAddNew} size="sm">
+                <Plus className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Add </span>Category
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -300,7 +292,7 @@ export default function CashflowCategories() {
               <Settings className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{categories.length}</div>
+              <div className="text-lg sm:text-2xl font-bold">{categories.length}</div>
             </CardContent>
           </Card>
           
@@ -310,7 +302,7 @@ export default function CashflowCategories() {
               <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{cashinCategories.length}</div>
+              <div className="text-lg sm:text-2xl font-bold text-green-600">{cashinCategories.length}</div>
             </CardContent>
           </Card>
           
@@ -320,7 +312,7 @@ export default function CashflowCategories() {
               <TrendingDown className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{cashoutCategories.length}</div>
+              <div className="text-lg sm:text-2xl font-bold text-red-600">{cashoutCategories.length}</div>
             </CardContent>
           </Card>
           
@@ -330,7 +322,7 @@ export default function CashflowCategories() {
               <DollarSign className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{currency} {categories?.reduce((sum: number, cat: any) => sum + (cat.amount || 0), 0).toLocaleString() || '0'}</div>
+              <div className="text-lg sm:text-2xl font-bold">{currency} {categories?.reduce((sum: number, cat: any) => sum + (cat.amount || 0), 0).toLocaleString() || '0'}</div>
             </CardContent>
           </Card>
         </div>

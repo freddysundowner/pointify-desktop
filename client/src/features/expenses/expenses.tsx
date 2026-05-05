@@ -396,35 +396,33 @@ export default function Expenses() {
 
   return (
     <DashboardLayout title="Expenses">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header with Add Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div className="flex items-center gap-3">
             {attendant && (
               <Link href={dashboardRoute}>
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4" />
                 </Button>
               </Link>
             )}
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold">Expenses</h2>
-              <p className="text-sm text-gray-600">Manage and track your business expenses</p>
+              <h2 className="text-lg sm:text-2xl font-bold">Expenses</h2>
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
             <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expense-categories' : '/expense-categories'}>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Manage </span>Categories
+              <Button variant="outline" size="sm" className="h-8 text-xs">
+                <Settings className="w-3.5 h-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Categories</span>
               </Button>
             </Link>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleAddNew} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Expense
+                <Button onClick={handleAddNew} size="sm" className="h-8 text-xs">
+                  <Plus className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Add </span>Expense
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
@@ -553,33 +551,30 @@ export default function Expenses() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="text-xs sm:text-sm text-gray-600">Total Expenses</div>
-              <div className="text-2xl font-bold">{expenseStats?.summary?.totalCount || 0}</div>
-              <div className="text-xs text-gray-500 mt-1">Recorded expenses</div>
+            <CardContent className="p-3">
+              <div className="text-xs text-gray-600">Expenses</div>
+              <div className="text-lg sm:text-2xl font-bold">{expenseStats?.summary?.totalCount || 0}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Total Amount</div>
-              <div className="text-2xl font-bold">{currency} {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
-              <div className="text-xs text-gray-500 mt-1">Total spent</div>
+            <CardContent className="p-3">
+              <div className="text-xs text-gray-600">Total Amount</div>
+              <div className="text-base sm:text-2xl font-bold truncate">{currency} {(expenseStats?.summary?.totalAmount || 0).toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Active Categories</div>
-              <div className="text-2xl font-bold">{expenseStats?.byCategory?.length || 0}</div>
-              <div className="text-xs text-gray-500 mt-1">Categories with expenses</div>
+            <CardContent className="p-3">
+              <div className="text-xs text-gray-600">Categories</div>
+              <div className="text-lg sm:text-2xl font-bold">{expenseStats?.byCategory?.length || 0}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Top Category</div>
-              <div className="text-lg font-bold">{expenseStats?.byCategory?.[0]?.category || 'None'}</div>
-              <div className="text-sm text-gray-500">{currency} {(expenseStats?.byCategory?.[0]?.totalAmount || 0).toLocaleString()}</div>
+            <CardContent className="p-3">
+              <div className="text-xs text-gray-600">Top Category</div>
+              <div className="text-sm sm:text-lg font-bold truncate">{expenseStats?.byCategory?.[0]?.category || 'None'}</div>
+              <div className="text-xs text-gray-500 truncate">{currency} {(expenseStats?.byCategory?.[0]?.totalAmount || 0).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -588,7 +583,7 @@ export default function Expenses() {
         {expenseStats?.byCategory && expenseStats.byCategory.length > 0 && (
           <Card>
             <CardHeader 
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              className="cursor-pointer hover:bg-gray-50 transition-colors py-3"
               onClick={() => setShowCategoryBreakdown(!showCategoryBreakdown)}
             >
               <div className="flex items-center justify-between">

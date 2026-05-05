@@ -219,22 +219,19 @@ export default function StockReport() {
 
   return (
     <DashboardLayout title="Stock Report">
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
+              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
             <div>
-              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Package className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600" />
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Package className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
                 Stock Report
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Comprehensive inventory analysis</p>
+              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Comprehensive inventory analysis</p>
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">

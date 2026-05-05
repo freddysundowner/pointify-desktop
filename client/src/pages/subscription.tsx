@@ -394,7 +394,7 @@ export default function SubscriptionPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Choose Your Plan</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Choose Your Plan</h1>
           <p className="text-sm text-gray-600 mt-2">Select the perfect subscription for your business</p>
         </div>
         <Button 
@@ -532,7 +532,7 @@ export default function SubscriptionPage() {
     <>
       <div className="flex items-start justify-between mb-6 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Select Your Shops</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Select Your Shops</h1>
           <p className="text-sm text-gray-600 mt-2">
             Choose up to {selectedPlan.maxShops} shops for your {selectedPlan.name} plan
           </p>
@@ -636,7 +636,7 @@ export default function SubscriptionPage() {
     <>
       <div className="flex items-start justify-between mb-6 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Payment Details</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Payment Details</h1>
           <p className="text-sm text-gray-600 mt-2">Complete your subscription purchase</p>
         </div>
         <Button 

@@ -120,7 +120,7 @@ export default function OrdersPage() {
   
   return (
     <DashboardLayout title="Orders">
-      <div className="space-y-6 w-full">
+      <div className="space-y-3 sm:space-y-5 w-full">
 
         {/* Filters */}
         <Card>

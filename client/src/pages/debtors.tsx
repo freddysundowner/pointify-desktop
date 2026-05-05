@@ -163,17 +163,12 @@ export default function DebtorsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Customer Debtors</h1>
-            <p className="text-muted-foreground">
-              Track customers with outstanding debt and manage credit accounts
-            </p>
-          </div>
-          <Button onClick={() => refetch()} variant="outline">
-            Refresh Data
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-base sm:text-xl font-bold tracking-tight">Debtors</h1>
+          <Button onClick={() => refetch()} variant="outline" size="sm">
+            Refresh
           </Button>
         </div>
 
@@ -186,7 +181,7 @@ export default function DebtorsPage() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-lg sm:text-2xl font-bold text-red-600">
                   {formatCurrency(debtorsData.total || 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -199,33 +194,16 @@ export default function DebtorsPage() {
 
         {/* Debtors List */}
         <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle>
-                  Debtors List ({filteredDebtors.length})
-                </CardTitle>
-                <CardDescription>
-                  Customers with outstanding debt requiring attention
-                </CardDescription>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-80">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search by name, phone, or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+          <CardHeader className="py-3">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Debtors ({filteredDebtors.length})</CardTitle>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
+                  <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-8 text-sm w-44" />
                 </div>
-                <Button
-                  onClick={handleDownloadReport}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Report
+                <Button onClick={handleDownloadReport} variant="outline" size="sm">
+                  <Download className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

@@ -672,29 +672,21 @@ export default function CashFlow() {
 
   return (
     <DashboardLayout title="Cash Flow">
-      <div className="space-y-6">
-        {/* Header with Back Button for Attendants */}
-        <div className="flex items-center justify-center relative">
+      <div className="space-y-3 sm:space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           {attendant && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation('/attendant/dashboard')}
-              className="absolute left-0 flex items-center gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setLocation('/attendant/dashboard')}>
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
             </Button>
           )}
-          <div className="text-center">
-            <p className="text-gray-600">{shopName}</p>
-          </div>
+          <p className="text-sm font-medium text-gray-600 mx-auto">{shopName}</p>
         </div>
 
         {/* Cash at Hand - moved to top */}
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-600 mb-2">Cash at Hand</p>
-          <h3 className={`text-2xl sm:text-4xl font-bold ${summaryData.cashathand >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className="text-xs font-medium text-gray-600 mb-1">Cash at Hand</p>
+          <h3 className={`text-xl sm:text-4xl font-bold ${summaryData.cashathand >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {summaryData.cashathand >= 0 ? '+' : ''}{summaryData.cashathand.toLocaleString()}
           </h3>
         </div>
@@ -830,13 +822,13 @@ export default function CashFlow() {
         </div>
 
         {/* Cash Flow Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
           <Card>
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">Cash In</p>
-                  <h3 className="text-lg sm:text-2xl font-bold text-green-600">
+                  <p className="text-xs sm:text-xs font-medium text-gray-600">Cash In</p>
+                  <h3 className="text-lg sm:text-base sm:text-xl font-bold text-green-600">
                     +{summaryData.cashintotal.toLocaleString()}
                   </h3>
                 </div>
@@ -849,8 +841,8 @@ export default function CashFlow() {
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">Cash Out</p>
-                  <h3 className="text-lg sm:text-2xl font-bold text-red-600">
+                  <p className="text-xs sm:text-xs font-medium text-gray-600">Cash Out</p>
+                  <h3 className="text-lg sm:text-base sm:text-xl font-bold text-red-600">
                     -{summaryData.cashoutotal.toLocaleString()}
                   </h3>
                 </div>
@@ -863,8 +855,8 @@ export default function CashFlow() {
             <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">Net Flow</p>
-                  <h3 className={`text-lg sm:text-2xl font-bold ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className="text-xs sm:text-xs font-medium text-gray-600">Net Flow</p>
+                  <h3 className={`text-lg sm:text-base sm:text-xl font-bold ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {netCashflow >= 0 ? '+' : ''}{netCashflow.toLocaleString()}
                   </h3>
                 </div>
@@ -875,7 +867,7 @@ export default function CashFlow() {
         </div>
 
         {/* Additional Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
           <Card 
             className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 border-2 hover:border-blue-300"
             onClick={(e) => {
@@ -885,47 +877,43 @@ export default function CashFlow() {
               setLocation(`${salesRoute}?startDate=${startDate}&endDate=${endDate}`);
             }}
           >
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Sales</p>
-                  <h3 className="text-2xl font-bold text-blue-600 hover:text-blue-700">
+                  <p className="text-xs font-medium text-gray-600">Total Sales</p>
+                  <h3 className="text-base sm:text-xl font-bold text-blue-600">
                     {summaryData.totalSales.toLocaleString()}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">Click to view details</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-8 h-8 text-blue-500" />
-                  <ArrowUpRight className="w-4 h-4 text-gray-400" />
-                </div>
+                <TrendingUp className="w-5 h-5 text-blue-500 shrink-0" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Purchases</p>
-                  <h3 className="text-2xl font-bold text-orange-600">
+                  <p className="text-xs font-medium text-gray-600">Total Purchases</p>
+                  <h3 className="text-base sm:text-xl font-bold text-orange-600">
                     {summaryData.purchasestotal.toLocaleString()}
                   </h3>
                 </div>
-                <TrendingDown className="w-8 h-8 text-orange-500" />
+                <TrendingDown className="w-5 h-5 text-orange-500 shrink-0" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                  <h3 className="text-2xl font-bold text-purple-600">
+                  <p className="text-xs font-medium text-gray-600">Total Expenses</p>
+                  <h3 className="text-base sm:text-xl font-bold text-purple-600">
                     {summaryData.totalExpenses.toLocaleString()}
                   </h3>
                 </div>
-                <DollarSign className="w-8 h-8 text-purple-500" />
+                <DollarSign className="w-5 h-5 text-purple-500" />
               </div>
             </CardContent>
           </Card>

@@ -587,9 +587,9 @@ export default function PurchasesList() {
   if (error) {
     return (
       <DashboardLayout title="Purchase Reports">
-        <div className="p-4 w-full">
-          <div className="mb-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+        <div className="p-0 sm:p-4 w-full">
+          <div className="mb-3">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
               <div className="flex items-center gap-4">
                 <Button
                   variant="outline"
@@ -635,27 +635,14 @@ export default function PurchasesList() {
 
   return (
     <DashboardLayout title="Purchase Reports">
-      <div className="p-4 w-full">
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBackClick}
-                className="flex items-center gap-2"
-              >
+      <div className="w-full">
+        <div className="mb-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleBackClick}>
                 <ArrowLeft className="h-4 w-4" />
-                Back
               </Button>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                  Purchase Reports
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Shop One
-                </p>
-              </div>
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Purchases</h1>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button 
@@ -679,12 +666,12 @@ export default function PurchasesList() {
         </div>
 
         {/* Filters Section */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
+        <Card className="mb-3">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <span className="font-medium">Filters</span>
+                <Filter className="h-3.5 w-3.5" />
+                <span className="text-sm font-medium">Filters</span>
               </div>
               <Button
                 variant="outline"
@@ -697,10 +684,10 @@ export default function PurchasesList() {
               </Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Search Bar - Full Width */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">Search</Label>
+                <Label className="text-xs font-medium mb-1 block">Search</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -731,12 +718,10 @@ export default function PurchasesList() {
               </div>
 
               {/* Filter Row - Horizontal Layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                 {/* Status Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Status
-                  </Label>
+                  <Label className="text-xs font-medium mb-1 block">Status</Label>
                   <Select
                     value={statusFilter}
                     onValueChange={handleStatusFilter}
@@ -754,9 +739,7 @@ export default function PurchasesList() {
 
                 {/* Supplier Filter */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">
-                    Supplier
-                  </Label>
+                  <Label className="text-xs font-medium mb-1 block">Supplier</Label>
                   <Select
                     value={supplierFilter}
                     onValueChange={handleSupplierFilter}
@@ -778,9 +761,7 @@ export default function PurchasesList() {
                 {/* Attendant Filter - Only show for admins */}
                 {isAdmin && (
                   <div>
-                    <Label className="text-sm font-medium mb-2 block">
-                      Attendant
-                    </Label>
+                    <Label className="text-xs font-medium mb-1 block">Attendant</Label>
                     <Select
                       value={attendantFilter}
                       onValueChange={handleAttendantFilter}
@@ -803,9 +784,7 @@ export default function PurchasesList() {
 
               {/* Date Range Section */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">
-                  Date Range
-                </Label>
+                <Label className="text-xs font-medium mb-1 block">Date Range</Label>
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex flex-col sm:flex-row gap-3 flex-1">
                     <div className="flex-1">

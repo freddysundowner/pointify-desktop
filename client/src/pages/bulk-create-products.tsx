@@ -257,22 +257,22 @@ export default function BulkCreateProducts() {
               Create 120 diverse products across 10 categories for testing stock count functionality
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{productTemplates.length}</div>
+                <div className="text-lg sm:text-2xl font-bold text-blue-600">{productTemplates.length}</div>
                 <div className="text-sm text-gray-600">Total Products</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{successCount}</div>
+                <div className="text-lg sm:text-2xl font-bold text-green-600">{successCount}</div>
                 <div className="text-sm text-gray-600">Created</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{failureCount}</div>
+                <div className="text-lg sm:text-2xl font-bold text-red-600">{failureCount}</div>
                 <div className="text-sm text-gray-600">Failed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{currentProduct}</div>
+                <div className="text-lg sm:text-2xl font-bold text-purple-600">{currentProduct}</div>
                 <div className="text-sm text-gray-600">Current</div>
               </div>
             </div>
