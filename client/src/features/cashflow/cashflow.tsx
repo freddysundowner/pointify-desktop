@@ -284,6 +284,7 @@ export default function CashFlow() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const salesRoute = useNavigationRoute('sales');
+  const dashboardRoute = useNavigationRoute('dashboard');
 
   // Get effective shop ID - use attendant's shop if attendant
   const effectiveShopId = attendant 
@@ -674,13 +675,11 @@ export default function CashFlow() {
     <DashboardLayout title="Cash Flow">
       <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          {attendant && (
-            <Button variant="ghost" size="sm" onClick={() => setLocation('/attendant/dashboard')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <p className="text-sm font-medium text-gray-600 mx-auto">{shopName}</p>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => setLocation(dashboardRoute)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <p className="text-sm font-medium text-gray-600">{shopName}</p>
         </div>
 
         {/* Cash at Hand - moved to top */}
