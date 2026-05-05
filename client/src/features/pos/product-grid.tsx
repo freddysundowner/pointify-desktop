@@ -1403,14 +1403,25 @@ export default function ProductGrid({
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <Input
+                                key={item.quantity}
                                 type="number"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const newQuantity = parseInt(e.target.value) || 1;
-                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                  onUpdateQuantity(item.id, Math.max(1, newQuantity), productData);
+                                defaultValue={item.quantity}
+                                onBlur={(e) => {
+                                  const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
+                                  if (newQuantity !== item.quantity) {
+                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                    onUpdateQuantity(item.id, newQuantity, productData);
+                                  }
                                 }}
-                                className="w-12 h-6 p-1 text-center text-xs font-semibold border-gray-300"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const newQuantity = Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1);
+                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                    onUpdateQuantity(item.id, newQuantity, productData);
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                                className="w-14 h-7 p-1 text-center text-xs font-semibold border-purple-300 focus:border-purple-500 rounded"
                                 min="1"
                               />
                               <Button
@@ -1503,14 +1514,25 @@ export default function ProductGrid({
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <Input
+                                key={item.quantity}
                                 type="number"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const newQuantity = parseInt(e.target.value) || 1;
-                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                  onUpdateQuantity(item.id, Math.max(1, newQuantity), productData);
+                                defaultValue={item.quantity}
+                                onBlur={(e) => {
+                                  const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
+                                  if (newQuantity !== item.quantity) {
+                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                    onUpdateQuantity(item.id, newQuantity, productData);
+                                  }
                                 }}
-                                className="w-12 h-7 p-1 text-center text-sm font-semibold border-gray-300"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const newQuantity = Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1);
+                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                    onUpdateQuantity(item.id, newQuantity, productData);
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                                className="w-14 h-7 p-1 text-center text-sm font-semibold border-purple-300 focus:border-purple-500 rounded"
                                 min="1"
                               />
                               <Button

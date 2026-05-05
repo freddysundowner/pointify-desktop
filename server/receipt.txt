@@ -1,12 +1,13 @@
- Riverside cosmetics  branch 1
+              ccc
+        Nyahururu, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC867555
-Date: May 1, 2026, 01:37 PM
+Receipt #: REC753128
+Date: May 5, 2026, 12:55 PM
 Customer: Walk-in
-Attendant: Fredrick
+Attendant: test
 -------------------------------
-white jeans
+test one
  srn: 
   1 x KES 200.00 = KES200.00
 -------------------------------
