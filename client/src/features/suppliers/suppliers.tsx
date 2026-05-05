@@ -302,7 +302,7 @@ export default function SuppliersPage() {
     <DashboardLayout title="Suppliers">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-4">
             {isAttendantRoute && (
               <Button
@@ -312,17 +312,17 @@ export default function SuppliersPage() {
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
+                Back
               </Button>
             )}
             <div>
-              <h1 className="text-2xl font-bold">Suppliers</h1>
-              <p className="text-muted-foreground">Manage your suppliers and vendor relationships</p>
+              <h1 className="text-xl sm:text-2xl font-bold">Suppliers</h1>
+              <p className="text-sm text-muted-foreground">Manage your suppliers and vendor relationships</p>
             </div>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Supplier
               </Button>
@@ -422,7 +422,40 @@ export default function SuppliersPage() {
                 )}
               </div>
             ) : (
-              <Table>
+              <>
+                {/* Mobile card view */}
+                <div className="block sm:hidden space-y-3">
+                  {filteredSuppliers.map((supplier: Supplier) => (
+                    <div key={supplier._id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold">{supplier.name}</p>
+                          {supplier.address && <p className="text-xs text-muted-foreground">{supplier.address}</p>}
+                        </div>
+                        {supplier.wallet !== undefined && supplier.wallet !== null && (
+                          <Badge variant={supplier.wallet > 0 ? "destructive" : "default"} className="text-xs ml-2">
+                            {supplier.wallet.toFixed(2)}
+                          </Badge>
+                        )}
+                      </div>
+                      {supplier.phoneNumber && <p className="text-sm text-gray-600 flex items-center gap-1"><Phone className="h-3 w-3" />{supplier.phoneNumber}</p>}
+                      {supplier.email && <p className="text-sm text-gray-600 flex items-center gap-1"><Mail className="h-3 w-3" />{supplier.email}</p>}
+                      <div className="flex gap-2 pt-1">
+                        {supplier.wallet && supplier.wallet < 0 && (
+                          <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} className="bg-green-600 hover:bg-green-700 h-7 px-2 text-xs">
+                            <CreditCard className="h-3 w-3 mr-1" />Pay
+                          </Button>
+                        )}
+                        <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} className="h-7 px-2"><History className="h-3 w-3" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} className="h-7 px-2"><Edit className="h-3 w-3" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} className="h-7 px-2"><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Company</TableHead>
@@ -483,48 +516,22 @@ export default function SuppliersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {/* Pay Debt button - only show if supplier has debt */}
                           {supplier.wallet && supplier.wallet < 0 && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handlePayDebt(supplier)}
-                              title={`Pay Debt: ${Math.abs(supplier.wallet).toFixed(2)}`}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
+                            <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} title={`Pay Debt: ${Math.abs(supplier.wallet).toFixed(2)}`} className="bg-green-600 hover:bg-green-700">
                               <CreditCard className="h-3 w-3" />
                             </Button>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewHistory(supplier)}
-                            title="View Purchase History"
-                          >
-                            <History className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(supplier)}
-                            title="Edit Supplier"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(supplier)}
-                            title="Delete Supplier"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} title="View Purchase History"><History className="h-3 w-3" /></Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} title="Edit Supplier"><Edit className="h-3 w-3" /></Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} title="Delete Supplier"><Trash2 className="h-3 w-3" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
+              </>
             )}
           </CardContent>
         </Card>

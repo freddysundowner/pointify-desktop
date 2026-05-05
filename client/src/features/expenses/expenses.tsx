@@ -398,31 +398,31 @@ export default function Expenses() {
     <DashboardLayout title="Expenses">
       <div className="space-y-6">
         {/* Header with Add Button */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3">
             {attendant && (
               <Link href={dashboardRoute}>
                 <Button variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  Back
                 </Button>
               </Link>
             )}
             <div>
-              <h2 className="text-2xl font-bold">Expenses</h2>
-              <p className="text-gray-600">Manage and track your business expenses</p>
+              <h2 className="text-xl sm:text-2xl font-bold">Expenses</h2>
+              <p className="text-sm text-gray-600">Manage and track your business expenses</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expense-categories' : '/expense-categories'}>
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <Settings className="w-4 h-4 mr-2" />
-                Manage Categories
+                <span className="hidden sm:inline">Manage </span>Categories
               </Button>
             </Link>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleAddNew}>
+                <Button onClick={handleAddNew} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
                 </Button>
@@ -432,7 +432,7 @@ export default function Expenses() {
                 <DialogTitle>{selectedExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="description">Description</Label>
                     <Input
@@ -553,10 +553,10 @@ export default function Expenses() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-gray-600">Total Expenses</div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xs sm:text-sm text-gray-600">Total Expenses</div>
               <div className="text-2xl font-bold">{expenseStats?.summary?.totalCount || 0}</div>
               <div className="text-xs text-gray-500 mt-1">Recorded expenses</div>
             </CardContent>
@@ -632,7 +632,7 @@ export default function Expenses() {
 
         {/* Filters */}
         <div className="space-y-3">
-          <div className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Start Date:</label>
               <input
@@ -710,6 +710,7 @@ export default function Expenses() {
         {/* Expenses Table */}
         <Card>
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -809,6 +810,7 @@ export default function Expenses() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 

@@ -1024,7 +1024,7 @@ function SalesList() {
     <DashboardLayout title="Sales Reports">
       <div className="p-4">
         <div className="w-full">
-          <div className="mb-6 flex justify-between items-start">
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start gap-3">
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -1036,11 +1036,11 @@ function SalesList() {
                 Back
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   Sales Reports
                 </h1>
                 <div className="text-gray-600 dark:text-gray-400 mt-1">
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  <p className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
                     {!startDate && !endDate
                       ? "Showing all sales transactions"
                       : startDate === endDate
@@ -1052,7 +1052,7 @@ function SalesList() {
             </div>
 
             {/* Action Buttons - Permission Controlled */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <PermissionGuard permission="create_sales">
                 <Button
                   className="flex items-center gap-2"
@@ -1452,7 +1452,52 @@ function SalesList() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="overflow-x-auto">
+              {/* Mobile card view */}
+              <div className="block sm:hidden space-y-2">
+                {isLoading ? (
+                  <div className="py-8 text-center text-sm text-gray-500">Loading sales data...</div>
+                ) : paginatedData.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-gray-500">No sales found</div>
+                ) : paginatedData.map((sale: any) => (
+                  <div key={sale.id} className="border rounded-lg p-3 space-y-2 bg-white">
+                    <div className="flex items-center justify-between">
+                      <button onClick={() => handleViewSale(sale)} className="font-mono text-sm font-semibold text-blue-600 hover:underline">
+                        #{sale.receiptNo}
+                      </button>
+                      <Badge variant={getStatusBadgeVariant(sale.status)} className="text-xs">
+                        {sale.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600 truncate mr-2">{sale.customerName}</span>
+                      <span className="font-semibold flex-shrink-0">{getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{new Date(sale.saleDate).toLocaleDateString()}</span>
+                      <span className="capitalize">{sale.paymentTag}</span>
+                    </div>
+                    {(hasPermission("sales_edit") || hasPermission("sales_delete") || hasPermission("sales_return")) && (
+                      <div className="pt-1 flex gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">Actions</Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewSale(sale)}><Eye className="mr-2 h-4 w-4" />View Receipt</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openQuotationDialog(sale)}><FileText className="mr-2 h-4 w-4" />Quotation</DropdownMenuItem>
+                            {sale.status === "hold" && <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}><Receipt className="mr-2 h-4 w-4" />Invoice</DropdownMenuItem>}
+                            {sale.status === "hold" && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600"><CheckCircle className="mr-2 h-4 w-4" />Complete Sale</DropdownMenuItem></>}
+                            {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && <DropdownMenuItem onClick={() => handleReturnSale(sale)}><RefreshCw className="mr-2 h-4 w-4" />Return Sale</DropdownMenuItem>}
+                            {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" />Delete Sale</DropdownMenuItem></>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">

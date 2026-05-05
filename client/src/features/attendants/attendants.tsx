@@ -501,21 +501,21 @@ export default function Attendants() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-            <p className="text-gray-600">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Staff Management</h1>
+            <p className="text-sm text-gray-600">
               Manage attendants for {selectedShop?.name || 'your shops'}
             </p>
           </div>
-          <Button onClick={handleCreate} className="flex items-center gap-2">
+          <Button onClick={handleCreate} size="sm" className="flex items-center gap-2 flex-shrink-0">
             <UserPlus className="h-4 w-4" />
             Add Attendant
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-purple-600">{filteredAttendants.length}</div>
@@ -574,7 +574,31 @@ export default function Attendants() {
                 {searchQuery ? 'No attendants found matching your search' : 'No attendants found for this shop'}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                {/* Mobile card view */}
+                <div className="block sm:hidden space-y-3">
+                  {filteredAttendants.map((attendant: Attendant) => (
+                    <div key={attendant._id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-900">{attendant.username}</p>
+                          <p className="text-xs text-gray-500 font-mono">PIN: {attendant.uniqueDigits}</p>
+                        </div>
+                        <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'} className="text-xs">
+                          {attendant.status || 'active'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-500">{getShopName(attendant.shopId)}</p>
+                      <div className="flex gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 px-2 text-blue-600"><Settings className="h-3 w-3" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEdit(attendant)} className="h-7 px-2 text-blue-600"><Edit className="h-3 w-3" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(attendant)} className="h-7 px-2 text-red-600"><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -589,63 +613,28 @@ export default function Attendants() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredAttendants.map((attendant: Attendant) => (
                       <tr key={attendant._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{attendant.username}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-mono text-gray-500">{attendant.uniqueDigits}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{getShopName(attendant.shopId)}</div></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-500">{attendant.last_seen ? new Date(attendant.last_seen).toLocaleString() : 'Never'}</div></td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{attendant.username}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-mono text-gray-500">{attendant.uniqueDigits}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{getShopName(attendant.shopId)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">
-                            {attendant.last_seen ? new Date(attendant.last_seen).toLocaleString() : 'Never'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge 
-                            variant={
-                              attendant.status === 'active' || !attendant.status ? 'default' :
-                              attendant.status === 'on_leave' ? 'secondary' : 'destructive'
-                            }
-                          >
+                          <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'}>
                             {attendant.status || 'active'}
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditPermissions(attendant)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Settings className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(attendant)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(attendant)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="text-blue-600 hover:text-blue-900"><Settings className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="text-blue-600 hover:text-blue-900"><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="text-red-600 hover:text-red-900"><Trash2 className="h-4 w-4" /></Button>
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

@@ -534,7 +534,7 @@ export default function StockProducts() {
         </div>
         {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
         {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">

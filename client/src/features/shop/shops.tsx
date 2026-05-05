@@ -107,16 +107,16 @@ export default function Shops() {
       <div className="h-full bg-gray-50">
         {/* Header Section */}
         <div className="bg-white border-b shadow-sm">
-          <div className="px-8 py-6">
-            <div className="flex items-center justify-between">
+          <div className="px-4 sm:px-8 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Shops</h1>
-                <p className="text-lg text-gray-600 mt-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Shops</h1>
+                <p className="text-sm sm:text-lg text-gray-600 mt-1">
                   Manage all your shop locations and settings
                 </p>
               </div>
               <Link href="/shop-setup">
-                <Button className="bg-purple-600 hover:bg-purple-700">
+                <Button size="sm" className="bg-purple-600 hover:bg-purple-700 flex-shrink-0">
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Shop
                 </Button>
@@ -126,7 +126,7 @@ export default function Shops() {
         </div>
 
         {/* Content Section */}
-        <div className="px-8 py-8">
+        <div className="px-4 sm:px-8 py-4 sm:py-8">
           {/* Search Bar */}
           <div className="mb-8">
             <div className="relative max-w-md">
