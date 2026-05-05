@@ -1216,21 +1216,21 @@ function SalesList() {
               <div className="px-4 py-3 space-y-4">
                 {/* Payment / Status */}
                 <div>
-                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Payment Method</Label>
-                  <div className="divide-y divide-gray-100 border rounded-lg overflow-hidden">
-                    {(["all","cash","mpesa","credit","wallet","bank","hold"] as const).map((v) => (
-                      <button
-                        key={v}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                          statusFilter === v ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                        onClick={() => handleStatusFilter(v)}
-                      >
-                        <span className="capitalize">{v === "all" ? "All Transactions" : v === "mpesa" ? "M-Pesa" : v}</span>
-                        {statusFilter === v && <Check className="h-3.5 w-3.5 text-purple-600" />}
-                      </button>
-                    ))}
-                  </div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Transaction Type</Label>
+                  <Select value={statusFilter} onValueChange={(v) => handleStatusFilter(v)}>
+                    <SelectTrigger className="h-9 text-sm w-full">
+                      <SelectValue placeholder="All Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="mpesa">M-Pesa</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                      <SelectItem value="wallet">Wallet</SelectItem>
+                      <SelectItem value="bank">Bank</SelectItem>
+                      <SelectItem value="hold">Hold</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Attendant (admin only) */}
