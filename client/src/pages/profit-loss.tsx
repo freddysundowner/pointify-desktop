@@ -156,7 +156,7 @@ export default function ProfitLossPage() {
       <div className="space-y-3 sm:space-y-5">
         {/* Header */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-base sm:text-xl font-bold text-gray-900">Profit & Loss</h1>
@@ -400,10 +400,10 @@ export default function ProfitLossPage() {
                   Profit Analysis
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid gap-6 md:grid-cols-3">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg">
-                    <h3 className="font-semibold text-blue-800 mb-3">Sales Performance</h3>
+              <CardContent className="p-3">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg">
+                    <h3 className="text-xs font-semibold text-blue-800 mb-2">Sales Performance</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-blue-600">Gross Profit</span>
@@ -421,8 +421,8 @@ export default function ProfitLossPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg">
-                    <h3 className="font-semibold text-green-800 mb-3">Final Profit</h3>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg">
+                    <h3 className="text-xs font-semibold text-green-800 mb-2">Final Profit</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-green-600">Net Profit</span>
@@ -442,8 +442,8 @@ export default function ProfitLossPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg">
-                    <h3 className="font-semibold text-purple-800 mb-3">Tax Summary</h3>
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg">
+                    <h3 className="text-xs font-semibold text-purple-800 mb-2">Tax Summary</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-purple-600">Total Taxes</span>

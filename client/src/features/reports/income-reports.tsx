@@ -147,246 +147,137 @@ export default function IncomeReports() {
 
   return (
     <DashboardLayout title="Income Reports">
-      <div className="space-y-3 sm:space-y-5">
+      <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
-            <div>
-              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
-                Income Reports
-              </h1>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Revenue analysis by payment method</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold leading-tight">Income Reports</h1>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={exportToExcel}>
-              <Download className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>Excel
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToExcel}>
+              <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
             </Button>
-            <Button size="sm" onClick={exportToPDF}>
-              <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>PDF
+            <Button size="sm" className="h-8 text-xs" onClick={exportToPDF}>
+              <FileText className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">PDF</span>
             </Button>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Income</p>
-                  <p className="text-2xl font-bold">KES {totalIncome.toLocaleString()}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-600" />
-              </div>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+          <Card className="sm:col-span-1">
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Total</div>
+              <div className="text-xs sm:text-sm font-bold truncate">KES {totalIncome.toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Cash Sales</p>
-                <p className="text-xl font-bold text-green-600">KES {totalCash.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((totalCash/totalIncome)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Cash</div>
+              <div className="text-xs font-bold text-green-600 truncate">KES {totalCash.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((totalCash/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Credit Sales</p>
-                <p className="text-xl font-bold text-blue-600">KES {totalCredit.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((totalCredit/totalIncome)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Credit</div>
+              <div className="text-xs font-bold text-blue-600 truncate">KES {totalCredit.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((totalCredit/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Wallet Payments</p>
-                <p className="text-xl font-bold text-purple-600">KES {totalWallet.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((totalWallet/totalIncome)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Wallet</div>
+              <div className="text-xs font-bold text-purple-600 truncate">KES {totalWallet.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((totalWallet/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Card Payments</p>
-                <p className="text-xl font-bold text-orange-600">KES {totalCard.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((totalCard/totalIncome)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Card</div>
+              <div className="text-xs font-bold text-orange-600 truncate">KES {totalCard.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((totalCard/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Data
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex gap-2">
-                {['today', 'thisWeek', 'thisMonth', 'thisYear'].map((period) => (
-                  <Button 
-                    key={period}
-                    variant={dateFilter === period ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setDateFilter(period)}
-                    className="capitalize"
-                  >
-                    {period === 'thisWeek' ? 'This Week' : 
-                     period === 'thisMonth' ? 'This Month' : 
-                     period === 'thisYear' ? 'This Year' : period}
-                  </Button>
-                ))}
-              </div>
-              <Input
-                placeholder="Search by date..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-gray-50 border rounded-lg">
+          {['today', 'thisWeek', 'thisMonth', 'thisYear'].map((period) => (
+            <Button key={period} variant={dateFilter === period ? 'default' : 'outline'} size="sm"
+              onClick={() => setDateFilter(period)} className="h-7 text-xs px-2">
+              {period === 'thisWeek' ? 'Week' : period === 'thisMonth' ? 'Month' : period === 'thisYear' ? 'Year' : 'Today'}
+            </Button>
+          ))}
+          <Input placeholder="Search by date..." value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)} className="h-7 text-xs w-36 ml-auto" />
+        </div>
 
-        {/* Detailed Data Table */}
+        {/* Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Daily Income Breakdown</CardTitle>
+          <CardHeader className="py-2 px-3">
+            <CardTitle className="text-sm font-semibold">Daily Income Breakdown</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Date</th>
-                    <th className="text-right p-3">Cash Sales</th>
-                    <th className="text-right p-3">Credit Sales</th>
-                    <th className="text-right p-3">Wallet Payments</th>
-                    <th className="text-right p-3">Card Payments</th>
-                    <th className="text-right p-3">Total</th>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Date</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Cash</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Credit</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Wallet</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden md:table-cell">Card</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedData.map((day, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 text-xs font-medium">{new Date(day.date).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-right text-xs text-green-600">KES {day.cashSales.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs text-blue-600 hidden sm:table-cell">KES {day.creditSales.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs text-purple-600 hidden sm:table-cell">KES {day.walletPayments.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs text-orange-600 hidden md:table-cell">KES {day.cardPayments.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs font-bold">KES {day.total.toLocaleString()}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((day, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="p-3 font-medium">{new Date(day.date).toLocaleDateString()}</td>
-                      <td className="p-3 text-right text-green-600">KES {day.cashSales.toLocaleString()}</td>
-                      <td className="p-3 text-right text-blue-600">KES {day.creditSales.toLocaleString()}</td>
-                      <td className="p-3 text-right text-purple-600">KES {day.walletPayments.toLocaleString()}</td>
-                      <td className="p-3 text-right text-orange-600">KES {day.cardPayments.toLocaleString()}</td>
-                      <td className="p-3 text-right font-bold">KES {day.total.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
-                <select 
-                  value={itemsPerPage} 
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border rounded px-2 py-1 text-sm"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-600">entries</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} entries
-                </span>
-                
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-3 py-2 border-t">
+                <span className="text-xs text-gray-500">{currentPage}/{totalPages}</span>
                 <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      const pageNum = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
-                      if (pageNum > totalPages) return null;
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>Prev</Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Performance Insights */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Insights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <h3 className="font-semibold text-green-800 dark:text-green-200">Best Performing Day</h3>
-                <p className="text-green-600 dark:text-green-400">June 17, 2025</p>
-                <p className="text-lg font-bold text-green-800 dark:text-green-200">KES 14,800</p>
-              </div>
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Average Daily Income</h3>
-                <p className="text-blue-600 dark:text-blue-400">Last 7 days</p>
-                <p className="text-lg font-bold text-blue-800 dark:text-blue-200">KES {(totalIncome/incomeData.length).toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <h3 className="font-semibold text-purple-800 dark:text-purple-200">Primary Payment Method</h3>
-                <p className="text-purple-600 dark:text-purple-400">Cash dominates</p>
-                <p className="text-lg font-bold text-purple-800 dark:text-purple-200">{((totalCash/totalIncome)*100).toFixed(1)}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="p-3 bg-green-50 rounded-lg">
+            <div className="text-xs font-semibold text-green-800">Best Day</div>
+            <div className="text-[10px] text-green-600">June 17, 2025</div>
+            <div className="text-sm font-bold text-green-800">KES 14,800</div>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="text-xs font-semibold text-blue-800">Avg Daily</div>
+            <div className="text-[10px] text-blue-600">Last 7 days</div>
+            <div className="text-sm font-bold text-blue-800">KES {(totalIncome/incomeData.length).toLocaleString()}</div>
+          </div>
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <div className="text-xs font-semibold text-purple-800">Top Method</div>
+            <div className="text-[10px] text-purple-600">Cash dominates</div>
+            <div className="text-sm font-bold text-purple-800">{((totalCash/totalIncome)*100).toFixed(1)}%</div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

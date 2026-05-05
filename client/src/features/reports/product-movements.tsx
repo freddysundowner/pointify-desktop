@@ -210,315 +210,176 @@ export default function ProductMovements() {
 
   return (
     <DashboardLayout title="Product Movements">
-      <div className="space-y-3 sm:space-y-5">
+      <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
-            <div>
-              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
-                Product Movements
-              </h1>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Track all inventory movements</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold leading-tight">Product Movements</h1>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button onClick={exportToExcel} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>Excel
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button onClick={exportToExcel} variant="outline" size="sm" className="h-8 text-xs">
+              <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
             </Button>
-            <Button onClick={exportToPDF} variant="outline" size="sm">
-              <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>PDF
+            <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 text-xs">
+              <FileText className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">PDF</span>
             </Button>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-4 gap-1.5">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Movements</p>
-                  <p className="text-2xl font-bold text-blue-600">{totalMovements}</p>
-                </div>
-                <RotateCcw className="hidden sm:block h-7 w-7 text-blue-600" />
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Movements</div>
+              <div className="text-xs font-bold text-blue-600">{totalMovements}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Items In</p>
-                  <p className="text-lg sm:text-2xl font-bold text-green-600">{itemsIn}</p>
-                </div>
-                <ArrowUpRight className="hidden sm:block h-7 w-7 text-green-600" />
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Items In</div>
+              <div className="text-xs font-bold text-green-600">{itemsIn}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Items Out</p>
-                  <p className="text-lg sm:text-2xl font-bold text-red-600">{itemsOut}</p>
-                </div>
-                <ArrowDownRight className="hidden sm:block h-7 w-7 text-red-600" />
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Items Out</div>
+              <div className="text-xs font-bold text-red-600">{itemsOut}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Net Movement</p>
-                  <p className={`text-lg sm:text-2xl font-bold ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {netMovement >= 0 ? '+' : ''}{netMovement}
-                  </p>
-                </div>
-                <TrendingUp className={`h-8 w-8 ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Net</div>
+              <div className={`text-xs font-bold ${netMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {netMovement >= 0 ? '+' : ''}{netMovement}
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Movements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex gap-2">
-                <Button 
-                  variant={typeFilter === 'all' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setTypeFilter('all')}
-                >
-                  All Types
-                </Button>
-                {['sale', 'purchase', 'return', 'transfer', 'adjustment'].map((type) => (
-                  <Button 
-                    key={type}
-                    variant={typeFilter === type ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setTypeFilter(type)}
-                    className="capitalize"
-                  >
-                    {type}
-                  </Button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant={directionFilter === 'all' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setDirectionFilter('all')}
-                >
-                  All Directions
-                </Button>
-                <Button 
-                  variant={directionFilter === 'in' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setDirectionFilter('in')}
-                >
-                  In
-                </Button>
-                <Button 
-                  variant={directionFilter === 'out' ? 'default' : 'outline'} 
-                  size="sm"
-                  onClick={() => setDirectionFilter('out')}
-                >
-                  Out
-                </Button>
-              </div>
-              <Input
-                placeholder="Search product or reference..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-gray-50 border rounded-lg">
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
+            className="h-7 text-xs border rounded px-1.5 bg-white capitalize">
+            <option value="all">All Types</option>
+            {['sale', 'purchase', 'return', 'transfer', 'adjustment'].map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select value={directionFilter} onChange={(e) => setDirectionFilter(e.target.value)}
+            className="h-7 text-xs border rounded px-1.5 bg-white">
+            <option value="all">All Directions</option>
+            <option value="in">In</option>
+            <option value="out">Out</option>
+          </select>
+          <Input placeholder="Search product/ref..." value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)} className="h-7 text-xs w-32 ml-auto" />
+        </div>
 
-        {/* Movements Table */}
+        {/* Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Movement Details</CardTitle>
+          <CardHeader className="py-2 px-3">
+            <CardTitle className="text-sm font-semibold">Movement Details</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Date</th>
-                    <th className="text-left p-3">Product</th>
-                    <th className="text-left p-3">Type</th>
-                    <th className="text-center p-3">Direction</th>
-                    <th className="text-right p-3">Quantity</th>
-                    <th className="text-left p-3">Reference</th>
-                    <th className="text-left p-3">Performed By</th>
-                    <th className="text-left p-3">Notes</th>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Date</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Product</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Type</th>
+                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-500">Dir</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Qty</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Ref</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 hidden md:table-cell">By</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 hidden md:table-cell">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedData.map((movement, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 text-xs hidden sm:table-cell">{new Date(movement.date).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-xs font-medium">{movement.product}</td>
+                    <td className="px-3 py-2 text-xs">
+                      <Badge className={`text-[10px] py-0 ${getTypeBadge(movement.type)}`}>{movement.type}</Badge>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {getDirectionIcon(movement.direction, movement.type)}
+                        <span className={`text-[10px] font-medium ${movement.direction === 'in' ? 'text-green-600' : 'text-red-600'}`}>
+                          {movement.direction.toUpperCase()}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs font-bold">{movement.quantity}</td>
+                    <td className="px-3 py-2 text-xs font-mono hidden sm:table-cell">{movement.reference}</td>
+                    <td className="px-3 py-2 text-xs hidden md:table-cell">{movement.performedBy}</td>
+                    <td className="px-3 py-2 text-xs text-gray-500 hidden md:table-cell">{movement.notes || '-'}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((movement, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="p-3">{new Date(movement.date).toLocaleDateString()}</td>
-                      <td className="p-3 font-medium">{movement.product}</td>
-                      <td className="p-3">
-                        <Badge className={getTypeBadge(movement.type)}>
-                          {movement.type}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {getDirectionIcon(movement.direction, movement.type)}
-                          <span className={`text-sm font-medium ${movement.direction === 'in' ? 'text-green-600' : 'text-red-600'}`}>
-                            {movement.direction.toUpperCase()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-right font-bold">{movement.quantity}</td>
-                      <td className="p-3 text-sm font-mono">{movement.reference}</td>
-                      <td className="p-3">{movement.performedBy}</td>
-                      <td className="p-3 text-sm text-gray-600">{movement.notes || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
-                <select 
-                  value={itemsPerPage} 
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border rounded px-2 py-1 text-sm"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-600">entries</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} entries
-                </span>
-                
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-3 py-2 border-t">
+                <span className="text-xs text-gray-500">{currentPage}/{totalPages}</span>
                 <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      const pageNum = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
-                      if (pageNum > totalPages) return null;
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>Prev</Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Movement Analysis */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Analysis */}
+        <div className="grid gap-3 md:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Movement Types Breakdown</CardTitle>
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="text-sm font-semibold">Type Breakdown</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {['sale', 'purchase', 'return', 'transfer', 'adjustment'].map((type) => {
-                  const count = movementData.filter(m => m.type === type).length;
-                  const percentage = ((count / totalMovements) * 100).toFixed(1);
-                  return (
-                    <div key={type} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Badge className={getTypeBadge(type)}>
-                          {type}
-                        </Badge>
-                        <span className="font-medium capitalize">{type}</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold">{count} movements</p>
-                        <p className="text-sm text-gray-500">{percentage}%</p>
-                      </div>
+            <CardContent className="p-3 pt-0 space-y-1.5">
+              {['sale', 'purchase', 'return', 'transfer', 'adjustment'].map((type) => {
+                const count = movementData.filter(m => m.type === type).length;
+                const pct = ((count / totalMovements) * 100).toFixed(1);
+                return (
+                  <div key={type} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Badge className={`text-[10px] py-0 ${getTypeBadge(type)}`}>{type}</Badge>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold">{count}</span>
+                      <span className="text-[10px] text-gray-500 ml-1">{pct}%</span>
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+            <CardHeader className="py-2 px-3">
+              <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {movementData.slice(0, 5).map((movement, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {getDirectionIcon(movement.direction, movement.type)}
-                      <div>
-                        <p className="font-medium">{movement.product}</p>
-                        <p className="text-sm text-gray-600">{movement.reference}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold">{movement.quantity}</p>
-                      <p className="text-sm text-gray-500">{new Date(movement.date).toLocaleDateString()}</p>
+            <CardContent className="p-3 pt-0 space-y-1.5">
+              {movementData.slice(0, 5).map((movement, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {getDirectionIcon(movement.direction, movement.type)}
+                    <div>
+                      <div className="text-xs font-medium">{movement.product}</div>
+                      <div className="text-[10px] text-gray-500">{movement.reference}</div>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <div className="text-xs font-bold">{movement.quantity}</div>
+                    <div className="text-[10px] text-gray-500">{new Date(movement.date).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>

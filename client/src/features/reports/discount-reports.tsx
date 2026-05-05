@@ -180,250 +180,141 @@ export default function DiscountReports() {
 
   return (
     <DashboardLayout title="Discount Reports">
-      <div className="space-y-3 sm:space-y-5">
+      <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Link href="/reports">
-              <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
-            <div>
-              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <ArrowDownRight className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
-                Discount Reports
-              </h1>
-              <p className="hidden sm:block text-xs text-gray-600 dark:text-gray-400 mt-0.5">Track all discounts given to customers</p>
-            </div>
+            <h1 className="text-base sm:text-xl font-bold leading-tight">Discount Reports</h1>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={exportToExcel}>
-              <Download className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>Excel
+          <div className="flex gap-1.5 flex-shrink-0">
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToExcel}>
+              <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
             </Button>
-            <Button size="sm" onClick={exportToPDF}>
-              <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Export </span>PDF
+            <Button size="sm" className="h-8 text-xs" onClick={exportToPDF}>
+              <FileText className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">PDF</span>
             </Button>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Discounts</p>
-                  <p className="text-2xl font-bold text-orange-600">KES {totalDiscounts.toLocaleString()}</p>
-                </div>
-                <TrendingDown className="h-8 w-8 text-orange-600" />
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Total</div>
+              <div className="text-xs font-bold text-orange-600 truncate">KES {totalDiscounts.toLocaleString()}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Bulk Discounts</p>
-                <p className="text-xl font-bold text-blue-600">KES {bulkDiscounts.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((bulkDiscounts/totalDiscounts)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Bulk</div>
+              <div className="text-xs font-bold text-blue-600 truncate">KES {bulkDiscounts.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((bulkDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Loyalty Discounts</p>
-                <p className="text-xl font-bold text-green-600">KES {loyaltyDiscounts.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((loyaltyDiscounts/totalDiscounts)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Loyalty</div>
+              <div className="text-xs font-bold text-green-600 truncate">KES {loyaltyDiscounts.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((loyaltyDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Promotional</p>
-                <p className="text-xl font-bold text-orange-600">KES {promotionalDiscounts.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((promotionalDiscounts/totalDiscounts)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Promo</div>
+              <div className="text-xs font-bold text-orange-500 truncate">KES {promotionalDiscounts.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((promotionalDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Staff Discounts</p>
-                <p className="text-xl font-bold text-purple-600">KES {staffDiscounts.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{((staffDiscounts/totalDiscounts)*100).toFixed(1)}% of total</p>
-              </div>
+            <CardContent className="p-2">
+              <div className="text-[10px] text-gray-500">Staff</div>
+              <div className="text-xs font-bold text-purple-600 truncate">KES {staffDiscounts.toLocaleString()}</div>
+              <div className="text-[10px] text-gray-400">{((staffDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filter Discounts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex gap-2">
-                {['all', 'bulk', 'loyalty', 'promotional', 'staff'].map((type) => (
-                  <Button 
-                    key={type}
-                    variant={discountFilter === type ? 'default' : 'outline'} 
-                    size="sm"
-                    onClick={() => setDiscountFilter(type)}
-                    className="capitalize"
-                  >
-                    {type === 'all' ? 'All Types' : type}
-                  </Button>
-                ))}
-              </div>
-              <Input
-                placeholder="Search by customer..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64"
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-gray-50 border rounded-lg">
+          {['all', 'bulk', 'loyalty', 'promotional', 'staff'].map((type) => (
+            <Button key={type} variant={discountFilter === type ? 'default' : 'outline'} size="sm"
+              onClick={() => setDiscountFilter(type)} className="h-7 text-xs px-2 capitalize">
+              {type === 'all' ? 'All' : type}
+            </Button>
+          ))}
+          <Input placeholder="Search customer..." value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)} className="h-7 text-xs w-32 ml-auto" />
+        </div>
 
-        {/* Detailed Data Table */}
+        {/* Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Discount Details</CardTitle>
+          <CardHeader className="py-2 px-3">
+            <CardTitle className="text-sm font-semibold">Discount Details</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Date</th>
-                    <th className="text-left p-3">Customer</th>
-                    <th className="text-left p-3">Type</th>
-                    <th className="text-right p-3">Original Amount</th>
-                    <th className="text-right p-3">Discount %</th>
-                    <th className="text-right p-3">Discount Amount</th>
-                    <th className="text-right p-3">Final Amount</th>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Date</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Customer</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Type</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden md:table-cell">Original</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Disc%</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Discount</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Final</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedData.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 text-xs hidden sm:table-cell">{new Date(item.date).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-xs font-medium">{item.customer}</td>
+                    <td className="px-3 py-2 text-xs">
+                      <Badge className={`text-[10px] py-0 ${getDiscountBadge(item.discountType)}`}>{item.discountType}</Badge>
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs hidden md:table-cell">KES {item.originalAmount.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs hidden sm:table-cell">{item.discountPercentage}%</td>
+                    <td className="px-3 py-2 text-right text-xs text-orange-600 font-bold">KES {item.discountAmount.toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right text-xs font-bold">KES {item.finalAmount.toLocaleString()}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {paginatedData.map((item, index) => (
-                    <tr key={index} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <td className="p-3">{new Date(item.date).toLocaleDateString()}</td>
-                      <td className="p-3 font-medium">{item.customer}</td>
-                      <td className="p-3">
-                        <Badge className={getDiscountBadge(item.discountType)}>
-                          {item.discountType}
-                        </Badge>
-                      </td>
-                      <td className="p-3 text-right">KES {item.originalAmount.toLocaleString()}</td>
-                      <td className="p-3 text-right">{item.discountPercentage}%</td>
-                      <td className="p-3 text-right text-orange-600 font-bold">KES {item.discountAmount.toLocaleString()}</td>
-                      <td className="p-3 text-right font-bold">KES {item.finalAmount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
-                <select 
-                  value={itemsPerPage} 
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border rounded px-2 py-1 text-sm"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-                <span className="text-sm text-gray-600">entries</span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} entries
-                </span>
-                
+                ))}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-3 py-2 border-t">
+                <span className="text-xs text-gray-500">{currentPage}/{totalPages}</span>
                 <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  
-                  <div className="flex gap-1">
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      const pageNum = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
-                      if (pageNum > totalPages) return null;
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNum)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>Prev</Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
+                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
                 </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Discount Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Discount Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <h3 className="font-semibold text-blue-800 dark:text-blue-200">Most Used Discount</h3>
-                <p className="text-blue-600 dark:text-blue-400">Bulk Purchase</p>
-                <p className="text-lg font-bold text-blue-800 dark:text-blue-200">KES {bulkDiscounts.toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <h3 className="font-semibold text-orange-800 dark:text-orange-200">Average Discount</h3>
-                <p className="text-orange-600 dark:text-orange-400">Per transaction</p>
-                <p className="text-lg font-bold text-orange-800 dark:text-orange-200">KES {(totalDiscounts/discountData.length).toLocaleString()}</p>
-              </div>
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <h3 className="font-semibold text-green-800 dark:text-green-200">Customers with Discounts</h3>
-                <p className="text-green-600 dark:text-green-400">Unique customers</p>
-                <p className="text-lg font-bold text-green-800 dark:text-green-200">{new Set(discountData.map(d => d.customer)).size}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Analysis */}
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="text-xs font-semibold text-blue-800">Top Type</div>
+            <div className="text-[10px] text-blue-600">Bulk Purchase</div>
+            <div className="text-sm font-bold text-blue-800">KES {bulkDiscounts.toLocaleString()}</div>
+          </div>
+          <div className="p-3 bg-orange-50 rounded-lg">
+            <div className="text-xs font-semibold text-orange-800">Avg Discount</div>
+            <div className="text-[10px] text-orange-600">Per transaction</div>
+            <div className="text-sm font-bold text-orange-800">KES {(totalDiscounts/discountData.length).toLocaleString()}</div>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg">
+            <div className="text-xs font-semibold text-green-800">Unique Customers</div>
+            <div className="text-[10px] text-green-600">With discounts</div>
+            <div className="text-sm font-bold text-green-800">{new Set(discountData.map(d => d.customer)).size}</div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
