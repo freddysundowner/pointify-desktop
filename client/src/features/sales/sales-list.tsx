@@ -1213,21 +1213,21 @@ function SalesList() {
                 </div>
               </SheetHeader>
 
-              <div className="px-5 py-4 space-y-5">
+              <div className="px-4 py-3 space-y-4">
                 {/* Payment / Status */}
                 <div>
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Payment Method</Label>
-                  <div className="space-y-1">
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Payment Method</Label>
+                  <div className="divide-y divide-gray-100 border rounded-lg overflow-hidden">
                     {(["all","cash","mpesa","credit","wallet","bank","hold"] as const).map((v) => (
                       <button
                         key={v}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                           statusFilter === v ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"
                         }`}
                         onClick={() => handleStatusFilter(v)}
                       >
                         <span className="capitalize">{v === "all" ? "All Transactions" : v === "mpesa" ? "M-Pesa" : v}</span>
-                        {statusFilter === v && <Check className="h-4 w-4 text-purple-600" />}
+                        {statusFilter === v && <Check className="h-3.5 w-3.5 text-purple-600" />}
                       </button>
                     ))}
                   </div>
@@ -1236,23 +1236,23 @@ function SalesList() {
                 {/* Attendant (admin only) */}
                 {userType === "admin" && (
                   <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Attendant</Label>
-                    <div className="space-y-1">
+                    <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Attendant</Label>
+                    <div className="divide-y divide-gray-100 border rounded-lg overflow-hidden">
                       <button
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm ${attendantFilter === "all" ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm ${attendantFilter === "all" ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
                         onClick={() => handleAttendantFilter("all")}
                       >
                         <span>All Attendants</span>
-                        {attendantFilter === "all" && <Check className="h-4 w-4 text-purple-600" />}
+                        {attendantFilter === "all" && <Check className="h-3.5 w-3.5 text-purple-600" />}
                       </button>
                       {uniqueAttendants.map((a: any) => (
                         <button
                           key={a._id}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm ${attendantFilter === a._id ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-sm ${attendantFilter === a._id ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
                           onClick={() => handleAttendantFilter(a._id)}
                         >
                           <span>{a.username}</span>
-                          {attendantFilter === a._id && <Check className="h-4 w-4 text-purple-600" />}
+                          {attendantFilter === a._id && <Check className="h-3.5 w-3.5 text-purple-600" />}
                         </button>
                       ))}
                     </div>
@@ -1308,39 +1308,24 @@ function SalesList() {
 
             {/* Summary Stats - Permission Controlled */}
             {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Total Sales</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.totalSales?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Count</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5">{filteredSalesCount}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Cash</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.cashtransactions?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">M-Pesa</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.mpesa?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Credit</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.credit?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Wallet</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.wallet?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Hold</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.hold?.toFixed(2) || "0.00"}</p>
-                </Card>
-                <Card className="p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Bank</p>
-                  <p className="text-base sm:text-xl font-bold mt-0.5 truncate">{primaryShopCurrency} {salesReportData?.bank?.toFixed(2) || "0.00"}</p>
-                </Card>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { label: "Total", value: salesReportData?.totalSales },
+                  { label: "Count", value: filteredSalesCount, isCount: true },
+                  { label: "Cash", value: salesReportData?.cashtransactions },
+                  { label: "M-Pesa", value: salesReportData?.mpesa },
+                  { label: "Credit", value: salesReportData?.credit },
+                  { label: "Wallet", value: salesReportData?.wallet },
+                  { label: "Hold", value: salesReportData?.hold },
+                  { label: "Bank", value: salesReportData?.bank },
+                ].map(({ label, value, isCount }) => (
+                  <Card key={label} className="p-2">
+                    <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
+                    <p className="text-xs sm:text-sm font-bold mt-0.5 truncate leading-tight">
+                      {isCount ? value : `${primaryShopCurrency} ${Number(value || 0).toFixed(2)}`}
+                    </p>
+                  </Card>
+                ))}
               </div>
             )}
           </div>
@@ -1382,82 +1367,20 @@ function SalesList() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              {/* Mobile card view */}
-              <div className="block sm:hidden space-y-2">
-                {isLoading ? (
-                  <div className="py-8 text-center text-sm text-gray-500">Loading sales data...</div>
-                ) : paginatedData.length === 0 ? (
-                  <div className="py-8 text-center text-sm text-gray-500">No sales found</div>
-                ) : paginatedData.map((sale: any) => (
-                  <div key={sale.id} className="border rounded-lg p-3 space-y-2 bg-white">
-                    <div className="flex items-center justify-between">
-                      <button onClick={() => handleViewSale(sale)} className="font-mono text-sm font-semibold text-blue-600 hover:underline">
-                        #{sale.receiptNo}
-                      </button>
-                      <Badge variant={getStatusBadgeVariant(sale.status)} className="text-xs">
-                        {sale.status}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600 truncate mr-2">{sale.customerName}</span>
-                      <span className="font-semibold flex-shrink-0">{getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{new Date(sale.saleDate).toLocaleDateString()}</span>
-                      <span className="capitalize">{sale.paymentTag}</span>
-                    </div>
-                    {(hasPermission("sales_edit") || hasPermission("sales_delete") || hasPermission("sales_return")) && (
-                      <div className="pt-1 flex gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">Actions</Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewSale(sale)}><Eye className="mr-2 h-4 w-4" />View Receipt</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openQuotationDialog(sale)}><FileText className="mr-2 h-4 w-4" />Quotation</DropdownMenuItem>
-                            {sale.status === "hold" && <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}><Receipt className="mr-2 h-4 w-4" />Invoice</DropdownMenuItem>}
-                            {sale.status === "hold" && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600"><CheckCircle className="mr-2 h-4 w-4" />Complete Sale</DropdownMenuItem></>}
-                            {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && <DropdownMenuItem onClick={() => handleReturnSale(sale)}><RefreshCw className="mr-2 h-4 w-4" />Return Sale</DropdownMenuItem>}
-                            {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600"><Trash2 className="mr-2 h-4 w-4" />Delete Sale</DropdownMenuItem></>}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {/* Desktop table */}
-              <div className="hidden sm:block overflow-x-auto">
+              {/* Single responsive table */}
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Receipt ID
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Customer
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Amount
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Date
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Payment
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Status
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Attendant
-                      </th>
-                      {(hasPermission("sales_edit") ||
-                        hasPermission("sales_delete") ||
-                        hasPermission("sales_return")) && (
-                        <th className="text-left py-2 px-3 font-medium text-sm">
-                          Actions
-                        </th>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Receipt</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Customer</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Amount</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Date</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Payment</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Status</th>
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden md:table-cell">Attendant</th>
+                      {(hasPermission("sales_edit") || hasPermission("sales_delete") || hasPermission("sales_return")) && (
+                        <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Actions</th>
                       )}
                     </tr>
                   </thead>
@@ -1467,18 +1390,13 @@ function SalesList() {
                         <td colSpan={8} className="py-8 text-center">
                           <div className="flex flex-col items-center space-y-2">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            <p className="text-sm text-gray-500">
-                              Loading sales data...
-                            </p>
+                            <p className="text-sm text-gray-500">Loading sales data...</p>
                           </div>
                         </td>
                       </tr>
                     ) : paginatedData.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={8}
-                          className="py-8 text-center text-gray-500"
-                        >
+                        <td colSpan={8} className="py-8 text-center text-gray-500">
                           No sales found for the selected filters
                         </td>
                       </tr>
@@ -1488,37 +1406,36 @@ function SalesList() {
                           key={sale.id}
                           className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50"
                         >
-                          <td className="py-2 px-3 text-sm font-mono">
-                            <button
-                              onClick={() => handleViewSale(sale)}
-                              className="hover:text-blue-600 hover:underline cursor-pointer"
-                              title="View sale details"
-                            >
-                              #{sale.receiptNo}
-                            </button>
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm font-mono">
+                            <div>
+                              <button
+                                onClick={() => handleViewSale(sale)}
+                                className="hover:text-blue-600 hover:underline cursor-pointer font-semibold"
+                                title="View sale details"
+                              >
+                                #{sale.receiptNo}
+                              </button>
+                              <p className="text-[10px] text-gray-500 sm:hidden">{new Date(sale.saleDate).toLocaleDateString()}</p>
+                            </div>
                           </td>
-                          <td className="py-2 px-3 text-sm">
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden sm:table-cell">
                             {sale.customerName}
                           </td>
-                          <td className="py-2 px-3 text-sm font-medium">
-                            {getSaleCurrency(sale)}{" "}
-                            {sale.totalAmount.toFixed(2)}
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm font-medium">
+                            {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
                           </td>
-                          <td className="py-2 px-3 text-sm">
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden sm:table-cell">
                             {new Date(sale.saleDate).toLocaleDateString()}
                           </td>
-                          <td className="py-2 px-3 text-sm capitalize">
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm capitalize hidden sm:table-cell">
                             {sale.paymentTag}
                           </td>
-                          <td className="py-2 px-3">
-                            <Badge
-                              variant={getStatusBadgeVariant(sale.status)}
-                              className="text-xs"
-                            >
+                          <td className="py-2 px-2 sm:px-3">
+                            <Badge variant={getStatusBadgeVariant(sale.status)} className="text-[10px] sm:text-xs">
                               {sale.status}
                             </Badge>
                           </td>
-                          <td className="py-2 px-3 text-sm">
+                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden md:table-cell">
                             {sale.attendantName}
                           </td>
                           <td className="py-2 px-3">
