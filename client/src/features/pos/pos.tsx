@@ -74,7 +74,8 @@ export default function POS() {
 
   return (
     <div className="flex h-screen bg-background">
-      <div className="absolute top-3 left-4 z-50">
+      {/* Desktop only — mobile uses the back button inside the POS nav bar */}
+      <div className="absolute top-3 left-4 z-50 hidden lg:block">
         <Button
           onClick={handleBackToDashboard}
           variant="outline"
@@ -123,6 +124,7 @@ export default function POS() {
           canSellToDealer={canSellToDealer}
           canDiscount={canDiscount}
           canEditPrice={canEditPrice}
+          onBack={handleBackToDashboard}
         />
       </div>
 

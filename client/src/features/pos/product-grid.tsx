@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,6 +49,8 @@ interface ProductGridProps {
   canSellToDealer?: boolean;
   canDiscount?: boolean;
   canEditPrice?: boolean;
+  onBack?: () => void;
+  orderId?: string;
 }
 
 
@@ -75,7 +77,8 @@ export default function ProductGrid({
   canSellToDealer = true,
   canDiscount = true,
   canEditPrice = true,
-  orderId
+  orderId,
+  onBack,
 }: ProductGridProps) {
   const { attendant } = useAttendantAuth();
   const { admin } = useAuth();
@@ -115,6 +118,7 @@ export default function ProductGrid({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
+  const [showMobileCart, setShowMobileCart] = useState(false);
   const [dropdownHighlight, setDropdownHighlight] = useState(-1);
 
   // Custom item states
@@ -983,45 +987,70 @@ export default function ProductGrid({
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
       {/* Mobile Navigation Bar */}
-      <div className="md:hidden bg-purple-600 text-white p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-purple-400 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
-            <h1 className="text-lg font-semibold">POS System</h1>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            {/* Mobile View Toggle */}
-            <div className="flex bg-purple-500 rounded-md p-0.5">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
-              >
-                <Grid3X3 className="h-3 w-3" />
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('table')}
-                className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
-              >
-                <Table className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <Button 
-              onClick={() => setShowCategoriesDrawer(true)}
-              variant="outline"
-              className="border-purple-300 text-purple-100 hover:bg-purple-500 h-8 px-3 text-sm"
+      <div className="lg:hidden bg-purple-600 text-white px-3 py-2.5">
+        {viewMode === 'grid' && showMobileCart ? (
+          /* Cart tab header */
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowMobileCart(false)}
+              className="flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white"
             >
-              Category
-            </Button>
+              <ArrowLeft className="h-4 w-4" />
+              Products
+            </button>
+            <span className="font-semibold text-sm">
+              Cart {cartItems.length > 0 ? `(${cartItems.length})` : '(empty)'}
+            </span>
+            <button
+              onClick={() => cartItems.length > 0 && setShowPaymentDialog(true)}
+              disabled={cartItems.length === 0}
+              className="bg-white text-purple-600 text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Pay
+            </button>
           </div>
-        </div>
+        ) : (
+          /* Products tab header (grid mode) or normal header (table mode) */
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+            <span className="font-semibold text-sm">POS System</span>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-purple-500 rounded-md p-0.5">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => { setViewMode('grid'); setShowMobileCart(false); }}
+                  className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
+                >
+                  <Grid3X3 className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
+                >
+                  <Table className="h-3 w-3" />
+                </Button>
+              </div>
+              {viewMode === 'grid' && (
+                <Button
+                  onClick={() => setShowCategoriesDrawer(true)}
+                  variant="outline"
+                  className="border-purple-300 text-purple-100 hover:bg-purple-500 h-7 px-2 text-xs"
+                >
+                  Filter
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Desktop Header Bar - No search on mobile */}
@@ -1094,7 +1123,7 @@ export default function ProductGrid({
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full ${viewMode === 'table' ? 'lg:w-2/3' : 'lg:w-2/3'} p-2 lg:p-6 bg-white order-2 lg:order-1 overflow-y-auto`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white overflow-y-auto ${showMobileCart || viewMode === 'table' ? 'block' : 'hidden lg:block'}`}>
           {/* Mobile: Stack vertically, Desktop: 2 columns */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-6 mb-3 lg:mb-6">
             <div>
@@ -1611,7 +1640,7 @@ export default function ProductGrid({
 
         {/* Right Panel - Products */}
         {viewMode === 'grid' && (
-          <div className="w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 order-1 lg:order-2 flex flex-col lg:h-full lg:overflow-hidden">
+          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden pb-20 lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
           
           {/* Mobile View Mode */}
           <div className="lg:hidden mb-2">
@@ -1842,7 +1871,7 @@ export default function ProductGrid({
 
         {/* Table Mode - Right Panel for Totals */}
         {viewMode === 'table' && (
-          <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 order-1 lg:order-2 flex flex-col">
+          <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 flex flex-col">
             <div className="flex-1 flex flex-col">
               {/* Summary Section */}
               <div className="bg-gray-50 p-4 lg:p-6 rounded-lg">
@@ -1915,6 +1944,26 @@ export default function ProductGrid({
           </div>
         )}
       </div>
+
+      {/* Mobile floating "View Cart" bar — shown when browsing products in grid mode */}
+      {viewMode === 'grid' && !showMobileCart && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-3 py-2.5 bg-white border-t border-gray-200 shadow-lg">
+          {cartItems.length === 0 ? (
+            <p className="text-center text-xs text-gray-400 py-1">Tap a product to add it to your cart</p>
+          ) : (
+            <button
+              onClick={() => setShowMobileCart(true)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white h-12 rounded-xl font-semibold flex items-center justify-between px-4 transition-colors"
+            >
+              <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center">
+                {cartItems.length}
+              </span>
+              <span className="text-sm">View Cart</span>
+              <span className="text-sm font-bold">Ksh {totals.total.toFixed(2)}</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={resetPaymentDialog}>
