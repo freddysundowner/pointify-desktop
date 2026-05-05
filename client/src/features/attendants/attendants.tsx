@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft } from 'lucide-react';
+import { Link } from 'wouter';
+import { useNavigationRoute } from '@/lib/navigation-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -496,139 +498,129 @@ export default function Attendants() {
   };
 
   const selectedShop = shops.find((shop) => shop.id === currentShopId);
+  const dashboardRoute = useNavigationRoute('dashboard');
 
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h1 className="text-base sm:text-xl font-bold text-gray-900">Staff</h1>
-          <Button onClick={handleCreate} size="sm" className="flex items-center gap-2 flex-shrink-0">
-            <UserPlus className="h-4 w-4" />
-            Add Attendant
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Link href={dashboardRoute}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">Staff</h1>
+          </div>
+          <Button onClick={handleCreate} size="sm" className="h-8 text-xs flex-shrink-0">
+            <UserPlus className="h-3.5 w-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline">Add </span>Attendant
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-4 gap-1.5">
           <Card>
-            <CardContent className="p-3">
-              <div className="text-lg sm:text-2xl font-bold text-purple-600">{filteredAttendants.length}</div>
-              <div className="text-xs text-gray-600">Total Staff</div>
+            <CardContent className="p-2">
+              <div className="text-sm sm:text-base font-bold text-purple-600">{filteredAttendants.length}</div>
+              <div className="text-[10px] text-gray-500">Total</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
-              <div className="text-lg sm:text-2xl font-bold text-green-600">{activeAttendants}</div>
-              <div className="text-xs text-gray-600">Active</div>
+            <CardContent className="p-2">
+              <div className="text-sm sm:text-base font-bold text-green-600">{activeAttendants}</div>
+              <div className="text-[10px] text-gray-500">Active</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3">
-              <div className="text-lg sm:text-2xl font-bold text-orange-600">
+            <CardContent className="p-2">
+              <div className="text-sm sm:text-base font-bold text-orange-600">
                 {attendants.filter((a: Attendant) => a.status === 'on_leave').length}
               </div>
-              <div className="text-xs text-gray-600">On Leave</div>
+              <div className="text-[10px] text-gray-500">On Leave</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-lg sm:text-2xl font-bold text-red-600">
+            <CardContent className="p-2">
+              <div className="text-sm sm:text-base font-bold text-red-600">
                 {attendants.filter((a: Attendant) => a.status === 'inactive').length}
               </div>
-              <div className="text-xs text-gray-600">Inactive</div>
+              <div className="text-[10px] text-gray-500">Inactive</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Search and Table */}
+        {/* Search + Table */}
         <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base">Staff Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2 mb-3">
+          <CardHeader className="py-2 px-3">
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
                 <Input
                   placeholder="Search staff..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-8 text-sm"
+                  className="pl-9 h-8 text-xs"
                 />
               </div>
             </div>
-
+          </CardHeader>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="text-center py-8">Loading attendants...</div>
+              <div className="text-center py-8 text-sm text-gray-500">Loading attendants...</div>
             ) : error ? (
-              <div className="text-center py-8 text-red-600">Error loading attendants</div>
+              <div className="text-center py-8 text-sm text-red-600">Error loading attendants</div>
             ) : filteredAttendants.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-sm text-gray-500">
                 {searchQuery ? 'No attendants found matching your search' : 'No attendants found for this shop'}
               </div>
             ) : (
-              <>
-                {/* Mobile card view */}
-                <div className="block sm:hidden space-y-3">
-                  {filteredAttendants.map((attendant: Attendant) => (
-                    <div key={attendant._id} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-900">{attendant.username}</p>
-                          <p className="text-xs text-gray-500 font-mono">PIN: {attendant.uniqueDigits}</p>
-                        </div>
-                        <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'} className="text-xs">
-                          {attendant.status || 'active'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-500">{getShopName(attendant.shopId)}</p>
-                      <div className="flex gap-2 pt-1">
-                        <Button variant="outline" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 px-2 text-blue-600"><Settings className="h-3 w-3" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(attendant)} className="h-7 px-2 text-blue-600"><Edit className="h-3 w-3" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(attendant)} className="h-7 px-2 text-red-600"><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Desktop table */}
-                <div className="hidden sm:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-100">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PIN</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Seen</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Name</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">PIN</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Shop</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Last Seen</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {filteredAttendants.map((attendant: Attendant) => (
                       <tr key={attendant._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{attendant.username}</div></td>
-                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-mono text-gray-500">{attendant.uniqueDigits}</div></td>
-                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900">{getShopName(attendant.shopId)}</div></td>
-                        <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-500">{attendant.last_seen ? new Date(attendant.last_seen).toLocaleString() : 'Never'}</div></td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'}>
+                        <td className="px-3 py-2">
+                          <div className="text-xs font-medium text-gray-900">{attendant.username}</div>
+                          <div className="sm:hidden text-[10px] text-gray-400">{getShopName(attendant.shopId)}</div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="text-xs font-mono text-gray-500">{attendant.uniqueDigits}</span>
+                        </td>
+                        <td className="px-3 py-2 hidden sm:table-cell">
+                          <span className="text-xs text-gray-700">{getShopName(attendant.shopId)}</span>
+                        </td>
+                        <td className="px-3 py-2 hidden md:table-cell">
+                          <span className="text-xs text-gray-500">{attendant.last_seen ? new Date(attendant.last_seen).toLocaleDateString() : 'Never'}</span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 py-0">
                             {attendant.status || 'active'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="text-blue-600 hover:text-blue-900"><Settings className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="text-blue-600 hover:text-blue-900"><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="text-red-600 hover:text-red-900"><Trash2 className="h-4 w-4" /></Button>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900"><Settings className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900"><Edit className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="h-7 w-7 p-0 text-red-600 hover:text-red-900"><Trash2 className="h-3 w-3" /></Button>
                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                </div>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
