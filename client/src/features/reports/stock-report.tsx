@@ -101,6 +101,8 @@ export default function StockReport() {
   const fastMovingValue = stockData.filter(item => item.velocity === 'fast').reduce((sum, item) => sum + item.totalValue, 0);
   const deadStockValue = stockData.filter(item => item.velocity === 'dead').reduce((sum, item) => sum + item.totalValue, 0);
 
+  const fmtK = (n: number) => n >= 1_000_000 ? `KES ${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `KES ${(n/1_000).toFixed(1)}K` : `KES ${n}`;
+
   const getStatusBadge = (status: string) => {
     const colors = {
       good: 'bg-green-100 text-green-800',
@@ -243,7 +245,7 @@ export default function StockReport() {
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Stock Value</div>
-              <div className="text-xs font-bold text-purple-600 truncate">KES {totalValue.toLocaleString()}</div>
+              <div className="text-xs font-bold text-purple-600">{fmtK(totalValue)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -255,14 +257,14 @@ export default function StockReport() {
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Fast Moving</div>
-              <div className="text-xs font-bold text-green-600 truncate">KES {fastMovingValue.toLocaleString()}</div>
+              <div className="text-xs font-bold text-green-600">{fmtK(fastMovingValue)}</div>
               <div className="text-[10px] text-gray-400">{((fastMovingValue/totalValue)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Dead Stock</div>
-              <div className="text-xs font-bold text-red-600 truncate">KES {deadStockValue.toLocaleString()}</div>
+              <div className="text-xs font-bold text-red-600">{fmtK(deadStockValue)}</div>
               <div className="text-[10px] text-gray-400">{((deadStockValue/totalValue)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>

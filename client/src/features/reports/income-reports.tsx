@@ -145,6 +145,8 @@ export default function IncomeReports() {
   const totalWallet = filteredData.reduce((sum, day) => sum + day.walletPayments, 0);
   const totalCard = filteredData.reduce((sum, day) => sum + day.cardPayments, 0);
 
+  const fmtK = (n: number) => n >= 1_000_000 ? `KES ${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `KES ${(n/1_000).toFixed(1)}K` : `KES ${n}`;
+
   return (
     <DashboardLayout title="Income Reports">
       <div className="space-y-3">
@@ -171,34 +173,34 @@ export default function IncomeReports() {
           <Card className="sm:col-span-1">
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Total</div>
-              <div className="text-xs sm:text-sm font-bold truncate">KES {totalIncome.toLocaleString()}</div>
+              <div className="text-xs font-bold">{fmtK(totalIncome)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Cash</div>
-              <div className="text-xs font-bold text-green-600 truncate">KES {totalCash.toLocaleString()}</div>
+              <div className="text-xs font-bold text-green-600">{fmtK(totalCash)}</div>
               <div className="text-[10px] text-gray-400">{((totalCash/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Credit</div>
-              <div className="text-xs font-bold text-blue-600 truncate">KES {totalCredit.toLocaleString()}</div>
+              <div className="text-xs font-bold text-blue-600">{fmtK(totalCredit)}</div>
               <div className="text-[10px] text-gray-400">{((totalCredit/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Wallet</div>
-              <div className="text-xs font-bold text-purple-600 truncate">KES {totalWallet.toLocaleString()}</div>
+              <div className="text-xs font-bold text-purple-600">{fmtK(totalWallet)}</div>
               <div className="text-[10px] text-gray-400">{((totalWallet/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Card</div>
-              <div className="text-xs font-bold text-orange-600 truncate">KES {totalCard.toLocaleString()}</div>
+              <div className="text-xs font-bold text-orange-600">{fmtK(totalCard)}</div>
               <div className="text-[10px] text-gray-400">{((totalCard/totalIncome)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>

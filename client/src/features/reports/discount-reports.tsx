@@ -166,6 +166,8 @@ export default function DiscountReports() {
   const promotionalDiscounts = discountData.filter(d => d.discountType === 'promotional').reduce((sum, item) => sum + item.discountAmount, 0);
   const staffDiscounts = discountData.filter(d => d.discountType === 'staff').reduce((sum, item) => sum + item.discountAmount, 0);
 
+  const fmtK = (n: number) => n >= 1_000_000 ? `KES ${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `KES ${(n/1_000).toFixed(1)}K` : `KES ${n}`;
+
   const getDiscountBadge = (type: string) => {
     const colors = {
       bulk: 'bg-blue-100 text-blue-800',
@@ -204,34 +206,34 @@ export default function DiscountReports() {
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Total</div>
-              <div className="text-xs font-bold text-orange-600 truncate">KES {totalDiscounts.toLocaleString()}</div>
+              <div className="text-xs font-bold text-orange-600">{fmtK(totalDiscounts)}</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Bulk</div>
-              <div className="text-xs font-bold text-blue-600 truncate">KES {bulkDiscounts.toLocaleString()}</div>
+              <div className="text-xs font-bold text-blue-600">{fmtK(bulkDiscounts)}</div>
               <div className="text-[10px] text-gray-400">{((bulkDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Loyalty</div>
-              <div className="text-xs font-bold text-green-600 truncate">KES {loyaltyDiscounts.toLocaleString()}</div>
+              <div className="text-xs font-bold text-green-600">{fmtK(loyaltyDiscounts)}</div>
               <div className="text-[10px] text-gray-400">{((loyaltyDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Promo</div>
-              <div className="text-xs font-bold text-orange-500 truncate">KES {promotionalDiscounts.toLocaleString()}</div>
+              <div className="text-xs font-bold text-orange-500">{fmtK(promotionalDiscounts)}</div>
               <div className="text-[10px] text-gray-400">{((promotionalDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-2">
               <div className="text-[10px] text-gray-500">Staff</div>
-              <div className="text-xs font-bold text-purple-600 truncate">KES {staffDiscounts.toLocaleString()}</div>
+              <div className="text-xs font-bold text-purple-600">{fmtK(staffDiscounts)}</div>
               <div className="text-[10px] text-gray-400">{((staffDiscounts/totalDiscounts)*100).toFixed(1)}%</div>
             </CardContent>
           </Card>
