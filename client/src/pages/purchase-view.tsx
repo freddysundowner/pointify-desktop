@@ -45,14 +45,14 @@ export default function PurchaseViewPage() {
     <DashboardLayout title="Purchase Details">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => setLocation(purchasesRoute)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Purchases
+            Back
           </Button>
           <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
             {purchase.paymentType}

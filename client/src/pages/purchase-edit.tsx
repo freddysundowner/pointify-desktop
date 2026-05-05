@@ -218,7 +218,7 @@ export default function PurchaseEditPage() {
     <DashboardLayout title="Edit Purchase">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Button 
               variant="outline" 
@@ -226,11 +226,11 @@ export default function PurchaseEditPage() {
               onClick={() => setLocation(purchasesRoute)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Purchases
+              Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Edit Purchase Order</h1>
-              <p className="text-muted-foreground">#{purchaseFromState.purchaseNo}</p>
+              <h1 className="text-xl sm:text-2xl font-bold">Edit Purchase Order</h1>
+              <p className="text-sm text-muted-foreground">#{purchaseFromState.purchaseNo}</p>
             </div>
           </div>
         </div>

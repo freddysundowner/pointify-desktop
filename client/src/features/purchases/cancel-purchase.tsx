@@ -140,7 +140,7 @@ export default function CancelPurchase() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Order Date</h4>
                 <p className="text-gray-600 dark:text-gray-400">

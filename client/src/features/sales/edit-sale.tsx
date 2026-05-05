@@ -163,24 +163,24 @@ export default function EditSale() {
     <DashboardLayout title={`Edit Sale #${originalSale._id}`}>
       <div className="p-6 w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               Edit Sale #{originalSale._id}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Modify sale details and items
             </p>
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => window.history.back()}>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={() => window.history.back()}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button size="sm" onClick={handleSave}>
               <Save className="mr-2 h-4 w-4" />
-              Save Changes
+              Save
             </Button>
           </div>
         </div>

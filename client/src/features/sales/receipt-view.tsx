@@ -373,18 +373,18 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <Button variant="outline" size="sm" onClick={handleEmail}>
-              <Mail className="mr-2 h-4 w-4" />
-              Email
+              <Mail className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Email</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" />
-              Download
+              <Download className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
             <Button size="sm" onClick={handlePrint}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print
+              <Printer className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
           </div>
         </div>

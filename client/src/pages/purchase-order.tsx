@@ -263,7 +263,7 @@ export default function PurchaseOrderPage() {
     <DashboardLayout title="Create Purchase Order">
       <div className="p-4 w-full">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -272,10 +272,10 @@ export default function PurchaseOrderPage() {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Purchases
+              Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Purchase Order</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Create Purchase Order</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">Order #{purchaseOrderNumber}</p>
             </div>
           </div>

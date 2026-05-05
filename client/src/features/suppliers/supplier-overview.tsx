@@ -226,13 +226,13 @@ export default function SupplierOverview() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{supplier.name}</h1>
-            <p className="text-gray-600">{supplier.contact}</p>
+            <h1 className="text-xl sm:text-3xl font-bold">{supplier.name}</h1>
+            <p className="text-sm text-gray-600">{supplier.contact}</p>
           </div>
         </div>
 
         {/* Supplier Info Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {supplier.totalOrders || 0}
@@ -363,7 +363,7 @@ export default function SupplierOverview() {
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-6">
                   <div className="text-2xl font-bold text-blue-600">{supplier.totalOrders || 0}</div>

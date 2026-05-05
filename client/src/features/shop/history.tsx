@@ -10,14 +10,14 @@ export default function HistoryPage() {
       
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Transaction History</h1>
-              <p className="text-gray-600">View all your sales transactions</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Transaction History</h1>
+              <p className="text-sm text-gray-600">View all your sales transactions</p>
             </div>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="flex-shrink-0">
               <Search className="w-4 h-4 mr-2" />
-              Search Transactions
+              Search
             </Button>
           </div>
 

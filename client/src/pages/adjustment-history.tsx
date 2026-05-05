@@ -199,27 +199,27 @@ export default function AdjustmentHistoryPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={goBack}>
+            <Button variant="outline" size="sm" onClick={goBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Products
+              Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Adjustment History</h1>
-              <p className="text-gray-600">
-                Stock adjustment history for {product?.name || 'Product'}
+              <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Adjustment History</h1>
+              <p className="text-sm text-gray-600">
+                {product?.name || 'Product'}
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={fetchAdjustmentHistory} disabled={isLoading}>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={fetchAdjustmentHistory} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline" onClick={exportToCsv} disabled={adjustmentHistory.length === 0}>
+            <Button variant="outline" size="sm" onClick={exportToCsv} disabled={adjustmentHistory.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              CSV
             </Button>
           </div>
         </div>
@@ -227,7 +227,7 @@ export default function AdjustmentHistoryPage() {
         {/* Filters */}
         <Card>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">From Date</label>
                 <input
@@ -270,7 +270,7 @@ export default function AdjustmentHistoryPage() {
         {product && (
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-600">Product Name</p>
                   <p className="font-semibold">{product.name}</p>

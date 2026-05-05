@@ -123,26 +123,28 @@ export default function ViewPurchase() {
     <DashboardLayout title={`Purchase Order #${purchase.id}`}>
       <div className="p-6 w-full">
         {/* Action Buttons */}
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => setLocation(purchasesRoute)}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+          <Button variant="outline" size="sm" onClick={() => setLocation(purchasesRoute)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Purchases
+            Back
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button 
               variant="outline" 
+              size="sm"
               onClick={handleEdit}
               disabled={purchase.status === "received" || purchase.status === "cancelled"}
             >
               <Edit className="mr-2 h-4 w-4" />
-              Edit Order
+              Edit
             </Button>
             <Button 
+              size="sm"
               onClick={handleReceive}
               disabled={purchase.status === "received" || purchase.status === "cancelled" || purchase.status === "pending"}
             >
               <Package className="mr-2 h-4 w-4" />
-              Receive Items
+              Receive
             </Button>
           </div>
         </div>
@@ -169,7 +171,7 @@ export default function ViewPurchase() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Supplier</h4>
                 <p className="text-gray-600 dark:text-gray-400">{purchase.supplierName}</p>

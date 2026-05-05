@@ -134,22 +134,22 @@ export default function ReceivePurchase() {
     <DashboardLayout title={`Receive Purchase Order #${originalPurchase.id}`}>
       <div className="p-6 w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Receive Purchase Order #{originalPurchase.id}
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Receive Purchase #{originalPurchase.id}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Record received items from {originalPurchase.supplierName}
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              From {originalPurchase.supplierName}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel}>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button onClick={handleReceive} disabled={!hasItemsToReceive}>
+            <Button size="sm" onClick={handleReceive} disabled={!hasItemsToReceive}>
               <Package className="mr-2 h-4 w-4" />
-              Receive Items ({totalReceivingNow})
+              Receive ({totalReceivingNow})
             </Button>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function ReceivePurchase() {
             <CardTitle>Purchase Order Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <div className="text-sm text-muted-foreground">Supplier</div>
                 <div className="font-medium">{originalPurchase.supplierName}</div>

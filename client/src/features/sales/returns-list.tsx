@@ -277,14 +277,13 @@ function ReturnsList() {
     <DashboardLayout title="Sales Returns">
       <div className="p-4">
         <div className="w-full">
-          <div className="mb-6 flex justify-between items-start">
+          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                 Sales Returns
               </h1>
               <div className="text-gray-600 dark:text-gray-400 mt-1">
-                <p>Shop One - Logged in as: {(admin?.attendantId as any)?.username || user?.name} ({user?.role})</p>
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                <p className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
                   {!startDate && !endDate ? 
                     `Showing today's returns (${new Date().toLocaleDateString()})` : 
                     startDate === endDate ? 
@@ -296,7 +295,7 @@ function ReturnsList() {
             </div>
             
             {/* Action Buttons - Permission Controlled */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <PermissionGuard permission="returns_create">
                 <Button className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />

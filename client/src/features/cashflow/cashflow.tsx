@@ -694,7 +694,7 @@ export default function CashFlow() {
         {/* Cash at Hand - moved to top */}
         <div className="text-center">
           <p className="text-sm font-medium text-gray-600 mb-2">Cash at Hand</p>
-          <h3 className={`text-4xl font-bold ${summaryData.cashathand >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <h3 className={`text-2xl sm:text-4xl font-bold ${summaryData.cashathand >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {summaryData.cashathand >= 0 ? '+' : ''}{summaryData.cashathand.toLocaleString()}
           </h3>
         </div>
@@ -830,52 +830,52 @@ export default function CashFlow() {
         </div>
 
         {/* Cash Flow Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Cash In</p>
-                  <h3 className="text-2xl font-bold text-green-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Cash In</p>
+                  <h3 className="text-lg sm:text-2xl font-bold text-green-600">
                     +{summaryData.cashintotal.toLocaleString()}
                   </h3>
                 </div>
-                <TrendingUp className="w-8 h-8 text-green-500" />
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Cash Out</p>
-                  <h3 className="text-2xl font-bold text-red-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Cash Out</p>
+                  <h3 className="text-lg sm:text-2xl font-bold text-red-600">
                     -{summaryData.cashoutotal.toLocaleString()}
                   </h3>
                 </div>
-                <TrendingDown className="w-8 h-8 text-red-500" />
+                <TrendingDown className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-6">
+          <Card className="col-span-2 sm:col-span-1">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Net Flow</p>
-                  <h3 className={`text-2xl font-bold ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">Net Flow</p>
+                  <h3 className={`text-lg sm:text-2xl font-bold ${netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {netCashflow >= 0 ? '+' : ''}{netCashflow.toLocaleString()}
                   </h3>
                 </div>
-                <DollarSign className="w-8 h-8 text-blue-500" />
+                <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Additional Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
           <Card 
             className="cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 border-2 hover:border-blue-300"
             onClick={(e) => {

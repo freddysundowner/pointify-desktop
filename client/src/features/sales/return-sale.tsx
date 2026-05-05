@@ -254,17 +254,17 @@ export default function ReturnSale() {
     <DashboardLayout title={`Return Sale #${originalSale.receiptNo || originalSale.id}`}>
       <div className="p-6 w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               Process Return - Sale #{originalSale.receiptNo || originalSale.id}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Select items to return and specify return reasons
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => window.history.back()}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel

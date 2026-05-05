@@ -258,19 +258,19 @@ export default function ReturnPurchase() {
 
   return (
     <DashboardLayout title={`Return Purchase #${originalPurchase.invoiceNumber || originalPurchase.id}`}>
-      <div className="p-6 w-full">
+      <div className="p-3 sm:p-6 w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Process Return - Purchase #{originalPurchase.invoiceNumber || originalPurchase.id}
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Process Return #{originalPurchase.invoiceNumber || originalPurchase.id}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Select items to return to supplier and specify return reasons
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Select items to return to supplier
             </p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button variant="outline" onClick={() => window.location.href = purchasesRoute}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel

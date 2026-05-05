@@ -153,9 +153,9 @@ export default function ProfitLossPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Button 
               variant="outline" 
@@ -164,14 +164,14 @@ export default function ProfitLossPage() {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
+              Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Profit & Loss Report</h1>
-              <p className="text-gray-600 mt-1">Comprehensive financial analysis and performance metrics</p>
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Profit & Loss Report</h1>
+              <p className="text-sm text-gray-600 mt-1">Financial analysis and performance metrics</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Calculator className="h-5 w-5 text-blue-600" />
             <Badge variant="outline" className="text-blue-600 border-blue-200">
               Financial Report
@@ -188,7 +188,7 @@ export default function ProfitLossPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className={`grid gap-4 ${user ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+            <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${user ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
               <div className="space-y-2">
                 <Label htmlFor="fromDate">From Date</Label>
                 <Input
@@ -263,7 +263,7 @@ export default function ProfitLossPage() {
         {profitLossData && (
           <>
             {/* Key Metrics Summary */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
               <Card className="shadow-lg border-0">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">

@@ -534,7 +534,7 @@ export default function StockTransfer() {
                 Back to Dashboard
               </Button>
             )}
-            <h1 className="text-3xl font-bold tracking-tight">Stock Transfer</h1>
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Stock Transfer</h1>
           </div>
           <Button onClick={() => setShowCreateForm(true)} className="bg-purple-600 hover:bg-purple-700">
             <Plus className="h-4 w-4 mr-2" />

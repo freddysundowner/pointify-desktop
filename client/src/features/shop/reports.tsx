@@ -10,12 +10,12 @@ export default function Reports() {
       
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sales Reports</h1>
-              <p className="text-gray-600">Analyze your business performance</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Sales Reports</h1>
+              <p className="text-sm text-gray-600">Analyze your business performance</p>
             </div>
-            <Button className="bg-purple-600 hover:bg-purple-700">
+            <Button size="sm" className="bg-purple-600 hover:bg-purple-700 flex-shrink-0">
               <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>

@@ -356,7 +356,7 @@ export default function ShopDetails() {
       <div className="h-full bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b shadow-sm">
-          <div className="px-8 py-6">
+          <div className="px-4 sm:px-8 py-4 sm:py-6">
             <div className="flex items-center gap-4">
               <Link href="/shops">
                 <Button variant="ghost" size="sm" className="p-2">
@@ -364,15 +364,15 @@ export default function ShopDetails() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{shop.name}</h1>
-                <p className="text-gray-600">Manage your shop settings and configuration</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{shop.name}</h1>
+                <p className="text-sm text-gray-600">Manage your shop settings and configuration</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-8 py-8">
+        <div className="px-4 sm:px-8 py-4 sm:py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Quick Actions Sidebar */}
             <div className="lg:col-span-1 space-y-6">

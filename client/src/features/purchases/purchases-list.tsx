@@ -589,7 +589,7 @@ export default function PurchasesList() {
       <DashboardLayout title="Purchase Reports">
         <div className="p-4 w-full">
           <div className="mb-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
               <div className="flex items-center gap-4">
                 <Button
                   variant="outline"
@@ -601,10 +601,10 @@ export default function PurchasesList() {
                   Back
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     Purchase Reports
                   </h1>
-                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Shop One
                   </p>
                 </div>
@@ -637,7 +637,7 @@ export default function PurchasesList() {
     <DashboardLayout title="Purchase Reports">
       <div className="p-4 w-full">
         <div className="mb-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -649,28 +649,29 @@ export default function PurchasesList() {
                 Back
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   Purchase Reports
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Shop One
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button 
                 onClick={exportToPDF}
                 variant="outline"
+                size="sm"
                 className="flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                Export PDF
+                <span className="hidden sm:inline">Export </span>PDF
               </Button>
               {(isAdmin || hasAttendantPermission("stocks", "add_purchases")) && (
                 <Link href={addPurchasesRoute}>
-                  <Button onClick={handleCreatePurchase}>
+                  <Button size="sm" onClick={handleCreatePurchase}>
                   <Plus className="mr-2 h-4 w-4" />
-                  New Purchase Order
+                  <span className="hidden sm:inline">New </span>Purchase
                 </Button></Link>
               )}
             </div>

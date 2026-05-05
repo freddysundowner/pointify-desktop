@@ -392,16 +392,16 @@ export default function SubscriptionPage() {
   const renderPlanSelection = () => (
     <>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Choose Your Plan</h1>
-          <p className="text-gray-600 mt-2">Select the perfect subscription for your business needs</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Choose Your Plan</h1>
+          <p className="text-sm text-gray-600 mt-2">Select the perfect subscription for your business</p>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => setLocation('/dashboard')}
-          className="hover:bg-gray-100"
+          className="hover:bg-gray-100 flex-shrink-0"
         >
           <X className="h-5 w-5" />
         </Button>
@@ -530,10 +530,10 @@ export default function SubscriptionPage() {
 
   const renderShopSelection = () => (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between mb-6 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Select Your Shops</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Select Your Shops</h1>
+          <p className="text-sm text-gray-600 mt-2">
             Choose up to {selectedPlan.maxShops} shops for your {selectedPlan.name} plan
           </p>
         </div>
@@ -541,10 +541,10 @@ export default function SubscriptionPage() {
           variant="ghost" 
           size="sm" 
           onClick={() => setStep(1)}
-          className="hover:bg-gray-100"
+          className="hover:bg-gray-100 flex-shrink-0"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Plans
+          Back
         </Button>
       </div>
 
@@ -634,19 +634,19 @@ export default function SubscriptionPage() {
 
   const renderPayment = () => (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-start justify-between mb-6 sm:mb-8 gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Details</h1>
-          <p className="text-gray-600 mt-2">Complete your subscription purchase</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Payment Details</h1>
+          <p className="text-sm text-gray-600 mt-2">Complete your subscription purchase</p>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => setStep(2)}
-          className="hover:bg-gray-100"
+          className="hover:bg-gray-100 flex-shrink-0"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
-          Back to Shops
+          Back
         </Button>
       </div>
 

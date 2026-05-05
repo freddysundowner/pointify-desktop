@@ -203,8 +203,8 @@ export default function EditProfilePage() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-              <p className="text-gray-600">Update your personal information and preferences</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Edit Profile</h1>
+              <p className="text-sm text-gray-600">Update your personal information and preferences</p>
             </div>
           </div>
         </div>
