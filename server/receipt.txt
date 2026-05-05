@@ -2,18 +2,18 @@
         Nyahururu, Kenya
          SALES RECEIPT
 -------------------------------
-Receipt #: REC426183
-Date: May 5, 2026, 12:56 PM
+Receipt #: REC369166
+Date: May 5, 2026, 12:58 PM
 Customer: Walk-in
 Attendant: test
 -------------------------------
 test one
  srn: 
-  1 x KES 200.00 = KES200.00
+  2 x KES 200.00 = KES400.00
 -------------------------------
-Subtotal:      KES200.00
+Subtotal:      KES400.00
 Tax:           KES0.00
-TOTAL:         KES200.00
+TOTAL:         KES400.00
 
 Payment Method: cash
 

@@ -1047,8 +1047,8 @@ export default function ProductGrid({
               {viewMode === 'grid' && (
                 <Button
                   onClick={() => setShowCategoriesDrawer(true)}
-                  variant="outline"
-                  className="border-purple-300 text-purple-100 hover:bg-purple-500 h-7 px-2 text-xs"
+                  variant="ghost"
+                  className="border border-white/40 text-white bg-white/15 hover:bg-white/25 h-7 px-3 text-xs rounded-full"
                 >
                   Filter
                 </Button>
