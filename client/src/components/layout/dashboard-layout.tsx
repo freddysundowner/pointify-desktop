@@ -505,7 +505,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
               { href: dashboardRoute, icon: Home,   label: "Home" },
               { href: "/shops",       icon: Store,  label: "Shops" },
               { href: "/attendants",  icon: Users,  label: "Staff" },
-              { href: "/edit-profile", icon: User,  label: "Profile" },
             ].map(({ href, icon: Icon, label }) => {
               const active = location === href || location.startsWith(href + '/');
               return (
