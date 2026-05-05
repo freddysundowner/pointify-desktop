@@ -303,19 +303,18 @@ export default function SuppliersPage() {
       <div className="space-y-3 sm:space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
-            {isAttendantRoute && (
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <h1 className="text-base sm:text-xl font-bold">Suppliers</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-base sm:text-xl font-bold leading-tight">Suppliers</h1>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Supplier
+              <Button size="sm" className="h-8 text-xs sm:text-sm">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                <span className="hidden sm:inline">Add Supplier</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -413,116 +412,59 @@ export default function SuppliersPage() {
                 )}
               </div>
             ) : (
-              <>
-                {/* Mobile card view */}
-                <div className="block sm:hidden space-y-3">
-                  {filteredSuppliers.map((supplier: Supplier) => (
-                    <div key={supplier._id} className="border rounded-lg p-3 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold">{supplier.name}</p>
-                          {supplier.address && <p className="text-xs text-muted-foreground">{supplier.address}</p>}
-                        </div>
-                        {supplier.wallet !== undefined && supplier.wallet !== null && (
-                          <Badge variant={supplier.wallet > 0 ? "destructive" : "default"} className="text-xs ml-2">
-                            {supplier.wallet.toFixed(2)}
-                          </Badge>
-                        )}
-                      </div>
-                      {supplier.phoneNumber && <p className="text-sm text-gray-600 flex items-center gap-1"><Phone className="h-3 w-3" />{supplier.phoneNumber}</p>}
-                      {supplier.email && <p className="text-sm text-gray-600 flex items-center gap-1"><Mail className="h-3 w-3" />{supplier.email}</p>}
-                      <div className="flex gap-2 pt-1">
-                        {supplier.wallet && supplier.wallet < 0 && (
-                          <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} className="bg-green-600 hover:bg-green-700 h-7 px-2 text-xs">
-                            <CreditCard className="h-3 w-3 mr-1" />Pay
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} className="h-7 px-2"><History className="h-3 w-3" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} className="h-7 px-2"><Edit className="h-3 w-3" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} className="h-7 px-2"><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Desktop table */}
-                <div className="hidden sm:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Credit Limit</TableHead>
-                    <TableHead>Wallet</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSuppliers.map((supplier: Supplier) => (
-                    <TableRow key={supplier._id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{supplier.name}</p>
-                          {supplier.address && (
-                            <p className="text-sm text-muted-foreground">{supplier.address}</p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{supplier.contact}</TableCell>
-                      <TableCell>
-                        {supplier.email && (
-                          <div className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {supplier.email}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.phoneNumber && (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {supplier.phoneNumber}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.creditLimit ? (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            {supplier.creditLimit.toFixed(2)}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">No limit</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {supplier.wallet !== undefined && supplier.wallet !== null ? (
-                          <Badge variant={supplier.wallet > 0 ? "destructive" : "default"}>
-                            {supplier.wallet.toFixed(2)}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">0.00</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {supplier.wallet && supplier.wallet < 0 && (
-                            <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} title={`Pay Debt: ${Math.abs(supplier.wallet).toFixed(2)}`} className="bg-green-600 hover:bg-green-700">
-                              <CreditCard className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} title="View Purchase History"><History className="h-3 w-3" /></Button>
-                          <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} title="Edit Supplier"><Edit className="h-3 w-3" /></Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} title="Delete Supplier"><Trash2 className="h-3 w-3" /></Button>
-                        </div>
-                      </TableCell>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-xs py-2">Company</TableHead>
+                      <TableHead className="text-xs py-2 hidden sm:table-cell">Phone / Email</TableHead>
+                      <TableHead className="text-xs py-2 hidden md:table-cell">Credit Limit</TableHead>
+                      <TableHead className="text-xs py-2">Wallet</TableHead>
+                      <TableHead className="text-xs py-2">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((supplier: Supplier) => (
+                      <TableRow key={supplier._id}>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <p className="font-medium text-xs sm:text-sm">{supplier.name}</p>
+                          {supplier.address && <p className="text-[10px] text-muted-foreground hidden sm:block">{supplier.address}</p>}
+                          <div className="sm:hidden space-y-0.5 mt-0.5">
+                            {supplier.phoneNumber && <p className="text-[10px] text-gray-500 flex items-center gap-1"><Phone className="h-2.5 w-2.5" />{supplier.phoneNumber}</p>}
+                            {supplier.email && <p className="text-[10px] text-gray-500 flex items-center gap-1"><Mail className="h-2.5 w-2.5" />{supplier.email}</p>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 hidden sm:table-cell">
+                          <div className="space-y-0.5 text-xs">
+                            {supplier.phoneNumber && <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{supplier.phoneNumber}</div>}
+                            {supplier.email && <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{supplier.email}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2 hidden md:table-cell text-xs">
+                          {supplier.creditLimit ? <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />{supplier.creditLimit.toFixed(2)}</span> : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          {supplier.wallet !== undefined && supplier.wallet !== null ? (
+                            <Badge variant={supplier.wallet > 0 ? "destructive" : "default"} className="text-[10px]">
+                              {supplier.wallet.toFixed(2)}
+                            </Badge>
+                          ) : <span className="text-xs text-muted-foreground">0.00</span>}
+                        </TableCell>
+                        <TableCell className="py-2 px-2 sm:px-4">
+                          <div className="flex items-center gap-1">
+                            {supplier.wallet && supplier.wallet < 0 && (
+                              <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} className="bg-green-600 hover:bg-green-700 h-7 w-7 p-0"><CreditCard className="h-3 w-3" /></Button>
+                            )}
+                            <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} className="h-7 w-7 p-0"><History className="h-3 w-3" /></Button>
+                            <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} className="h-7 w-7 p-0"><Edit className="h-3 w-3" /></Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} className="h-7 w-7 p-0"><Trash2 className="h-3 w-3" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              </>
             )}
           </CardContent>
         </Card>
