@@ -1124,32 +1124,33 @@ export default function ProductGrid({
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
         <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white overflow-y-auto ${showMobileCart || viewMode === 'table' ? 'block' : 'hidden lg:block'}`}>
-          {/* Mobile: Stack vertically, Desktop: 2 columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-6 mb-3 lg:mb-6">
+          {/* Transaction ID + Date — always 2 cols */}
+          <div className="grid grid-cols-2 gap-2 lg:gap-6 mb-2 lg:mb-6">
             <div>
-              <label className="text-xs lg:text-sm font-medium text-gray-700 block mb-1 lg:mb-2">Transaction ID</label>
-              <Input value="S-01154" className="h-8 lg:h-10 bg-gray-50 text-xs lg:text-sm" readOnly />
+              <label className="text-xs font-medium text-gray-500 block mb-1">Txn ID</label>
+              <Input value="S-01154" className="h-8 bg-gray-50 text-xs" readOnly />
             </div>
             <div>
-              <label className="text-xs lg:text-sm font-medium text-gray-700 block mb-1 lg:mb-2">Date</label>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Date</label>
               <Input 
                 type="date" 
                 defaultValue={new Date().toISOString().split('T')[0]} 
-                className="h-8 lg:h-10 text-xs lg:text-sm" 
+                className="h-8 text-xs" 
                 disabled={!canSetSaleDate}
                 readOnly={!canSetSaleDate}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-6 mb-3 lg:mb-6">
+          {/* Customer + Sale Type — always 2 cols */}
+          <div className="grid grid-cols-2 gap-2 lg:gap-6 mb-2 lg:mb-6">
             <div>
-              <label className="text-xs lg:text-sm font-medium text-gray-700 block mb-1 lg:mb-2">Select Customer</label>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Customer</label>
               <div className="flex gap-1 lg:gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                   <Input
-                    className="h-8 lg:h-10 pl-7 pr-2 text-xs lg:text-sm"
+                    className="h-8 pl-7 pr-2 text-xs"
                     placeholder="Walk-in"
                     value={showMainCustomerDropdown ? mainCustomerSearch : (selectedCustomer ? selectedCustomer.name : '')}
                     onFocus={() => {
@@ -1219,39 +1220,26 @@ export default function ProductGrid({
               
               {/* Customer Balance Display */}
               {selectedCustomer && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex justify-between items-center text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Previous Balance: </span>
-                      <span className={`font-bold ${
-                        (selectedCustomer.wallet && parseFloat(selectedCustomer.wallet) >= 0) 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        Ksh {selectedCustomer.wallet 
-                          ? parseFloat(selectedCustomer.wallet).toFixed(2) 
-                          : '0.00'}
+                <div className="mt-1 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-gray-600">
+                      Bal: <span className={`font-bold ${parseFloat(selectedCustomer.wallet || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        Ksh {parseFloat(selectedCustomer.wallet || '0').toFixed(2)}
                       </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Credit Limit: Ksh {selectedCustomer.creditLimit 
-                        ? parseFloat(selectedCustomer.creditLimit).toFixed(2) 
-                        : '0.00'}
-                    </div>
-                  </div>
-                  <div className="mt-1 text-xs text-gray-600">
-                    Contact: {selectedCustomer.phone || selectedCustomer.email || 'N/A'}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      Limit: Ksh {parseFloat(selectedCustomer.creditLimit || '0').toFixed(2)}
+                    </span>
                   </div>
                 </div>
               )}
             </div>
             <div>
-              <label className="text-xs lg:text-sm font-medium text-gray-700 block mb-1 lg:mb-2">Sale Type</label>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Sale Type</label>
               <select 
                 value={saleType}
                 onChange={(e) => onSaleTypeChange(e.target.value)}
-                className="w-full h-8 lg:h-10 px-2 lg:px-3 border border-gray-300 rounded text-xs lg:text-sm bg-white cursor-pointer"
-                disabled={false}
+                className="w-full h-8 px-2 border border-gray-300 rounded text-xs bg-white cursor-pointer"
               >
                 <option value="Retail">Retail</option>
                 {canSellToDealer && <option value="Wholesale">Wholesale</option>}
@@ -1262,10 +1250,10 @@ export default function ProductGrid({
 
           {/* Table Mode - Product Search Bar */}
           {viewMode === 'table' && (
-            <div className="mb-4">
+            <div className="mb-2 lg:mb-4">
               <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5" />
                 <Input
                   ref={searchInputRef}
                   type="text"
@@ -1273,7 +1261,7 @@ export default function ProductGrid({
                   value={searchQuery}
                   onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
                   onKeyDown={(e) => handleSearchKeyDown(e, products.slice(0, 8))}
-                  className="pl-10 h-10 text-sm border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="pl-8 h-8 text-xs border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   autoFocus
                 />
                 
@@ -1344,19 +1332,22 @@ export default function ProductGrid({
                 type="button"
                 variant="outline"
                 onClick={() => setShowCustomItemDialog(true)}
-                className="h-10 px-3 border-dashed border-purple-400 text-purple-600 hover:bg-purple-50 whitespace-nowrap shrink-0"
+                className="h-8 px-2 border-dashed border-purple-400 text-purple-600 hover:bg-purple-50 whitespace-nowrap shrink-0 text-xs"
               >
-                <PlusCircle className="h-4 w-4 mr-1.5" />
-                Custom Item
+                <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                <span className="hidden sm:inline">Custom Item</span>
+                <span className="sm:hidden">Custom</span>
               </Button>
               </div>
             </div>
           )}
 
           {/* Items Table */}
-          <div className="border border-gray-200 rounded-lg mb-3 lg:mb-6 overflow-hidden shadow-sm">
-            <div className="bg-gray-50 px-3 lg:px-6 py-2 lg:py-3 border-b border-gray-200">
-              <h3 className="text-xs lg:text-sm font-semibold text-gray-700">Transaction Items</h3>
+          <div className="border border-gray-200 rounded-lg mb-2 lg:mb-6 overflow-hidden shadow-sm">
+            <div className="bg-gray-50 px-3 py-1.5 lg:px-6 lg:py-3 border-b border-gray-200">
+              <h3 className="text-xs font-semibold text-gray-600">
+                Cart {cartItems.length > 0 && <span className="text-purple-600">({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>}
+              </h3>
             </div>
 
             {/* Desktop Table Header */}
@@ -1368,12 +1359,12 @@ export default function ProductGrid({
               <div className="text-right">Subtotal</div>
               <div className="text-center">Remove</div>
             </div>
-            <div className="min-h-[120px] lg:min-h-[200px] bg-white">
+            <div className="min-h-[80px] lg:min-h-[200px] bg-white">
               {cartItems.length === 0 ? (
-                <div className="p-6 lg:p-12 text-center text-gray-500">
-                  <Package className="h-8 w-8 lg:h-16 lg:w-16 mx-auto mb-3 lg:mb-6 text-gray-300" />
-                  <p className="font-semibold text-sm lg:text-lg text-gray-600 mb-1 lg:mb-2">No items added</p>
-                  <p className="text-xs lg:text-base text-gray-400">Add products to start the transaction</p>
+                <div className="p-3 lg:p-12 text-center text-gray-500">
+                  <Package className="h-6 w-6 lg:h-16 lg:w-16 mx-auto mb-1 lg:mb-6 text-gray-300" />
+                  <p className="font-semibold text-xs lg:text-lg text-gray-600 mb-0.5 lg:mb-2">No items added</p>
+                  <p className="text-xs lg:text-base text-gray-400 hidden lg:block">Add products to start the transaction</p>
                 </div>
               ) : (
                 <div>
@@ -1568,7 +1559,7 @@ export default function ProductGrid({
 
           {/* Grid Mode - Sticky Payment Summary Section */}
           {viewMode === 'grid' && (
-            <div className="sticky bottom-0 bg-white mt-6 rounded-t-2xl shadow-lg">
+            <div className="sticky bottom-0 bg-white mt-2 lg:mt-6 rounded-t-2xl shadow-lg">
             {/* Summary Section */}
             <div className="bg-gray-50 p-2 lg:p-4">
               <div className="space-y-1 lg:space-y-2">
