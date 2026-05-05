@@ -1054,7 +1054,7 @@ export default function ProductGrid({
       </div>
 
       {/* Desktop Header Bar - No search on mobile */}
-      <div className="hidden md:block bg-white shadow-sm border-b border-gray-200">
+      <div className="hidden lg:block bg-white shadow-sm border-b border-gray-200">
         <div className="px-3 sm:px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             {/* Keyboard shortcut hints — offset to clear the absolute Back button */}
