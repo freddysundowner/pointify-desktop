@@ -509,7 +509,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
               const active = location === href || location.startsWith(href + '/');
               return (
                 <Link key={href} href={href}>
-                  <div className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 w-[calc(100vw/5)] cursor-pointer transition-colors ${
+                  <div className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 w-[calc(100vw/4)] cursor-pointer transition-colors ${
                     active ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
                   }`}>
                     <div className={`p-1 rounded-xl transition-all ${active ? 'bg-purple-50' : ''}`}>
@@ -526,7 +526,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             {/* More tab → opens full slide-out menu */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 flex-1 w-[calc(100vw/5)] transition-colors ${
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 flex-1 w-[calc(100vw/4)] transition-colors ${
                 isMobileMenuOpen ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
               }`}
             >
