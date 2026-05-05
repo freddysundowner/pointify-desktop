@@ -505,32 +505,28 @@ export default function StockProducts() {
 
   return (
     <DashboardLayout title="Stock Products">
-      <div className="space-y-3 sm:space-y-6">
-        {/* Back button */}
-        <div className="flex items-center space-x-4 mb-4">
+      <div className="space-y-3 sm:space-y-5">
+        {/* Header row */}
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
             onClick={() => {
-              // Check if we came from stock summary by looking at URL parameters
               const urlParams = new URLSearchParams(window.location.search);
               const hasFilter = urlParams.has('filter');
-              
               if (hasFilter) {
-                // If we came from stock summary with a filter, go back there
                 const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
                 setLocation(backRoute);
               } else {
-                // Otherwise go to dashboard
                 const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
                 setLocation(backRoute);
               }
             }}
-            className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
           </Button>
+          <h1 className="text-base sm:text-xl font-semibold">Stock Products</h1>
         </div>
         {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
         {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
@@ -699,7 +695,7 @@ export default function StockProducts() {
                         hasAttendantPermission(
                           "stocks",
                           "view_buying_price",
-                        )) && <th className="text-left p-4 font-medium">Buying Price</th>}
+                        )) && <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">Buying Price</th>}
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Qty</th>
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">Status</th>
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Actions</th>
@@ -930,16 +926,16 @@ export default function StockProducts() {
             </div>
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Items per page:</span>
+            <div className="flex items-center justify-between px-3 py-2 border-t gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-600 hidden sm:inline">Per page:</span>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => {
                     setItemsPerPage(Number(e.target.value));
-                    setPage(1); // Reset to first page when changing items per page
+                    setPage(1);
                   }}
-                  className="border rounded px-2 py-1 text-sm"
+                  className="border rounded px-1.5 py-0.5 text-xs"
                 >
                   <option value={5}>5</option>
                   <option value={10}>10</option>
@@ -948,28 +944,24 @@ export default function StockProducts() {
                 </select>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, totalProducts)} of{" "}
-                  {totalProducts} products
-                </span>
-              </div>
+              <span className="text-xs text-gray-500 hidden sm:inline">
+                {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalProducts)} of {totalProducts}
+              </span>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 px-2 text-xs"
                   onClick={() => setPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage <= 1}
                 >
-                  Previous
+                  Prev
                 </Button>
 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-0.5">
                   {(() => {
                     const pages = [];
-
                     for (let i = 1; i <= Math.min(totalPages, 5); i++) {
                       pages.push(
                         <Button
@@ -977,13 +969,12 @@ export default function StockProducts() {
                           variant={currentPage === i ? "default" : "outline"}
                           size="sm"
                           onClick={() => setPage(i)}
-                          className="w-8 h-8 p-0"
+                          className="w-7 h-7 p-0 text-xs"
                         >
                           {i}
                         </Button>,
                       );
                     }
-
                     return pages;
                   })()}
                 </div>
@@ -991,6 +982,7 @@ export default function StockProducts() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 px-2 text-xs"
                   onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage >= totalPages}
                 >
