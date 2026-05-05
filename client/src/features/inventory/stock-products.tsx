@@ -531,109 +531,67 @@ export default function StockProducts() {
         {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
         {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                    <div>
-                      <p className="text-xs sm:text-sm font-medium text-gray-600">
-                        Low Qty
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold text-orange-600">
-                        {lowQuantityProducts}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setStockFilter(
-                        stockFilter === "lowstock" ? "all" : "lowstock",
-                      )
-                    }
-                    className={`text-xs ${stockFilter === "lowstock" ? "bg-orange-100 text-orange-700" : "text-gray-500 hover:text-orange-600"}`}
-                  >
-                    {stockFilter === "lowstock" ? "Show All" : "View"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
-                    <div>
-                      <p className="text-xs sm:text-sm font-medium text-gray-600">
-                        Out of Stock
-                      </p>
-                      <p className="text-lg sm:text-2xl font-bold text-red-600">
-                        {outOfStockProducts}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      setStockFilter(
-                        stockFilter === "outofstock" ? "all" : "outofstock",
-                      )
-                    }
-                    className={`text-xs ${stockFilter === "outofstock" ? "bg-red-100 text-red-700" : "text-gray-500 hover:text-red-600"}`}
-                  >
-                    {stockFilter === "outofstock" ? "Show All" : "View"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <Card
+              className={`cursor-pointer transition-colors ${stockFilter === "lowstock" ? "ring-2 ring-orange-400 bg-orange-50" : "hover:bg-orange-50/50"}`}
+              onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
+            >
+              <CardContent className="p-2.5 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">
-                      Stock Value
-                    </p>
-                    <p className="text-sm sm:text-xl font-bold text-green-600 truncate">
-                      {currency} {totalStockValue.toLocaleString()}
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 leading-tight">Low Qty</p>
+                    <p className="text-base sm:text-xl font-bold text-orange-600 leading-tight">{lowQuantityProducts}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <Card
+              className={`cursor-pointer transition-colors ${stockFilter === "outofstock" ? "ring-2 ring-red-400 bg-red-50" : "hover:bg-red-50/50"}`}
+              onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
+            >
+              <CardContent className="p-2.5 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">
-                      Profit Est.
-                    </p>
-                    <p className="text-sm sm:text-xl font-bold text-purple-600 truncate">
-                      {currency} {profitEstimate.toLocaleString()}
-                    </p>
+                    <p className="text-xs font-medium text-gray-500 leading-tight">Out of Stock</p>
+                    <p className="text-base sm:text-xl font-bold text-red-600 leading-tight">{outOfStockProducts}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-600">
-                      Total Stock
-                    </p>
-                    <p className="text-lg sm:text-2xl font-bold text-indigo-600">
-                      {totalStockCount}
-                    </p>
+              <CardContent className="p-2.5 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-500 leading-tight">Stock Value</p>
+                    <p className="text-xs sm:text-base font-bold text-green-600 truncate leading-tight">{currency} {totalStockValue.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-2.5 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-500 leading-tight">Profit Est.</p>
+                    <p className="text-xs sm:text-base font-bold text-purple-600 truncate leading-tight">{currency} {profitEstimate.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-2.5 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-500 leading-tight">Total Stock</p>
+                    <p className="text-base sm:text-xl font-bold text-indigo-600 leading-tight">{totalStockCount}</p>
                   </div>
                 </div>
               </CardContent>
