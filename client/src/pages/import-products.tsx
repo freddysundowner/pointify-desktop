@@ -58,7 +58,42 @@ export default function ImportProductsPage() {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<ResultRow[]>([]);
   const [isDone, setIsDone] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const ACCEPTED_TYPES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+  ];
+
+  const isValidFile = (f: File) =>
+    ACCEPTED_TYPES.includes(f.type) || f.name.endsWith(".xlsx") || f.name.endsWith(".xls");
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isImporting) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (isImporting) return;
+    const dropped = e.dataTransfer.files[0];
+    if (!dropped) return;
+    if (!isValidFile(dropped)) {
+      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx or .xls).", variant: "destructive" });
+      return;
+    }
+    handleFileChange(dropped);
+  };
 
   const downloadSample = () => {
     const data = [
@@ -242,8 +277,16 @@ export default function ImportProductsPage() {
                   onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                 />
                 <div
-                  className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-5 cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
+                  className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-5 cursor-pointer transition-colors ${
+                    isDragging
+                      ? "border-purple-500 bg-purple-50 scale-[1.01]"
+                      : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50"
+                  }`}
                   onClick={() => !isImporting && fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                 >
                   {file ? (
                     <div className="text-center">
@@ -256,10 +299,15 @@ export default function ImportProductsPage() {
                         <X className="h-3 w-3" /> Remove
                       </button>
                     </div>
+                  ) : isDragging ? (
+                    <>
+                      <Upload className="h-8 w-8 text-purple-500 mb-2 animate-bounce" />
+                      <p className="text-sm font-medium text-purple-600">Drop it here!</p>
+                    </>
                   ) : (
                     <>
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500 text-center">Click to select an Excel file<br /><span className="text-xs">.xlsx or .xls</span></p>
+                      <p className="text-sm text-gray-500 text-center">Drag & drop or click to select<br /><span className="text-xs">.xlsx or .xls</span></p>
                     </>
                   )}
                 </div>
