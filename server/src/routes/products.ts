@@ -698,17 +698,18 @@ export function registerProductRoutes(app: Express) {
       if (!token) {
         return res.status(401).json({ error: "Authorization token required" });
       }
-      const { ids } = req.body;
-      if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ error: "ids array is required" });
+      const { ids, shopId } = req.body;
+      if (!shopId && (!Array.isArray(ids) || ids.length === 0)) {
+        return res.status(400).json({ error: "ids array or shopId is required" });
       }
+      const payload = shopId ? { shopId } : { ids };
       const data = await makePointifyRequest("/product/bulk/delete", {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ids }),
+        body: JSON.stringify(payload),
       });
       res.json(data);
     } catch (error) {

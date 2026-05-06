@@ -118,6 +118,8 @@ export default function StockProducts() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   // Note: Adjustment history now uses standalone page instead of dialog
 
@@ -164,6 +166,30 @@ export default function StockProducts() {
     }
     setIsBulkDeleting(false);
     setBulkDeleteConfirmOpen(false);
+  };
+
+  const handleDeleteAll = async () => {
+    const shopId = selectedShopId;
+    if (!shopId) {
+      toast({ title: "No shop selected", description: "Please select a shop first.", variant: "destructive" });
+      return;
+    }
+    setIsDeletingAll(true);
+    try {
+      const resp = await apiCall("/api/product/bulk/delete", {
+        method: "DELETE",
+        body: JSON.stringify({ shopId }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      toast({ title: "All products deleted", description: "All products in this shop have been deleted." });
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+      refreshProducts();
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+    setIsDeletingAll(false);
+    setDeleteAllConfirmOpen(false);
   };
 
   // Get effective shop ID from Redux state or fallback to admin/attendant data
@@ -693,6 +719,17 @@ export default function StockProducts() {
                 </Button>
               )}
 
+              {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                <Button
+                  variant="outline"
+                  className="h-8 text-sm gap-1.5 border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={() => setDeleteAllConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete All</span>
+                </Button>
+              )}
+
               {(hasPermission("inventory_add") ||
                 hasAttendantPermission("stocks", "add_products") ||
                 hasAttendantPermission("products", "add")) && (
@@ -1142,6 +1179,29 @@ export default function StockProducts() {
         </DialogContent>
       </Dialog>
 
+
+      {/* Delete All Confirmation */}
+      <Dialog open={deleteAllConfirmOpen} onOpenChange={(o) => { if (!isDeletingAll) setDeleteAllConfirmOpen(o); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete All Products?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete <strong>every product</strong> in this shop. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteAllConfirmOpen(false)} disabled={isDeletingAll}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAll} disabled={isDeletingAll}>
+              {isDeletingAll ? "Deleting…" : "Delete All"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Delete Confirmation */}
       <Dialog open={bulkDeleteConfirmOpen} onOpenChange={(o) => { if (!isBulkDeleting) setBulkDeleteConfirmOpen(o); }}>
