@@ -657,7 +657,7 @@ export function registerProductRoutes(app: Express) {
   });
 
   // Bulk import products
-  app.post("/api/product/import", async (req, res) => {
+  app.post("/api/products/import/products", async (req, res) => {
     try {
       const token = extractToken(req);
       if (!token) {
@@ -667,7 +667,7 @@ export function registerProductRoutes(app: Express) {
       if (!Array.isArray(products) || products.length === 0) {
         return res.status(400).json({ error: "products array is required" });
       }
-      const data = await makePointifyRequest("/product/import", {
+      const data = await makePointifyRequest("/products/import/products", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

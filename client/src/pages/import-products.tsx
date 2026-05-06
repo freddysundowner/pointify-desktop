@@ -190,7 +190,7 @@ export default function ImportProductsPage() {
 
     try {
       setProgress(Math.round(products.length * 0.1));
-      const resp = await apiCall("/api/product/import", {
+      const resp = await apiCall("/api/products/import/products", {
         method: "POST",
         body: JSON.stringify({ products }),
       });
