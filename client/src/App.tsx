@@ -80,6 +80,7 @@ import PurchaseViewPage from "@/pages/purchase-view";
 import PurchaseEditPage from "@/pages/purchase-edit";
 import SupplierHistoryPage from "@/pages/supplier-history";
 import BulkCreateProducts from "@/pages/bulk-create-products";
+import ImportProductsPage from "@/pages/import-products";
 import NotFound from "@/pages/not-found";
 import AttendantLogin from "@/pages/attendant-login";
 import AttendantDashboard from "@/pages/attendant-dashboard";
@@ -458,6 +459,7 @@ function AppContent() {
             <Route path="/shop-setup" component={ShopSetup} />
             <Route path="/shop/setup" component={ShopSetup} />
             <Route path="/stock/products" component={StockProducts} />
+            <Route path="/stock/import-products" component={ImportProductsPage} />
             <Route path="/stock/summary" component={StockSummary} />
             <Route path="/stock/count" component={StockCount} />
             <Route path="/stock/count-history" component={StockCountHistoryPage} />

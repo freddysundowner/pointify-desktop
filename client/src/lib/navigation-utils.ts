@@ -11,6 +11,10 @@ export const ROUTE_MAPPINGS = {
     admin: "/stock/add-product", 
     attendant: "/attendant/stock/add-product"
   },
+  importProducts: {
+    admin: "/stock/import-products",
+    attendant: "/stock/import-products"
+  },
   editProduct: {
     admin: "/stock/edit-product",
     attendant: "/attendant/stock/edit-product"
