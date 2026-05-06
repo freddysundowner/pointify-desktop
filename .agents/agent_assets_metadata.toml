@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "TkFhy84q-sBe7SfLVfSZs"
+uri = "file://attached_assets/blessed_kitchen_import_ready.xlsx"
+type = "table"
+title = "blessed_kitchen_import_ready.xlsx"
