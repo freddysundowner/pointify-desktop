@@ -656,6 +656,41 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Bulk delete products
+  app.delete("/api/product/bulk/delete", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const { ids } = req.body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: "ids array is required" });
+      }
+      const data = await makePointifyRequest("/product/bulk/delete", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids }),
+      });
+      res.json(data);
+    } catch (error) {
+      const status = (error as any).status || 500;
+      const responseBody = (error as any).responseBody;
+      if (responseBody) {
+        try {
+          res.status(status).json(JSON.parse(responseBody));
+        } catch {
+          res.status(status).json({ error: "Failed to bulk delete products" });
+        }
+      } else {
+        res.status(500).json({ error: "Failed to bulk delete products" });
+      }
+    }
+  });
+
   // Delete product
   app.delete("/api/product/:id", async (req, res) => {
     try {

@@ -191,6 +191,7 @@ export default function ImportProductsPage() {
         virtual: false,
         trackInventory: true,
         adminid: adminId,
+        attendantId: adminData.attendantId?._id || adminData._id,
         shopId,
       };
       try {

@@ -52,6 +52,7 @@ import {
   Check,
   Upload,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { apiCall } from "@/lib/api-config";
 import { Link, useLocation } from "wouter";
@@ -113,6 +114,10 @@ export default function StockProducts() {
 
   const [isAdjusting, setIsAdjusting] = useState(false);
 
+  // Bulk delete state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Note: Adjustment history now uses standalone page instead of dialog
 
@@ -132,6 +137,34 @@ export default function StockProducts() {
   useEffect(() => {
     setPage(1);
   }, [searchQuery, selectedCategory, productType, sortBy, stockFilter]);
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const allPageIds = filteredProducts?.map((p: any) => p._id) ?? [];
+  const allPageSelected = allPageIds.length > 0 && allPageIds.every((id: string) => selectedIds.includes(id));
+
+  const toggleSelectAll = () =>
+    setSelectedIds(allPageSelected ? selectedIds.filter((id) => !allPageIds.includes(id)) : [...new Set([...selectedIds, ...allPageIds])]);
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const resp = await apiCall("/api/product/bulk/delete", {
+        method: "DELETE",
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      toast({ title: "Deleted", description: `${selectedIds.length} product${selectedIds.length !== 1 ? "s" : ""} deleted successfully.` });
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+      refreshProducts();
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+    setIsBulkDeleting(false);
+    setBulkDeleteConfirmOpen(false);
+  };
 
   // Get effective shop ID from Redux state or fallback to admin/attendant data
   const getShopId = () => {
@@ -649,6 +682,17 @@ export default function StockProducts() {
                 </SelectContent>
               </Select>
 
+              {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                <Button
+                  variant="destructive"
+                  className="h-8 text-sm gap-1.5"
+                  onClick={() => setBulkDeleteConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete {selectedIds.length}</span>
+                </Button>
+              )}
+
               {(hasPermission("inventory_add") ||
                 hasAttendantPermission("stocks", "add_products") ||
                 hasAttendantPermission("products", "add")) && (
@@ -721,6 +765,13 @@ export default function StockProducts() {
                 <table className="w-full">
                   <thead className="border-b bg-gray-50">
                     <tr>
+                      <th className="p-2 sm:p-4 w-8">
+                        <Checkbox
+                          checked={allPageSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Select all"
+                        />
+                      </th>
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Product</th>
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">SKU</th>
                       <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Price</th>
@@ -779,8 +830,15 @@ export default function StockProducts() {
                         return (
                           <tr
                             key={product._id}
-                            className={`border-b hover:bg-gray-50 ${rowBgClass}`}
+                            className={`border-b hover:bg-gray-50 ${rowBgClass} ${selectedIds.includes(product._id) ? "bg-purple-50 hover:bg-purple-100" : ""}`}
                           >
+                            <td className="p-2 sm:p-4 w-8">
+                              <Checkbox
+                                checked={selectedIds.includes(product._id)}
+                                onCheckedChange={() => toggleSelect(product._id)}
+                                aria-label={`Select ${product.name}`}
+                              />
+                            </td>
                             <td className="p-2 sm:p-4">
                               <div>
                                 <p className="font-medium text-sm">{product.name}</p>
@@ -1084,6 +1142,29 @@ export default function StockProducts() {
         </DialogContent>
       </Dialog>
 
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={bulkDeleteConfirmOpen} onOpenChange={(o) => { if (!isBulkDeleting) setBulkDeleteConfirmOpen(o); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete {selectedIds.length} Product{selectedIds.length !== 1 ? "s" : ""}?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete the selected product{selectedIds.length !== 1 ? "s" : ""}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setBulkDeleteConfirmOpen(false)} disabled={isBulkDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+              {isBulkDeleting ? "Deleting…" : `Delete ${selectedIds.length}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </DashboardLayout>
   );
