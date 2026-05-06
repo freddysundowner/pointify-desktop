@@ -176,12 +176,47 @@ export default function StockProducts() {
     }
     setIsDeletingAll(true);
     try {
-      const resp = await apiCall("/api/product/bulk/delete", {
-        method: "DELETE",
-        body: JSON.stringify({ shopId }),
+      // Fetch all product IDs for this shop in one call (large limit)
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "5000",
+        shopid: shopId,
+        reason: "",
+        date: "",
+        name: "",
+        type: "",
+        sort: "",
+        productid: "",
+        barcodeid: "",
+        productType: "",
+        useWarehouse: "true",
+        warehouse: "false",
+        ...(admin?._id ? { adminid: admin._id } : {}),
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      toast({ title: "All products deleted", description: "All products in this shop have been deleted." });
+      const fetchResp = await apiCall(`/api/product?${params.toString()}`, { method: "GET" });
+      if (!fetchResp.ok) throw new Error(`Failed to fetch products: HTTP ${fetchResp.status}`);
+      const fetchData = await fetchResp.json();
+      const allProducts: any[] = Array.isArray(fetchData?.data) ? fetchData.data : Array.isArray(fetchData) ? fetchData : [];
+      if (allProducts.length === 0) {
+        toast({ title: "No products found", description: "There are no products to delete in this shop." });
+        setIsDeletingAll(false);
+        setDeleteAllConfirmOpen(false);
+        return;
+      }
+      const ids = allProducts.map((p: any) => p._id);
+
+      // Delete in batches of 200 to avoid payload limits
+      const BATCH = 200;
+      for (let i = 0; i < ids.length; i += BATCH) {
+        const batch = ids.slice(i, i + BATCH);
+        const resp = await apiCall("/api/product/bulk/delete", {
+          method: "DELETE",
+          body: JSON.stringify({ ids: batch }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      }
+
+      toast({ title: "All products deleted", description: `${ids.length} product${ids.length !== 1 ? "s" : ""} deleted successfully.` });
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["/api/product"] });
       refreshProducts();
