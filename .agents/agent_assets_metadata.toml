@@ -12,3 +12,9 @@ id = "u3jXmh90x28DEHzITYsqm"
 uri = "file://attached_assets/blessed_shop_2_with_prices.xlsx"
 type = "table"
 title = "blessed_shop_2_with_prices.xlsx"
+
+[[outputs]]
+id = "RZrukfVZRPf9bdgKmN03r"
+uri = "file://attached_assets/blessed_shop_2_with_prices_colored.xlsx"
+type = "table"
+title = "blessed_shop_2_with_prices_colored.xlsx"

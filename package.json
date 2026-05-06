@@ -93,6 +93,7 @@
     }
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "mongodb": "^6.17.0"
   }
 }
