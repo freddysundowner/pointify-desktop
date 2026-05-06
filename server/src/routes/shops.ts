@@ -69,10 +69,12 @@ export function registerShopRoutes(app: Express) {
   app.get("/api/shop/admin/:adminId", async (req, res) => {
     try {
       const { adminId } = req.params;
+      const token = extractToken(req);
       console.log(`🏪 Fetching shops for admin: ${adminId}`);
-      
+
       const response = await makePointifyRequest(`/shop/admin/${adminId}`, {
         method: "GET",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       
       console.log(`🏪 Found ${response?.length || 0} shops for admin ${adminId}`);
