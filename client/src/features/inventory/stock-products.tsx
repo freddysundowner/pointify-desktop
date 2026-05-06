@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,11 @@ import {
   Download,
   SlidersHorizontal,
   Check,
+  Upload,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { apiCall } from "@/lib/api-config";
 import { Link, useLocation } from "wouter";
@@ -111,6 +115,125 @@ export default function StockProducts() {
   const [adjustType, setAdjustType] = useState<"increase" | "decrease">("increase");
 
   const [isAdjusting, setIsAdjusting] = useState(false);
+
+  // CSV Import State
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importTotal, setImportTotal] = useState(0);
+  const [importDone, setImportDone] = useState(false);
+  const [importResults, setImportResults] = useState<Array<{ name: string; success: boolean; error?: string }>>([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const CSV_COLUMNS = [
+    "name", "category", "buyingPrice", "sellingPrice", "wholesalePrice",
+    "dealerPrice", "quantity", "sku", "description", "lowStockThreshold",
+    "reorderLevel", "unit", "manufacturer", "measure",
+  ];
+
+  const downloadSampleCSV = () => {
+    const header = CSV_COLUMNS.join(",");
+    const sample = [
+      "White Shirt,Clothing,500,800,650,600,50,SKU001,Premium white shirt,10,5,pcs,BrandX,",
+      "Basmati Rice 5kg,Groceries,800,1200,1000,950,100,SKU002,Quality basmati rice,20,10,kg,,",
+      "Sony Headphones,Electronics,3000,5000,4200,4000,30,SKU003,Noise cancelling headphones,5,3,pcs,Sony,",
+    ].join("\n");
+    const blob = new Blob([header + "\n" + sample], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "products_sample.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const parseCSV = (text: string): Record<string, string>[] => {
+    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+    return lines.slice(1).map(line => {
+      const values = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || line.split(",");
+      const row: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        row[h] = (values[i] || "").trim().replace(/^"|"$/g, "");
+      });
+      return row;
+    }).filter(row => row.name);
+  };
+
+  const handleImportCSV = async () => {
+    if (!importFile) return;
+    const adminDataStr = localStorage.getItem("adminData");
+    if (!adminDataStr) {
+      toast({ title: "Error", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+    const adminData = JSON.parse(adminDataStr);
+    const adminId = adminData._id;
+    const shopId = effectiveShopId || (typeof adminData?.primaryShop === "string" ? adminData.primaryShop : adminData?.primaryShop?._id);
+
+    const text = await importFile.text();
+    const rows = parseCSV(text);
+    if (rows.length === 0) {
+      toast({ title: "Error", description: "No valid rows found in the CSV file.", variant: "destructive" });
+      return;
+    }
+
+    setIsImporting(true);
+    setImportTotal(rows.length);
+    setImportProgress(0);
+    setImportResults([]);
+    setImportDone(false);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const product = {
+        name: row.name,
+        category: row.category || "",
+        buyingPrice: parseFloat(row.buyingPrice) || 0,
+        sellingPrice: parseFloat(row.sellingPrice) || 0,
+        wholesalePrice: parseFloat(row.wholesalePrice) || 0,
+        dealerPrice: parseFloat(row.dealerPrice) || 0,
+        quantity: parseInt(row.quantity) || 0,
+        sku: row.sku || "",
+        description: row.description || "",
+        lowStockThreshold: parseInt(row.lowStockThreshold) || 0,
+        reorderLevel: parseInt(row.reorderLevel) || 0,
+        unit: row.unit || "pcs",
+        manufacturer: row.manufacturer || "",
+        measure: row.measure || "",
+        virtual: false,
+        trackInventory: true,
+        adminid: adminId,
+        shopId,
+      };
+      try {
+        const resp = await apiCall("/api/product", { method: "POST", body: JSON.stringify(product) });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        successCount++;
+        setImportResults(prev => [...prev, { name: row.name, success: true }]);
+      } catch (err: any) {
+        failCount++;
+        setImportResults(prev => [...prev, { name: row.name, success: false, error: err.message }]);
+      }
+      setImportProgress(i + 1);
+      await new Promise(r => setTimeout(r, 80));
+    }
+
+    setIsImporting(false);
+    setImportDone(true);
+    queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+    refreshProducts();
+    toast({
+      title: "Import Complete",
+      description: `${successCount} product${successCount !== 1 ? "s" : ""} imported successfully${failCount > 0 ? `, ${failCount} failed` : ""}.`,
+      variant: failCount > 0 ? "destructive" : "default",
+    });
+  };
 
   // Note: Adjustment history now uses standalone page instead of dialog
 
@@ -650,12 +773,29 @@ export default function StockProducts() {
               {(hasPermission("inventory_add") ||
                 hasAttendantPermission("stocks", "add_products") ||
                 hasAttendantPermission("products", "add")) && (
-                <Link href={addProductRoute}>
-                  <Button className="bg-purple-600 hover:bg-purple-700 h-8 text-sm">
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    <span className="hidden sm:inline">Add </span>Product
+                <>
+                  <Button
+                    variant="outline"
+                    className="h-8 text-sm border-purple-300 text-purple-700 hover:bg-purple-50"
+                    onClick={() => {
+                      setImportFile(null);
+                      setImportResults([]);
+                      setImportDone(false);
+                      setImportProgress(0);
+                      setImportTotal(0);
+                      setImportDialogOpen(true);
+                    }}
+                  >
+                    <Upload className="h-4 w-4 mr-1.5" />
+                    <span className="hidden sm:inline">Import</span>
                   </Button>
-                </Link>
+                  <Link href={addProductRoute}>
+                    <Button className="bg-purple-600 hover:bg-purple-700 h-8 text-sm">
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline">Add </span>Product
+                    </Button>
+                  </Link>
+                </>
               )}
             </div>
 
@@ -1071,6 +1211,128 @@ export default function StockProducts() {
         </DialogContent>
       </Dialog>
 
+
+      {/* CSV Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={(open) => { if (!isImporting) setImportDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-purple-600" />
+              Import Products from CSV
+            </DialogTitle>
+            <DialogDescription>
+              Download the sample CSV, fill it in with your products, then upload it here.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Step 1 – Download sample */}
+            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+              <p className="text-sm font-medium text-gray-700 mb-1">Step 1 — Download the sample file</p>
+              <p className="text-xs text-gray-500 mb-3">
+                Columns: <span className="font-mono">name, category, buyingPrice, sellingPrice, wholesalePrice, dealerPrice, quantity, sku, description, lowStockThreshold, reorderLevel, unit, manufacturer, measure</span>
+              </p>
+              <Button variant="outline" size="sm" onClick={downloadSampleCSV} className="gap-2">
+                <Download className="h-4 w-4" />
+                Download Sample CSV
+              </Button>
+            </div>
+
+            {/* Step 2 – Upload filled file */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Step 2 — Upload your filled CSV</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setImportFile(file);
+                  setImportResults([]);
+                  setImportDone(false);
+                  setImportProgress(0);
+                }}
+              />
+              <div
+                className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {importFile ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <FileText className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium">{importFile.name}</span>
+                    <button
+                      className="ml-2 text-gray-400 hover:text-red-500"
+                      onClick={(e) => { e.stopPropagation(); setImportFile(null); setImportResults([]); setImportDone(false); }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">Click to select a CSV file</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Progress */}
+            {isImporting && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Importing products…</span>
+                  <span>{importProgress} / {importTotal}</span>
+                </div>
+                <Progress value={importTotal > 0 ? (importProgress / importTotal) * 100 : 0} />
+              </div>
+            )}
+
+            {/* Results summary */}
+            {importDone && importResults.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex gap-4 text-sm">
+                  <span className="flex items-center gap-1 text-green-700">
+                    <CheckCircle className="h-4 w-4" />
+                    {importResults.filter(r => r.success).length} imported
+                  </span>
+                  {importResults.filter(r => !r.success).length > 0 && (
+                    <span className="flex items-center gap-1 text-red-600">
+                      <XCircle className="h-4 w-4" />
+                      {importResults.filter(r => !r.success).length} failed
+                    </span>
+                  )}
+                </div>
+                {importResults.filter(r => !r.success).length > 0 && (
+                  <div className="max-h-32 overflow-y-auto rounded border border-red-100 bg-red-50 p-2 text-xs space-y-1">
+                    {importResults.filter(r => !r.success).map((r, i) => (
+                      <p key={i} className="text-red-700">
+                        <span className="font-medium">{r.name}</span>: {r.error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={isImporting}>
+              {importDone ? "Close" : "Cancel"}
+            </Button>
+            {!importDone && (
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                onClick={handleImportCSV}
+                disabled={!importFile || isImporting}
+              >
+                {isImporting ? `Importing… (${importProgress}/${importTotal})` : "Import Products"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </DashboardLayout>
   );
