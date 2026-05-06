@@ -6,3 +6,9 @@ id = "TkFhy84q-sBe7SfLVfSZs"
 uri = "file://attached_assets/blessed_kitchen_import_ready.xlsx"
 type = "table"
 title = "blessed_kitchen_import_ready.xlsx"
+
+[[outputs]]
+id = "u3jXmh90x28DEHzITYsqm"
+uri = "file://attached_assets/blessed_shop_2_with_prices.xlsx"
+type = "table"
+title = "blessed_shop_2_with_prices.xlsx"
