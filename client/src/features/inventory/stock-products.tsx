@@ -55,6 +55,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import * as XLSX from "xlsx";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { apiCall } from "@/lib/api-config";
 import { Link, useLocation } from "wouter";
@@ -132,34 +133,32 @@ export default function StockProducts() {
     "reorderLevel", "unit", "manufacturer", "measure",
   ];
 
-  const downloadSampleCSV = () => {
-    const header = CSV_COLUMNS.join(",");
-    const sample = [
-      "White Shirt,Clothing,500,800,650,600,50,SKU001,Premium white shirt,10,5,pcs,BrandX,",
-      "Basmati Rice 5kg,Groceries,800,1200,1000,950,100,SKU002,Quality basmati rice,20,10,kg,,",
-      "Sony Headphones,Electronics,3000,5000,4200,4000,30,SKU003,Noise cancelling headphones,5,3,pcs,Sony,",
-    ].join("\n");
-    const blob = new Blob([header + "\n" + sample], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "products_sample.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadSampleExcel = () => {
+    const sampleData = [
+      CSV_COLUMNS,
+      ["White Shirt", "Clothing", 500, 800, 650, 600, 50, "SKU001", "Premium white shirt", 10, 5, "pcs", "BrandX", ""],
+      ["Basmati Rice 5kg", "Groceries", 800, 1200, 1000, 950, 100, "SKU002", "Quality basmati rice", 20, 10, "kg", "", ""],
+      ["Sony Headphones", "Electronics", 3000, 5000, 4200, 4000, 30, "SKU003", "Noise cancelling headphones", 5, 3, "pcs", "Sony", ""],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(sampleData);
+    ws["!cols"] = CSV_COLUMNS.map((_, i) => ({ wch: i === 8 ? 30 : 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Products");
+    XLSX.writeFile(wb, "products_sample.xlsx");
   };
 
-  const parseCSV = (text: string): Record<string, string>[] => {
-    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) return [];
-    const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-    return lines.slice(1).map(line => {
-      const values = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || line.split(",");
-      const row: Record<string, string> = {};
-      headers.forEach((h, i) => {
-        row[h] = (values[i] || "").trim().replace(/^"|"$/g, "");
-      });
-      return row;
-    }).filter(row => row.name);
+  const parseExcel = async (file: File): Promise<Record<string, string>[]> => {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+    if (rows.length < 2) return [];
+    const headers: string[] = (rows[0] as string[]).map(h => String(h).trim());
+    return rows.slice(1).map(row => {
+      const obj: Record<string, string> = {};
+      headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
+      return obj;
+    }).filter(r => r.name);
   };
 
   const handleImportCSV = async () => {
@@ -173,10 +172,9 @@ export default function StockProducts() {
     const adminId = adminData._id;
     const shopId = effectiveShopId || (typeof adminData?.primaryShop === "string" ? adminData.primaryShop : adminData?.primaryShop?._id);
 
-    const text = await importFile.text();
-    const rows = parseCSV(text);
+    const rows = await parseExcel(importFile);
     if (rows.length === 0) {
-      toast({ title: "Error", description: "No valid rows found in the CSV file.", variant: "destructive" });
+      toast({ title: "Error", description: "No valid rows found in the Excel file.", variant: "destructive" });
       return;
     }
 
@@ -1218,10 +1216,10 @@ export default function StockProducts() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5 text-purple-600" />
-              Import Products from CSV
+              Import Products from Excel
             </DialogTitle>
             <DialogDescription>
-              Download the sample CSV, fill it in with your products, then upload it here.
+              Download the sample Excel file, fill it in with your products, then upload it here.
             </DialogDescription>
           </DialogHeader>
 
@@ -1232,19 +1230,19 @@ export default function StockProducts() {
               <p className="text-xs text-gray-500 mb-3">
                 Columns: <span className="font-mono">name, category, buyingPrice, sellingPrice, wholesalePrice, dealerPrice, quantity, sku, description, lowStockThreshold, reorderLevel, unit, manufacturer, measure</span>
               </p>
-              <Button variant="outline" size="sm" onClick={downloadSampleCSV} className="gap-2">
+              <Button variant="outline" size="sm" onClick={downloadSampleExcel} className="gap-2">
                 <Download className="h-4 w-4" />
-                Download Sample CSV
+                Download Sample Excel
               </Button>
             </div>
 
             {/* Step 2 – Upload filled file */}
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Step 2 — Upload your filled CSV</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Step 2 — Upload your filled Excel file</p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,text/csv"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0] || null;
@@ -1272,7 +1270,7 @@ export default function StockProducts() {
                 ) : (
                   <>
                     <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">Click to select a CSV file</p>
+                    <p className="text-sm text-gray-500">Click to select an Excel file (.xlsx)</p>
                   </>
                 )}
               </div>
