@@ -141,11 +141,11 @@ export default function StockProducts() {
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
-  const allPageIds = filteredProducts?.map((p: any) => p._id) ?? [];
-  const allPageSelected = allPageIds.length > 0 && allPageIds.every((id: string) => selectedIds.includes(id));
-
-  const toggleSelectAll = () =>
-    setSelectedIds(allPageSelected ? selectedIds.filter((id) => !allPageIds.includes(id)) : [...new Set([...selectedIds, ...allPageIds])]);
+  const toggleSelectAll = () => {
+    const pageIds = filteredProducts?.map((p: any) => p._id) ?? [];
+    const allSelected = pageIds.length > 0 && pageIds.every((id: string) => selectedIds.includes(id));
+    setSelectedIds(allSelected ? selectedIds.filter((id) => !pageIds.includes(id)) : [...new Set([...selectedIds, ...pageIds])]);
+  };
 
   const handleBulkDelete = async () => {
     setIsBulkDeleting(true);
@@ -767,7 +767,7 @@ export default function StockProducts() {
                     <tr>
                       <th className="p-2 sm:p-4 w-8">
                         <Checkbox
-                          checked={allPageSelected}
+                          checked={filteredProducts.length > 0 && filteredProducts.every((p: any) => selectedIds.includes(p._id))}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Select all"
                         />
