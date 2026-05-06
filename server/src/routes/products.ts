@@ -656,6 +656,41 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Bulk import products
+  app.post("/api/product/import", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const { products } = req.body;
+      if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: "products array is required" });
+      }
+      const data = await makePointifyRequest("/product/import", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ products }),
+      });
+      res.json(data);
+    } catch (error) {
+      const status = (error as any).status || 500;
+      const responseBody = (error as any).responseBody;
+      if (responseBody) {
+        try {
+          res.status(status).json(JSON.parse(responseBody));
+        } catch {
+          res.status(status).json({ error: "Failed to import products" });
+        }
+      } else {
+        res.status(500).json({ error: "Failed to import products" });
+      }
+    }
+  });
+
   // Bulk delete products
   app.delete("/api/product/bulk/delete", async (req, res) => {
     try {

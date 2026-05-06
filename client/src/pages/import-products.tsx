@@ -27,6 +27,7 @@ import * as XLSX from "xlsx";
 const COLUMNS = [
   { key: "name", label: "Name", required: true },
   { key: "category", label: "Category" },
+  { key: "supplier", label: "Supplier" },
   { key: "buyingPrice", label: "Buying Price" },
   { key: "sellingPrice", label: "Selling Price" },
   { key: "wholesalePrice", label: "Wholesale Price" },
@@ -161,61 +162,72 @@ export default function ImportProductsPage() {
     }
     const adminData = JSON.parse(adminDataStr);
     const adminId = adminData._id;
+    const attendantId = adminData.attendantId?._id || adminData._id;
     const shopId = selectedShopId || (typeof adminData?.primaryShop === "string" ? adminData.primaryShop : adminData?.primaryShop?._id);
 
     setIsImporting(true);
     setResults([]);
     setProgress(0);
 
-    const toImport = validRows;
-    let successCount = 0;
-    let failCount = 0;
+    const products = validRows.map((row) => ({
+      name: row.name,
+      productCategoryId: row.category || "General",
+      supplierId: row.supplier || "General",
+      buyingPrice: parseFloat(row.buyingPrice) || 0,
+      sellingPrice: parseFloat(row.sellingPrice) || 0,
+      wholesalePrice: parseFloat(row.wholesalePrice) || 0,
+      dealerPrice: parseFloat(row.dealerPrice) || 0,
+      quantity: parseInt(row.quantity) || 0,
+      reorderLevel: parseInt(row.reorderLevel) || 0,
+      description: row.description || "",
+      manufacturer: row.manufacturer || "",
+      measure: row.measure || "",
+      virtual: false,
+      adminId,
+      attendantId,
+      shopId,
+    }));
 
-    for (let i = 0; i < toImport.length; i++) {
-      const row = toImport[i];
-      const product = {
-        name: row.name,
-        category: row.category || "",
-        buyingPrice: parseFloat(row.buyingPrice) || 0,
-        sellingPrice: parseFloat(row.sellingPrice) || 0,
-        wholesalePrice: parseFloat(row.wholesalePrice) || 0,
-        dealerPrice: parseFloat(row.dealerPrice) || 0,
-        quantity: parseInt(row.quantity) || 0,
-        sku: row.sku || "",
-        description: row.description || "",
-        lowStockThreshold: parseInt(row.lowStockThreshold) || 0,
-        reorderLevel: parseInt(row.reorderLevel) || 0,
-        unit: row.unit || "pcs",
-        manufacturer: row.manufacturer || "",
-        measure: row.measure || "",
-        virtual: false,
-        trackInventory: true,
-        adminid: adminId,
-        attendantId: adminData.attendantId?._id || adminData._id,
-        shopId,
-      };
-      try {
-        const resp = await apiCall("/api/product", { method: "POST", body: JSON.stringify(product) });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        successCount++;
-        setResults((prev) => [...prev, { name: row.name, success: true }]);
-      } catch (err: any) {
-        failCount++;
-        setResults((prev) => [...prev, { name: row.name, success: false, error: err.message }]);
+    try {
+      setProgress(Math.round(products.length * 0.1));
+      const resp = await apiCall("/api/product/import", {
+        method: "POST",
+        body: JSON.stringify({ products }),
+      });
+      const data = await resp.json();
+      setProgress(products.length);
+
+      if (!resp.ok) {
+        throw new Error(data?.error || `HTTP ${resp.status}`);
       }
-      setProgress(i + 1);
-      await new Promise((r) => setTimeout(r, 80));
+
+      // Parse "Imported X products, Y failed." message from server
+      const msg: string = data?.message || "";
+      const successMatch = msg.match(/Imported (\d+)/);
+      const failMatch = msg.match(/(\d+) failed/);
+      const successCount = successMatch ? parseInt(successMatch[1]) : products.length;
+      const failCount = failMatch ? parseInt(failMatch[1]) : 0;
+
+      // Show per-product results from the names we submitted
+      const successResults = validRows.slice(0, successCount).map((r) => ({ name: r.name, success: true }));
+      const failResults = validRows.slice(successCount).map((r) => ({ name: r.name, success: false, error: "Import failed" }));
+      setResults([...successResults, ...failResults]);
+
+      setIsDone(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+      refreshProducts();
+      toast({
+        title: "Import Complete",
+        description: msg || `${successCount} product${successCount !== 1 ? "s" : ""} imported${failCount > 0 ? `, ${failCount} failed` : " successfully"}.`,
+        variant: failCount > 0 ? "destructive" : "default",
+      });
+    } catch (err: any) {
+      setResults(validRows.map((r) => ({ name: r.name, success: false, error: err.message })));
+      setIsDone(true);
+      toast({ title: "Import Failed", description: err.message, variant: "destructive" });
     }
 
     setIsImporting(false);
-    setIsDone(true);
-    queryClient.invalidateQueries({ queryKey: ["/api/product"] });
-    refreshProducts();
-    toast({
-      title: "Import Complete",
-      description: `${successCount} product${successCount !== 1 ? "s" : ""} imported${failCount > 0 ? `, ${failCount} failed` : " successfully"}.`,
-      variant: failCount > 0 ? "destructive" : "default",
-    });
   };
 
   const resetPage = () => {
