@@ -138,11 +138,11 @@ export async function makeLocalPointifyRequest(
     response = await fetch(url, { ...options, headers });
   } catch (fetchError: any) {
     console.log(`🚨 Local API request failed: ${fetchError.message}`);
+    throw fetchError;
   }
   console.log(`🌐 Attempting local request for ${response}`);
   if (!response) {
-    console.log(`🚨 Local API request failed: ${response}`);
-    return {};
+    throw new Error(`Local API request failed: no response for ${url}`);
   }
 
   return await response.json();

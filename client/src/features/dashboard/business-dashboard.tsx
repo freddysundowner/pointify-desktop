@@ -75,15 +75,17 @@ export default function BusinessDashboard() {
       : (admin?.primaryShop as any)?._id || (admin?.primaryShop as any)?.id);
 
   // Fetch attendants for the admin
-  const { data: attendants = [] } = useQuery({
+  const { data: rawAttendants = [] } = useQuery({
     queryKey: ['/api/attendants/all', admin?._id],
     queryFn: async () => {
       const adminId = admin?._id || admin?.id;
       const response = await apiCall(`/api/attendants/all/${adminId}`, { method: "GET" });
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!admin?._id,
   });
+  const attendants: any[] = Array.isArray(rawAttendants) ? rawAttendants : [];
 
   // Fetch products for stock alerts
   const { data: productsData } = useQuery({
