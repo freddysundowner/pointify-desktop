@@ -105,8 +105,8 @@ app.use((req, res, next) => {
   }
 
 
-  const port = 1999;
-  app.listen(port, '127.0.0.1', () => {
+  const port = parseInt(process.env.PORT || '1999', 10);
+  app.listen(port, '0.0.0.0', () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
       dumpRetryMonitor.startMonitoring();
