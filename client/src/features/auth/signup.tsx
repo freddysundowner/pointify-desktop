@@ -302,7 +302,7 @@ export default function Signup() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-gray-400">
-            © 2025 Pointify. All rights reserved.
+            © 2026 Pointify. All rights reserved.
           </p>
         </div>
       </div>

@@ -71,7 +71,7 @@ export default function Login() {
         {/* Footer */}
         <div className="mt-16 text-center">
           <p className="text-xs text-gray-400">
-            © 2025 Pointify. All rights reserved.
+            © 2026 Pointify. All rights reserved.
           </p>
         </div>
       </div>
