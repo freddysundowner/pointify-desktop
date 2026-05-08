@@ -30,3 +30,9 @@ id = "fm71ie_31oDhL8nhQyslZ"
 uri = "file://attached_assets/blessed_shop2_import_ready.xlsx"
 type = "table"
 title = "blessed_shop2_import_ready.xlsx"
+
+[[outputs]]
+id = "bOsZ8-R2qXZf3lWsUgjpE"
+uri = "file://attached_assets/blessed_kitchen3_import_ready.xlsx"
+type = "table"
+title = "blessed_kitchen3_import_ready.xlsx"
