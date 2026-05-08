@@ -24,3 +24,9 @@ id = "oDaiRUXMhqJKpxIkPsutN"
 uri = "file://attached_assets/kitchen2_import_ready.xlsx"
 type = "table"
 title = "kitchen2_import_ready.xlsx"
+
+[[outputs]]
+id = "fm71ie_31oDhL8nhQyslZ"
+uri = "file://attached_assets/blessed_shop2_import_ready.xlsx"
+type = "table"
+title = "blessed_shop2_import_ready.xlsx"
