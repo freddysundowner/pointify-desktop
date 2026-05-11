@@ -36,3 +36,9 @@ id = "bOsZ8-R2qXZf3lWsUgjpE"
 uri = "file://attached_assets/blessed_kitchen3_import_ready.xlsx"
 type = "table"
 title = "blessed_kitchen3_import_ready.xlsx"
+
+[[outputs]]
+id = "T34xGH0gk1ui-7IMsmAnA"
+uri = "file://attached_assets/untitled_import_ready.xlsx"
+type = "table"
+title = "untitled_import_ready.xlsx"
