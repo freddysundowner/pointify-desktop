@@ -1,6 +1,8 @@
 {
   "type": "SYSTEM",
   "interface": "xpprinter",
+  "port": 9100,
+  "baudRate": 9600,
   "width": 32,
   "characterSet": "PC437_USA"
 }

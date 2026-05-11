@@ -79,32 +79,80 @@ export default function ReceiptModal({
 }, [isOpen, transaction]);
 
 
-  // Thermal print function
- const printThermal = async (receiptData = getPrintData()) => {
-  console.log('Thermal print data:', receiptData);
-  if (receiptData && typeof receiptData.preventDefault === 'function') {
-    receiptData = getPrintData();
-  }
-  if (!receiptData) {
-    receiptData = getPrintData();
-  }
-  try {
-    const response = await apiCall('/api/printer/salereceipt', {
-      method: 'POST',
-      body: JSON.stringify(receiptData)
-    });
-    const respo = await response.json();
-    if (respo.success) {
-      toast({
-        title: "Receipt Printed",
+  // Browser print fallback — opens a clean receipt window
+  const browserPrint = () => {
+    const cur = primaryShop?.currency || 'KES';
+    const html = `<!DOCTYPE html><html><head><title>Receipt</title>
+<style>
+  body{font-family:monospace;font-size:12px;width:280px;margin:0 auto;padding:8px}
+  .center{text-align:center} .bold{font-weight:bold}
+  .row{display:flex;justify-content:space-between}
+  hr{border:none;border-top:1px dashed #000;margin:6px 0}
+  @media print{@page{size:80mm auto;margin:0}body{width:72mm}}
+</style></head><body>
+<div class="center bold">${primaryShop?.name || 'Business Name'}</div>
+${primaryShop?.address ? `<div class="center">${primaryShop.address}</div>` : ''}
+<div class="center bold">SALES RECEIPT</div>
+<hr/>
+<div class="row"><span>Receipt #</span><span>${transaction.id}</span></div>
+<div class="row"><span>Date</span><span>${transactionDate.toLocaleDateString()}</span></div>
+<div class="row"><span>Customer</span><span>${transaction.customerName || 'Walk-in'}</span></div>
+<div class="row"><span>By</span><span>${attendantName}</span></div>
+<hr/>
+${items.map(item => `
+<div>${item.name}</div>
+<div class="row"><span>  ${item.quantity} x ${cur} ${Number(item.price).toFixed(2)}</span><span>${cur} ${Number(item.total).toFixed(2)}</span></div>
+${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${cur} ${(Number(item.discount)*item.quantity).toFixed(2)}</span></div>` : ''}
+`).join('')}
+<hr/>
+<div class="row"><span>Subtotal</span><span>${cur} ${Number(transaction.subtotal).toFixed(2)}</span></div>
+<div class="row"><span>Tax</span><span>${cur} ${Number(transaction.tax).toFixed(2)}</span></div>
+<div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction.total).toFixed(2)}</span></div>
+<div class="row"><span>Payment</span><span>${transaction.paymentMethod}</span></div>
+<hr/>
+<div class="center">Thank you for your business!</div>
+</body></html>`;
+    const w = window.open('', '_blank', 'width=400,height=600');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 400);
+  };
+
+  // Thermal print function — tries server first, falls back to browser print
+  const printThermal = async (receiptData = getPrintData()) => {
+    if (receiptData && typeof receiptData.preventDefault === 'function') {
+      receiptData = getPrintData();
+    }
+    if (!receiptData) receiptData = getPrintData();
+
+    try {
+      // Check printer config first
+      const statusRes = await fetch('/api/printer/status');
+      const status = statusRes.ok ? await statusRes.json() : null;
+
+      // BROWSER mode — skip server, go straight to browser print
+      if (status?.config?.type === 'BROWSER') {
+        browserPrint();
+        return;
+      }
+
+      const response = await apiCall('/api/printer/salereceipt', {
+        method: 'POST',
+        body: JSON.stringify(receiptData)
       });
-    } else {
-      console.log(respo.message || 'Print failed');
-    } 
-  } catch (error) {
-    console.log('Thermal printing error:', error);
-  }
-};
+      const respo = await response.json();
+      if (respo.success) {
+        toast({ title: "Receipt Printed", description: "Sent to printer successfully" });
+      } else {
+        // Server failed — fall back to browser print
+        browserPrint();
+      }
+    } catch (error) {
+      // Network/server error — fall back to browser print
+      browserPrint();
+    }
+  };
 
 
   // PDF generation function
