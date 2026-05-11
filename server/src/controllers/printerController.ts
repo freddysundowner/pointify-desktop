@@ -1,12 +1,18 @@
 import { exec } from 'child_process';
 import { Request, Response } from 'express';
 import fs from 'fs';
+import net from 'net';
+import os from 'os';
+import path from 'path';
 
 const CONFIG_FILE = 'printer-config.json';
+const isWindows = os.platform() === 'win32';
 
 interface PrinterConfig {
-  type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM';
+  type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM' | 'BROWSER';
   interface: string;
+  port?: number;
+  baudRate?: number;
   width?: number;
   characterSet?: string;
 }
@@ -14,193 +20,311 @@ interface PrinterConfig {
 let currentPrinterConfig: PrinterConfig = {
   type: 'SYSTEM',
   interface: '',
+  port: 9100,
+  baudRate: 9600,
   width: 32,
   characterSet: 'PC437_USA',
 };
 
-// Load config at startup
 if (fs.existsSync(CONFIG_FILE)) {
   try {
-    currentPrinterConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    currentPrinterConfig = { ...currentPrinterConfig, ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) };
     console.log('✅ Loaded printer config:', currentPrinterConfig);
   } catch (err) {
     console.error('❌ Failed to load printer config:', err);
   }
-} else {
-  console.log('ℹ️ No config file found, using default.');
 }
 
-// ----------------------
-// List system printers
-// ----------------------
-export const getPrinters = (req: Request, res: Response): void => {
-  exec('wmic printer get name', (err, stdout) => {
-    if (err) {
-      console.error('Error fetching printers:', err);
-      return res.status(500).json({ error: err.message });
+// ─── ESC/POS helpers ──────────────────────────────────────────────────────────
+const ESC = 0x1b;
+const GS  = 0x1d;
+
+const ESC_INIT    = Buffer.from([ESC, 0x40]);
+const ESC_BOLD_ON = Buffer.from([ESC, 0x45, 0x01]);
+const ESC_BOLD_OFF= Buffer.from([ESC, 0x45, 0x00]);
+const ESC_CENTER  = Buffer.from([ESC, 0x61, 0x01]);
+const ESC_LEFT    = Buffer.from([ESC, 0x61, 0x00]);
+const ESC_FEED    = Buffer.from([ESC, 0x64, 0x04]);
+const ESC_CUT     = Buffer.from([GS,  0x56, 0x41, 0x00]);
+
+function buildReceiptBuffer(text: string): Buffer {
+  const parts: Buffer[] = [
+    ESC_INIT,
+    ESC_LEFT,
+    Buffer.from(text, 'utf8'),
+    ESC_FEED,
+    ESC_CUT,
+  ];
+  return Buffer.concat(parts);
+}
+
+// ─── Printer detection ────────────────────────────────────────────────────────
+function detectSystemPrinters(): Promise<string[]> {
+  return new Promise((resolve) => {
+    if (isWindows) {
+      exec('wmic printer get name', (err, stdout) => {
+        if (err) return resolve([]);
+        const lines = stdout.split('\r\n').map(l => l.trim()).filter(Boolean);
+        resolve(lines.slice(1));
+      });
+    } else {
+      exec("lpstat -a 2>/dev/null | awk '{print $1}'", (err, stdout) => {
+        if (err || !stdout.trim()) {
+          exec("lpstat -p 2>/dev/null | grep 'printer' | awk '{print $2}'", (err2, stdout2) => {
+            if (err2 || !stdout2.trim()) return resolve([]);
+            resolve(stdout2.split('\n').map(l => l.trim()).filter(Boolean));
+          });
+        } else {
+          resolve(stdout.split('\n').map(l => l.trim()).filter(Boolean));
+        }
+      });
     }
-    const lines = stdout.split('\r\n').map(line => line.trim()).filter(Boolean);
-    const printers = lines.slice(1); // skip header
-    res.json({ printers });
   });
+}
+
+// ─── TCP printing ─────────────────────────────────────────────────────────────
+function printViaTCP(ip: string, port: number, data: Buffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    socket.setTimeout(8000);
+    socket.connect(port, ip, () => {
+      socket.write(data, (err) => {
+        if (err) { socket.destroy(); return reject(err); }
+        setTimeout(() => { socket.end(); resolve(); }, 300);
+      });
+    });
+    socket.on('timeout', () => { socket.destroy(); reject(new Error('TCP connection timed out')); });
+    socket.on('error', (err) => reject(err));
+  });
+}
+
+// ─── USB / device-file printing ───────────────────────────────────────────────
+function printViaUSB(devicePath: string, data: Buffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(devicePath, data, (err) => {
+      if (err) reject(new Error(`USB write failed: ${err.message}`));
+      else resolve();
+    });
+  });
+}
+
+// ─── Serial printing ──────────────────────────────────────────────────────────
+function printViaSerial(port: string, baudRate: number, data: Buffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tmpFile = path.join(os.tmpdir(), `receipt_${Date.now()}.bin`);
+    fs.writeFileSync(tmpFile, data);
+    if (isWindows) {
+      exec(`mode ${port}: baud=${baudRate} parity=n data=8 stop=1 && copy /b "${tmpFile}" ${port}`, (err, _, stderr) => {
+        fs.unlinkSync(tmpFile);
+        if (err) reject(new Error(stderr || err.message)); else resolve();
+      });
+    } else {
+      exec(`stty -F ${port} ${baudRate} raw -echo && cat "${tmpFile}" > ${port}`, (err, _, stderr) => {
+        fs.unlinkSync(tmpFile);
+        if (err) reject(new Error(stderr || err.message)); else resolve();
+      });
+    }
+  });
+}
+
+// ─── System printer printing ─────────────────────────────────────────────────
+function printViaSystem(printerName: string, data: Buffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tmpFile = path.join(os.tmpdir(), `receipt_${Date.now()}.bin`);
+    fs.writeFileSync(tmpFile, data);
+    let cmd: string;
+    if (isWindows) {
+      cmd = `copy /b "${tmpFile}" "\\\\localhost\\${printerName}"`;
+    } else {
+      cmd = `lp -d "${printerName}" -o raw "${tmpFile}"`;
+    }
+    exec(cmd, (err, _, stderr) => {
+      try { fs.unlinkSync(tmpFile); } catch (_) {}
+      if (err) reject(new Error(stderr || err.message)); else resolve();
+    });
+  });
+}
+
+// ─── Route handlers ───────────────────────────────────────────────────────────
+export const getPrinters = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const printers = await detectSystemPrinters();
+    res.json({ success: true, printers, platform: os.platform() });
+  } catch (err: any) {
+    res.status(500).json({ success: false, printers: [], error: err.message });
+  }
 };
 
-// ----------------------
-// Return printer status
-// ----------------------
 export const getPrinterStatus = (req: Request, res: Response): void => {
   res.json({
-    initialized: !!currentPrinterConfig.interface,
+    initialized: !!(currentPrinterConfig.interface || currentPrinterConfig.type === 'BROWSER'),
     config: currentPrinterConfig,
+    platform: os.platform(),
   });
 };
 
-// ----------------------
-// Save printer config
-// ----------------------
 export const initializePrinter = (req: Request, res: Response): void => {
-  const { type, interface: printerName, width, characterSet } = req.body;
+  const { type, interface: iface, port, baudRate, width, characterSet } = req.body;
 
-  if (!printerName) {
-    return res.status(400).json({ success: false, message: 'Printer name is required' });
+  if (type !== 'BROWSER' && !iface) {
+    res.status(400).json({ success: false, message: 'Printer interface/address is required' });
+    return;
   }
 
-  currentPrinterConfig = { type, interface: printerName, width, characterSet };
+  currentPrinterConfig = {
+    type: type || 'SYSTEM',
+    interface: iface || '',
+    port: port ? Number(port) : 9100,
+    baudRate: baudRate ? Number(baudRate) : 9600,
+    width: width ? Number(width) : 32,
+    characterSet: characterSet || 'PC437_USA',
+  };
+
   try {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(currentPrinterConfig, null, 2));
-    console.log('💾 Config saved:', currentPrinterConfig);
-    res.json({ success: true, message: `Printer initialized: ${printerName}` });
-  } catch (err) {
-    console.error('Failed to save config:', err);
-    res.status(500).json({ success: false, message: 'Failed to save config' });
+    console.log('💾 Printer config saved:', currentPrinterConfig);
+    res.json({ success: true, message: `Printer configured: ${type} — ${iface || 'browser'}`, config: currentPrinterConfig });
+  } catch (err: any) {
+    console.error('Failed to save printer config:', err);
+    res.status(500).json({ success: false, message: 'Failed to save config: ' + err.message });
   }
-}; 
-
-const padLine = (text: string, width = 32) => {
-  if (text.length >= width) return text;
-  const padding = Math.floor((width - text.length) / 2);
-  return ' '.repeat(padding) + text;
 };
- 
+
+export const testPrint = async (req: Request, res: Response): Promise<void> => {
+  const cfg = currentPrinterConfig;
+
+  if (!cfg.interface && cfg.type !== 'BROWSER') {
+    res.status(400).json({ success: false, message: 'Printer not configured' });
+    return;
+  }
+
+  const testText = [
+    '================================\n',
+    '         TEST PRINT\n',
+    '================================\n',
+    `Type:    ${cfg.type}\n`,
+    `Target:  ${cfg.interface || 'browser'}\n`,
+    `Date:    ${new Date().toLocaleString()}\n`,
+    '================================\n',
+    '   Printer is working correctly\n',
+    '================================\n',
+    '\n\n\n',
+  ].join('');
+
+  try {
+    await sendToPrinter(cfg, testText);
+    res.json({ success: true, message: 'Test print sent successfully' });
+  } catch (err: any) {
+    console.error('Test print failed:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 export const printReceipt = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      shopName,
-      shopAddress,
-      receiptNumber,
-      date,
-      items,
-      subtotal,
-      tax,
-      total,
-      paymentMethod,
-      customerName,
-      attendant,
-      splitPayment,currency
+      shopName, shopAddress, receiptNumber, date, items,
+      subtotal, tax, total, paymentMethod, customerName,
+      attendant, splitPayment, currency,
     } = req.body;
 
-    console.log(req.body);
+    const w = currentPrinterConfig.width || 32;
+    const div = '-'.repeat(w);
 
-    let receiptContent = '';
-    receiptContent += padLine(shopName || 'Business Name') + '\n';
-    if (shopAddress) receiptContent += padLine(shopAddress) + '\n';
+    const center = (text: string) => {
+      if (text.length >= w) return text + '\n';
+      const pad = Math.floor((w - text.length) / 2);
+      return ' '.repeat(pad) + text + '\n';
+    };
+
+    const lr = (left: string, right: string) => {
+      const gap = w - left.length - right.length;
+      return left + (gap > 0 ? ' '.repeat(gap) : ' ') + right + '\n';
+    };
+
+    const cur = currency || 'KES';
+    let txt = '';
+
+    txt += center(shopName || 'Business Name');
+    if (shopAddress) txt += center(shopAddress);
     if (req.body.paybill_account) {
-      receiptContent += padLine(`Paybill: ${req.body.paybill_account}`) + '\n';
-      if (req.body.paybill_till) {
-        receiptContent += padLine(`Account: ${req.body.paybill_till}`) + '\n';
-      }
+      txt += center(`Paybill: ${req.body.paybill_account}`);
+      if (req.body.paybill_till) txt += center(`Account: ${req.body.paybill_till}`);
     } else if (req.body.paybill_till) {
-      receiptContent += padLine(`Buy Goods: ${req.body.paybill_till}`) + '\n';
+      txt += center(`Buy Goods Till: ${req.body.paybill_till}`);
     }
-    receiptContent += padLine('SALES RECEIPT') + '\n';
-    receiptContent += '-------------------------------\n';
-    receiptContent += `Receipt #: ${receiptNumber}\n`;
-    receiptContent += `Date: ${date}\n`;
-    receiptContent += `Customer: ${customerName}\n`;
-    receiptContent += `Attendant: ${attendant}\n`;
-    receiptContent += '-------------------------------\n';
+    txt += center('SALES RECEIPT');
+    txt += div + '\n';
+    txt += `Receipt: ${receiptNumber}\n`;
+    txt += `Date:    ${date}\n`;
+    txt += `Customer:${customerName}\n`;
+    txt += `By:      ${attendant}\n`;
+    txt += div + '\n';
 
-    items.forEach((item: { name: string | any[]; serialnumber: string; quantity: number; unitPrice: number; total: number; discount: number; }) => {
-      // First line with item name
-      receiptContent += `${item.name.slice(0,20)}\n ${'srn: '+item.serialnumber}\n`;
-      // Second line with qty x unit price = total
-      receiptContent += `  ${item.quantity} x ${currency ?? 'KES'} ${item.unitPrice.toFixed(2)} = ${currency?? "KES"}${item.total.toFixed(2)}\n`;
-
-      // Discount line if applicable
+    items.forEach((item: any) => {
+      txt += `${String(item.name).slice(0, w)}\n`;
+      if (item.serialnumber) txt += `  SN: ${item.serialnumber}\n`;
+      txt += `  ${item.quantity} x ${cur} ${Number(item.unitPrice).toFixed(2)} = ${cur} ${Number(item.total).toFixed(2)}\n`;
       if (item.discount && item.discount > 0) {
-        receiptContent += `  Discount: -${currency ?? 'KES'}${(item.discount * item.quantity).toFixed(2)}\n`;
+        txt += `  Disc: -${cur} ${(item.discount * item.quantity).toFixed(2)}\n`;
       }
     });
 
-    receiptContent += '-------------------------------\n';
-    receiptContent += `Subtotal:      ${currency??"KES"}${subtotal.toFixed(2)}\n`;
-    if (items.some((item: { discount: number; }) => item.discount && item.discount > 0)) {
-      const totalDiscount = items.reduce((sum: number, i: { discount: any; quantity: number; }) => sum + ((i.discount || 0) * i.quantity), 0);
-      receiptContent += `Discount:     -${currency??"KES"}${totalDiscount.toFixed(2)}\n`;
-    }
-    receiptContent += `Tax:           ${currency??"KES"}${tax.toFixed(2)}\n`;
-    receiptContent += `TOTAL:         ${currency??"KES"}${total.toFixed(2)}\n`;
+    txt += div + '\n';
+    txt += lr('Subtotal:', `${cur} ${Number(subtotal).toFixed(2)}`);
+
+    const totalDiscount = items.reduce((s: number, i: any) => s + ((i.discount || 0) * i.quantity), 0);
+    if (totalDiscount > 0) txt += lr('Discount:', `-${cur} ${totalDiscount.toFixed(2)}`);
+
+    txt += lr('Tax:', `${cur} ${Number(tax).toFixed(2)}`);
+    txt += lr('TOTAL:', `${cur} ${Number(total).toFixed(2)}`);
 
     if (paymentMethod === 'split' && splitPayment) {
-      receiptContent += '\nPayment Breakdown:\n';
-      if (splitPayment.cash > 0) {
-        receiptContent += `  Cash:    ${currency??"KES"}${splitPayment.cash.toFixed(2)}\n`;
-      }
-      if (splitPayment.mpesa > 0) {
-        receiptContent += `  M-Pesa:  ${currency??"KES"}${splitPayment.mpesa.toFixed(2)}\n`;
-      }
-      if (splitPayment.bank > 0) {
-        receiptContent += `  Bank:    ${currency??"KES"}${splitPayment.bank.toFixed(2)}\n`;
-      }
-    } else { 
-      receiptContent += `\nPayment Method: ${paymentMethod}\n`;
+      txt += '\nPayment:\n';
+      if (splitPayment.cash  > 0) txt += `  Cash:   ${cur} ${Number(splitPayment.cash).toFixed(2)}\n`;
+      if (splitPayment.mpesa > 0) txt += `  M-Pesa: ${cur} ${Number(splitPayment.mpesa).toFixed(2)}\n`;
+      if (splitPayment.bank  > 0) txt += `  Bank:   ${cur} ${Number(splitPayment.bank).toFixed(2)}\n`;
+    } else {
+      txt += `\nPayment: ${paymentMethod}\n`;
     }
 
-    receiptContent += '\n';
-    receiptContent += padLine('Thank you for your business!') + '\n';
-    receiptContent += padLine('Visit us again soon') + '\n';
-    receiptContent += '\n\n\n\n'; // Feed extra paper
+    txt += '\n';
+    txt += center('Thank you for your business!');
+    txt += center('Visit us again soon');
+    txt += '\n\n\n\n';
 
-    const contentBuffer = Buffer.from(receiptContent, 'utf8');
-    const cutBuffer = Buffer.from([0x1B, 0x69]); // Full cut
-    const finalBuffer = Buffer.concat([contentBuffer, cutBuffer]);
-
-    fs.writeFileSync('receipt.txt', finalBuffer);
-
-    exec(`copy /b receipt.txt \\\\localhost\\${currentPrinterConfig.interface}`, (err, stdout, stderr) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: `Print failed: ${err.message}` });
-      }
-      console.log(`✅ Receipt sent to printer.`);
-      res.json({ success: true, message: 'Receipt printed successfully' });
-    });
-
+    await sendToPrinter(currentPrinterConfig, txt);
+    res.json({ success: true, message: 'Receipt printed successfully' });
   } catch (err: any) {
-    console.error('Unexpected error:', err);
-    res.status(500).json({ success: false, message: err.message || 'Server error' });
+    console.error('Receipt print error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Print failed' });
   }
 };
-// ----------------------
-// Test print
-// ----------------------
-export const testPrint = (req: Request, res: Response): void => {
-  console.log(currentPrinterConfig)
-  if (!currentPrinterConfig.interface) {
-    return res.status(400).json({ success: false, message: 'Printer not configured' });
-  }
 
-  const content = `Test Print\nPrinter: ${currentPrinterConfig.interface}\nDate: ${new Date().toLocaleString()}`;
-  const filename = `test-receipt-${Date.now()}.txt`;
+// ─── Unified send dispatcher ──────────────────────────────────────────────────
+async function sendToPrinter(cfg: PrinterConfig, text: string): Promise<void> {
+  const data = buildReceiptBuffer(text);
 
-  fs.writeFileSync(filename, content);
-
-  exec(`notepad /p ${filename}`, (err, stdout, stderr) => {
-    if (err) {
-      console.error('Print failed:', err);
-      console.error(stderr);
-      return res.status(500).json({ success: false, message: err.message });
+  switch (cfg.type) {
+    case 'TCP': {
+      const [ip, portStr] = cfg.interface.includes(':')
+        ? cfg.interface.split(':')
+        : [cfg.interface, String(cfg.port || 9100)];
+      await printViaTCP(ip.trim(), parseInt(portStr) || 9100, data);
+      break;
     }
-    console.log(`🖨️ Test print sent via Notepad to default printer`);
-    res.json({ success: true, message: `Test print sent to default printer` });
-  });
-};
+    case 'USB':
+      await printViaUSB(cfg.interface, data);
+      break;
+    case 'SERIAL':
+      await printViaSerial(cfg.interface, cfg.baudRate || 9600, data);
+      break;
+    case 'SYSTEM':
+      await printViaSystem(cfg.interface, data);
+      break;
+    case 'BROWSER':
+      throw new Error('BROWSER mode: use the browser Print button on the receipt page');
+    default:
+      throw new Error(`Unknown printer type: ${cfg.type}`);
+  }
+}
