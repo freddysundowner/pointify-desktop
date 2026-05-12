@@ -203,7 +203,7 @@ export default function StockProducts() {
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       toast({ title: "Product deleted", description: `"${singleDeleteProduct.name}" has been deleted.` });
-      queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+      queryClient.invalidateQueries();
       refreshProducts();
     } catch (err: any) {
       toast({ title: "Delete failed", description: err.message, variant: "destructive" });
