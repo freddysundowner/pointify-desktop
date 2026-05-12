@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb, Monitor, Globe } from "lucide-react";
+import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb, Monitor, Globe, Link, LinkOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usbPrinter } from "@/lib/usb-printer";
 
 interface PrinterConfig {
-  type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM' | 'BROWSER';
+  type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM' | 'BROWSER' | 'WEBUSB';
   interface: string;
   port?: number;
   baudRate?: number;
@@ -25,7 +26,8 @@ interface PrinterStatus {
 
 const TYPE_INFO: Record<string, { icon: React.ReactNode; label: string; hint: string; placeholder: string }> = {
   TCP:     { icon: <Wifi className="h-4 w-4" />,    label: 'Network (TCP/IP)',  hint: 'Printer connected via Wi-Fi or LAN. Needs an IP address.',           placeholder: '192.168.1.100' },
-  USB:     { icon: <Usb className="h-4 w-4" />,     label: 'USB',               hint: 'Linux: /dev/usb/lp0   Windows: USB001',                             placeholder: '/dev/usb/lp0' },
+  WEBUSB:  { icon: <Usb className="h-4 w-4" />,     label: 'USB (Direct)',      hint: 'Connect your USB thermal printer directly from Chrome — no drivers required.', placeholder: '' },
+  USB:     { icon: <Usb className="h-4 w-4" />,     label: 'USB (Server)',      hint: 'Linux: /dev/usb/lp0   Windows: USB001  (server must run on this PC)', placeholder: '/dev/usb/lp0' },
   SERIAL:  { icon: <Settings className="h-4 w-4" />,label: 'Serial / COM Port', hint: 'Linux: /dev/ttyUSB0   Windows: COM3',                               placeholder: '/dev/ttyUSB0' },
   SYSTEM:  { icon: <Monitor className="h-4 w-4" />, label: 'System Printer',    hint: 'Printer installed in your OS. Works when server runs on your PC.',   placeholder: 'Printer name' },
   BROWSER: { icon: <Globe className="h-4 w-4" />,   label: 'Browser Print',     hint: 'Use the browser\'s built-in print dialog. Works from any device, no setup needed.', placeholder: '' },
@@ -47,7 +49,14 @@ export function PrinterConfigDialog() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
+  const [usbConnected, setUsbConnected] = useState(false);
+  const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setUsbConnected(usbPrinter.isConnected());
+    setUsbDeviceName(usbPrinter.getDeviceName());
+  }, [isOpen]);
 
   useEffect(() => { loadPrinterStatus(); }, []);
 
@@ -107,6 +116,31 @@ export function PrinterConfigDialog() {
     }
   };
 
+  const handleConnectUSB = async () => {
+    setIsLoading(true);
+    try {
+      const name = await usbPrinter.connect();
+      setUsbConnected(true);
+      setUsbDeviceName(name);
+      toast({ title: "USB Printer Connected", description: `Connected to: ${name}` });
+    } catch (err) {
+      toast({
+        title: "USB Connection Failed",
+        description: err instanceof Error ? err.message : "Could not connect to USB printer",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDisconnectUSB = async () => {
+    await usbPrinter.disconnect();
+    setUsbConnected(false);
+    setUsbDeviceName(null);
+    toast({ title: "USB Printer Disconnected" });
+  };
+
   const handleTest = async () => {
     if (!status.initialized) {
       toast({ title: "Not Configured", description: "Save a printer config first", variant: "destructive" });
@@ -114,6 +148,22 @@ export function PrinterConfigDialog() {
     }
     if (status.config?.type === 'BROWSER') {
       window.print();
+      return;
+    }
+    if (status.config?.type === 'WEBUSB') {
+      if (!usbPrinter.isConnected()) {
+        toast({ title: "Not Connected", description: "Connect the USB printer first", variant: "destructive" });
+        return;
+      }
+      setIsLoading(true);
+      try {
+        await usbPrinter.testPrint();
+        toast({ title: "Test Successful", description: "Test receipt printed via USB" });
+      } catch (err) {
+        toast({ title: "Test Failed", description: err instanceof Error ? err.message : "USB print failed", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
     setIsLoading(true);
@@ -310,6 +360,40 @@ export function PrinterConfigDialog() {
                     <SelectItem value="48">48 chars — 80mm wide</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* WEBUSB connect panel */}
+            {config.type === 'WEBUSB' && (
+              <div className="space-y-3">
+                <div className={`rounded-md border p-3 text-sm ${usbConnected ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                  {usbConnected ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      <span>Connected to <strong>{usbDeviceName || 'USB Printer'}</strong> — ready to print!</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 shrink-0" />
+                      <span>Not connected. Click <strong>Connect USB Printer</strong> below, then select your printer from the browser prompt.</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {!usbConnected ? (
+                    <Button onClick={handleConnectUSB} disabled={isLoading} className="flex-1">
+                      <Link className="h-4 w-4 mr-2" />
+                      {isLoading ? 'Connecting…' : 'Connect USB Printer'}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={handleDisconnectUSB} className="flex-1">
+                      <LinkOff className="h-4 w-4 mr-2" /> Disconnect
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Prints silently via ESC/POS — no print dialog. Works in Chrome and Edge only. You must click Connect each time the page is reloaded.
+                </p>
               </div>
             )}
 

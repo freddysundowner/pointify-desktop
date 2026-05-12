@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
 import { useEffect, useState } from "react";
+import { usbPrinter } from "@/lib/usb-printer";
 
 interface ReceiptModalProps {
   isOpen: boolean;
@@ -130,6 +131,45 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
       // Check printer config first
       const statusRes = await fetch('/api/printer/status');
       const status = statusRes.ok ? await statusRes.json() : null;
+
+      // WEBUSB mode — send directly from browser via Web USB
+      if (status?.config?.type === 'WEBUSB') {
+        if (!usbPrinter.isConnected()) {
+          toast({
+            title: "USB Printer Not Connected",
+            description: "Go to Printer Settings and click 'Connect USB Printer' first",
+            variant: "destructive",
+          });
+          return;
+        }
+        try {
+          await usbPrinter.printReceipt({
+            shopName: receiptData.shopName,
+            shopAddress: receiptData.shopAddress,
+            receiptNumber: receiptData.receiptNumber,
+            date: receiptData.date,
+            currency: receiptData.currency,
+            items: receiptData.items.map((i: any) => ({
+              name: i.name,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              total: i.total,
+              discount: i.discount,
+            })),
+            subtotal: receiptData.subtotal,
+            tax: receiptData.tax,
+            total: receiptData.total,
+            paymentMethod: receiptData.paymentMethod,
+            customerName: receiptData.customerName,
+            attendant: receiptData.attendant,
+            splitPayment: receiptData.splitPayment,
+          });
+          toast({ title: "Receipt Printed", description: "Sent to USB printer" });
+        } catch (usbErr: any) {
+          toast({ title: "USB Print Failed", description: usbErr.message, variant: "destructive" });
+        }
+        return;
+      }
 
       // BROWSER mode — skip server, go straight to browser print
       if (status?.config?.type === 'BROWSER') {
