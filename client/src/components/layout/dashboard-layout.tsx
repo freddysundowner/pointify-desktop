@@ -409,91 +409,96 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </div>
       )}
 
-      {/* ── Desktop Header Bar (hidden on mobile) ──────────────────────────── */}
-      <div className={`hidden lg:block fixed top-0 w-full z-20 bg-white shadow-sm border-b ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="flex items-center justify-between px-4 h-16">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Store className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Welcome {admin?.username}</h1>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span>{formatDate(currentTime)}</span>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span className="font-medium">{formatTime(currentTime)}</span>
+      {/* ── Main Content + Desktop Header (column layout) ───────────────────── */}
+      <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
+
+        {/* Desktop Header — sticky inside the column, so PageHeader flows right below it */}
+        {!isAttendantRoute && (
+          <div className="hidden lg:block sticky top-0 z-20 bg-white shadow-sm border-b">
+            <div className="flex items-center justify-between px-4 h-16">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Store className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Welcome {admin?.username}</h1>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <span>{formatDate(currentTime)}</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span className="font-medium">{formatTime(currentTime)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{admin?.email?.split('@')[0] || 'Admin User'}</p>
+                    <p className="text-xs text-gray-500">{admin?.email || 'admin@pointify.com'}</p>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                      <User className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => setLocation('/edit-profile')}>
+                      <Edit className="w-4 h-4 mr-2" /> Edit Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLocation('/settings')}>
+                      <Settings className="w-4 h-4 mr-2" /> Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">{admin?.email?.split('@')[0] || 'Admin User'}</p>
-                <p className="text-xs text-gray-500">{admin?.email || 'admin@pointify.com'}</p>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                  <User className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => setLocation('/edit-profile')}>
-                  <Edit className="w-4 h-4 mr-2" /> Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation('/settings')}>
-                  <Settings className="w-4 h-4 mr-2" /> Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* Attendant route header (when isAttendantRoute, show a minimal header on mobile too) */}
-      {isAttendantRoute && (
-        <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-4 h-14">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
-                <Store className="h-4 w-4 text-white" />
+        {/* Attendant route mobile header */}
+        {isAttendantRoute && (
+          <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between px-4 h-14">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center">
+                  <Store className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-lg font-bold text-gray-900">Pointify</span>
               </div>
-              <span className="text-lg font-bold text-gray-900">Pointify</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">
+                      {(admin?.username || 'A')[0].toUpperCase()}
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">
-                    {(admin?.username || 'A')[0].toUpperCase()}
-                  </span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Main Content ───────────────────────────────────────────────────── */}
-      <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="pt-14 lg:pt-16 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none overflow-x-hidden">
+        {/* Page content — pt-14 on mobile (offset fixed mobile nav), no top padding on desktop */}
+        <div className="pt-14 lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none overflow-x-hidden">
           {children}
         </div>
+
       </div>
 
       {/* ── Mobile Bottom Tab Bar ──────────────────────────────────────────── */}
