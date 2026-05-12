@@ -411,7 +411,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
       {/* ── Desktop Header Bar (hidden on mobile) ──────────────────────────── */}
       <div className={`hidden lg:block fixed top-0 w-full z-20 bg-white shadow-sm border-b ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 h-16">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Store className="h-4 w-4 text-white" />
