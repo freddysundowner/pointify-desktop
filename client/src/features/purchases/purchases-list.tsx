@@ -667,167 +667,88 @@ export default function PurchasesList() {
 
         {/* Filters Section */}
         <Card className="mb-3">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Filter className="h-3.5 w-3.5" />
-                <span className="text-sm font-medium">Filters</span>
+          <CardContent className="p-3 space-y-2">
+            {/* Row 1: Search + dropdowns + clear */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by purchase number…"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearAllFilters}
-                className="h-8 px-3"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Clear All
+
+              <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                <SelectTrigger className="h-9 w-[130px] text-sm">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={supplierFilter} onValueChange={handleSupplierFilter}>
+                <SelectTrigger className="h-9 w-[150px] text-sm">
+                  <SelectValue placeholder="All Suppliers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Suppliers</SelectItem>
+                  {(suppliersData as any[]).map((supplier: any) => (
+                    <SelectItem key={supplier._id} value={supplier._id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {isAdmin && (
+                <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
+                  <SelectTrigger className="h-9 w-[150px] text-sm">
+                    <SelectValue placeholder="All Attendants" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Attendants</SelectItem>
+                    {(attendantsData as any[]).map((attendant: any) => (
+                      <SelectItem key={attendant._id} value={attendant._id}>
+                        {attendant.username || attendant.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 w-[140px] text-sm"
+              />
+              <span className="text-xs text-muted-foreground">—</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 w-[140px] text-sm"
+              />
+
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 px-3 text-muted-foreground">
+                <RotateCcw className="h-3.5 w-3.5" />
               </Button>
             </div>
 
-            <div className="space-y-3">
-              {/* Search Bar - Full Width */}
-              <div>
-                <Label className="text-xs font-medium mb-1 block">Search</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search by purchase number..."
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-10 h-9"
-                    />
-                  </div>
-                  {searchQuery && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSearchChange("")}
-                      className="h-9 px-3"
-                    >
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                {searchQuery && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Found {filteredPurchases.length} results for "{searchQuery}"
-                  </p>
-                )}
-              </div>
-
-              {/* Filter Row - Horizontal Layout */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                {/* Status Filter */}
-                <div>
-                  <Label className="text-xs font-medium mb-1 block">Status</Label>
-                  <Select
-                    value={statusFilter}
-                    onValueChange={handleStatusFilter}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Supplier Filter */}
-                <div>
-                  <Label className="text-xs font-medium mb-1 block">Supplier</Label>
-                  <Select
-                    value={supplierFilter}
-                    onValueChange={handleSupplierFilter}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="All Suppliers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Suppliers</SelectItem>
-                      {(suppliersData as any[]).map((supplier: any) => (
-                        <SelectItem key={supplier._id} value={supplier._id}>
-                          {supplier.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Attendant Filter - Only show for admins */}
-                {isAdmin && (
-                  <div>
-                    <Label className="text-xs font-medium mb-1 block">Attendant</Label>
-                    <Select
-                      value={attendantFilter}
-                      onValueChange={handleAttendantFilter}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="All Attendants" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Attendants</SelectItem>
-                        {(attendantsData as any[]).map((attendant: any) => (
-                          <SelectItem key={attendant._id} value={attendant._id}>
-                            {attendant.username || attendant.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              {/* Date Range Section */}
-              <div>
-                <Label className="text-xs font-medium mb-1 block">Date Range</Label>
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="start-date"
-                        className="text-xs text-muted-foreground mb-1 block"
-                      >
-                        Start Date
-                      </Label>
-                      <Input
-                        id="start-date"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label
-                        htmlFor="end-date"
-                        className="text-xs text-muted-foreground mb-1 block"
-                      >
-                        End Date
-                      </Label>
-                      <Input
-                        id="end-date"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {(startDate || endDate) && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Showing {filteredPurchases.length} results from{" "}
-                    {startDate || "beginning"} to {endDate || "now"}
-                  </p>
-                )}
-              </div>
-            </div>
+            {/* Result hints */}
+            {(searchQuery || startDate || endDate) && (
+              <p className="text-xs text-muted-foreground">
+                {filteredPurchases.length} result{filteredPurchases.length !== 1 ? 's' : ''}
+                {searchQuery && <> for "<span className="font-medium">{searchQuery}</span>"</>}
+                {(startDate || endDate) && <> · {startDate || '…'} to {endDate || 'now'}</>}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -857,78 +778,21 @@ export default function PurchasesList() {
 
         {/* Summary Stats */}
         {!isLoading && !error && analyticsData && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Total Purchases
-                  </p>
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {currency} {(analyticsData.totalpurchases || 0).toFixed(2)}
-                  </p>
-                </div>
-                <TrendingDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Cash Purchases
-                  </p>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                    {currency} {(analyticsData.cash || 0).toFixed(2)}
-                  </p>
-                </div>
-                <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Unpaid Purchases
-                  </p>
-                  <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                    {currency} {(analyticsData.credit || 0).toFixed(2)}
-                  </p>
-                </div>
-                <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Amount Paid
-                  </p>
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {currency} {(analyticsData.paid || 0).toFixed(2)}
-                  </p>
-                </div>
-                <Truck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Returns
-                  </p>
-                  <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                    {currency} {(analyticsData.returns || 0).toFixed(2)}
-                  </p>
-                </div>
-                <Package className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </div>
-            </Card>
-
-
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
+            {[
+              { label: "Total", value: analyticsData.totalpurchases || 0, color: "text-blue-600" },
+              { label: "Cash", value: analyticsData.cash || 0, color: "text-green-600" },
+              { label: "Unpaid", value: analyticsData.credit || 0, color: "text-orange-500" },
+              { label: "Paid", value: analyticsData.paid || 0, color: "text-purple-600" },
+              { label: "Returns", value: analyticsData.returns || 0, color: "text-red-500" },
+            ].map(({ label, value, color }) => (
+              <Card key={label} className="p-3">
+                <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+                <p className={`text-base font-bold ${color}`}>
+                  {currency} {(value).toFixed(2)}
+                </p>
+              </Card>
+            ))}
           </div>
         )}
 
@@ -973,28 +837,14 @@ export default function PurchasesList() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-3 font-medium text-sm w-16">
-                        Details
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        PO #
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Supplier
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Total
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Date
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm">
-                        Status
-                      </th>
-                      <th className="text-left py-2 px-3 font-medium text-sm w-16">
-                        Actions
-                      </th>
+                    <tr className="border-b bg-gray-50 dark:bg-gray-800/50">
+                      <th className="w-10 py-2 px-3" />
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">PO #</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Supplier</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
+                      <th className="w-10 py-2 px-3" />
                     </tr>
                   </thead>
                   <tbody>
@@ -1002,12 +852,12 @@ export default function PurchasesList() {
                       <React.Fragment key={purchase.id}>
                         <tr className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50">
                           <td
-                            className="py-2 px-3 cursor-pointer"
+                            className="py-2 px-3 cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                             onClick={() => toggleRowExpansion(purchase.id)}
                           >
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                              {expandedRows.has(purchase.id) ? "Hide" : "Show"}
-                            </span>
+                            {expandedRows.has(purchase.id)
+                              ? <ChevronUp className="h-4 w-4" />
+                              : <ChevronDown className="h-4 w-4" />}
                           </td>
                           <td className="py-2 px-3 text-sm font-mono">
                             {purchase.invoiceNumber}
