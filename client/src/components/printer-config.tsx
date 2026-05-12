@@ -59,6 +59,16 @@ export function PrinterConfigDialog() {
     setUsbDeviceName(usbPrinter.getDeviceName());
   }, [isOpen]);
 
+  // Auto-reconnect to previously-granted USB printer on mount
+  useEffect(() => {
+    usbPrinter.reconnect().then(name => {
+      if (name) {
+        setUsbConnected(true);
+        setUsbDeviceName(name);
+      }
+    });
+  }, []);
+
   useEffect(() => { loadPrinterStatus(); }, []);
 
   useEffect(() => {

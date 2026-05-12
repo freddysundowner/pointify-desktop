@@ -116,6 +116,43 @@ class USBThermalPrinter {
     this.device = null;
   }
 
+  async reconnect(): Promise<string | null> {
+    if (!('usb' in navigator)) return null;
+    if (this.isConnected()) return this.device!.productName || 'USB Printer';
+    try {
+      const devices: USBDevice[] = await (navigator as any).usb.getDevices();
+      if (devices.length === 0) return null;
+      const device = devices[0];
+      try {
+        await device.open();
+      } catch (err: any) {
+        const msg = (err?.message || '').toLowerCase();
+        if (msg.includes('access') || msg.includes('denied') || msg.includes('failed to execute')) {
+          throw new Error('WINDOWS_ACCESS_DENIED');
+        }
+        return null;
+      }
+      if (device.configuration === null) {
+        try { await device.selectConfiguration(1); } catch {}
+      }
+      const interfaces: USBInterface[] = device.configuration?.interfaces ?? [];
+      for (const iface of interfaces) {
+        try {
+          await device.claimInterface(iface.interfaceNumber);
+          const ep = iface.alternate.endpoints.find((e: USBEndpoint) => e.direction === 'out');
+          if (ep) {
+            this.endpointNumber = ep.endpointNumber;
+            this.device = device;
+            return device.productName || 'USB Printer';
+          }
+        } catch {}
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   private async write(data: Uint8Array): Promise<void> {
     if (!this.device?.opened) throw new Error('USB printer not connected');
     const CHUNK = 64;

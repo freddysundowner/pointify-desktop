@@ -132,8 +132,15 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
       const statusRes = await fetch('/api/printer/status');
       const status = statusRes.ok ? await statusRes.json() : null;
 
+      // No printer configured — skip silently
+      if (!status?.initialized) return;
+
       // WEBUSB mode — send directly from browser via Web USB
       if (status?.config?.type === 'WEBUSB') {
+        // Try to auto-reconnect to previously-granted device before failing
+        if (!usbPrinter.isConnected()) {
+          await usbPrinter.reconnect();
+        }
         if (!usbPrinter.isConnected()) {
           toast({
             title: "USB Printer Not Connected",
