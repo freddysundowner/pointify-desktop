@@ -300,16 +300,6 @@ export default function BusinessDashboard() {
       description: `Loading data for ${selectedShopMeta?.name || 'selected shop'}...`,
     });
 
-    try {
-      // Update primary shop on the server so it persists across sessions
-      await apiCall(`/api/admin/${admin?._id}`, {
-        method: "PUT",
-        body: JSON.stringify({ primaryShop: shopId }),
-      });
-    } catch (error) {
-      console.error("Error switching shop on server:", error);
-      // Local update already applied above — user stays on correct shop
-    }
   };
   // Admin always has full access - no impersonation restrictions
   const canViewSales = true;
