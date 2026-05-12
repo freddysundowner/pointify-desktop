@@ -142,11 +142,8 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
           await usbPrinter.reconnect();
         }
         if (!usbPrinter.isConnected()) {
-          toast({
-            title: "USB Printer Not Connected",
-            description: "Go to Printer Settings and click 'Connect USB Printer' first",
-            variant: "destructive",
-          });
+          // Printer was configured but isn't available — fall back silently to browser print
+          browserPrint();
           return;
         }
         try {
