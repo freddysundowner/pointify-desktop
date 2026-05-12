@@ -44,17 +44,17 @@ export default function PurchaseViewPage() {
 
   return (
     <DashboardLayout title="Purchase Details">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <PageHeader
-          title="Purchase Details"
-          onBack={() => setLocation(purchasesRoute)}
-          actions={
-            <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
-              {purchase.paymentType}
-            </Badge>
-          }
-        />
+      <PageHeader
+        title="Purchase Details"
+        onBack={() => setLocation(purchasesRoute)}
+        actions={
+          <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
+            {purchase.paymentType}
+          </Badge>
+        }
+      />
 
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Receipt-style Layout */}
         <div className="w-full max-w-4xl mx-auto">
           <Card className="shadow-lg">
