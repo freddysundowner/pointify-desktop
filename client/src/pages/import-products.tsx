@@ -45,6 +45,70 @@ const COLUMNS = [
 type PreviewRow = Record<string, string> & { _valid: boolean; _errors: string[] };
 type ResultRow = { name: string; success: boolean; error?: string };
 
+// Maps any reasonable header variation to the canonical key
+const HEADER_ALIASES: Record<string, string> = {
+  // name
+  name: "name", "product name": "name", product_name: "name", "item name": "name",
+  item_name: "name", product: "name", item: "name", title: "name", "product title": "name",
+  productname: "name", itemname: "name",
+  // category
+  category: "category", cat: "category", "product category": "category",
+  "category name": "category", categoryname: "category", "item category": "category",
+  type: "category",
+  // supplier
+  supplier: "supplier", vendor: "supplier", "supplier name": "supplier",
+  suppliername: "supplier", brand: "supplier",
+  // buyingPrice
+  buyingprice: "buyingPrice", "buying price": "buyingPrice", buying_price: "buyingPrice",
+  cost: "buyingPrice", "cost price": "buyingPrice", costprice: "buyingPrice",
+  "purchase price": "buyingPrice", purchaseprice: "buyingPrice",
+  "buy price": "buyingPrice", buyprice: "buyingPrice", "buying cost": "buyingPrice",
+  buyingcost: "buyingPrice",
+  // sellingPrice
+  sellingprice: "sellingPrice", "selling price": "sellingPrice", selling_price: "sellingPrice",
+  price: "sellingPrice", "sale price": "sellingPrice", saleprice: "sellingPrice",
+  "retail price": "sellingPrice", retailprice: "sellingPrice",
+  "selling cost": "sellingPrice",
+  // wholesalePrice
+  wholesaleprice: "wholesalePrice", "wholesale price": "wholesalePrice",
+  wholesale_price: "wholesalePrice", wholesale: "wholesalePrice",
+  "whole sale price": "wholesalePrice", "whole sale": "wholesalePrice",
+  // dealerPrice
+  dealerprice: "dealerPrice", "dealer price": "dealerPrice", dealer_price: "dealerPrice",
+  dealer: "dealerPrice",
+  // quantity
+  quantity: "quantity", qty: "quantity", stock: "quantity", "stock quantity": "quantity",
+  stockquantity: "quantity", units: "quantity", "current stock": "quantity",
+  currentstock: "quantity", "opening stock": "quantity", openingstock: "quantity",
+  "opening qty": "quantity", openingqty: "quantity",
+  // sku
+  sku: "sku", barcode: "sku", code: "sku", "product code": "sku", productcode: "sku",
+  "item code": "sku", itemcode: "sku", "bar code": "sku",
+  // description
+  description: "description", desc: "description", details: "description",
+  notes: "description", note: "description", "product description": "description",
+  // lowStockThreshold
+  lowstockthreshold: "lowStockThreshold", "low stock threshold": "lowStockThreshold",
+  "low stock": "lowStockThreshold", "min stock": "lowStockThreshold",
+  "minimum stock": "lowStockThreshold", lowstock: "lowStockThreshold",
+  "alert level": "lowStockThreshold",
+  // reorderLevel
+  reorderlevel: "reorderLevel", "reorder level": "reorderLevel", reorder: "reorderLevel",
+  "reorder point": "reorderLevel", reorderpoint: "reorderLevel",
+  // unit
+  unit: "unit", "unit of measure": "unit", uom: "unit",
+  // manufacturer
+  manufacturer: "manufacturer", make: "manufacturer", "brand name": "manufacturer",
+  brandname: "manufacturer",
+  // measure
+  measure: "measure",
+};
+
+const normalizeHeader = (h: string): string => {
+  const key = h.toLowerCase().replace(/[_\-\/]+/g, " ").replace(/\s+/g, " ").trim();
+  return HEADER_ALIASES[key] || HEADER_ALIASES[key.replace(/\s/g, "")] || h;
+};
+
 export default function ImportProductsPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -125,7 +189,7 @@ export default function ImportProductsPage() {
         setIsParsing(false);
         return;
       }
-      const headers: string[] = (raw[0] as string[]).map((h) => String(h).trim());
+      const headers: string[] = (raw[0] as string[]).map((h) => normalizeHeader(String(h).trim()));
       const parsed: PreviewRow[] = raw.slice(1).map((row) => {
         const obj: Record<string, string> = {};
         headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
