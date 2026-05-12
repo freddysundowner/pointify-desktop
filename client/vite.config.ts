@@ -15,7 +15,7 @@ export default defineConfig({
     allowedHosts: true,
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate',
-      'X-Frame-Options': 'ALLOWALL',
+      'Content-Security-Policy': "frame-ancestors *",
     },
     proxy: {
       '/api': 'http://localhost:1999',
