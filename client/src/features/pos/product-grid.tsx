@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -991,69 +991,110 @@ export default function ProductGrid({
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
-      {/* Mobile Navigation Bar */}
-      <div className="lg:hidden bg-purple-600 text-white px-3 py-2.5">
-        {viewMode === 'grid' && showMobileCart ? (
-          /* Cart tab header */
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setShowMobileCart(false)}
-              className="flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Products
-            </button>
-            <span className="font-semibold text-sm">
-              Cart {cartItems.length > 0 ? `(${cartItems.length})` : '(empty)'}
-            </span>
-            <button
-              onClick={() => cartItems.length > 0 && setShowPaymentDialog(true)}
-              disabled={cartItems.length === 0}
-              className="bg-white text-purple-600 text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Pay
-            </button>
+      {/* Mobile App Header */}
+      <div className="lg:hidden bg-purple-600 text-white">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-3 pt-3 pb-2">
+          <button
+            onClick={showMobileCart ? () => setShowMobileCart(false) : onBack}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+
+          <div className="text-center">
+            <p className="font-bold text-base leading-tight">
+              {showMobileCart ? 'My Cart' : 'Pointify POS'}
+            </p>
+            {showMobileCart && (
+              <p className="text-purple-200 text-xs">
+                {cartItems.length > 0 ? `${cartItems.length} item${cartItems.length !== 1 ? 's' : ''}` : 'Empty'}
+              </p>
+            )}
           </div>
-        ) : (
-          /* Products tab header (grid mode) or normal header (table mode) */
-          <div className="flex items-center justify-between">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </button>
-            <span className="font-semibold text-sm">POS System</span>
-            <div className="flex items-center gap-2">
-              <div className="flex bg-purple-500 rounded-md p-0.5">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => { setViewMode('grid'); setShowMobileCart(false); }}
-                  className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
+
+          <div className="flex items-center gap-1.5">
+            {showMobileCart ? (
+              <button
+                onClick={() => cartItems.length > 0 && setShowPaymentDialog(true)}
+                disabled={cartItems.length === 0}
+                className="bg-white text-purple-700 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+              >
+                Pay
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowCategoriesDrawer(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile search bar — shown only on products tab */}
+        {!showMobileCart && (
+          <div className="px-3 pb-3 relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-300 pointer-events-none z-10" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
+                onKeyDown={(e) => handleSearchKeyDown(e, products.slice(0, 8))}
+                className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-white/15 text-white placeholder-purple-300 text-sm focus:outline-none focus:bg-white/25 border border-white/20"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { onSearchChange(''); setDropdownHighlight(-1); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
-                  <Grid3X3 className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-6 px-2 text-xs bg-transparent hover:bg-purple-400"
-                >
-                  <Table className="h-3 w-3" />
-                </Button>
-              </div>
-              {viewMode === 'grid' && (
-                <Button
-                  onClick={() => setShowCategoriesDrawer(true)}
-                  variant="ghost"
-                  className="border border-white/40 text-white bg-white/15 hover:bg-white/25 h-7 px-3 text-xs rounded-full"
-                >
-                  Filter
-                </Button>
+                  <X className="h-4 w-4 text-white/60" />
+                </button>
               )}
             </div>
+            {/* Search results dropdown */}
+            {searchQuery && (
+              <div className="absolute left-3 right-3 top-full mt-0.5 bg-white rounded-2xl shadow-2xl z-50 max-h-72 overflow-y-auto border border-gray-100">
+                {isSearching ? (
+                  <div className="py-5 text-center text-sm text-gray-400">Searching…</div>
+                ) : products.length === 0 ? (
+                  <div className="py-5 text-center text-sm text-gray-400">No products found</div>
+                ) : (
+                  products.slice(0, 8).map((product: any, idx: number) => {
+                    const isService = product?.productType === 'service' || product?.virtual === true;
+                    const isOutOfStock = !isService && (product.quantity === 0);
+                    const isHighlighted = idx === dropdownHighlight;
+                    return (
+                      <div
+                        key={product._id || product.id}
+                        ref={el => { dropdownItemRefs.current[idx] = el; }}
+                        onClick={isOutOfStock ? undefined : () => {
+                          onAddToCart(product);
+                          onSearchChange('');
+                          setDropdownHighlight(-1);
+                        }}
+                        className={`flex items-center justify-between px-4 py-3 border-b border-gray-50 last:border-b-0 ${
+                          isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:bg-purple-50'
+                        } ${isHighlighted ? 'bg-purple-50' : ''}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{product.name || product.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {isService ? 'Service' : isOutOfStock ? 'Out of stock' : `In stock: ${product.quantity}`}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-purple-600 ml-3 shrink-0">
+                          Ksh {getPriceForSaleType(product, saleType).toFixed(2)}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1128,7 +1169,7 @@ export default function ProductGrid({
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white overflow-y-auto ${showMobileCart || viewMode === 'table' ? 'block' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white overflow-y-auto ${showMobileCart || viewMode === 'table' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden lg:block'}`}>
           {/* Transaction ID + Date — always 2 cols */}
           <div className="grid grid-cols-2 gap-2 lg:gap-6 mb-2 lg:mb-6">
             <div>
@@ -1378,71 +1419,48 @@ export default function ProductGrid({
                     return (
                       <div key={item.id}>
                         {/* Mobile Layout */}
-                        <div className={`lg:hidden px-3 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${index % 2 === 1 ? 'bg-gray-25' : 'bg-white'}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
-                              <p className="font-semibold text-gray-800 text-sm truncate">{item.name}</p>
-                              <p className="text-gray-500 text-xs">
-                                Ksh {item.price.toFixed(2)} × {item.quantity}
+                        <div className="lg:hidden px-4 py-3.5 border-b border-gray-100 bg-white active:bg-gray-50">
+                          <div className="flex items-start gap-3">
+                            {/* Product icon */}
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 mt-0.5">
+                              <Package className="h-5 w-5 text-purple-300" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start">
+                                <p className="font-semibold text-gray-900 text-sm truncate pr-2">{item.name}</p>
+                                <p className="font-bold text-gray-900 text-sm shrink-0">Ksh {item.total.toFixed(2)}</p>
+                              </div>
+                              <p className="text-gray-400 text-xs mt-0.5">
+                                Ksh {item.price.toFixed(2)} each
                                 {item.discount > 0 && (
-                                  <span className="text-green-600"> (-Ksh {item.discount.toFixed(2)})</span>
+                                  <span className="text-green-500 ml-1">−Ksh {item.discount.toFixed(2)}</span>
                                 )}
                               </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-gray-800 text-sm">Ksh {item.total.toFixed(2)}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                  onUpdateQuantity(item.id, Math.max(1, item.quantity - 1), productData);
-                                }}
-                                className="w-6 h-6 p-0 rounded border-gray-300"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <Input
-                                key={item.quantity}
-                                type="number"
-                                defaultValue={item.quantity}
-                                onBlur={(e) => {
-                                  const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
-                                  if (newQuantity !== item.quantity) {
-                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                    onUpdateQuantity(item.id, newQuantity, productData);
-                                  }
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    const newQuantity = Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1);
-                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                    onUpdateQuantity(item.id, newQuantity, productData);
-                                    (e.target as HTMLInputElement).blur();
-                                  }
-                                }}
-                                className="w-14 h-7 p-1 text-center text-xs font-semibold border-purple-300 focus:border-purple-500 rounded"
-                                min="1"
-                              />
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                  onUpdateQuantity(item.id, item.quantity + 1, productData);
-                                }}
-                                className="w-6 h-6 p-0 rounded border-gray-300"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
+                              {/* Qty controls + actions */}
+                              <div className="flex items-center justify-between mt-2.5">
+                                <div className="flex items-center bg-gray-100 rounded-xl overflow-hidden">
+                                  <button
+                                    onClick={() => {
+                                      const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                      onUpdateQuantity(item.id, Math.max(1, item.quantity - 1), productData);
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center text-purple-600 active:bg-gray-200"
+                                  >
+                                    <Minus className="h-3.5 w-3.5" />
+                                  </button>
+                                  <span className="w-8 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
+                                  <button
+                                    onClick={() => {
+                                      const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                      onUpdateQuantity(item.id, item.quantity + 1, productData);
+                                    }}
+                                    className="w-8 h-8 flex items-center justify-center text-purple-600 active:bg-gray-200"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
                               {canEditPrice && (
                                 <button 
                                   onClick={() => handlePriceChange(item)}
@@ -1467,6 +1485,8 @@ export default function ProductGrid({
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
+                            </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1658,107 +1678,7 @@ export default function ProductGrid({
 
         {/* Right Panel - Products */}
         {viewMode === 'grid' && (
-          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden pb-20 lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
-          
-          {/* Mobile View Mode */}
-          <div className="lg:hidden mb-2">
-            {viewMode === 'grid' ? (
-              /* Mobile Product Search for Cards Mode */
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 z-10" />
-                <Input
-                  type="text"
-                  placeholder="Search products to add..."
-                  value={searchQuery}
-                  onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
-                  onKeyDown={(e) => handleSearchKeyDown(e, products)}
-                  className="pl-8 h-8 text-sm border-gray-300 bg-white"
-                />
-                
-                {/* Dropdown Results */}
-                {searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                    {isLoading ? (
-                      <div className="text-center py-2">
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mx-auto mb-1"></div>
-                        <p className="text-xs text-gray-500">Searching...</p>
-                      </div>
-                    ) : isSearching ? (
-                      <div className="text-center py-2 text-gray-500">
-                        <p className="text-xs">Searching...</p>
-                      </div>
-                    ) : products.length === 0 ? (
-                      <div className="text-center py-2 text-gray-500">
-                        <p className="text-xs">{searchQuery ? "No products found for your search" : "No products found"}</p>
-                      </div>
-                    ) : (
-                      products.map((product: any, idx: number) => {
-                        const price = getPriceForSaleType(product, saleType);
-                        const productId = product._id || product.id;
-                        const productName = product.name || product.title;
-                        const quantity = product.quantity || 0;
-                        const isVirtual = product.virtual;
-                        const isOutOfStock = !isVirtual && quantity === 0;
-                        const isHighlighted = idx === dropdownHighlight;
-                        
-                        return (
-                          <div
-                            key={productId}
-                            ref={el => { dropdownItemRefs.current[idx] = el; }}
-                            className={`p-2 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
-                              isOutOfStock ? "opacity-50" : ""
-                            } ${isHighlighted ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'hover:bg-gray-50'}`}
-                            onClick={() => {
-                              if (!isOutOfStock) {
-                                onAddToCart(product);
-                                onSearchChange("");
-                                setDropdownHighlight(-1);
-                              }
-                            }}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-900 truncate">{productName}</p>
-                                <p className="text-xs text-gray-500">Ksh {price.toFixed(2)}</p>
-                              </div>
-                              <div className="ml-1 text-right">
-                                {isVirtual ? (
-                                  <span className="text-xs bg-blue-100 text-blue-600 px-1 py-0.5 rounded">Service</span>
-                                ) : (
-                                  <span className={`text-xs font-medium ${
-                                    isOutOfStock ? "text-red-600" : "text-green-600"
-                                  }`}>
-                                    {isOutOfStock ? "Out" : `${quantity}`}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                      )}
-                      {hasMore && !isLoading && (
-                        <div ref={loaderRef} style={{ height: "40px" }} />
-                      )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Mobile Scanner Interface for Table Mode */
-              <div className="bg-white rounded-lg p-4 text-center border border-gray-200">
-                <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h2M4 4h4m12 0h2M4 20h4m12 0h2" />
-                  </svg>
-                </div>
-                <p className="text-sm font-medium text-gray-900 mb-2">Scanner Mode</p>
-                <p className="text-xs text-gray-500 mb-3">Scan barcode or search product name</p>
-                <div className="bg-gray-50 rounded-lg p-2">
-                  <p className="text-xs text-gray-600">{products.length} products available</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden pb-2 lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
 
           {/* Product Grid — shown on all sizes */}
           <div className="flex flex-col bg-white rounded-xl lg:rounded-2xl p-2 lg:p-4 shadow-sm lg:shadow-lg lg:flex-1 lg:min-h-0 lg:overflow-hidden">
@@ -1802,32 +1722,32 @@ export default function ProductGrid({
                     return (
                       <div
                         key={productId}
-                        className={`rounded-lg lg:rounded-xl cursor-pointer transition-all duration-200 overflow-hidden border ${
+                        className={`rounded-xl lg:rounded-xl cursor-pointer transition-all duration-150 overflow-hidden border active:scale-[0.97] select-none ${
                           isOutOfStock
-                            ? "bg-red-50 border-red-200 opacity-60 pointer-events-none"
+                            ? "bg-gray-50 border-gray-200 opacity-50 pointer-events-none"
                             : isLowStock
-                            ? "bg-amber-50 border-amber-200 hover:border-amber-400 hover:shadow-md"
-                            : "bg-white border-gray-200 hover:border-purple-300 hover:shadow-md"
+                            ? "bg-amber-50 border-amber-200 active:border-amber-400 active:shadow-md"
+                            : "bg-white border-gray-100 active:border-purple-300 active:shadow-md shadow-sm"
                         }`}
                         onClick={() => !isOutOfStock && onAddToCart(product)}
                       >
-                        {/* Image area — shorter on mobile */}
-                        <div className="h-16 lg:h-24 bg-gray-100 flex items-center justify-center">
-                          <Package className="h-6 w-6 lg:h-8 lg:w-8 text-gray-300" />
+                        {/* Image area */}
+                        <div className="h-20 lg:h-24 bg-gradient-to-br from-purple-50 to-gray-100 flex items-center justify-center">
+                          <Package className="h-7 w-7 lg:h-8 lg:w-8 text-purple-200" />
                         </div>
                         {/* Content */}
-                        <div className="p-2 lg:p-2.5">
+                        <div className="p-2.5 lg:p-2.5">
                           <p className="text-xs lg:text-sm font-semibold text-gray-800 truncate leading-tight">{productName}</p>
-                          <p className="text-xs lg:text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
-                          <div className="mt-1">
+                          <p className="text-sm lg:text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
+                          <div className="mt-1.5">
                             {isVirtual ? (
-                              <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded font-medium">Service</span>
+                              <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium">Service</span>
                             ) : isOutOfStock ? (
-                              <span className="text-xs text-red-600 bg-red-100 px-1 py-0.5 rounded font-medium">Out</span>
+                              <span className="text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full font-medium">Out of stock</span>
                             ) : isLowStock ? (
-                              <span className="text-xs text-orange-600 bg-orange-50 px-1 py-0.5 rounded font-medium">Low:{quantity}</span>
+                              <span className="text-[10px] text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full font-medium">Low: {quantity}</span>
                             ) : (
-                              <span className="text-xs text-gray-400">x{quantity}</span>
+                              <span className="text-[10px] text-gray-400">In stock: {quantity}</span>
                             )}
                           </div>
                         </div>
@@ -1963,25 +1883,39 @@ export default function ProductGrid({
         )}
       </div>
 
-      {/* Mobile floating "View Cart" bar — shown when browsing products in grid mode */}
-      {viewMode === 'grid' && !showMobileCart && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-3 py-2.5 bg-white border-t border-gray-200 shadow-lg">
-          {cartItems.length === 0 ? (
-            <p className="text-center text-xs text-gray-400 py-1">Tap a product to add it to your cart</p>
-          ) : (
-            <button
-              onClick={() => setShowMobileCart(true)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white h-12 rounded-xl font-semibold flex items-center justify-between px-4 transition-colors"
-            >
-              <span className="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[22px] text-center">
-                {cartItems.length}
+      {/* Mobile Bottom Tab Bar */}
+      <div className="lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] flex">
+        {/* Products Tab */}
+        <button
+          onClick={() => { setShowMobileCart(false); setViewMode('grid'); }}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors active:bg-gray-50 ${
+            !showMobileCart ? 'text-purple-600' : 'text-gray-400'
+          }`}
+        >
+          <LayoutGrid className="h-5 w-5" />
+          <span className="text-xs font-medium">Products</span>
+        </button>
+
+        {/* Cart Tab */}
+        <button
+          onClick={() => setShowMobileCart(true)}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors active:bg-gray-50 relative ${
+            showMobileCart ? 'text-purple-600' : 'text-gray-400'
+          }`}
+        >
+          <div className="relative">
+            <ShoppingCart className="h-5 w-5" />
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-purple-600 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
+                {cartItems.length > 99 ? '99+' : cartItems.length}
               </span>
-              <span className="text-sm">View Cart</span>
-              <span className="text-sm font-bold">Ksh {totals.total.toFixed(2)}</span>
-            </button>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+          <span className="text-xs font-medium">
+            {cartItems.length > 0 ? `Cart · Ksh ${totals.total.toFixed(0)}` : 'Cart'}
+          </span>
+        </button>
+      </div>
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={resetPaymentDialog}>
