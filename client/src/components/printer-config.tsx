@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb, Monitor, Globe, Link, LinkOff } from "lucide-react";
+import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb, Monitor, Globe, Link, Unlink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usbPrinter } from "@/lib/usb-printer";
 
@@ -387,7 +387,7 @@ export function PrinterConfigDialog() {
                     </Button>
                   ) : (
                     <Button variant="outline" onClick={handleDisconnectUSB} className="flex-1">
-                      <LinkOff className="h-4 w-4 mr-2" /> Disconnect
+                      <Unlink className="h-4 w-4 mr-2" /> Disconnect
                     </Button>
                   )}
                 </div>
