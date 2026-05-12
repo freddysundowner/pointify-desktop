@@ -43,6 +43,16 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import React, { useState, useMemo } from "react";
@@ -99,6 +109,8 @@ export default function PurchasesList() {
   const currency = useCurrency();
   const [, setLocation] = useLocation();
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [purchaseToDelete, setPurchaseToDelete] = useState<any>(null);
   const { toast } = useToast();
   const purchasesRoute = useNavigationRoute("purchases");
   const addPurchasesRoute = useNavigationRoute("addPurchase");
@@ -453,13 +465,15 @@ export default function PurchasesList() {
   };
 
   const handleDeletePurchase = (purchase: any) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete purchase ${purchase.invoiceNumber}? This action cannot be undone.`,
-      )
-    ) {
-      deletePurchaseMutation.mutate(purchase.id);
-    }
+    setPurchaseToDelete(purchase);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeletePurchase = () => {
+    if (!purchaseToDelete) return;
+    deletePurchaseMutation.mutate(purchaseToDelete.id);
+    setDeleteDialogOpen(false);
+    setPurchaseToDelete(null);
   };
 
   const handleCreatePurchase = () => {
@@ -1118,6 +1132,29 @@ export default function PurchasesList() {
             });
           }}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Purchase</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete purchase {purchaseToDelete?.invoiceNumber}?
+                This action cannot be undone and will permanently remove this purchase from your records.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deletePurchaseMutation.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeletePurchase}
+                disabled={deletePurchaseMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deletePurchaseMutation.isPending ? "Deleting..." : "Delete Purchase"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
