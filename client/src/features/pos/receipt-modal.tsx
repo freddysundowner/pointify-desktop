@@ -142,8 +142,7 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
           await usbPrinter.reconnect();
         }
         if (!usbPrinter.isConnected()) {
-          // Printer was configured but isn't available — fall back silently to browser print
-          browserPrint();
+          // Printer was configured but isn't available — skip silently
           return;
         }
         try {
