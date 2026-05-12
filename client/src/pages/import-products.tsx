@@ -131,9 +131,9 @@ export default function ImportProductsPage() {
         headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
         const errors: string[] = [];
         if (!obj.name) errors.push("Name is required");
-        if (obj.sellingPrice && isNaN(Number(obj.sellingPrice))) errors.push("Selling price must be a number");
-        if (obj.buyingPrice && isNaN(Number(obj.buyingPrice))) errors.push("Buying price must be a number");
-        if (obj.quantity && isNaN(Number(obj.quantity))) errors.push("Quantity must be a number");
+        if (obj.sellingPrice !== "" && isNaN(Number(obj.sellingPrice))) errors.push("Selling price must be a number");
+        if (obj.buyingPrice !== "" && isNaN(Number(obj.buyingPrice))) errors.push("Buying price must be a number");
+        if (obj.quantity !== "" && isNaN(Number(obj.quantity))) errors.push("Quantity must be a number");
         return { ...obj, _valid: errors.length === 0, _errors: errors };
       }).filter((r) => r.name || Object.values(r).some((v) => v && v !== "true" && v !== "false"));
       setRows(parsed);
@@ -173,12 +173,12 @@ export default function ImportProductsPage() {
       name: row.name,
       productCategoryId: row.category || "General",
       supplierId: row.supplier || "General",
-      buyingPrice: parseFloat(row.buyingPrice) || 0,
-      sellingPrice: parseFloat(row.sellingPrice) || 0,
-      wholesalePrice: parseFloat(row.wholesalePrice) || 0,
-      dealerPrice: parseFloat(row.dealerPrice) || 0,
-      quantity: parseInt(row.quantity) || 0,
-      reorderLevel: parseInt(row.reorderLevel) || 0,
+      buyingPrice: row.buyingPrice !== "" ? (parseFloat(row.buyingPrice) || 0) : 0,
+      sellingPrice: row.sellingPrice !== "" ? (parseFloat(row.sellingPrice) || 0) : 0,
+      wholesalePrice: row.wholesalePrice !== "" ? (parseFloat(row.wholesalePrice) || 0) : 0,
+      dealerPrice: row.dealerPrice !== "" ? (parseFloat(row.dealerPrice) || 0) : 0,
+      quantity: row.quantity !== "" ? (parseInt(row.quantity) || 0) : 0,
+      reorderLevel: row.reorderLevel !== "" ? (parseInt(row.reorderLevel) || 0) : 0,
       description: row.description || "",
       manufacturer: row.manufacturer || "",
       measure: row.measure || "",
