@@ -349,7 +349,6 @@ export function registerSalesRoutes(app: Express) {
         body: JSON.stringify(req.body)
       });
       
-      console.log("Pointify sales response:", JSON.stringify(data, null, 2));
       res.json(data);
     } catch (error: any) {
       console.error("Sales transaction error:", error);
