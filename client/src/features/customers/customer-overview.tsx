@@ -14,6 +14,7 @@ import { Search, User, CreditCard, ShoppingBag, Calendar, DollarSign, TrendingUp
 import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { useAuth } from '@/features/auth/useAuth';
@@ -1109,14 +1110,7 @@ export default function CustomerOverview() {
   return (
     <DashboardLayout title="Customer Overview">
       <div className="space-y-3 sm:space-y-5">
-        <div className="flex items-center gap-2">
-          <Link href={customersRoute}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-base sm:text-xl font-bold">Customer Overview</h1>
-        </div>
+        <PageHeader title="Customer Overview" backHref={customersRoute} />
 
         {/* Customer Header - Mobile Responsive */}
         <Card>

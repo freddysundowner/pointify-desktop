@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -198,28 +199,21 @@ export default function AdjustmentHistoryPage() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={goBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-xl font-bold tracking-tight">Adjustment History</h1>
-              <p className="text-xs text-gray-500 truncate">{product?.name || 'Product'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={fetchAdjustmentHistory} disabled={isLoading}>
+        <PageHeader
+          title="Adjustment History"
+          subtitle={product?.name || 'Product'}
+          onBack={goBack}
+          actions={<>
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={fetchAdjustmentHistory} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
+              <span className="hidden sm:inline ml-1">Refresh</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={exportToCsv} disabled={adjustmentHistory.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              CSV
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToCsv} disabled={adjustmentHistory.length === 0}>
+              <Download className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">CSV</span>
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Filters */}
         <Card>

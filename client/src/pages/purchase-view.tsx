@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Package, User, Calendar, DollarSign, FileText, Building2, CreditCard } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useCurrency } from "@/utils";
 
 export default function PurchaseViewPage() {
@@ -44,20 +45,15 @@ export default function PurchaseViewPage() {
   return (
     <DashboardLayout title="Purchase Details">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setLocation(purchasesRoute)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
-            {purchase.paymentType}
-          </Badge>
-        </div>
+        <PageHeader
+          title="Purchase Details"
+          onBack={() => setLocation(purchasesRoute)}
+          actions={
+            <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
+              {purchase.paymentType}
+            </Badge>
+          }
+        />
 
         {/* Receipt-style Layout */}
         <div className="w-full max-w-4xl mx-auto">

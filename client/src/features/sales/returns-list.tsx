@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/features/auth/useAuth";
@@ -277,19 +278,17 @@ function ReturnsList() {
     <DashboardLayout title="Sales Returns">
       <div className="w-full">
         <div className="w-full">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Returns</h1>
-            
-            {/* Action Buttons - Permission Controlled */}
-            <div className="flex gap-2 flex-shrink-0">
+          <PageHeader
+            title="Returns"
+            actions={
               <PermissionGuard permission="returns_create">
                 <Button size="sm" className="flex items-center gap-1.5">
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">New </span>Return
                 </Button>
               </PermissionGuard>
-            </div>
-          </div>
+            }
+          />
 
           {/* Filters Section */}
           <Card className="mb-3">

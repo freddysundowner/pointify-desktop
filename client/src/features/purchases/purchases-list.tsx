@@ -636,37 +636,30 @@ export default function PurchasesList() {
   return (
     <DashboardLayout title="Purchase Reports">
       <div className="w-full">
-        {/* Sticky page header — stays visible while scrolling */}
-        <div className="sticky top-14 lg:top-16 z-10 -mx-3 lg:-mx-6 px-3 lg:px-6 py-2 mb-3 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={handleBackClick} className="h-8 w-8 p-0">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-base font-bold text-gray-900 dark:text-white">Purchases</h1>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button 
-                onClick={exportToPDF}
-                variant="outline"
-                size="sm"
-                className="h-8 flex items-center gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-sm">Export PDF</span>
-                <span className="sm:hidden text-sm">PDF</span>
-              </Button>
-              {(isAdmin || hasAttendantPermission("stocks", "add_purchases")) && (
-                <Link href={addPurchasesRoute}>
-                  <Button size="sm" className="h-8" onClick={handleCreatePurchase}>
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    <span className="hidden sm:inline">New </span>Purchase
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Purchases"
+          onBack={handleBackClick}
+          actions={<>
+            <Button 
+              onClick={exportToPDF}
+              variant="outline"
+              size="sm"
+              className="h-8 flex items-center gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-sm">Export PDF</span>
+              <span className="sm:hidden text-sm">PDF</span>
+            </Button>
+            {(isAdmin || hasAttendantPermission("stocks", "add_purchases")) && (
+              <Link href={addPurchasesRoute}>
+                <Button size="sm" className="h-8" onClick={handleCreatePurchase}>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline">New </span>Purchase
+                </Button>
+              </Link>
+            )}
+          </>}
+        />
 
         {/* Filters Section */}
         <Card className="mb-3">

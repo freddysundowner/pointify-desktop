@@ -10,6 +10,7 @@ import { AlertCircle, ArrowLeft, RotateCcw, Loader2, CheckCircle } from "lucide-
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -253,23 +254,13 @@ export default function ReturnSale() {
   return (
     <DashboardLayout title={`Return Sale #${originalSale.receiptNo || originalSale.id}`}>
       <div className="p-6 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              Process Return - Sale #{originalSale.receiptNo || originalSale.id}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Select items to return and specify return reasons
-            </p>
-          </div>
-          
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" onClick={() => window.history.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
+        <PageHeader
+          title={`Process Return - Sale #${originalSale.receiptNo || originalSale.id}`}
+          subtitle="Select items to return and specify return reasons"
+          onBack={() => window.history.back()}
+          actions={
             <Button 
+              size="sm"
               onClick={handleProcessReturn}
               disabled={selectedItemsCount === 0 || isProcessing}
             >
@@ -285,8 +276,8 @@ export default function ReturnSale() {
                 </>
               )}
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         <div className="grid gap-6">
           {/* Original Sale Info */}

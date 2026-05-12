@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, Filter, Download, Calendar, Clock, RefreshCw, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { Link } from 'wouter';
@@ -397,17 +398,10 @@ export default function Expenses() {
   return (
     <DashboardLayout title="Expenses">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header with Add Button */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Link href={dashboardRoute}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            </Link>
-            <h2 className="text-base sm:text-xl font-bold leading-tight">Expenses</h2>
-          </div>
-          <div className="flex gap-1.5 flex-shrink-0">
+        <PageHeader
+          title="Expenses"
+          backHref={dashboardRoute}
+          actions={<>
             <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expense-categories' : '/expense-categories'}>
               <Button variant="outline" size="sm" className="h-8 text-xs">
                 <Settings className="w-3.5 h-3.5 sm:mr-1.5" />
@@ -542,9 +536,9 @@ export default function Expenses() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
-          </div>
-        </div>
+            </Dialog>
+          </>}
+        />
 
         {/* Summary Stats */}
         <div className="grid grid-cols-4 gap-1.5">

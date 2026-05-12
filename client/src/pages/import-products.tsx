@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -306,16 +307,11 @@ export default function ImportProductsPage() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-5 p-4 sm:p-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setLocation("/stock/products")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">Import Products</h1>
-            <p className="text-sm text-gray-500">Upload an Excel file to bulk-import products into your inventory</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Import Products"
+          subtitle="Upload an Excel file to bulk-import products into your inventory"
+          onBack={() => setLocation("/stock/products")}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Left column: upload steps */}

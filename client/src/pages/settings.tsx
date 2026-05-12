@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Settings, Globe, CheckCircle2, AlertCircle, Wifi, WifiOff, RefreshCw, Clock } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -116,16 +117,10 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Settings className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="text-sm text-gray-500">System configuration and status</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Settings"
+          subtitle="System configuration and status"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Settings Config */}

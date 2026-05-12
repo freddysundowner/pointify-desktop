@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Download, Calendar, DollarSign, TrendingUp, Filter, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -150,23 +151,18 @@ export default function IncomeReports() {
   return (
     <DashboardLayout title="Income Reports">
       <div className="space-y-3">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Link href="/reports">
-              <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
-            </Link>
-            <h1 className="text-base sm:text-xl font-bold leading-tight">Income Reports</h1>
-          </div>
-          <div className="flex gap-1.5 flex-shrink-0">
+        <PageHeader
+          title="Income Reports"
+          backHref="/reports"
+          actions={<>
             <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToExcel}>
               <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
             </Button>
             <Button size="sm" className="h-8 text-xs" onClick={exportToPDF}>
               <FileText className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">PDF</span>
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">

@@ -13,6 +13,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation,useParams } from "wouter";
 import { apiCall } from "@/lib/api-config";
 import { navigate } from "wouter/use-browser-location";
@@ -164,18 +165,11 @@ export default function ProductHistory() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleGoBack} className="shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold truncate">
-              {productLoading ? "Loading..." : product?.name || "Product History"}
-            </h1>
-            <p className="text-xs text-gray-500">{selectedMonth}/{selectedYear}</p>
-          </div>
-        </div>
+        <PageHeader
+          title={productLoading ? "Loading..." : product?.name || "Product History"}
+          subtitle={`${selectedMonth}/${selectedYear}`}
+          onBack={handleGoBack}
+        />
 
         {/* Summary Cards */}
         {summary && (

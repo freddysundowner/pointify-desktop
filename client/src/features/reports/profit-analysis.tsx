@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Calendar, Filter, Download, Eye, BarChart3, FileText, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -330,15 +331,10 @@ export default function ProfitAnalysis() {
   return (
     <DashboardLayout title="Profit Analysis">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Link href={reportsRoute}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h2 className="text-base sm:text-xl font-bold leading-tight">Profit Analysis</h2>
-        </div>
+        <PageHeader
+          title="Profit Analysis"
+          backHref={reportsRoute}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-1.5">

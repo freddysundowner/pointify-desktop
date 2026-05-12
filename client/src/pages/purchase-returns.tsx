@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -261,24 +262,19 @@ export default function PurchaseReturns() {
   return (
     <DashboardLayout title="Purchase Returns">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header with Back Button */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLocation(backRoute)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="text-base sm:text-xl font-semibold">Purchase Returns</h2>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          title="Purchase Returns"
+          onBack={() => setLocation(backRoute)}
+          actions={<>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={downloadReturnsReport}>
               <Download className="h-4 w-4" />
-              Export
+              <span className="hidden sm:inline ml-1">Export</span>
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-2">

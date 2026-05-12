@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, DollarSign, History, ArrowLeft, CreditCard } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -301,22 +302,18 @@ export default function SuppliersPage() {
   return (
     <DashboardLayout title="Suppliers">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-base sm:text-xl font-bold leading-tight">Suppliers</h1>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 text-xs sm:text-sm">
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                <span className="hidden sm:inline">Add Supplier</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            </DialogTrigger>
+        <PageHeader
+          title="Suppliers"
+          onBack={handleBack}
+          actions={
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 text-xs sm:text-sm">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline">Add Supplier</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Create New Supplier</DialogTitle>
@@ -369,8 +366,9 @@ export default function SuppliersPage() {
                 </div>
               </form>
             </DialogContent>
-          </Dialog>
-        </div>
+            </Dialog>
+          }
+        />
 
         {/* Search */}
         <div className="flex items-center space-x-2">

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Eye, DollarSign, Users, AlertTriangle, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/features/auth/useAuth";
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -164,13 +165,14 @@ export default function DebtorsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-base sm:text-xl font-bold tracking-tight">Debtors</h1>
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            Refresh
-          </Button>
-        </div>
+        <PageHeader
+          title="Debtors"
+          actions={
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="h-8 text-xs">
+              Refresh
+            </Button>
+          }
+        />
 
         {/* Summary Card */}
         {debtorsData && (

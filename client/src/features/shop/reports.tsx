@@ -3,6 +3,7 @@ import { ArrowLeft, TrendingUp, DollarSign, Tag, Package, ArrowUpDown, BarChart3
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 
 const reportCards = [
   {
@@ -61,16 +62,11 @@ export default function ReportsHub() {
   return (
     <DashboardLayout title="Reports">
       <div className="space-y-3">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-base sm:text-xl font-bold leading-tight">Reports</h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">Choose a report to view</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Reports"
+          subtitle="Choose a report to view"
+          onBack={() => navigate("/dashboard")}
+        />
 
         {/* Report Cards Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">

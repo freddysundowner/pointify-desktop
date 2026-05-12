@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -262,16 +263,11 @@ export default function PurchaseOrderPage() {
   return (
     <DashboardLayout title="Create Purchase Order">
       <div className="w-full">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <Button variant="ghost" size="sm" onClick={() => setLocation('/purchases')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">Create Purchase Order</h1>
-            <p className="text-xs text-gray-500">#{purchaseOrderNumber}</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Create Purchase Order"
+          subtitle={`#${purchaseOrderNumber}`}
+          onBack={() => setLocation('/purchases')}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Payment Method */}

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
@@ -252,27 +253,20 @@ export default function StockCount() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {attendant && (
-              <Button variant="ghost" size="sm" onClick={() => setLocation(backRoute)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <h1 className="text-base sm:text-xl font-bold">Stock Count</h1>
-          </div>
-          <div className="flex gap-2">
+        <PageHeader
+          title="Stock Count"
+          onBack={attendant ? () => setLocation(backRoute) : undefined}
+          actions={<>
             <Button 
               onClick={() => setLocation(attendant ? "/attendant/stock/count-history" : "/stock/count-history")}
-              variant="outline" size="sm"
+              variant="outline" size="sm" className="h-8 text-xs"
             >
               <History className="h-4 w-4 sm:mr-1.5" />
               <span className="hidden sm:inline">History</span>
             </Button>
             <Button 
               onClick={handleReset} 
-              variant="outline" size="sm"
+              variant="outline" size="sm" className="h-8 text-xs"
               disabled={Object.keys(preservedCounts).length === 0}
             >
               <RefreshCw className="h-4 w-4" />
@@ -280,13 +274,14 @@ export default function StockCount() {
             </Button>
             <Button 
               onClick={handleSaveCount}
+              size="sm" className="h-8 text-xs"
               disabled={Object.entries(preservedCounts).filter(([_, count]) => count !== undefined).length === 0 || stockCountMutation.isPending}
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-1" />
               {stockCountMutation.isPending ? "Saving..." : "Save Count"}
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">

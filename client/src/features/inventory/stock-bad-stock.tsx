@@ -13,6 +13,7 @@ import { useShop } from "@/features/shop/useShop";
 import { useProducts } from "@/contexts/ProductsContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
@@ -227,13 +228,10 @@ export default function StockBadStock() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/bad-stock")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-base sm:text-xl font-bold text-gray-900">Bad Stock</h1>
-        </div>
+        <PageHeader
+          title="Bad Stock"
+          onBack={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/bad-stock")}
+        />
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card>

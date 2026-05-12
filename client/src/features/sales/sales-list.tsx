@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/features/auth/useAuth";
@@ -1033,22 +1034,11 @@ function SalesList() {
     <DashboardLayout title="Sales Reports">
       <div className="w-full">
         <div className="space-y-3">
-          {/* Header row */}
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={handleBackClick}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">Sales Reports</h1>
-              <p className="hidden sm:block text-xs font-medium text-blue-600 dark:text-blue-400 mt-0.5">
-                {!startDate && !endDate
-                  ? "Showing all sales transactions"
-                  : startDate === endDate
-                    ? `Transactions for ${new Date(startDate).toLocaleDateString()}`
-                    : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
-              </p>
-            </div>
-            <div className="flex gap-1.5 shrink-0">
+          <PageHeader
+            title="Sales Reports"
+            subtitle={!startDate && !endDate ? "Showing all sales transactions" : startDate === endDate ? `Transactions for ${new Date(startDate).toLocaleDateString()}` : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
+            onBack={handleBackClick}
+            actions={<>
               <PermissionGuard permission="create_sales">
                 <Button size="sm" className="h-8 text-sm" onClick={() => setLocation("/pos")}>
                   <Plus className="h-4 w-4 mr-1" /><span className="hidden sm:inline">New </span>Sale
@@ -1059,8 +1049,8 @@ function SalesList() {
                   <TrendingUp className="h-4 w-4" />Export PDF
                 </Button>
               </PermissionGuard>
-            </div>
-          </div>
+            </>}
+          />
 
           {/* ── Mobile: compact search + filter button row ── */}
           <div className="flex gap-2 sm:hidden">

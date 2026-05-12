@@ -10,6 +10,7 @@ import {
   AlertCircle 
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import React, { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
@@ -259,19 +260,12 @@ export default function ReturnPurchase() {
   return (
     <DashboardLayout title={`Return Purchase #${originalPurchase.invoiceNumber || originalPurchase.id}`}>
       <div className="w-full">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3 gap-2">
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-              Return #{originalPurchase.invoiceNumber || originalPurchase.id}
-            </h1>
-          </div>
-          
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={() => window.location.href = purchasesRoute}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+        <PageHeader
+          title={`Return #${originalPurchase.invoiceNumber || originalPurchase.id}`}
+          onBack={() => window.location.href = purchasesRoute}
+          actions={
             <Button 
+              size="sm"
               onClick={handleProcessReturn}
               disabled={selectedItemsCount === 0 || isProcessing}
             >
@@ -287,8 +281,8 @@ export default function ReturnPurchase() {
                 </>
               )}
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         <div className="grid gap-3">
           {/* Purchase Information */}

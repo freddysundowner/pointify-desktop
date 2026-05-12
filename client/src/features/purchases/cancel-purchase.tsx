@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertTriangle, Package } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Purchase } from "@shared/schema";
@@ -103,7 +104,10 @@ export default function CancelPurchase() {
   return (
     <DashboardLayout title={`Cancel Purchase Order #${purchase.id}`}>
       <div className="p-6 w-full max-w-4xl mx-auto">
-        {/* Header */}
+        <PageHeader
+          title={`Cancel Purchase Order #${purchase.id}`}
+          onBack={() => setLocation(purchasesRoute)}
+        />
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">

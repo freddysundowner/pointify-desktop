@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, Calendar, FileText, Edit, Truck, AlertCircle, CheckCircle } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Purchase } from "@shared/schema";
@@ -122,13 +123,10 @@ export default function ViewPurchase() {
   return (
     <DashboardLayout title={`Purchase Order #${purchase.id}`}>
       <div className="p-6 w-full">
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <Button variant="outline" size="sm" onClick={() => setLocation(purchasesRoute)}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <div className="flex gap-2 flex-shrink-0">
+        <PageHeader
+          title={`Purchase Order #${purchase.id}`}
+          onBack={() => setLocation(purchasesRoute)}
+          actions={<>
             <Button 
               variant="outline" 
               size="sm"
@@ -146,8 +144,8 @@ export default function ViewPurchase() {
               <Package className="mr-2 h-4 w-4" />
               Receive
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Purchase Header */}
         <Card className="mb-6">

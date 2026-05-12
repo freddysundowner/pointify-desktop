@@ -12,6 +12,7 @@ import AddressInput from "@/components/ui/address-input";
 import { queryClient } from "@/lib/queryClient";
 import { useLocation, Link } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { ArrowLeft } from "lucide-react";
 
 interface ShopCategory {
@@ -143,26 +144,11 @@ export default function ShopSetup() {
       <div className="h-full bg-gray-50 p-8">
         <div className="bg-white rounded-xl shadow-sm border">
           <div className="p-8">
-            <div className="mb-8 pb-6 border-b border-gray-200">
-              <div className="flex items-center gap-4 mb-4">
-                <Link href="/shops">
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {isAdditionalShop ? "Add New Shop" : "Setup Your First Shop"}
-                  </h2>
-                  <p className="text-gray-600 mt-2">
-                    {isAdditionalShop 
-                      ? "Expand your business by adding another shop location" 
-                      : "Let's get your point of sale system ready for business"
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
+            <PageHeader
+              title={isAdditionalShop ? "Add New Shop" : "Setup Your First Shop"}
+              subtitle={isAdditionalShop ? "Expand your business by adding another shop location" : "Let's get your point of sale system ready for business"}
+              backHref="/shops"
+            />
             
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

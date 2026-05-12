@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, ArrowLeft, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useRoute } from "wouter";
 import { useState } from "react";
 import type { Sale } from "@shared/schema";
@@ -81,7 +82,10 @@ export default function DeleteSale() {
   return (
     <DashboardLayout title={`Delete Sale #${sale.id}`}>
       <div className="p-6 w-full max-w-4xl mx-auto">
-        {/* Header */}
+        <PageHeader
+          title={`Delete Sale #${sale.id}`}
+          onBack={() => window.history.back()}
+        />
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">

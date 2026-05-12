@@ -8,6 +8,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Save, Plus, Trash2, Package, Search } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -186,31 +187,18 @@ export default function CreatePurchase() {
   return (
     <DashboardLayout title="Create Purchase Order">
       <div className="space-y-6">
-      <div className="flex items-center space-x-4 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Check if we came from stock summary by looking at URL parameters
-              const urlParams = new URLSearchParams(window.location.search);
-              const hasFilter = urlParams.has('filter');
-              
-              if (hasFilter) {
-                // If we came from stock summary with a filter, go back there
-                const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
-                setLocation(backRoute);
-              } else {
-                // Otherwise go to dashboard
-                const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
-                setLocation(backRoute);
-              }
-            }}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </Button>
-        </div>
+        <PageHeader
+          title="Create Purchase Order"
+          onBack={() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasFilter = urlParams.has('filter');
+            if (hasFilter) {
+              setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
+            } else {
+              setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
+            }
+          }}
+        />
         {/* Basic Information */}
         <Card>
           <CardHeader>

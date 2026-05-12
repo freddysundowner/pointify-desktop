@@ -8,6 +8,7 @@ import { MapPin, Store, Plus, Search, Edit, Eye } from "lucide-react";
 import { useAuth } from "@/features/auth/useAuth";
 import { apiCall } from "@/lib/api-config";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { Link } from "wouter";
 
 interface Shop {
@@ -105,23 +106,18 @@ export default function Shops() {
   return (
     <DashboardLayout title="My Shops">
       <div className="h-full bg-gray-50">
-        {/* Header */}
-        <div className="bg-white border-b shadow-sm">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">My Shops</h1>
-                <p className="text-xs text-gray-500">{shops.length} shop{shops.length !== 1 ? 's' : ''}</p>
-              </div>
-              <Link href="/shop-setup">
-                <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Shop
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="My Shops"
+          subtitle={`${shops.length} shop${shops.length !== 1 ? 's' : ''}`}
+          actions={
+            <Link href="/shop-setup">
+              <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Shop
+              </Button>
+            </Link>
+          }
+        />
 
         {/* Content */}
         <div className="px-3 py-3">

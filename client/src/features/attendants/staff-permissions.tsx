@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { PageHeader } from '@/components/layout/page-header';
 
 interface Permission {
   id: string;
@@ -395,16 +396,10 @@ export default function StaffPermissions() {
   return (
     <DashboardLayout title="Staff & Permissions">
       <div className="w-full space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <UserPlus className="h-6 w-6 text-purple-600" />
-              Staff & Permissions
-            </h1>
-            <p className="text-gray-600">Manage staff members, roles, and permissions</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Staff & Permissions"
+          subtitle="Manage staff members, roles, and permissions"
+        />
 
         {/* Tabs */}
         <Tabs defaultValue="staff" className="w-full">

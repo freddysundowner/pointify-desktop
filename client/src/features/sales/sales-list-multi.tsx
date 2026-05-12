@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { TrendingUp, DollarSign, ShoppingCart, Users, Filter, Calendar, ChevronLeft, ChevronRight, Search, ChevronDown, ChevronUp, Edit, Trash2, RotateCcw, Receipt, MoreHorizontal } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
@@ -279,14 +280,10 @@ export default function SalesListMulti() {
     <DashboardLayout title="Sales Dashboard">
       <div className="p-4">
         <div className="w-full">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Sales Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Monitor your sales performance and revenue metrics
-            </p>
-          </div>
+          <PageHeader
+            title="Sales Dashboard"
+            subtitle="Monitor your sales performance and revenue metrics"
+          />
 
           {/* Filters Section */}
           <Card className="mb-4">

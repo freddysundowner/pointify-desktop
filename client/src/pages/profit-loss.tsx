@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { CalendarDays, TrendingUp, TrendingDown, DollarSign, ShoppingCart, Receipt, AlertTriangle, Calculator, ArrowLeft } from "lucide-react";
 import { RootState } from "@/store";
 import { Badge } from "@/components/ui/badge";
@@ -154,13 +155,10 @@ export default function ProfitLossPage() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-base sm:text-xl font-bold text-gray-900">Profit & Loss</h1>
-        </div>
+        <PageHeader
+          title="Profit & Loss"
+          onBack={handleBack}
+        />
 
         {/* Filters */}
         <Card className="shadow-lg border-0">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/page-header";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -193,21 +194,17 @@ export default function ExpenseCategories() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Link href={window.location.pathname.includes('/attendant/') ? '/attendant/expenses' : '/expenses'}>
-              <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="w-4 h-4" /></Button>
-            </Link>
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">Expense Categories</h1>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 text-xs">
-                <Plus className="h-3.5 w-3.5 sm:mr-1" />
-                <span className="hidden sm:inline">Add </span>Category
-              </Button>
-            </DialogTrigger>
+        <PageHeader
+          title="Expense Categories"
+          backHref={window.location.pathname.includes('/attendant/') ? '/attendant/expenses' : '/expenses'}
+          actions={
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 text-xs">
+                  <Plus className="h-3.5 w-3.5 sm:mr-1" />
+                  <span className="hidden sm:inline">Add </span>Category
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Expense Category</DialogTitle>
@@ -240,8 +237,9 @@ export default function ExpenseCategories() {
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
-        </div>
+            </Dialog>
+          }
+        />
 
         {/* Search */}
         <div className="relative">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, ArrowLeft, TrendingUp, TrendingDown, Settings, DollarSign } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -223,21 +224,17 @@ export default function CashflowCategories() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? '/attendant/cashflow' : '/cashflow')}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <h1 className="text-base sm:text-xl font-bold text-gray-900">Cashflow Categories</h1>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleAddNew} size="sm">
-                <Plus className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Add </span>Category
-              </Button>
-            </DialogTrigger>
+        <PageHeader
+          title="Cashflow Categories"
+          onBack={() => setLocation(attendant ? '/attendant/cashflow' : '/cashflow')}
+          actions={
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNew} size="sm" className="h-8 text-xs">
+                  <Plus className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Add </span>Category
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Cashflow Category</DialogTitle>
@@ -281,8 +278,9 @@ export default function CashflowCategories() {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
-        </div>
+            </Dialog>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

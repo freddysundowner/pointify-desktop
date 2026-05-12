@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useRoute } from "wouter";
 import { useState, useEffect } from "react";
 import type { Sale, SaleItem } from "@shared/schema";
@@ -162,28 +163,17 @@ export default function EditSale() {
   return (
     <DashboardLayout title={`Edit Sale #${originalSale._id}`}>
       <div className="p-6 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              Edit Sale #{originalSale._id}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Modify sale details and items
-            </p>
-          </div>
-          
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={() => window.history.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
+        <PageHeader
+          title={`Edit Sale #${originalSale._id}`}
+          subtitle="Modify sale details and items"
+          onBack={() => window.history.back()}
+          actions={<>
             <Button size="sm" onClick={handleSave}>
               <Save className="mr-2 h-4 w-4" />
               Save
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         <div className="grid gap-6">
           {/* Sale Information */}

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
@@ -523,17 +524,10 @@ export default function ProductForm() {
   return (
     <DashboardLayout title={isEditMode ? "Edit Product" : "Add New Product"}>
       <div className="max-w-7xl mx-auto p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(productsRoute)}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Products</span>
-          </Button>
-        </div>
+        <PageHeader
+          title={isEditMode ? "Edit Product" : "Add New Product"}
+          onBack={() => navigate(productsRoute)}
+        />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

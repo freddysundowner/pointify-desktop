@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { PageHeader } from "@/components/layout/page-header";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -596,28 +597,20 @@ export default function StockProducts() {
   return (
     <DashboardLayout title="Stock Products">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header row */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => {
-              const urlParams = new URLSearchParams(window.location.search);
-              const hasFilter = urlParams.has('filter');
-              if (hasFilter) {
-                const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
-                setLocation(backRoute);
-              } else {
-                const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
-                setLocation(backRoute);
-              }
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-base sm:text-xl font-semibold">Stock Products</h1>
-        </div>
+        <PageHeader
+          title="Stock Products"
+          onBack={() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasFilter = urlParams.has('filter');
+            if (hasFilter) {
+              const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
+              setLocation(backRoute);
+            } else {
+              const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
+              setLocation(backRoute);
+            }
+          }}
+        />
         {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
         {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -217,23 +218,11 @@ export default function PurchaseEditPage() {
   return (
     <DashboardLayout title="Edit Purchase">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation(purchasesRoute)}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Edit Purchase Order</h1>
-              <p className="text-sm text-muted-foreground">#{purchaseFromState.purchaseNo}</p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Edit Purchase Order"
+          subtitle={`#${purchaseFromState.purchaseNo}`}
+          onBack={() => setLocation(purchasesRoute)}
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Purchase Details */}

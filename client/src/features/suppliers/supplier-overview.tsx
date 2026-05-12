@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Link, useLocation } from 'wouter';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { PageHeader } from '@/components/layout/page-header';
 
 interface Supplier {
   _id: string;
@@ -217,18 +218,11 @@ export default function SupplierOverview() {
   return (
     <DashboardLayout title={`${supplier.name} - Overview`}>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header with back button */}
-        <div className="flex items-center gap-2">
-          <Link href="/suppliers">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold truncate">{supplier.name}</h1>
-            <p className="text-xs text-gray-500">{supplier.contact}</p>
-          </div>
-        </div>
+        <PageHeader
+          title={supplier.name}
+          subtitle={supplier.contact}
+          backHref="/suppliers"
+        />
 
         {/* Supplier Info Summary */}
         <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">

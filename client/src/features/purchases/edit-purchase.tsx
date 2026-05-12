@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { ArrowLeft, Save, Plus, Trash2, Package, Check, Search } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useState } from "react";
@@ -158,26 +159,17 @@ export default function EditPurchase() {
   return (
     <DashboardLayout title={`Edit Purchase Order #${originalPurchase.id}`}>
       <div className="p-6 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              Edit Purchase Order #{originalPurchase.id}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Update purchase order details and items
-            </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              Cancel
-            </Button>
+        <PageHeader
+          title={`Edit Purchase Order #${originalPurchase.id}`}
+          subtitle="Update purchase order details and items"
+          onBack={handleCancel}
+          actions={
             <Button size="sm" onClick={handleSave} disabled={!canSave}>
               <Save className="mr-2 h-4 w-4" />
               Save
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Purchase Details */}
         <Card className="mb-6">

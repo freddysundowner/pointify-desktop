@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, Calendar, User, Receipt, DollarSign } from "lucide-react";
@@ -104,24 +105,11 @@ export default function PurchaseReturnDetails() {
   return (
     <DashboardLayout title="Purchase Return Details">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation(purchaseReturnsRoute)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {isAttendantRoute ? 'Back to Dashboard' : 'Back to Returns'}
-            </Button>
-            <h2 className="text-xl font-semibold">Return Details</h2>
-          </div>
-          <Badge variant="outline" className="text-sm">
-            {returnData.purchaseReturnNo || returnData._id.slice(-8)}
-          </Badge>
-        </div>
+        <PageHeader
+          title="Return Details"
+          subtitle={returnData.purchaseReturnNo || returnData._id.slice(-8)}
+          onBack={() => setLocation(purchaseReturnsRoute)}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

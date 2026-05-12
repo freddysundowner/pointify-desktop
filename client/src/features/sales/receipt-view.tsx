@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Download, Mail, Printer, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/features/auth/useAuth";
@@ -367,13 +368,10 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
   return (
     <DashboardLayout title={`Receipt #${saleData.receiptNo}`}>
       <div className="p-4 md:p-6">
-        {/* Action bar */}
-        <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" size="sm" onClick={() => window.history.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
-          <div className="flex gap-1 sm:gap-2">
+        <PageHeader
+          title={`Receipt #${saleData.receiptNo}`}
+          onBack={() => window.history.back()}
+          actions={<>
             <Button variant="outline" size="sm" onClick={handleEmail}>
               <Mail className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Email</span>
@@ -386,8 +384,8 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
               <Printer className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Print</span>
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Receipt paper */}
         <div className="flex justify-center print:block">

@@ -35,6 +35,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -542,25 +543,19 @@ export default function SupplierHistoryPage() {
   return (
     <DashboardLayout title={`Purchase History - ${supplierName}`}>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              const isAttendantRoute = window.location.pathname.startsWith('/attendant');
-              const route = isAttendantRoute ? '/attendant/suppliers' : '/suppliers';
-              navigate(route);
-            }}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back to Suppliers
-          </Button>
-          <Button onClick={handleDownloadStatement} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download Statement
-          </Button>
-        </div>
+        <PageHeader
+          title={`Purchase History - ${supplierName}`}
+          onBack={() => {
+            const isAttendantRoute = window.location.pathname.startsWith('/attendant');
+            navigate(isAttendantRoute ? '/attendant/suppliers' : '/suppliers');
+          }}
+          actions={
+            <Button size="sm" onClick={handleDownloadStatement} className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Download Statement</span>
+            </Button>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

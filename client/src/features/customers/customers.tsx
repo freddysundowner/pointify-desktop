@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, CreditCard, Eye, ArrowLeft } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -270,25 +271,22 @@ export default function Customers() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(dashboardRoute)}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">Customers</h1>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 text-xs sm:text-sm">
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                <span className="hidden sm:inline">Add Customer</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Customer</DialogTitle>
-              </DialogHeader>
+        <PageHeader
+          title="Customers"
+          onBack={() => navigate(dashboardRoute)}
+          actions={
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 text-xs sm:text-sm">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline">Add Customer</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Customer</DialogTitle>
+                </DialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="name">Customer Name *</Label>
@@ -350,8 +348,9 @@ export default function Customers() {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
-        </div>
+            </Dialog>
+          }
+        />
 
         {/* Search */}
         <div className="relative">

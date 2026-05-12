@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Package, CheckCircle, AlertCircle } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useState } from "react";
 import type { Purchase, PurchaseItem } from "@shared/schema";
@@ -133,26 +134,17 @@ export default function ReceivePurchase() {
   return (
     <DashboardLayout title={`Receive Purchase Order #${originalPurchase.id}`}>
       <div className="p-6 w-full">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              Receive Purchase #{originalPurchase.id}
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              From {originalPurchase.supplierName}
-            </p>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              Cancel
-            </Button>
+        <PageHeader
+          title={`Receive Purchase #${originalPurchase.id}`}
+          subtitle={`From ${originalPurchase.supplierName}`}
+          onBack={handleCancel}
+          actions={
             <Button size="sm" onClick={handleReceive} disabled={!hasItemsToReceive}>
               <Package className="mr-2 h-4 w-4" />
               Receive ({totalReceivingNow})
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Purchase Summary */}
         <Card className="mb-6">

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Package, AlertTriangle, DollarSign, BarChart3, ArrowLeft, Download, MousePointer } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
@@ -172,13 +173,10 @@ export default function StockSummary() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => { const a=localStorage.getItem('attendantData'); setLocation(a?'/attendant/dashboard':'/dashboard'); }}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-base sm:text-xl font-bold">Stock Summary</h1>
-        </div>
+        <PageHeader
+          title="Stock Summary"
+          onBack={() => { const a=localStorage.getItem('attendantData'); setLocation(a?'/attendant/dashboard':'/dashboard'); }}
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">

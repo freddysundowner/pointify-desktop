@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, DollarSign, CreditCard, Banknote } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -146,16 +147,11 @@ export default function PurchasePaymentPage() {
   return (
     <DashboardLayout title="Make Payment">
       <div className="w-full space-y-3">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setLocation(purchasesRoute)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0">
-            <h1 className="text-base sm:text-xl font-bold">Make Payment</h1>
-            <p className="text-xs text-muted-foreground">#{purchase.purchaseNo}</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Make Payment"
+          subtitle={`#${purchase.purchaseNo}`}
+          onBack={() => setLocation(purchasesRoute)}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Purchase Summary */}

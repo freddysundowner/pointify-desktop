@@ -2,6 +2,7 @@ import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Link } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
 import { Button } from '@/components/ui/button';
@@ -503,21 +504,16 @@ export default function Attendants() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Link href={dashboardRoute}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <h1 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">Staff</h1>
-          </div>
-          <Button onClick={handleCreate} size="sm" className="h-8 text-xs flex-shrink-0">
-            <UserPlus className="h-3.5 w-3.5 sm:mr-1.5" />
-            <span className="hidden sm:inline">Add </span>Attendant
-          </Button>
-        </div>
+        <PageHeader
+          title="Staff"
+          backHref={dashboardRoute}
+          actions={
+            <Button onClick={handleCreate} size="sm" className="h-8 text-xs flex-shrink-0">
+              <UserPlus className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Add </span>Attendant
+            </Button>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-4 gap-1.5">

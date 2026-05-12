@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Plus, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, Filter, ChevronRight, ArrowLeft } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Link, useLocation } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -674,13 +675,11 @@ export default function CashFlow() {
   return (
     <DashboardLayout title="Cash Flow">
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => setLocation(dashboardRoute)}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <p className="text-sm font-medium text-gray-600">{shopName}</p>
-        </div>
+        <PageHeader
+          title="Cash Flow"
+          subtitle={shopName}
+          onBack={() => setLocation(dashboardRoute)}
+        />
 
         {/* Cash at Hand - moved to top */}
         <div className="text-center">

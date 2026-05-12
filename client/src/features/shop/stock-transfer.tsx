@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Trash2, Plus, Package, ArrowRight, Eye, Download, ArrowLeft } from 'lucide-react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { apiCall } from '@/lib/api-config';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/contexts/ProductsContext';
@@ -522,20 +523,16 @@ export default function StockTransfer() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {userType === 'attendant' && (
-              <Button variant="ghost" size="sm" onClick={() => setLocation('/attendant/dashboard')}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <h1 className="text-base sm:text-xl font-bold tracking-tight">Stock Transfer</h1>
-          </div>
-          <Button onClick={() => setShowCreateForm(true)} size="sm" className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="h-4 w-4 sm:mr-1.5" />
-            <span className="hidden sm:inline">New </span>Transfer
-          </Button>
-        </div>
+        <PageHeader
+          title="Stock Transfer"
+          onBack={userType === 'attendant' ? () => setLocation('/attendant/dashboard') : undefined}
+          actions={
+            <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-8 text-xs bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">New </span>Transfer
+            </Button>
+          }
+        />
 
 
 

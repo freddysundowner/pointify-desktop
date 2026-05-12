@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, Search, Download, FileText, Eye, ChevronDown, ChevronUp, ArrowLeft, AlertTriangle, RotateCcw, BarChart3 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -216,26 +217,21 @@ export default function StockCountHistoryPage() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/count")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-base sm:text-xl font-bold text-gray-900">Stock Count History</h1>
-          </div>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" onClick={() => setIsAnalysisDialogOpen(true)}>
+        <PageHeader
+          title="Stock Count History"
+          onBack={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/count")}
+          actions={<>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => setIsAnalysisDialogOpen(true)}>
               <BarChart3 className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport('csv')}>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => handleExport('csv')}>
               <FileText className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => handleExport('pdf')}>
               <Download className="h-3.5 w-3.5" />
             </Button>
-          </div>
-        </div>
+          </>}
+        />
 
         {/* Filters */}
         <Card>

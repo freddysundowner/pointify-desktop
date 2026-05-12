@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { User, Mail, Phone, Save, ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { PageHeader } from "@/components/layout/page-header";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/useAuth";
@@ -190,24 +191,11 @@ export default function EditProfilePage() {
   return (
     <DashboardLayout title="Edit Profile">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setLocation('/dashboard')}
-              className="hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Edit Profile</h1>
-              <p className="text-sm text-gray-600">Update your personal information and preferences</p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Edit Profile"
+          subtitle="Update your personal information and preferences"
+          onBack={() => setLocation('/dashboard')}
+        />
 
         {/* Profile Form */}
         <div className="w-full">
