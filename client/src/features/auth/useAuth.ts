@@ -195,7 +195,9 @@ export const useAuthProvider = (): AuthContextType => {
         // await checkAndTriggerAutoSync();
         
       } else {
-        throw new Error("Invalid response from server");
+        // Use the actual API error message if available
+        const message = data?.message || data?.error || "Invalid email or password. Please try again.";
+        throw new Error(message);
       }
     } catch (error) {
       if (error instanceof Error && (error.message.includes('502') || error.message.includes('unavailable'))) {
