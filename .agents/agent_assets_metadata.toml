@@ -54,3 +54,9 @@ id = "jCzoT6daYUrDTeM36nojK"
 uri = "file://attached_assets/products_import_ready_2.xlsx"
 type = "table"
 title = "products_import_ready_2.xlsx — 960 rows, import-ready"
+
+[[outputs]]
+id = "awSKUWyL_VzVTZCqNWAWF"
+uri = "file://attached_assets/products_import_ready_3.xlsx"
+type = "table"
+title = "products_import_ready_3.xlsx — 960 rows, import-ready"
