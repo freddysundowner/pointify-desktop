@@ -1,5 +1,5 @@
 {
-  "type": "BROWSER",
+  "type": "WEBUSB",
   "interface": "",
   "port": 9100,
   "baudRate": 9600,
