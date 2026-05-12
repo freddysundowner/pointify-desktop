@@ -495,7 +495,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         )}
 
         {/* Page content — pt-14 on mobile (offset fixed mobile nav), no top padding on desktop */}
-        <div className="pt-14 lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none overflow-x-hidden">
+        <div className="pt-14 lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none">
           {children}
         </div>
 

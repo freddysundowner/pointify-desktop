@@ -13,7 +13,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, onBack, backHref, actions }: PageHeaderProps) {
   return (
-    <div className="sticky top-14 lg:top-16 z-10 -mx-3 lg:-mx-6 px-3 lg:px-6 py-2 mb-3 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+    <div className="sticky top-14 lg:static z-10 -mx-3 lg:-mx-6 px-3 lg:px-6 py-2 mb-3 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1 min-w-0">
           {onBack && (
