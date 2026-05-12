@@ -668,9 +668,9 @@ export default function PurchasesList() {
         {/* Filters Section */}
         <Card className="mb-3">
           <CardContent className="p-3 space-y-2">
-            {/* Row 1: Search + dropdowns + clear */}
+            {/* Row 1: Search + status + supplier + attendant */}
             <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative flex-1 min-w-[180px]">
+              <div className="relative flex-1 min-w-[160px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   type="text"
@@ -682,7 +682,7 @@ export default function PurchasesList() {
               </div>
 
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="h-9 w-[130px] text-sm">
+                <SelectTrigger className="h-9 w-[120px] text-sm">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -693,7 +693,7 @@ export default function PurchasesList() {
               </Select>
 
               <Select value={supplierFilter} onValueChange={handleSupplierFilter}>
-                <SelectTrigger className="h-9 w-[150px] text-sm">
+                <SelectTrigger className="h-9 w-[140px] text-sm">
                   <SelectValue placeholder="All Suppliers" />
                 </SelectTrigger>
                 <SelectContent>
@@ -708,7 +708,7 @@ export default function PurchasesList() {
 
               {isAdmin && (
                 <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
-                  <SelectTrigger className="h-9 w-[150px] text-sm">
+                  <SelectTrigger className="h-9 w-[140px] text-sm">
                     <SelectValue placeholder="All Attendants" />
                   </SelectTrigger>
                   <SelectContent>
@@ -721,23 +721,28 @@ export default function PurchasesList() {
                   </SelectContent>
                 </Select>
               )}
+            </div>
 
+            {/* Row 2: Date range + clear */}
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
               <Input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="h-9 w-[140px] text-sm"
+                className="h-8 w-[140px] text-sm"
               />
               <span className="text-xs text-muted-foreground">—</span>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="h-9 w-[140px] text-sm"
+                className="h-8 w-[140px] text-sm"
               />
-
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9 px-3 text-muted-foreground">
-                <RotateCcw className="h-3.5 w-3.5" />
+              <div className="flex-1" />
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-2 text-xs text-muted-foreground gap-1">
+                <RotateCcw className="h-3 w-3" />
+                Clear
               </Button>
             </div>
 
