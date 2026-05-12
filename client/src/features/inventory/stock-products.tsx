@@ -120,6 +120,8 @@ export default function StockProducts() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [singleDeleteProduct, setSingleDeleteProduct] = useState<any>(null);
+  const [isSingleDeleting, setIsSingleDeleting] = useState(false);
 
   // Note: Adjustment history now uses standalone page instead of dialog
 
@@ -190,6 +192,24 @@ export default function StockProducts() {
     }
     setIsDeletingAll(false);
     setDeleteAllConfirmOpen(false);
+  };
+
+  const handleSingleDelete = async () => {
+    if (!singleDeleteProduct) return;
+    setIsSingleDeleting(true);
+    try {
+      const resp = await apiCall(`/api/product/${singleDeleteProduct._id}`, {
+        method: "DELETE",
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      toast({ title: "Product deleted", description: `"${singleDeleteProduct.name}" has been deleted.` });
+      queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+      refreshProducts();
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+    setIsSingleDeleting(false);
+    setSingleDeleteProduct(null);
   };
 
   // Get effective shop ID from Redux state or fallback to admin/attendant data
@@ -1036,7 +1056,10 @@ export default function StockProducts() {
                                       "products",
                                       "delete",
                                     )) && (
-                                    <DropdownMenuItem className="flex items-center space-x-2 text-red-600 focus:text-red-600">
+                                    <DropdownMenuItem
+                                      className="flex items-center space-x-2 text-red-600 focus:text-red-600"
+                                      onClick={() => setSingleDeleteProduct(product)}
+                                    >
                                       <Trash2 className="h-4 w-4" />
                                       <span>Delete</span>
                                     </DropdownMenuItem>
@@ -1179,6 +1202,29 @@ export default function StockProducts() {
         </DialogContent>
       </Dialog>
 
+
+      {/* Single Product Delete Confirmation */}
+      <Dialog open={!!singleDeleteProduct} onOpenChange={(o) => { if (!isSingleDeleting && !o) setSingleDeleteProduct(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              Delete Product?
+            </DialogTitle>
+            <DialogDescription>
+              This will permanently delete <strong>{singleDeleteProduct?.name}</strong>. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSingleDeleteProduct(null)} disabled={isSingleDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleSingleDelete} disabled={isSingleDeleting}>
+              {isSingleDeleting ? "Deleting…" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete All Confirmation */}
       <Dialog open={deleteAllConfirmOpen} onOpenChange={(o) => { if (!isDeletingAll) setDeleteAllConfirmOpen(o); }}>
