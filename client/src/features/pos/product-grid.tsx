@@ -397,11 +397,19 @@ export default function ProductGrid({
     }
   }, [cartItems.length, showMobileCart]);
 
+  // Sort helper: out-of-stock products go to the end
+  const sortInStock = (list: any[]) =>
+    [...list].sort((a, b) => {
+      const aOut = (a.quantity ?? 0) <= 0 ? 1 : 0;
+      const bOut = (b.quantity ?? 0) <= 0 ? 1 : 0;
+      return aOut - bOut;
+    });
+
   // Filter products based on category and search query
   const products = useMemo(() => {
     // If user is searching, use search results instead of local filtering
     if (searchQuery && searchResults.length > 0) {
-      return searchResults;
+      return sortInStock(searchResults);
     }
 
     // If user is searching but no results yet, show loading or empty state
@@ -424,7 +432,7 @@ export default function ProductGrid({
       );
     }
 
-    return filteredProducts;
+    return sortInStock(filteredProducts);
   }, [allProducts, activeCategory, searchQuery, searchResults, isSearching]);
 
   const { data: customersResponse, isLoading: customersLoading } = useQuery({
