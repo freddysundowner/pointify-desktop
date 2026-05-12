@@ -263,8 +263,8 @@ export function PrinterConfigDialog() {
               <p className="text-xs text-muted-foreground">{info.hint}</p>
             </div>
 
-            {/* Interface / address — hidden for BROWSER */}
-            {config.type !== 'BROWSER' && (
+            {/* Interface / address — hidden for BROWSER and WEBUSB */}
+            {config.type !== 'BROWSER' && config.type !== 'WEBUSB' && (
               <div className="space-y-2">
                 <Label>
                   {config.type === 'TCP'    && 'IP Address'}

@@ -157,7 +157,7 @@ export const getPrinters = async (req: Request, res: Response): Promise<void> =>
 
 export const getPrinterStatus = (req: Request, res: Response): void => {
   res.json({
-    initialized: !!(currentPrinterConfig.interface || currentPrinterConfig.type === 'BROWSER'),
+    initialized: !!(currentPrinterConfig.interface || currentPrinterConfig.type === 'BROWSER' || currentPrinterConfig.type === 'WEBUSB'),
     config: currentPrinterConfig,
     platform: os.platform(),
   });
@@ -166,7 +166,7 @@ export const getPrinterStatus = (req: Request, res: Response): void => {
 export const initializePrinter = (req: Request, res: Response): void => {
   const { type, interface: iface, port, baudRate, width, characterSet } = req.body;
 
-  if (type !== 'BROWSER' && !iface) {
+  if (type !== 'BROWSER' && type !== 'WEBUSB' && !iface) {
     res.status(400).json({ success: false, message: 'Printer interface/address is required' });
     return;
   }
