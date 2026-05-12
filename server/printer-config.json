@@ -1,6 +1,6 @@
 {
-  "type": "SYSTEM",
-  "interface": "xpprinter",
+  "type": "BROWSER",
+  "interface": "",
   "port": 9100,
   "baudRate": 9600,
   "width": 32,
