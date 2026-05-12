@@ -491,7 +491,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
       {/* ── Main Content ───────────────────────────────────────────────────── */}
       <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
-        <div className="pt-14 lg:pt-16 pb-24 lg:pb-6 px-3 lg:px-6 py-3 lg:py-6 w-full max-w-none overflow-x-hidden">
+        <div className="pt-14 lg:pt-16 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none overflow-x-hidden">
           {children}
         </div>
       </div>
