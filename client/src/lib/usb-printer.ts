@@ -58,14 +58,53 @@ class USBThermalPrinter {
     if (!('usb' in navigator)) throw new Error('Web USB is not supported in this browser. Use Chrome or Edge.');
 
     const device = await (navigator as any).usb.requestDevice({ filters: [] });
-    await device.open();
-    if (device.configuration === null) await device.selectConfiguration(1);
 
-    const iface = device.configuration!.interfaces[0];
-    await device.claimInterface(iface.interfaceNumber);
+    try {
+      await device.open();
+    } catch (err: any) {
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('access') || msg.includes('denied') || msg.includes('failed to execute')) {
+        throw new Error('WINDOWS_ACCESS_DENIED');
+      }
+      throw err;
+    }
 
-    const ep = iface.alternate.endpoints.find((e: USBEndpoint) => e.direction === 'out');
-    if (!ep) throw new Error('No output endpoint found on this USB device');
+    if (device.configuration === null) {
+      try {
+        await device.selectConfiguration(1);
+      } catch {}
+    }
+
+    const interfaces: USBInterface[] = device.configuration?.interfaces ?? [];
+    if (interfaces.length === 0) throw new Error('No USB interfaces found on this device.');
+
+    let claimedIface: USBInterface | null = null;
+    let claimError: any = null;
+
+    for (const iface of interfaces) {
+      try {
+        await device.claimInterface(iface.interfaceNumber);
+        claimedIface = iface;
+        break;
+      } catch (err: any) {
+        claimError = err;
+        const msg = (err?.message || '').toLowerCase();
+        if (msg.includes('access') || msg.includes('denied')) {
+          throw new Error('WINDOWS_ACCESS_DENIED');
+        }
+      }
+    }
+
+    if (!claimedIface) {
+      const msg = (claimError?.message || '').toLowerCase();
+      if (msg.includes('access') || msg.includes('denied')) {
+        throw new Error('WINDOWS_ACCESS_DENIED');
+      }
+      throw new Error(claimError?.message || 'Could not claim any USB interface on this device.');
+    }
+
+    const ep = claimedIface.alternate.endpoints.find((e: USBEndpoint) => e.direction === 'out');
+    if (!ep) throw new Error('No output endpoint found on this USB device.');
 
     this.endpointNumber = ep.endpointNumber;
     this.device = device;

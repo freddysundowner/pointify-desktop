@@ -51,6 +51,7 @@ export function PrinterConfigDialog() {
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
   const [usbConnected, setUsbConnected] = useState(false);
   const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
+  const [usbWindowsError, setUsbWindowsError] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -118,17 +119,23 @@ export function PrinterConfigDialog() {
 
   const handleConnectUSB = async () => {
     setIsLoading(true);
+    setUsbWindowsError(false);
     try {
       const name = await usbPrinter.connect();
       setUsbConnected(true);
       setUsbDeviceName(name);
       toast({ title: "USB Printer Connected", description: `Connected to: ${name}` });
     } catch (err) {
-      toast({
-        title: "USB Connection Failed",
-        description: err instanceof Error ? err.message : "Could not connect to USB printer",
-        variant: "destructive",
-      });
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'WINDOWS_ACCESS_DENIED') {
+        setUsbWindowsError(true);
+      } else {
+        toast({
+          title: "USB Connection Failed",
+          description: msg || "Could not connect to USB printer",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -366,6 +373,7 @@ export function PrinterConfigDialog() {
             {/* WEBUSB connect panel */}
             {config.type === 'WEBUSB' && (
               <div className="space-y-3">
+                {/* Status banner */}
                 <div className={`rounded-md border p-3 text-sm ${usbConnected ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
                   {usbConnected ? (
                     <div className="flex items-center gap-2">
@@ -379,6 +387,25 @@ export function PrinterConfigDialog() {
                     </div>
                   )}
                 </div>
+
+                {/* Windows "Access Denied" help panel */}
+                {usbWindowsError && (
+                  <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900 space-y-2">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <XCircle className="h-4 w-4 shrink-0" /> Access Denied — Windows driver conflict
+                    </p>
+                    <p>Windows has already claimed this printer with its own driver, blocking browser access. You need to replace the driver with <strong>WinUSB</strong> using the free tool <strong>Zadig</strong>:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs leading-relaxed">
+                      <li>Download <strong>Zadig</strong> from <span className="font-mono">zadig.akeo.ie</span> and run it.</li>
+                      <li>Click <strong>Options → List All Devices</strong>, then select your printer from the dropdown.</li>
+                      <li>Make sure the replacement driver on the right is set to <strong>WinUSB</strong>.</li>
+                      <li>Click <strong>Replace Driver</strong> and wait for it to finish.</li>
+                      <li>Unplug and re-plug the printer, then click <strong>Connect USB Printer</strong> again.</li>
+                    </ol>
+                    <p className="text-xs text-red-700">Note: this will remove the standard Windows print driver for this printer. To undo it, open Device Manager → find the printer → Update driver → Search automatically.</p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   {!usbConnected ? (
                     <Button onClick={handleConnectUSB} disabled={isLoading} className="flex-1">
