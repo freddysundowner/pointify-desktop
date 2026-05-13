@@ -96,6 +96,10 @@ export default function ProductGrid({
   const [showDiscountDialog, setShowDiscountDialog] = useState(false);
   const [selectedDiscountItem, setSelectedDiscountItem] = useState<CartItem | null>(null);
   const [discountAmount, setDiscountAmount] = useState("");
+  const [extraChargeAmount, setExtraChargeAmount] = useState<number>(0);
+  const [extraChargeLabel, setExtraChargeLabel] = useState<string>("Transport");
+  const [showExtraChargeInput, setShowExtraChargeInput] = useState(false);
+  const [extraChargeInputValue, setExtraChargeInputValue] = useState<string>("");
  
   // Payment-specific input states
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
@@ -534,7 +538,7 @@ export default function ProductGrid({
           items: cartItems,
           subtotal: totals.subtotal,
           tax: totals.tax,
-          total: totals.total,
+          total: grandTotal,
           paymentMethod: selectedPaymentMethod,
           customerName: selectedCustomer?.name,
           timestamp: response.sale?.createdAt || new Date().toISOString(),
@@ -547,6 +551,9 @@ export default function ProductGrid({
       
       setShowPaymentDialog(false);
       setSelectedPaymentMethod("");
+      setExtraChargeAmount(0);
+      setExtraChargeInputValue("");
+      setShowExtraChargeInput(false);
       onClearCart();
     },
     onError: (error: any) => {
@@ -741,6 +748,8 @@ export default function ProductGrid({
     }
   };
 
+  const grandTotal = totals.total + extraChargeAmount;
+
   const processTransaction = async (isHold = false) => {
     // For hold transactions, skip payment method validations
     if (!isHold) {
@@ -779,10 +788,10 @@ export default function ProductGrid({
       
       if (selectedPaymentMethod === "split") {
         const totalSplit = splitAmounts.cash + splitAmounts.mpesa + splitAmounts.bank;
-        if (Math.abs(totalSplit - totals.total) > 0.01) {
+        if (Math.abs(totalSplit - grandTotal) > 0.01) {
           toast({
             title: "Amount Mismatch",
-            description: `Split amounts (${totalSplit.toFixed(2)}) must equal total (${totals.total.toFixed(2)})`,
+            description: `Split amounts (${totalSplit.toFixed(2)}) must equal total (${grandTotal.toFixed(2)})`,
             variant: "destructive",
           });
           return;
@@ -870,20 +879,21 @@ export default function ProductGrid({
       allownegativeselling: false,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
                    !isHold && selectedPaymentMethod === "split" && splitAmounts.mpesa > 0 ? `SPLIT_${Date.now()}` : "",
-      mpesaTotal: !isHold && selectedPaymentMethod === "mpesa" ? parseFloat(totals.total.toString()) :
+      mpesaTotal: !isHold && selectedPaymentMethod === "mpesa" ? parseFloat(grandTotal.toString()) :
                  !isHold && selectedPaymentMethod === "split" ? splitAmounts.mpesa : 0.0,
-      bankTotal: !isHold && selectedPaymentMethod === "bank" ? parseFloat(totals.total.toString()) :
+      bankTotal: !isHold && selectedPaymentMethod === "bank" ? parseFloat(grandTotal.toString()) :
                 !isHold && selectedPaymentMethod === "split" ? splitAmounts.bank : 0.0,
       bankTransId: !isHold && selectedPaymentMethod === "bank" ? bankTransactionId : 
                   !isHold && selectedPaymentMethod === "split" && splitAmounts.bank > 0 ? `BANK_${Date.now()}` : "",
       amountPaid: isHold || selectedPaymentMethod === "credit" ? 0.0 : 
-                 selectedPaymentMethod === "split" ? splitAmounts.cash : parseFloat(totals.total.toString()),
-      outstandingBalance: isHold || selectedPaymentMethod === "credit" ? parseFloat(totals.total.toString()) : 0.0,
+                 selectedPaymentMethod === "split" ? splitAmounts.cash : parseFloat(grandTotal.toString()),
+      outstandingBalance: isHold || selectedPaymentMethod === "credit" ? parseFloat(grandTotal.toString()) : 0.0,
       paymentType: isHold ? "cash" : selectedPaymentMethod,
       paymentTag: isHold ? "cash" : selectedPaymentMethod,
       totalDiscount: parseFloat(totals.discount.toString()),
       customerId: selectedCustomerId || null,
-      saleDiscount: 0.0
+      saleDiscount: 0.0,
+      extraCharge: extraChargeAmount > 0 ? { label: extraChargeLabel, amount: extraChargeAmount } : null,
     };
 
     try {
@@ -1642,11 +1652,45 @@ export default function ProductGrid({
                     </div>
                     <span className="font-medium text-gray-900 text-xs">Ksh 0.00</span>
                   </div>
+                  <div className="flex justify-between items-center py-1">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs font-medium text-gray-600">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
+                      <button
+                        className="w-4 h-4 rounded border border-gray-400 text-gray-600 flex items-center justify-center"
+                        onClick={() => setShowExtraChargeInput(!showExtraChargeInput)}
+                      >
+                        <Plus className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                    <span className={`font-medium text-xs ${extraChargeAmount > 0 ? 'text-gray-900' : 'text-gray-900'}`}>Ksh {extraChargeAmount.toFixed(2)}</span>
+                  </div>
+                  {showExtraChargeInput && (
+                    <div className="bg-gray-100 rounded-lg p-2 space-y-1.5 mt-1">
+                      <Input
+                        placeholder="Label (e.g. Transport)"
+                        value={extraChargeLabel}
+                        onChange={(e) => setExtraChargeLabel(e.target.value)}
+                        className="h-7 text-xs border-gray-300"
+                      />
+                      <div className="flex items-center space-x-1">
+                        <Input
+                          type="number"
+                          placeholder="Amount"
+                          value={extraChargeInputValue}
+                          onChange={(e) => setExtraChargeInputValue(e.target.value)}
+                          className="h-7 text-xs border-gray-300"
+                          min="0"
+                        />
+                        <Button size="sm" className="h-7 px-2 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setExtraChargeAmount(parseFloat(extraChargeInputValue) || 0); setShowExtraChargeInput(false); }}>Add</Button>
+                        <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}>Clear</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="bg-purple-600 text-white px-3 py-2 rounded-lg mt-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold">Grand Total:</span>
-                    <span className="text-base font-bold">Ksh {totals.total.toFixed(2)}</span>
+                    <span className="text-base font-bold">Ksh {grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -1695,13 +1739,50 @@ export default function ProductGrid({
                   </div>
                   <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh 0.00</span>
                 </div>
+
+                <div className="flex justify-between items-center py-1">
+                  <div className="flex items-center space-x-1 lg:space-x-2">
+                    <span className="text-xs lg:text-sm font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-4 h-4 lg:w-6 lg:h-6 p-0 rounded border-gray-400 text-gray-600 hover:bg-gray-100"
+                      onClick={() => setShowExtraChargeInput(!showExtraChargeInput)}
+                    >
+                      <Plus className="h-2 w-2 lg:h-3 lg:w-3" />
+                    </Button>
+                  </div>
+                  <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh {extraChargeAmount.toFixed(2)}</span>
+                </div>
+                {showExtraChargeInput && (
+                  <div className="bg-gray-100 rounded-lg p-2 space-y-1.5 mt-1">
+                    <Input
+                      placeholder="Label (e.g. Transport)"
+                      value={extraChargeLabel}
+                      onChange={(e) => setExtraChargeLabel(e.target.value)}
+                      className="h-7 text-xs border-gray-300"
+                    />
+                    <div className="flex items-center space-x-1">
+                      <Input
+                        type="number"
+                        placeholder="Amount"
+                        value={extraChargeInputValue}
+                        onChange={(e) => setExtraChargeInputValue(e.target.value)}
+                        className="h-7 text-xs border-gray-300"
+                        min="0"
+                      />
+                      <Button size="sm" className="h-7 px-2 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setExtraChargeAmount(parseFloat(extraChargeInputValue) || 0); setShowExtraChargeInput(false); }}>Add</Button>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}>Clear</Button>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Grand Total */}
               <div className="bg-purple-600 text-white p-2 lg:p-4 rounded-lg mt-2 lg:mt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm lg:text-lg font-semibold">Grand Total:</span>
-                  <span className="text-lg lg:text-xl font-bold">Ksh {totals.total.toFixed(2)}</span>
+                  <span className="text-lg lg:text-xl font-bold">Ksh {grandTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -1899,13 +1980,50 @@ export default function ProductGrid({
                     </div>
                     <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh 0.00</span>
                   </div>
+
+                  <div className="flex justify-between items-center py-1 lg:py-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs lg:text-base font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-5 h-5 lg:w-6 lg:h-6 p-0 rounded border-gray-400 text-gray-600 hover:bg-gray-100"
+                        onClick={() => setShowExtraChargeInput(!showExtraChargeInput)}
+                      >
+                        <Plus className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+                      </Button>
+                    </div>
+                    <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh {extraChargeAmount.toFixed(2)}</span>
+                  </div>
+                  {showExtraChargeInput && (
+                    <div className="bg-gray-100 rounded-lg p-2 lg:p-3 space-y-2 mt-1">
+                      <Input
+                        placeholder="Label (e.g. Transport)"
+                        value={extraChargeLabel}
+                        onChange={(e) => setExtraChargeLabel(e.target.value)}
+                        className="h-8 text-xs lg:text-sm border-gray-300"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          type="number"
+                          placeholder="Amount"
+                          value={extraChargeInputValue}
+                          onChange={(e) => setExtraChargeInputValue(e.target.value)}
+                          className="h-8 text-xs lg:text-sm border-gray-300"
+                          min="0"
+                        />
+                        <Button size="sm" className="h-8 px-3 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { setExtraChargeAmount(parseFloat(extraChargeInputValue) || 0); setShowExtraChargeInput(false); }}>Add</Button>
+                        <Button size="sm" variant="outline" className="h-8 px-3 text-xs" onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}>Clear</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Grand Total */}
                 <div className="bg-purple-600 text-white p-2.5 lg:p-6 rounded-lg mt-2 lg:mt-6">
                   <div className="flex justify-between items-center">
                     <span className="text-sm lg:text-xl font-semibold">Grand Total:</span>
-                    <span className="text-base lg:text-2xl font-bold">Ksh {totals.total.toFixed(2)}</span>
+                    <span className="text-base lg:text-2xl font-bold">Ksh {grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
