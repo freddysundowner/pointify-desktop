@@ -302,11 +302,11 @@ export default function ProductGrid({
         if (selectedPaymentMethod === "cash" && ["1","2","3","4"].includes(e.key) && !inInput) {
           e.preventDefault();
           const presets = [
-            Math.ceil(totals.total / 50) * 50,
-            Math.ceil(totals.total / 100) * 100,
-            Math.ceil(totals.total / 500) * 500,
-            Math.ceil(totals.total / 1000) * 1000,
-          ].filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01).slice(0, 4);
+            Math.ceil(grandTotal / 50) * 50,
+            Math.ceil(grandTotal / 100) * 100,
+            Math.ceil(grandTotal / 500) * 500,
+            Math.ceil(grandTotal / 1000) * 1000,
+          ].filter((v, i, arr) => arr.indexOf(v) === i && v >= grandTotal - 0.01).slice(0, 4);
           const idx = parseInt(e.key) - 1;
           if (presets[idx] !== undefined) setCashReceived(String(presets[idx]));
           return;
@@ -2089,7 +2089,7 @@ export default function ProductGrid({
             )}
           </div>
           <span className="text-xs font-medium">
-            {cartItems.length > 0 ? `Cart · Ksh ${totals.total.toFixed(0)}` : 'Cart'}
+            {cartItems.length > 0 ? `Cart · Ksh ${grandTotal.toFixed(0)}` : 'Cart'}
           </span>
         </button>
       </div>
@@ -2144,7 +2144,7 @@ export default function ProductGrid({
             {/* Total */}
             <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
               <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
-              <span className="text-xl font-extrabold text-purple-600">Ksh {totals.total.toFixed(2)}</span>
+              <span className="text-xl font-extrabold text-purple-600">Ksh {grandTotal.toFixed(2)}</span>
             </div>
 
             {showCardInterface ? (
@@ -2230,12 +2230,12 @@ export default function ProductGrid({
                     </div>
                     <div className="flex gap-2">
                       {[
-                        Math.ceil(totals.total / 50) * 50,
-                        Math.ceil(totals.total / 100) * 100,
-                        Math.ceil(totals.total / 500) * 500,
-                        Math.ceil(totals.total / 1000) * 1000,
+                        Math.ceil(grandTotal / 50) * 50,
+                        Math.ceil(grandTotal / 100) * 100,
+                        Math.ceil(grandTotal / 500) * 500,
+                        Math.ceil(grandTotal / 1000) * 1000,
                       ]
-                        .filter((v, i, arr) => arr.indexOf(v) === i && v >= totals.total - 0.01)
+                        .filter((v, i, arr) => arr.indexOf(v) === i && v >= grandTotal - 0.01)
                         .slice(0, 4)
                         .map((amount) => (
                           <button
@@ -2253,13 +2253,13 @@ export default function ProductGrid({
                         ))}
                     </div>
                     <div className={`flex justify-between items-center rounded-lg px-3 py-2 border transition-colors ${
-                      parseFloat(cashReceived) >= totals.total ? "bg-purple-50 border-purple-300" : "bg-white border-gray-200"
+                      parseFloat(cashReceived) >= grandTotal ? "bg-purple-50 border-purple-300" : "bg-white border-gray-200"
                     }`}>
                       <span className="text-sm font-semibold text-gray-700">Change Due:</span>
                       <span className={`text-xl font-extrabold ${
-                        parseFloat(cashReceived) >= totals.total ? "text-purple-600" : "text-gray-300"
+                        parseFloat(cashReceived) >= grandTotal ? "text-purple-600" : "text-gray-300"
                       }`}>
-                        Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - totals.total).toFixed(2)}
+                        Ksh {Math.max(0, (parseFloat(cashReceived) || 0) - grandTotal).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -2364,7 +2364,7 @@ export default function ProductGrid({
                     </div>
                     <div className="flex justify-between text-xs font-medium">
                       <span className="text-gray-600">Total: Ksh {(splitAmounts.cash + splitAmounts.mpesa + splitAmounts.bank).toFixed(2)}</span>
-                      <span className="text-purple-600">Required: Ksh {totals.total.toFixed(2)}</span>
+                      <span className="text-purple-600">Required: Ksh {grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
