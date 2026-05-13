@@ -1985,7 +1985,8 @@ export default function ProductGrid({
           fixed bottom-0 left-0 right-0 top-auto translate-x-0 translate-y-0
           rounded-t-2xl sm:rounded-2xl
           sm:fixed sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto sm:-translate-x-1/2 sm:-translate-y-1/2
-          max-h-[92dvh] sm:max-h-[88dvh] overflow-y-auto">
+          max-h-[92dvh] sm:max-h-[88dvh] overflow-y-auto
+          [&>button]:hidden">
 
           {/* Drag handle (mobile) */}
           <div className="flex justify-center pt-2 pb-1 sm:hidden">
