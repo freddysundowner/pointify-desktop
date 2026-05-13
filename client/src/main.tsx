@@ -41,11 +41,23 @@ if ('serviceWorker' in navigator) {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
+const root = createRoot(document.getElementById("root")!);
+root.render(
   <Provider store={store}>
     <CartProvider>
-    <App />
+      <App />
     </CartProvider>
-    
   </Provider>
 );
+
+// Remove the HTML splash screen once React has painted
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    const splash = document.getElementById("splash");
+    if (splash) {
+      splash.style.transition = "opacity 0.3s ease";
+      splash.style.opacity = "0";
+      setTimeout(() => splash.remove(), 320);
+    }
+  });
+});
