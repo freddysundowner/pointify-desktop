@@ -90,7 +90,6 @@ export default function ProductGrid({
   const [showCardInterface, setShowCardInterface] = useState(false);
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [showCategoriesDrawer, setShowCategoriesDrawer] = useState(false);
-  const [showCategoryBar, setShowCategoryBar] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [selectedPriceItem, setSelectedPriceItem] = useState<CartItem | null>(null);
   const [newPrice, setNewPrice] = useState("");
@@ -999,14 +998,6 @@ export default function ProductGrid({
     setShowHoldCustomerDialog(false);
   };
 
-  const toggleCategoryBar = () => {
-    setShowCategoryBar(prev => {
-      const next = !prev;
-      try { localStorage.setItem('pos_showCategoryBar', String(next)); } catch {}
-      return next;
-    });
-  };
-
   const openPaymentDialog = () => {
     onCategoryChange("all");
     setShowPaymentDialog(true);
@@ -1063,9 +1054,9 @@ export default function ProductGrid({
             ) : (
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={toggleCategoryBar}
-                  title={showCategoryBar ? "Hide categories" : "Show categories"}
-                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showCategoryBar ? 'bg-white/30' : 'bg-white/15 active:bg-white/25'}`}
+                  onClick={() => setShowCategoriesDrawer(true)}
+                  title="Browse categories"
+                  className="w-9 h-9 flex items-center justify-center rounded-full transition-colors bg-white/15 active:bg-white/25"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                 </button>
@@ -1081,37 +1072,6 @@ export default function ProductGrid({
           </div>
         </div>
 
-        {/* Mobile category pill bar */}
-        {!showMobileCart && showCategoryBar && categories.length > 0 && (
-          <div className="flex gap-2 px-3 pb-2 overflow-x-auto scrollbar-none">
-            <button
-              onClick={() => onCategoryChange("all")}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                activeCategory === "all"
-                  ? "bg-white text-purple-700 border-white"
-                  : "bg-white/15 text-white border-white/20 active:bg-white/30"
-              }`}
-            >
-              All
-            </button>
-            {categories.map((cat: any) => {
-              const id = cat.id || cat._id || cat.name;
-              return (
-                <button
-                  key={id}
-                  onClick={() => onCategoryChange(id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                    activeCategory === id
-                      ? "bg-white text-purple-700 border-white"
-                      : "bg-white/15 text-white border-white/20 active:bg-white/30"
-                  }`}
-                >
-                  {cat.name || cat.title}
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         {/* Mobile search bar — shown only on products tab in grid mode */}
         {!showMobileCart && viewMode !== 'table' && (
@@ -1237,11 +1197,11 @@ export default function ProductGrid({
               </div>
               
               <Button
-                onClick={toggleCategoryBar}
+                onClick={() => setShowCategoriesDrawer(true)}
                 variant="outline"
                 size="sm"
-                title={showCategoryBar ? "Hide categories" : "Show categories"}
-                className={`h-8 px-3 text-sm whitespace-nowrap ${showCategoryBar ? 'bg-purple-50 border-purple-300 text-purple-700' : ''}`}
+                title="Browse categories"
+                className="h-8 px-3 text-sm whitespace-nowrap"
               >
                 <SlidersHorizontal className="h-4 w-4 mr-1.5" />
                 Categories
@@ -1250,37 +1210,6 @@ export default function ProductGrid({
           </div>
         </div>
 
-        {/* Desktop category pill bar */}
-        {showCategoryBar && categories.length > 0 && (
-          <div className="flex gap-2 px-6 py-2 overflow-x-auto scrollbar-none border-t border-gray-100 bg-white">
-            <button
-              onClick={() => onCategoryChange("all")}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                activeCategory === "all"
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-gray-50 text-gray-600 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-              }`}
-            >
-              All
-            </button>
-            {categories.map((cat: any) => {
-              const id = cat.id || cat._id || cat.name;
-              return (
-                <button
-                  key={id}
-                  onClick={() => onCategoryChange(id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                    activeCategory === id
-                      ? "bg-purple-600 text-white border-purple-600"
-                      : "bg-gray-50 text-gray-600 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
-                  }`}
-                >
-                  {cat.name || cat.title}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
@@ -2529,7 +2458,7 @@ export default function ProductGrid({
           <div className="mt-6 space-y-2">
             <div 
               className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                activeCategory === "all" ? "bg-red-100 border-red-200 text-red-800" : "bg-gray-50 hover:bg-gray-100"
+                activeCategory === "all" ? "bg-purple-100 border-purple-200 text-purple-800" : "bg-gray-50 hover:bg-gray-100"
               }`}
               onClick={() => {
                 onCategoryChange("all");
@@ -2544,7 +2473,7 @@ export default function ProductGrid({
                 key={category.id || category._id || category.name}
                 className={`p-3 rounded-lg cursor-pointer transition-colors ${
                   activeCategory === (category.id || category._id || category.name) 
-                    ? "bg-red-100 border-red-200 text-red-800" 
+                    ? "bg-purple-100 border-purple-200 text-purple-800" 
                     : "bg-gray-50 hover:bg-gray-100"
                 }`}
                 onClick={() => {
