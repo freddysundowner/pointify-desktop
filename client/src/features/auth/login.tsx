@@ -1,79 +1,97 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
 import { User, UserCheck, MapPin } from "lucide-react";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-
-  const handleRoleSelect = (role: string) => {
-    setSelectedRole(role);
-    if (role === "business-owner") {
-      setLocation("/business-login");
-    } else if (role === "attendant") {
-      setLocation("/attendant/login");
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Logo and Brand */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mr-3">
-              <div className="w-6 h-6 bg-white rounded-full"></div>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              <span className="text-purple-600">P</span>ointify
-            </h1>
+    <div style={{ minHeight: "100dvh", background: "linear-gradient(160deg,#7c3aed 0%,#9333ea 50%,#a855f7 100%)", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom)" }}>
+
+      {/* Top: logo + tagline */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 32px 24px" }}>
+        <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <text x="24" y="36" textAnchor="middle" fontSize="32" fontWeight="900" fill="white" fontFamily="-apple-system,Arial,sans-serif">P</text>
+          </svg>
+        </div>
+        <h1 style={{ margin: 0, fontSize: 36, fontWeight: 800, color: "white", letterSpacing: -0.5, fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>Pointify</h1>
+        <p style={{ margin: "8px 0 0", fontSize: 15, color: "rgba(255,255,255,0.75)", fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>An enterprise at your hand.</p>
+      </div>
+
+      {/* Bottom: action buttons */}
+      <div style={{ padding: "0 24px 32px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* Business Owner */}
+        <button
+          onClick={() => setLocation("/business-login")}
+          style={{
+            width: "100%", padding: "17px 20px", borderRadius: 16, border: "none",
+            background: "white", color: "#7c3aed",
+            fontSize: 16, fontWeight: 700, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 12,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif",
+            WebkitTapHighlightColor: "transparent",
+            transition: "transform 0.1s",
+          }}
+          onPointerDown={e => (e.currentTarget.style.transform = "scale(0.97)")}
+          onPointerUp={e => (e.currentTarget.style.transform = "scale(1)")}
+          onPointerLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+        >
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg,#7c3aed,#9333ea)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <User style={{ width: 20, height: 20, color: "white" }} />
           </div>
-          <p className="text-gray-600 text-sm">An enterprise at your hand.</p>
-        </div>
-
-        {/* Role Selection */}
-        <div className="space-y-4">
-          {/* Business Owner Button */}
-          <Button
-            onClick={() => handleRoleSelect("business-owner")}
-            variant="outline"
-            className="w-full h-14 text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200"
-          >
-            <User className="w-5 h-5 mr-3" />
-            <span className="font-medium">BUSINESS OWNER</span>
-          </Button>
-
-          {/* Attendant Button */}
-          <Button
-            onClick={() => handleRoleSelect("attendant")}
-            className="w-full h-14 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-all duration-200"
-          >
-            <UserCheck className="w-5 h-5 mr-3" />
-            <span>ATTENDANT</span>
-          </Button>
-
-          {/* Divider */}
-          <div className="text-center py-2">
-            <span className="text-gray-400 text-sm">or</span>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#1f1235" }}>Business Owner</div>
+            <div style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500 }}>Admin dashboard &amp; management</div>
           </div>
+        </button>
 
-          {/* Shops Around You */}
-          <Button
-            variant="ghost"
-            className="w-full text-gray-600 hover:text-purple-600 hover:bg-purple-50 transition-all duration-200"
-          >
-            <MapPin className="w-4 h-4 mr-2" />
-            <span className="text-sm">Shops Around You</span>
-          </Button>
-        </div>
+        {/* Attendant */}
+        <button
+          onClick={() => setLocation("/attendant/login")}
+          style={{
+            width: "100%", padding: "17px 20px", borderRadius: 16,
+            border: "2px solid rgba(255,255,255,0.3)",
+            background: "rgba(255,255,255,0.12)", color: "white",
+            fontSize: 16, fontWeight: 700, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 12,
+            fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif",
+            WebkitTapHighlightColor: "transparent",
+            transition: "transform 0.1s",
+            backdropFilter: "blur(8px)",
+          }}
+          onPointerDown={e => (e.currentTarget.style.transform = "scale(0.97)")}
+          onPointerUp={e => (e.currentTarget.style.transform = "scale(1)")}
+          onPointerLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+        >
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <UserCheck style={{ width: 20, height: 20, color: "white" }} />
+          </div>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Staff / Attendant</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>Access with assigned permissions</div>
+          </div>
+        </button>
 
-        {/* Footer */}
-        <div className="mt-16 text-center">
-          <p className="text-xs text-gray-400">
-            © 2026 Pointify. All rights reserved.
-          </p>
-        </div>
+        {/* Shops around you */}
+        <button
+          onClick={() => window.open("https://pointifypos.com/shops", "_blank")}
+          style={{
+            width: "100%", padding: "12px", borderRadius: 12, border: "none",
+            background: "transparent", color: "rgba(255,255,255,0.6)",
+            fontSize: 13, fontWeight: 500, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <MapPin style={{ width: 14, height: 14 }} />
+          Shops Around You
+        </button>
+
+        <p style={{ margin: "4px 0 0", textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>
+          © 2026 Pointify. All rights reserved.
+        </p>
       </div>
     </div>
   );
