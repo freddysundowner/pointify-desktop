@@ -1056,9 +1056,12 @@ export default function ProductGrid({
                 <button
                   onClick={() => setShowCategoriesDrawer(true)}
                   title="Browse categories"
-                  className="w-9 h-9 flex items-center justify-center rounded-full transition-colors bg-white/15 active:bg-white/25"
+                  className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors bg-white/15 active:bg-white/25"
                 >
                   <SlidersHorizontal className="h-4 w-4" />
+                  {activeCategory !== "all" && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-300 border border-purple-700" />
+                  )}
                 </button>
                 <button
                   onClick={() => cartItems.length > 0 && openPaymentDialog()}
@@ -1201,10 +1204,12 @@ export default function ProductGrid({
                 variant="outline"
                 size="sm"
                 title="Browse categories"
-                className="h-8 px-3 text-sm whitespace-nowrap"
+                className={`h-8 px-3 text-sm whitespace-nowrap max-w-[160px] truncate ${activeCategory !== "all" ? "bg-purple-50 border-purple-400 text-purple-700" : ""}`}
               >
-                <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-                Categories
+                <SlidersHorizontal className="h-4 w-4 mr-1.5 shrink-0" />
+                {activeCategory === "all"
+                  ? "Categories"
+                  : (categories.find((c: any) => (c.id || c._id || c.name) === activeCategory)?.name || "Category")}
               </Button>
             </div>
           </div>
