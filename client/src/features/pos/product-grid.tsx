@@ -544,6 +544,7 @@ export default function ProductGrid({
           timestamp: response.sale?.createdAt || new Date().toISOString(),
           shopId: shopId || "",
           adminId: adminId || "",
+          ...(variables.salesnote ? { salesnote: variables.salesnote } : {}),
         };
         
         onCheckout(realTransaction);
