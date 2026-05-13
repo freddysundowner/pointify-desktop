@@ -66,3 +66,9 @@ id = "MK5qze8rcbKSBkniOsKfu"
 uri = "file://attached_assets/products_import_ready_4.xlsx"
 type = "table"
 title = "products_import_ready_4.xlsx — 960 rows, import-ready"
+
+[[outputs]]
+id = "Nat-ecEgiTLgGYJusqgrc"
+uri = "file://products_import.xlsx"
+type = "table"
+title = "Products Import — 226 items"
