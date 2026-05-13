@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clearing cache...</title>
+  <style>
+    body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f3ff; }
+    .box { text-align: center; }
+    h2 { color: #7c3aed; }
+    p { color: #555; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Clearing service worker & caches...</h2>
+    <p id="status">Working...</p>
+  </div>
+  <script>
+    (async function() {
+      const status = document.getElementById('status');
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+          status.textContent = 'Service workers unregistered (' + regs.length + '). Clearing caches...';
+        }
+        if (typeof caches !== 'undefined') {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+          status.textContent = 'All caches cleared. Redirecting...';
+        }
+      } catch (e) {
+        status.textContent = 'Done (some errors ignored). Redirecting...';
+      }
+      setTimeout(() => { window.location.replace('/'); }, 800);
+    })();
+  </script>
+</body>
+</html>
