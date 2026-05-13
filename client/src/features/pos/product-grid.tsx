@@ -1175,9 +1175,9 @@ export default function ProductGrid({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white overflow-y-auto ${showMobileCart || viewMode === 'table' ? 'flex flex-col flex-1 overflow-y-auto' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 overflow-y-auto' : viewMode === 'table' ? 'flex flex-col lg:flex-1 lg:overflow-y-auto' : 'hidden lg:block'}`}>
           {/* Transaction ID + Date — always 2 cols */}
           <div className="grid grid-cols-2 gap-2 lg:gap-6 mb-2 lg:mb-6">
             <div>
@@ -1817,8 +1817,8 @@ export default function ProductGrid({
 
         {/* Table Mode - Right Panel for Totals */}
         {viewMode === 'table' && (
-          <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 flex flex-col">
-            <div className="flex-1 flex flex-col">
+          <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 flex flex-col pb-4 lg:pb-6">
+            <div className="lg:flex-1 flex flex-col">
               {/* Summary Section */}
               <div className="bg-gray-50 p-4 lg:p-6 rounded-lg">
                 <div className="space-y-3 lg:space-y-4">
