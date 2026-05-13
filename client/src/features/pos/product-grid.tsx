@@ -1041,8 +1041,8 @@ export default function ProductGrid({
           </div>
         </div>
 
-        {/* Mobile search bar — shown only on products tab */}
-        {!showMobileCart && (
+        {/* Mobile search bar — shown only on products tab in grid mode */}
+        {!showMobileCart && viewMode !== 'table' && (
           <div className="px-3 pb-3 relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-300 pointer-events-none z-10" />
