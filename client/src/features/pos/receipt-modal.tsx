@@ -21,9 +21,9 @@ export default function ReceiptModal({
   transaction,
   onNewTransaction,
 }: ReceiptModalProps) {
-  if (!transaction) return null;
-  
   const { toast } = useToast();
+
+  if (!transaction) return null;
 
   // Get admin and shop data from localStorage
   const adminData = localStorage.getItem('adminData');
@@ -108,6 +108,7 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
 <hr/>
 <div class="row"><span>Subtotal</span><span>${cur} ${Number(transaction.subtotal).toFixed(2)}</span></div>
 <div class="row"><span>Tax</span><span>${cur} ${Number(transaction.tax).toFixed(2)}</span></div>
+${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} ${extraCharge.amount.toFixed(2)}</span></div>` : ''}
 <div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction.total).toFixed(2)}</span></div>
 <div class="row"><span>Payment</span><span>${transaction.paymentMethod}</span></div>
 <hr/>
@@ -271,6 +272,10 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
     yPos += 8;
     doc.text(`Tax (${shopTaxRate}%): ${primaryShop?.currency || 'KES'} ${transaction.tax.toFixed(2)}`, 130, yPos);
     yPos += 8;
+    if (extraCharge) {
+      doc.text(`${extraCharge.label}: ${primaryShop?.currency || 'KES'} ${extraCharge.amount.toFixed(2)}`, 130, yPos);
+      yPos += 8;
+    }
     doc.setFont('helvetica', 'bold');
     doc.text(`Total: ${primaryShop?.currency || 'KES'} ${transaction.total.toFixed(2)}`, 130, yPos);
     
@@ -312,6 +317,13 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
 
 
   const currency = primaryShop?.currency || 'KES';
+
+  // Parse extra charge from salesnote (format: "Label: Ksh 50.00")
+  const rawNote = (transaction as any).salesnote || "";
+  const extraChargeMatch = rawNote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
+  const extraCharge = extraChargeMatch
+    ? { label: extraChargeMatch[1], amount: parseFloat(extraChargeMatch[2]) }
+    : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -407,6 +419,12 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
                 <span>Tax ({shopTaxRate}%)</span>
                 <span className="font-medium">{currency} {Number(transaction.tax).toFixed(2)}</span>
               </div>
+              {extraCharge && (
+                <div className="flex justify-between text-gray-600">
+                  <span>{extraCharge.label}</span>
+                  <span className="font-medium">{currency} {extraCharge.amount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-base pt-1.5 border-t border-gray-200 mt-1">
                 <span>Total</span>
                 <span className="text-primary">{currency} {Number(transaction.total).toFixed(2)}</span>

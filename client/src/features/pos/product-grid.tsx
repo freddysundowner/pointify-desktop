@@ -871,7 +871,6 @@ export default function ProductGrid({
       createdAt: (!isHold && isCustomDateTime && customDateTime) ? customDateTime : new Date().toISOString(),
       status: isHold ? "hold" : "cashed",
       totaltax: parseFloat(totals.tax.toString()),
-      salesnote: "",
       orderId: orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
       ready_date: readyDate || "",

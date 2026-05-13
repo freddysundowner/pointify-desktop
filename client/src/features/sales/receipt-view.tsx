@@ -216,6 +216,7 @@ ${item.lineDiscount > 0 ? `<div class="row" style="color:#888;font-size:11px;pad
 ${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
 ${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
 ${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
+${(() => { const m = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/); return m ? `<div class="row"><span>${m[1]}:</span><span>${fmt(parseFloat(m[2]))}</span></div>` : ""; })()}
 <hr class="divider">
 <div class="total-row"><span>TOTAL</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
 <hr class="divider">
@@ -451,7 +452,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
                 <ReceiptRow label="Customer" value={saleData.customerName} />
                 <ReceiptRow label="Cashier" value={saleData.attendantName} />
                 <ReceiptRow label="Type" value={saleData.saleType} />
-                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && (
+                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && !saleData.salesnote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/) && (
                   <ReceiptRow label="Note" value={saleData.salesnote} />
                 )}
               </div>
@@ -495,18 +496,27 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
               <Dashes />
 
               {/* Totals */}
-              <div className="text-xs space-y-1 mb-2">
-                <ReceiptRow label="Subtotal" value={fmt(subtotal)} />
-                {itemDiscounts > 0 && (
-                  <ReceiptRow label="Item Discounts" value={`-${fmt(itemDiscounts)}`} />
-                )}
-                {saleData.saleDiscount > 0 && (
-                  <ReceiptRow label="Sale Discount" value={`-${fmt(saleData.saleDiscount)}`} />
-                )}
-                {saleData.totaltax > 0 && (
-                  <ReceiptRow label="Tax" value={fmt(saleData.totaltax)} />
-                )}
-              </div>
+              {(() => {
+                const ecMatch = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
+                const ec = ecMatch ? { label: ecMatch[1], amount: parseFloat(ecMatch[2]) } : null;
+                return (
+                  <div className="text-xs space-y-1 mb-2">
+                    <ReceiptRow label="Subtotal" value={fmt(subtotal)} />
+                    {itemDiscounts > 0 && (
+                      <ReceiptRow label="Item Discounts" value={`-${fmt(itemDiscounts)}`} />
+                    )}
+                    {saleData.saleDiscount > 0 && (
+                      <ReceiptRow label="Sale Discount" value={`-${fmt(saleData.saleDiscount)}`} />
+                    )}
+                    {saleData.totaltax > 0 && (
+                      <ReceiptRow label="Tax" value={fmt(saleData.totaltax)} />
+                    )}
+                    {ec && (
+                      <ReceiptRow label={ec.label} value={fmt(ec.amount)} />
+                    )}
+                  </div>
+                );
+              })()}
 
               <Dashes />
 
