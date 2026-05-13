@@ -38,6 +38,13 @@ export default function ReceiptModal({
   const items = transaction.items as CartItem[];
   const transactionDate = new Date();
   const shopTaxRate = primaryShop?.tax || 0;
+  // Parse extra charge from salesnote (format: "Label: Ksh 50.00")
+  const rawNote = (transaction as any).salesnote || "";
+  const extraChargeMatch = rawNote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
+  const extraCharge = extraChargeMatch
+    ? { label: extraChargeMatch[1], amount: parseFloat(extraChargeMatch[2]) }
+    : null;
+
   const getPrintData = () => {
     const receiptData = {
         shopName: primaryShop?.name || 'Business Name',
@@ -69,7 +76,8 @@ export default function ReceiptModal({
           cash: transaction.amountPaid || 0,
           mpesa: transaction.mpesaTotal || 0,
           bank: transaction.bankTotal || 0
-        } : undefined
+        } : undefined,
+        extraCharge: extraCharge || undefined,
       };
       return receiptData;
   }
@@ -167,6 +175,7 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
             customerName: receiptData.customerName,
             attendant: receiptData.attendant,
             splitPayment: receiptData.splitPayment,
+            extraCharge: receiptData.extraCharge,
           });
           toast({ title: "Receipt Printed", description: "Sent to USB printer" });
         } catch (usbErr: any) {
@@ -317,13 +326,6 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
 
 
   const currency = primaryShop?.currency || 'KES';
-
-  // Parse extra charge from salesnote (format: "Label: Ksh 50.00")
-  const rawNote = (transaction as any).salesnote || "";
-  const extraChargeMatch = rawNote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
-  const extraCharge = extraChargeMatch
-    ? { label: extraChargeMatch[1], amount: parseFloat(extraChargeMatch[2]) }
-    : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

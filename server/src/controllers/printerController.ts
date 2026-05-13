@@ -225,7 +225,7 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     const {
       shopName, shopAddress, receiptNumber, date, items,
       subtotal, tax, total, paymentMethod, customerName,
-      attendant, splitPayment, currency,
+      attendant, splitPayment, currency, extraCharge,
     } = req.body;
 
     const w = currentPrinterConfig.width || 32;
@@ -277,6 +277,7 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     if (totalDiscount > 0) txt += lr('Discount:', `-${cur} ${totalDiscount.toFixed(2)}`);
 
     txt += lr('Tax:', `${cur} ${Number(tax).toFixed(2)}`);
+    if (extraCharge) txt += lr(`${extraCharge.label}:`, `${cur} ${Number(extraCharge.amount).toFixed(2)}`);
     txt += lr('TOTAL:', `${cur} ${Number(total).toFixed(2)}`);
 
     if (paymentMethod === 'split' && splitPayment) {

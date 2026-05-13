@@ -142,6 +142,9 @@ export default function ReceiptView() {
   const itemDiscounts = saleData.items.reduce((s: number, i: any) => s + (i.lineDiscount || 0), 0);
   const date = new Date(saleData.saleDate);
 
+  const ecMatch = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
+  const extraCharge = ecMatch ? { label: ecMatch[1], amount: parseFloat(ecMatch[2]) } : undefined;
+
   const getPrintData = () => ({
     shopName: saleData.shop.name,
     shopAddress: saleData.shop.address,
@@ -164,6 +167,7 @@ export default function ReceiptView() {
       saleData.paymentTag === "split"
         ? { cash: saleData.amountPaid, mpesa: saleData.mpesaTotal, bank: saleData.bankTotal }
         : "",
+    extraCharge,
   });
 
   const getReceiptHtml = () => `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>

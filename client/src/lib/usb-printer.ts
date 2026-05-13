@@ -23,6 +23,7 @@ export interface ReceiptPrintData {
   customerName?: string;
   attendant?: string;
   splitPayment?: { cash?: number; mpesa?: number; bank?: number };
+  extraCharge?: { label: string; amount: number };
 }
 
 function pad(left: string, right: string, w = WIDTH): string {
@@ -216,6 +217,9 @@ class USBThermalPrinter {
 
     txt(pad('Subtotal:', `${data.currency} ${Number(data.subtotal).toFixed(2)}`)); nl();
     txt(pad('Tax:',      `${data.currency} ${Number(data.tax).toFixed(2)}`)); nl();
+    if (data.extraCharge) {
+      txt(pad(`${data.extraCharge.label}:`, `${data.currency} ${Number(data.extraCharge.amount).toFixed(2)}`)); nl();
+    }
 
     cmd(ESC, 0x45, 0x01);
     cmd(GS,  0x21, 0x10);
