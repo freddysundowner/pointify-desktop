@@ -1183,9 +1183,9 @@ export default function ProductGrid({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 overflow-y-auto' : viewMode === 'table' ? 'flex flex-col lg:flex-1 lg:overflow-y-auto' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 overflow-y-auto' : viewMode === 'table' ? 'flex flex-col flex-1 overflow-hidden' : 'hidden lg:block'}`}>
           {/* Transaction ID + Date — desktop only */}
           <div className="hidden lg:grid grid-cols-2 gap-6 mb-6">
             <div>
@@ -1405,7 +1405,7 @@ export default function ProductGrid({
           )}
 
           {/* Items Table */}
-          <div className="border border-gray-200 rounded-lg mb-2 lg:mb-6 overflow-hidden shadow-sm">
+          <div className={`border border-gray-200 rounded-lg overflow-hidden shadow-sm ${viewMode === 'table' ? 'flex-1 flex flex-col mb-0 lg:mb-6' : 'mb-2 lg:mb-6'}`}>
             <div className="bg-gray-50 px-3 py-1.5 lg:px-6 lg:py-3 border-b border-gray-200">
               <h3 className="text-xs font-semibold text-gray-600">
                 Cart {cartItems.length > 0 && <span className="text-purple-600">({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>}
@@ -1421,7 +1421,7 @@ export default function ProductGrid({
               <div className="text-right">Subtotal</div>
               <div className="text-center">Remove</div>
             </div>
-            <div className="min-h-[80px] lg:min-h-[200px] bg-white">
+            <div className={`bg-white ${viewMode === 'table' ? 'flex-1 overflow-y-auto' : 'min-h-[80px] lg:min-h-[200px]'}`}>
               {cartItems.length === 0 ? (
                 <div className="p-3 lg:p-12 text-center text-gray-500">
                   <Package className="h-6 w-6 lg:h-16 lg:w-16 mx-auto mb-1 lg:mb-6 text-gray-300" />
@@ -1619,6 +1619,52 @@ export default function ProductGrid({
               )}
             </div>
           </div>
+
+          {/* Table Mode - Mobile Totals (pinned at bottom of left panel) */}
+          {viewMode === 'table' && (
+            <div className="lg:hidden shrink-0 bg-white border-t border-gray-100">
+              <div className="bg-gray-50 px-3 pt-2 pb-1">
+                <div className="space-y-0">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs font-medium text-gray-600">Discount</span>
+                    <span className="text-red-500 font-medium text-xs">- Ksh {totals.discount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs font-medium text-gray-600">Tax</span>
+                    <span className="font-medium text-gray-900 text-xs">Ksh {totals.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs font-medium text-gray-600">Coupon</span>
+                      <button className="w-4 h-4 rounded border border-gray-400 text-gray-600 flex items-center justify-center">
+                        <Plus className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+                    <span className="font-medium text-gray-900 text-xs">Ksh 0.00</span>
+                  </div>
+                </div>
+                <div className="bg-purple-600 text-white px-3 py-2 rounded-lg mt-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold">Grand Total:</span>
+                    <span className="text-base font-bold">Ksh {totals.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-3 pt-2 pb-3 space-y-2">
+                <Button
+                  onClick={() => setShowPaymentDialog(true)}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm font-semibold rounded-lg"
+                  disabled={cartItems.length === 0}
+                >
+                  Cash-In
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={onClearCart} variant="outline" className="border-red-400 text-red-600 hover:bg-red-50 py-1.5 text-xs font-semibold rounded-lg" disabled={cartItems.length === 0}>Clear</Button>
+                  <Button onClick={handleHoldTransaction} variant="outline" className="border-gray-400 text-gray-700 hover:bg-gray-50 py-1.5 text-xs font-semibold rounded-lg" disabled={cartItems.length === 0}>Hold</Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Grid Mode - Sticky Payment Summary Section */}
           {viewMode === 'grid' && (
@@ -1823,9 +1869,9 @@ export default function ProductGrid({
           </div>
         )}
 
-        {/* Table Mode - Right Panel for Totals */}
+        {/* Table Mode - Right Panel for Totals (desktop only) */}
         {viewMode === 'table' && (
-          <div className="w-full lg:w-1/3 bg-white p-2 lg:p-6 flex flex-col pb-4 lg:pb-6">
+          <div className="hidden lg:flex w-full lg:w-1/3 bg-white p-2 lg:p-6 flex-col pb-4 lg:pb-6">
             <div className="lg:flex-1 flex flex-col">
               {/* Summary Section */}
               <div className="bg-gray-50 p-2 lg:p-6 rounded-lg">
@@ -1899,8 +1945,8 @@ export default function ProductGrid({
         )}
       </div>
 
-      {/* Mobile Bottom Tab Bar */}
-      <div className="lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] flex">
+      {/* Mobile Bottom Tab Bar — hidden in table mode (layout already shows everything) */}
+      <div className={`lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] flex ${viewMode === 'table' ? 'hidden' : ''}`}>
         {/* Products Tab */}
         <button
           onClick={() => { setShowMobileCart(false); setViewMode('grid'); }}
