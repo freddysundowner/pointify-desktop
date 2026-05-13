@@ -414,7 +414,13 @@ export default function ProductGrid({
   const products = useMemo(() => {
     // If user is searching, use search results instead of local filtering
     if (searchQuery && searchResults.length > 0) {
-      return sortInStock(searchResults);
+      let results = searchResults;
+      if (activeCategory !== "all") {
+        results = results.filter(product =>
+          product.category?.toLowerCase() === activeCategory.toLowerCase()
+        );
+      }
+      return sortInStock(results);
     }
 
     // If user is searching but no results yet, show loading or empty state
