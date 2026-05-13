@@ -1645,15 +1645,6 @@ export default function ProductGrid({
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <div className="flex items-center space-x-1.5">
-                      <span className="text-xs font-medium text-gray-600">Coupon</span>
-                      <button className="w-4 h-4 rounded border border-gray-400 text-gray-600 flex items-center justify-center">
-                        <Plus className="h-2.5 w-2.5" />
-                      </button>
-                    </div>
-                    <span className="font-medium text-gray-900 text-xs">Ksh 0.00</span>
-                  </div>
-                  <div className="flex justify-between items-center py-1">
-                    <div className="flex items-center space-x-1.5">
                       <span className="text-xs font-medium text-gray-600">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
                       <button
                         className="w-4 h-4 rounded border border-gray-400 text-gray-600 flex items-center justify-center"
@@ -1726,20 +1717,6 @@ export default function ProductGrid({
                   <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh {totals.tax.toFixed(2)}</span>
                 </div>
                 
-                <div className="flex justify-between items-center py-1">
-                  <div className="flex items-center space-x-1 lg:space-x-2">
-                    <span className="text-xs lg:text-sm font-medium text-gray-700">Coupon</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-4 h-4 lg:w-6 lg:h-6 p-0 rounded border-gray-400 text-gray-600 hover:bg-gray-100"
-                    >
-                      <Plus className="h-2 w-2 lg:h-3 lg:w-3" />
-                    </Button>
-                  </div>
-                  <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh 0.00</span>
-                </div>
-
                 <div className="flex justify-between items-center py-1">
                   <div className="flex items-center space-x-1 lg:space-x-2">
                     <span className="text-xs lg:text-sm font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
@@ -1967,20 +1944,6 @@ export default function ProductGrid({
                     <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh {totals.tax.toFixed(2)}</span>
                   </div>
                   
-                  <div className="flex justify-between items-center py-1 lg:py-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs lg:text-base font-medium text-gray-700">Coupon</span>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-5 h-5 lg:w-6 lg:h-6 p-0 rounded border-gray-400 text-gray-600 hover:bg-gray-100"
-                      >
-                        <Plus className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                      </Button>
-                    </div>
-                    <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh 0.00</span>
-                  </div>
-
                   <div className="flex justify-between items-center py-1 lg:py-2">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs lg:text-base font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
