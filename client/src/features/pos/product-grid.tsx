@@ -550,6 +550,7 @@ export default function ProductGrid({
           timestamp: response.sale?.createdAt || new Date().toISOString(),
           shopId: shopId || "",
           adminId: adminId || "",
+          ...(variables.extraCharges ? { extraCharges: variables.extraCharges } : {}),
           ...(variables.salesnote ? { salesnote: variables.salesnote } : {}),
         };
         
@@ -899,7 +900,8 @@ export default function ProductGrid({
       totalDiscount: parseFloat(totals.discount.toString()),
       customerId: selectedCustomerId || null,
       saleDiscount: 0.0,
-      salesnote: extraChargeAmount > 0 ? `${extraChargeLabel}: Ksh ${extraChargeAmount.toFixed(2)}` : "",
+      extraCharges: extraChargeAmount,
+      salesnote: extraChargeAmount > 0 ? extraChargeLabel : "",
     };
 
     try {

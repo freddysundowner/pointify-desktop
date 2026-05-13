@@ -35,11 +35,11 @@ export default function ReceiptModal({
   const shopTaxRate = primaryShop?.tax || 0;
   const currency = primaryShop?.currency || 'KES';
 
-  // Parse extra charge from salesnote (format: "Label: Ksh 50.00")
-  const rawNote = (transaction as any)?.salesnote || "";
-  const extraChargeMatch = rawNote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
-  const extraCharge = extraChargeMatch
-    ? { label: extraChargeMatch[1], amount: parseFloat(extraChargeMatch[2]) }
+  // Parse extra charge from dedicated extraCharges field + salesnote label
+  const extraChargeAmount = (transaction as any)?.extraCharges || 0;
+  const extraChargeLabel = (transaction as any)?.salesnote || "Extra Charge";
+  const extraCharge = extraChargeAmount > 0
+    ? { label: extraChargeLabel, amount: extraChargeAmount }
     : null;
 
   const getPrintData = () => ({

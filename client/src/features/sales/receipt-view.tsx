@@ -104,6 +104,7 @@ export default function ReceiptView() {
     paymentTag: sale.paymentTag || sale.paymentType || "cash",
     saleType: sale.saleType || "Retail",
     salesnote: sale.salesnote || "",
+    extraCharges: sale.extraCharges || 0,
     items: (sale.items || []).map((item: any) => ({
       productName: item.product?.name || item.productName || "Unknown Product",
       quantity: item.quantity || 0,
@@ -142,8 +143,9 @@ export default function ReceiptView() {
   const itemDiscounts = saleData.items.reduce((s: number, i: any) => s + (i.lineDiscount || 0), 0);
   const date = new Date(saleData.saleDate);
 
-  const ecMatch = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
-  const extraCharge = ecMatch ? { label: ecMatch[1], amount: parseFloat(ecMatch[2]) } : undefined;
+  const extraCharge = saleData.extraCharges > 0
+    ? { label: saleData.salesnote || "Extra Charge", amount: saleData.extraCharges }
+    : undefined;
 
   const getPrintData = () => ({
     shopName: saleData.shop.name,
@@ -220,7 +222,7 @@ ${item.lineDiscount > 0 ? `<div class="row" style="color:#888;font-size:11px;pad
 ${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
 ${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
 ${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
-${(() => { const m = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/); return m ? `<div class="row"><span>${m[1]}:</span><span>${fmt(parseFloat(m[2]))}</span></div>` : ""; })()}
+${saleData.extraCharges > 0 ? `<div class="row"><span>${saleData.salesnote || "Extra Charge"}:</span><span>${fmt(saleData.extraCharges)}</span></div>` : ""}
 <hr class="divider">
 <div class="total-row"><span>TOTAL</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
 <hr class="divider">
@@ -456,7 +458,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
                 <ReceiptRow label="Customer" value={saleData.customerName} />
                 <ReceiptRow label="Cashier" value={saleData.attendantName} />
                 <ReceiptRow label="Type" value={saleData.saleType} />
-                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && !saleData.salesnote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/) && (
+                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && saleData.extraCharges <= 0 && (
                   <ReceiptRow label="Note" value={saleData.salesnote} />
                 )}
               </div>
@@ -501,8 +503,9 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 
               {/* Totals */}
               {(() => {
-                const ecMatch = saleData.salesnote?.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
-                const ec = ecMatch ? { label: ecMatch[1], amount: parseFloat(ecMatch[2]) } : null;
+                const ec = saleData.extraCharges > 0
+                  ? { label: saleData.salesnote || "Extra Charge", amount: saleData.extraCharges }
+                  : null;
                 return (
                   <div className="text-xs space-y-1 mb-2">
                     <ReceiptRow label="Subtotal" value={fmt(subtotal)} />
