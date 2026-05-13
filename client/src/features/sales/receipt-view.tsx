@@ -146,6 +146,7 @@ export default function ReceiptView() {
   const extraCharge = saleData.extraCharges > 0
     ? { label: saleData.salesnote || "Extra Charge", amount: saleData.extraCharges }
     : undefined;
+  const effectiveTotal = saleData.totalWithDiscount + (saleData.extraCharges || 0);
 
   const getPrintData = () => ({
     shopName: saleData.shop.name,
@@ -161,7 +162,7 @@ export default function ReceiptView() {
     })),
     subtotal,
     tax: saleData.totaltax,
-    total: saleData.totalWithDiscount,
+    total: effectiveTotal,
     paymentMethod: saleData.paymentTag,
     customerName: saleData.customerName,
     attendant: saleData.attendantName,
@@ -224,7 +225,7 @@ ${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span
 ${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
 ${saleData.extraCharges > 0 ? `<div class="row"><span>${saleData.salesnote || "Extra Charge"}:</span><span>${fmt(saleData.extraCharges)}</span></div>` : ""}
 <hr class="divider">
-<div class="total-row"><span>TOTAL</span><span>${fmt(saleData.totalWithDiscount)}</span></div>
+<div class="total-row"><span>TOTAL</span><span>${fmt(effectiveTotal)}</span></div>
 <hr class="divider">
 <div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
 ${saleData.paymentTag === "split" ? `
@@ -529,7 +530,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 
               <div className="flex justify-between font-bold text-sm my-2">
                 <span>TOTAL</span>
-                <span>{fmt(saleData.totalWithDiscount)}</span>
+                <span>{fmt(effectiveTotal)}</span>
               </div>
 
               <Dashes />
