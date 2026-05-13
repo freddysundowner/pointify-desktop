@@ -90,9 +90,7 @@ export default function ProductGrid({
   const [showCardInterface, setShowCardInterface] = useState(false);
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [showCategoriesDrawer, setShowCategoriesDrawer] = useState(false);
-  const [showCategoryBar, setShowCategoryBar] = useState(() => {
-    try { return localStorage.getItem('pos_showCategoryBar') === 'true'; } catch { return false; }
-  });
+  const [showCategoryBar, setShowCategoryBar] = useState(false);
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [selectedPriceItem, setSelectedPriceItem] = useState<CartItem | null>(null);
   const [newPrice, setNewPrice] = useState("");
