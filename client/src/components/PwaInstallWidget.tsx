@@ -9,6 +9,10 @@ function isIos() {
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 }
 
+function isIosChrome() {
+  return isIos() && /CriOS/i.test(window.navigator.userAgent);
+}
+
 function isInStandaloneMode() {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -125,20 +129,39 @@ export function PwaInstallWidget() {
                 </div>
               </div>
 
-              <div style={{ background: "#f3f4f6", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px" }}>
-                <p style={{ margin: 0, fontSize: "13px", color: "#374151", lineHeight: 1.6 }}>
-                  1. Tap <ShareIcon /> in Safari's toolbar below<br />
-                  2. Tap <strong>"Add to Home Screen"</strong>
-                </p>
-              </div>
-
-              {/* Arrow pointing down toward Safari toolbar */}
-              <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <polyline points="19 12 12 19 5 12" />
-                </svg>
-              </div>
+              {isIosChrome() ? (
+                <>
+                  <div style={{ background: "#f3f4f6", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px" }}>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#374151", lineHeight: 1.6 }}>
+                      1. Tap the <strong>⋮</strong> menu in the top-right corner<br />
+                      2. Tap <strong>"Add to Home Screen"</strong>
+                    </p>
+                  </div>
+                  {/* Arrow pointing up toward Chrome menu */}
+                  <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="19" x2="12" y2="5" />
+                      <polyline points="5 12 12 5 19 12" />
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ background: "#f3f4f6", borderRadius: "12px", padding: "12px 14px", marginBottom: "16px" }}>
+                    <p style={{ margin: 0, fontSize: "13px", color: "#374151", lineHeight: 1.6 }}>
+                      1. Tap <ShareIcon /> in Safari's toolbar below<br />
+                      2. Tap <strong>"Add to Home Screen"</strong>
+                    </p>
+                  </div>
+                  {/* Arrow pointing down toward Safari toolbar */}
+                  <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9333ea" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <polyline points="19 12 12 19 5 12" />
+                    </svg>
+                  </div>
+                </>
+              )}
 
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
