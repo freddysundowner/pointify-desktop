@@ -1,11 +1,11 @@
 import { X, Printer, Mail, Plus, Check, Download } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Transaction, CartItem } from "@shared/schema";
 import { jsPDF } from 'jspdf';
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usbPrinter } from "@/lib/usb-printer";
 
 interface ReceiptModalProps {
@@ -21,76 +21,60 @@ export default function ReceiptModal({
   transaction,
   onNewTransaction,
 }: ReceiptModalProps) {
+  // ── All hooks must come before any early return ──────────────────────────
   const { toast } = useToast();
 
-  if (!transaction) return null;
-
-  // Get admin and shop data from localStorage
+  // Derive everything with optional chaining so these are safe even when
+  // transaction is null (hooks must not be called conditionally).
   const adminData = localStorage.getItem('adminData');
   const admin = adminData ? JSON.parse(adminData) : null;
-  
-  // Primary shop is nested under admin data
   const primaryShop = admin?.primaryShop;
-  
-  // Get attendant name from attendantId or fallback to admin username
   const attendantName = admin?.attendantId?.username || admin?.username || 'Staff';
-
-  const items = transaction.items as CartItem[];
+  const items = (transaction?.items as CartItem[]) || [];
   const transactionDate = new Date();
   const shopTaxRate = primaryShop?.tax || 0;
+  const currency = primaryShop?.currency || 'KES';
+
   // Parse extra charge from salesnote (format: "Label: Ksh 50.00")
-  const rawNote = (transaction as any).salesnote || "";
+  const rawNote = (transaction as any)?.salesnote || "";
   const extraChargeMatch = rawNote.match(/^(.+?):\s*Ksh\s*([\d.]+)$/);
   const extraCharge = extraChargeMatch
     ? { label: extraChargeMatch[1], amount: parseFloat(extraChargeMatch[2]) }
     : null;
 
-  const getPrintData = () => {
-    const receiptData = {
-        shopName: primaryShop?.name || 'Business Name',
-        shopAddress: primaryShop?.address || '',
-        receiptNumber: transaction.id.toString(),
-        date: transactionDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        currency: primaryShop.currency,
-        items: items.map(item => ({
-          name: item.name,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          total: item.total,
-          serialnumber: item?.serialnumber || ''
-        })),
-        subtotal: transaction.subtotal,
-        tax: transaction.tax,
-        total: transaction.total,
-        paymentMethod: transaction.paymentMethod,
-        customerName: transaction.customerName || 'Walk-in',
-        attendant: attendantName,
-        // Handle split payments
-        splitPayment: transaction.paymentMethod === 'split' ? {
-          cash: transaction.amountPaid || 0,
-          mpesa: transaction.mpesaTotal || 0,
-          bank: transaction.bankTotal || 0
-        } : undefined,
-        extraCharge: extraCharge || undefined,
-      };
-      return receiptData;
-  }
-  useEffect(() => {
-  if(isOpen && transaction && admin?.autoPrint === true) {
-    printThermal();
-  }
-}, [isOpen, transaction]);
-
+  const getPrintData = () => ({
+    shopName: primaryShop?.name || 'Business Name',
+    shopAddress: primaryShop?.address || '',
+    receiptNumber: transaction?.id?.toString() ?? '',
+    date: transactionDate.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }),
+    currency: primaryShop?.currency ?? 'KES',
+    items: items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      total: item.total,
+      serialnumber: (item as any)?.serialnumber || '',
+    })),
+    subtotal: transaction?.subtotal ?? 0,
+    tax: transaction?.tax ?? 0,
+    total: transaction?.total ?? 0,
+    paymentMethod: transaction?.paymentMethod ?? 'cash',
+    customerName: transaction?.customerName || 'Walk-in',
+    attendant: attendantName,
+    splitPayment: transaction?.paymentMethod === 'split' ? {
+      cash: transaction.amountPaid || 0,
+      mpesa: (transaction as any).mpesaTotal || 0,
+      bank: (transaction as any).bankTotal || 0,
+    } : undefined,
+    extraCharge: extraCharge || undefined,
+  });
 
   // Browser print fallback — opens a clean receipt window
   const browserPrint = () => {
-    const cur = primaryShop?.currency || 'KES';
+    const cur = currency;
     const html = `<!DOCTYPE html><html><head><title>Receipt</title>
 <style>
   body{font-family:monospace;font-size:12px;width:280px;margin:0 auto;padding:8px}
@@ -103,9 +87,9 @@ export default function ReceiptModal({
 ${primaryShop?.address ? `<div class="center">${primaryShop.address}</div>` : ''}
 <div class="center bold">SALES RECEIPT</div>
 <hr/>
-<div class="row"><span>Receipt #</span><span>${transaction.id}</span></div>
+<div class="row"><span>Receipt #</span><span>${transaction?.id}</span></div>
 <div class="row"><span>Date</span><span>${transactionDate.toLocaleDateString()}</span></div>
-<div class="row"><span>Customer</span><span>${transaction.customerName || 'Walk-in'}</span></div>
+<div class="row"><span>Customer</span><span>${transaction?.customerName || 'Walk-in'}</span></div>
 <div class="row"><span>By</span><span>${attendantName}</span></div>
 <hr/>
 ${items.map(item => `
@@ -114,11 +98,11 @@ ${items.map(item => `
 ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${cur} ${(Number(item.discount)*item.quantity).toFixed(2)}</span></div>` : ''}
 `).join('')}
 <hr/>
-<div class="row"><span>Subtotal</span><span>${cur} ${Number(transaction.subtotal).toFixed(2)}</span></div>
-<div class="row"><span>Tax</span><span>${cur} ${Number(transaction.tax).toFixed(2)}</span></div>
+<div class="row"><span>Subtotal</span><span>${cur} ${Number(transaction?.subtotal).toFixed(2)}</span></div>
+<div class="row"><span>Tax</span><span>${cur} ${Number(transaction?.tax).toFixed(2)}</span></div>
 ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} ${extraCharge.amount.toFixed(2)}</span></div>` : ''}
-<div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction.total).toFixed(2)}</span></div>
-<div class="row"><span>Payment</span><span>${transaction.paymentMethod}</span></div>
+<div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction?.total).toFixed(2)}</span></div>
+<div class="row"><span>Payment</span><span>${transaction?.paymentMethod}</span></div>
 <hr/>
 <div class="center">Thank you for your business!</div>
 </body></html>`;
@@ -129,53 +113,39 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
     setTimeout(() => { w.focus(); w.print(); }, 400);
   };
 
-  // Thermal print function — tries server first, falls back to browser print
-  const printThermal = async (receiptData = getPrintData()) => {
-    if (receiptData && typeof receiptData.preventDefault === 'function') {
-      receiptData = getPrintData();
-    }
-    if (!receiptData) receiptData = getPrintData();
+  // Thermal print — tries server first, falls back to browser print
+  const printThermal = async (receiptData?: any) => {
+    const data = (receiptData && typeof receiptData.preventDefault !== 'function')
+      ? receiptData
+      : getPrintData();
 
     try {
-      // Check printer config first
       const statusRes = await fetch('/api/printer/status');
       const status = statusRes.ok ? await statusRes.json() : null;
-
-      // No printer configured — skip silently
       if (!status?.initialized) return;
 
-      // WEBUSB mode — send directly from browser via Web USB
       if (status?.config?.type === 'WEBUSB') {
-        // Try to auto-reconnect to previously-granted device before failing
-        if (!usbPrinter.isConnected()) {
-          await usbPrinter.reconnect();
-        }
-        if (!usbPrinter.isConnected()) {
-          // Printer was configured but isn't available — skip silently
-          return;
-        }
+        if (!usbPrinter.isConnected()) await usbPrinter.reconnect();
+        if (!usbPrinter.isConnected()) return;
         try {
           await usbPrinter.printReceipt({
-            shopName: receiptData.shopName,
-            shopAddress: receiptData.shopAddress,
-            receiptNumber: receiptData.receiptNumber,
-            date: receiptData.date,
-            currency: receiptData.currency,
-            items: receiptData.items.map((i: any) => ({
-              name: i.name,
-              quantity: i.quantity,
-              unitPrice: i.unitPrice,
-              total: i.total,
-              discount: i.discount,
+            shopName: data.shopName,
+            shopAddress: data.shopAddress,
+            receiptNumber: data.receiptNumber,
+            date: data.date,
+            currency: data.currency,
+            items: data.items.map((i: any) => ({
+              name: i.name, quantity: i.quantity,
+              unitPrice: i.unitPrice, total: i.total, discount: i.discount,
             })),
-            subtotal: receiptData.subtotal,
-            tax: receiptData.tax,
-            total: receiptData.total,
-            paymentMethod: receiptData.paymentMethod,
-            customerName: receiptData.customerName,
-            attendant: receiptData.attendant,
-            splitPayment: receiptData.splitPayment,
-            extraCharge: receiptData.extraCharge,
+            subtotal: data.subtotal,
+            tax: data.tax,
+            total: data.total,
+            paymentMethod: data.paymentMethod,
+            customerName: data.customerName,
+            attendant: data.attendant,
+            splitPayment: data.splitPayment,
+            extraCharge: data.extraCharge,
           });
           toast({ title: "Receipt Printed", description: "Sent to USB printer" });
         } catch (usbErr: any) {
@@ -184,7 +154,6 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
         return;
       }
 
-      // BROWSER mode — skip server, go straight to browser print
       if (status?.config?.type === 'BROWSER') {
         browserPrint();
         return;
@@ -192,144 +161,100 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
 
       const response = await apiCall('/api/printer/salereceipt', {
         method: 'POST',
-        body: JSON.stringify(receiptData)
+        body: JSON.stringify(data),
       });
       const respo = await response.json();
       if (respo.success) {
         toast({ title: "Receipt Printed", description: "Sent to printer successfully" });
       } else {
-        // Server failed — fall back to browser print
         browserPrint();
       }
-    } catch (error) {
-      // Network/server error — fall back to browser print
+    } catch {
       browserPrint();
     }
   };
 
-
-  // PDF generation function
+  // PDF generation
   const generatePDF = () => {
     const doc = new jsPDF();
-    
-    // Header
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text(primaryShop?.name || 'Store Name', 105, 20, { align: 'center' });
-    
-    // Shop details
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    if (primaryShop?.address) {
-      doc.text(primaryShop.address, 105, 30, { align: 'center' });
-    }
-    if (primaryShop?.contact) {
-      doc.text(`Phone: ${primaryShop.contact}`, 105, 35, { align: 'center' });
-    }
-    const shopEmailForReceipt =
-      (primaryShop as any)?.email_receipt ||
-      primaryShop?.receiptemail ||
-      (primaryShop as any)?.email;
-    if (shopEmailForReceipt) {
-      doc.text(`Email: ${shopEmailForReceipt}`, 105, 40, { align: 'center' });
-    }
-    
-    // Receipt title
+    if (primaryShop?.address) doc.text(primaryShop.address, 105, 30, { align: 'center' });
+    if (primaryShop?.contact) doc.text(`Phone: ${primaryShop.contact}`, 105, 35, { align: 'center' });
+    const shopEmail = (primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email;
+    if (shopEmail) doc.text(`Email: ${shopEmail}`, 105, 40, { align: 'center' });
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('SALES RECEIPT', 105, 55, { align: 'center' });
-    
-    // Receipt details
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Receipt #: ${transaction.id}`, 20, 70);
+    doc.text(`Receipt #: ${transaction?.id}`, 20, 70);
     doc.text(`Date: ${transactionDate.toLocaleDateString()}`, 20, 75);
     doc.text(`Time: ${transactionDate.toLocaleTimeString()}`, 20, 80);
     doc.text(`Attendant: ${attendantName}`, 20, 85);
-    doc.text(`Customer: ${transaction.customerName || 'Walk-in'}`, 20, 90);
-    
-    // Items table
+    doc.text(`Customer: ${transaction?.customerName || 'Walk-in'}`, 20, 90);
     let yPos = 105;
     doc.setFont('helvetica', 'bold');
-    doc.text('Item', 20, yPos);
-    doc.text('Qty', 100, yPos);
-    doc.text('Price', 130, yPos);
-    doc.text('Total', 160, yPos);
-    
-    // Line separator
+    doc.text('Item', 20, yPos); doc.text('Qty', 100, yPos);
+    doc.text('Price', 130, yPos); doc.text('Total', 160, yPos);
     doc.setLineWidth(0.5);
     doc.line(20, yPos + 2, 190, yPos + 2);
-    
     yPos += 10;
     doc.setFont('helvetica', 'normal');
-    
-    items.forEach((item) => {
+    items.forEach(item => {
       doc.text(item.name.substring(0, 20), 20, yPos);
       doc.text(item.quantity.toString(), 100, yPos);
-      doc.text(`${primaryShop?.currency || 'KES'} ${item.price.toFixed(2)}`, 130, yPos);
-      doc.text(`${primaryShop?.currency || 'KES'} ${item.total.toFixed(2)}`, 160, yPos);
+      doc.text(`${currency} ${item.price.toFixed(2)}`, 130, yPos);
+      doc.text(`${currency} ${item.total.toFixed(2)}`, 160, yPos);
       yPos += 8;
     });
-    
-    // Totals section
     yPos += 10;
-    doc.setLineWidth(0.5);
     doc.line(20, yPos, 190, yPos);
     yPos += 10;
-    
-    doc.text(`Subtotal: ${primaryShop?.currency || 'KES'} ${transaction.subtotal.toFixed(2)}`, 130, yPos);
-    yPos += 8;
-    doc.text(`Tax (${shopTaxRate}%): ${primaryShop?.currency || 'KES'} ${transaction.tax.toFixed(2)}`, 130, yPos);
-    yPos += 8;
+    doc.text(`Subtotal: ${currency} ${(transaction?.subtotal ?? 0).toFixed(2)}`, 130, yPos); yPos += 8;
+    doc.text(`Tax (${shopTaxRate}%): ${currency} ${(transaction?.tax ?? 0).toFixed(2)}`, 130, yPos); yPos += 8;
     if (extraCharge) {
-      doc.text(`${extraCharge.label}: ${primaryShop?.currency || 'KES'} ${extraCharge.amount.toFixed(2)}`, 130, yPos);
+      doc.text(`${extraCharge.label}: ${currency} ${extraCharge.amount.toFixed(2)}`, 130, yPos);
       yPos += 8;
     }
     doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${primaryShop?.currency || 'KES'} ${transaction.total.toFixed(2)}`, 130, yPos);
-    
-    // Split payment breakdown
-    if (transaction.paymentMethod === 'split') {
+    doc.text(`Total: ${currency} ${(transaction?.total ?? 0).toFixed(2)}`, 130, yPos);
+    if (transaction?.paymentMethod === 'split') {
       yPos += 15;
       doc.setFont('helvetica', 'bold');
-      doc.text('Payment Breakdown:', 20, yPos);
-      yPos += 8;
+      doc.text('Payment Breakdown:', 20, yPos); yPos += 8;
       doc.setFont('helvetica', 'normal');
-      
-      if ((transaction as any).amountPaid > 0) {
-        doc.text(`Cash: ${primaryShop?.currency || 'KES'} ${((transaction as any).amountPaid).toFixed(2)}`, 20, yPos);
-        yPos += 6;
-      }
-      if ((transaction as any).mpesaNewTotal > 0) {
-        doc.text(`M-Pesa: ${primaryShop?.currency || 'KES'} ${((transaction as any).mpesaNewTotal).toFixed(2)}`, 20, yPos);
-        yPos += 6;
-      }
-      if ((transaction as any).bankTotal > 0) {
-        doc.text(`Bank: ${primaryShop?.currency || 'KES'} ${((transaction as any).bankTotal).toFixed(2)}`, 20, yPos);
-        yPos += 6;
-      }
+      if (transaction.amountPaid > 0) { doc.text(`Cash: ${currency} ${transaction.amountPaid.toFixed(2)}`, 20, yPos); yPos += 6; }
+      if ((transaction as any).mpesaNewTotal > 0) { doc.text(`M-Pesa: ${currency} ${(transaction as any).mpesaNewTotal.toFixed(2)}`, 20, yPos); yPos += 6; }
+      if ((transaction as any).bankTotal > 0) { doc.text(`Bank: ${currency} ${(transaction as any).bankTotal.toFixed(2)}`, 20, yPos); yPos += 6; }
     } else {
       yPos += 15;
       doc.setFont('helvetica', 'normal');
-      doc.text(`Payment Method: ${transaction.paymentMethod}`, 20, yPos);
+      doc.text(`Payment Method: ${transaction?.paymentMethod}`, 20, yPos);
     }
-    
-    // Footer
     yPos += 20;
     doc.setFontSize(10);
     doc.text('Thank you for your business!', 105, yPos, { align: 'center' });
-    
-    // Save PDF
-    const fileName = `receipt-${transaction.id}-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(fileName);
+    doc.save(`receipt-${transaction?.id}-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  // Auto-print effect — MUST be before any conditional return
+  useEffect(() => {
+    if (isOpen && transaction && admin?.autoPrint === true) {
+      printThermal();
+    }
+  }, [isOpen, transaction]);
 
-  const currency = primaryShop?.currency || 'KES';
+  // ── Early return AFTER all hooks ─────────────────────────────────────────
+  if (!transaction) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md w-full max-h-[92dvh] bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0">
+        <DialogTitle className="sr-only">Transaction Complete</DialogTitle>
 
         {/* Fixed header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
