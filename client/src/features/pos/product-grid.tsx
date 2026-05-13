@@ -1099,6 +1099,7 @@ export default function ProductGrid({
                 value={searchQuery}
                 onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
                 onKeyDown={(e) => handleSearchKeyDown(e, products.slice(0, 8))}
+                style={{ fontSize: '16px' }}
                 className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-white/15 text-white placeholder-purple-300 text-sm focus:outline-none focus:bg-white/25 border border-white/20"
               />
               {searchQuery && (
@@ -1369,8 +1370,8 @@ export default function ProductGrid({
                   value={searchQuery}
                   onChange={(e) => { onSearchChange(e.target.value); setDropdownHighlight(-1); }}
                   onKeyDown={(e) => handleSearchKeyDown(e, products.slice(0, 8))}
+                  style={{ fontSize: '16px' }}
                   className="pl-8 h-8 text-xs border-gray-300 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  autoFocus
                 />
                 
                 {/* Search Results Dropdown */}
