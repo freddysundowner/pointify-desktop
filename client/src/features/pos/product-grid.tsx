@@ -1076,6 +1076,18 @@ export default function ProductGrid({
         </div>
 
 
+        {/* Mobile active-category chip */}
+        {!showMobileCart && activeCategory !== "all" && (
+          <div className="px-3 pb-1.5 flex items-center gap-2">
+            <span className="flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/30">
+              {categories.find((c: any) => (c.id || c._id || c.name) === activeCategory)?.name || activeCategory}
+              <button onClick={() => onCategoryChange("all")} className="ml-0.5 opacity-70 hover:opacity-100">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          </div>
+        )}
+
         {/* Mobile search bar — shown only on products tab in grid mode */}
         {!showMobileCart && viewMode !== 'table' && (
           <div className="px-3 pb-3 relative">
@@ -1865,6 +1877,18 @@ export default function ProductGrid({
               </div>
             )}
             
+            {/* Desktop active-category chip */}
+            {activeCategory !== "all" && (
+              <div className="hidden lg:flex items-center gap-2 mb-3">
+                <span className="flex items-center gap-1.5 bg-purple-50 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full border border-purple-200">
+                  {categories.find((c: any) => (c.id || c._id || c.name) === activeCategory)?.name || activeCategory}
+                  <button onClick={() => onCategoryChange("all")} className="ml-0.5 opacity-60 hover:opacity-100">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              </div>
+            )}
+
             {/* Product Display - Grid or Table View */}
             <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:max-h-[calc(100vh-200px)]">
               {isLoading ? (
