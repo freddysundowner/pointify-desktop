@@ -893,7 +893,7 @@ export default function ProductGrid({
       totalDiscount: parseFloat(totals.discount.toString()),
       customerId: selectedCustomerId || null,
       saleDiscount: 0.0,
-      extraCharge: extraChargeAmount > 0 ? { label: extraChargeLabel, amount: extraChargeAmount } : null,
+      salesnote: extraChargeAmount > 0 ? `${extraChargeLabel}: Ksh ${extraChargeAmount.toFixed(2)}` : "",
     };
 
     try {
