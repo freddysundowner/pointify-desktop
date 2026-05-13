@@ -1654,8 +1654,16 @@ export default function ProductGrid({
                       >
                         <Plus className="h-2.5 w-2.5" />
                       </button>
+                      {extraChargeAmount > 0 && (
+                        <button
+                          className="w-4 h-4 rounded border border-red-300 text-red-500 flex items-center justify-center hover:bg-red-50"
+                          onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      )}
                     </div>
-                    <span className={`font-medium text-xs ${extraChargeAmount > 0 ? 'text-gray-900' : 'text-gray-900'}`}>Ksh {extraChargeAmount.toFixed(2)}</span>
+                    <span className="font-medium text-xs text-gray-900">Ksh {extraChargeAmount.toFixed(2)}</span>
                   </div>
                   {showExtraChargeInput && (
                     <div className="bg-gray-100 rounded-lg p-2 space-y-1.5 mt-1">
@@ -1732,6 +1740,16 @@ export default function ProductGrid({
                     >
                       <Plus className="h-2 w-2 lg:h-3 lg:w-3" />
                     </Button>
+                    {extraChargeAmount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-4 h-4 lg:w-6 lg:h-6 p-0 rounded border-red-300 text-red-500 hover:bg-red-50"
+                        onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}
+                      >
+                        <X className="h-2 w-2 lg:h-3 lg:w-3" />
+                      </Button>
+                    )}
                   </div>
                   <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh {extraChargeAmount.toFixed(2)}</span>
                 </div>
@@ -1961,6 +1979,16 @@ export default function ProductGrid({
                       >
                         <Plus className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
                       </Button>
+                      {extraChargeAmount > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-5 h-5 lg:w-6 lg:h-6 p-0 rounded border-red-300 text-red-500 hover:bg-red-50"
+                          onClick={() => { setExtraChargeAmount(0); setExtraChargeInputValue(""); setShowExtraChargeInput(false); }}
+                        >
+                          <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
+                        </Button>
+                      )}
                     </div>
                     <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh {extraChargeAmount.toFixed(2)}</span>
                   </div>
