@@ -3,6 +3,10 @@
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Kill any processes still holding the ports from a previous run
+fuser -k 1999/tcp 2>/dev/null || true
+fuser -k 5000/tcp 2>/dev/null || true
+
 # Start the Express backend on port 1999
 cd "$ROOT_DIR/server" && npm run dev &
 SERVER_PID=$!
