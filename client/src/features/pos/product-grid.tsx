@@ -1639,10 +1639,12 @@ export default function ProductGrid({
                     <span className="text-xs font-medium text-gray-600">Discount</span>
                     <span className="text-red-500 font-medium text-xs">- Ksh {totals.discount.toFixed(2)}</span>
                   </div>
+                  {totals.tax > 0 && (
                   <div className="flex justify-between items-center py-1">
                     <span className="text-xs font-medium text-gray-600">Tax</span>
                     <span className="font-medium text-gray-900 text-xs">Ksh {totals.tax.toFixed(2)}</span>
                   </div>
+                  )}
                   <div className="flex justify-between items-center py-1">
                     <div className="flex items-center space-x-1.5">
                       <span className="text-xs font-medium text-gray-600">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
@@ -1712,11 +1714,13 @@ export default function ProductGrid({
                   <span className="text-red-500 font-medium text-xs lg:text-sm">- Ksh {totals.discount.toFixed(2)}</span>
                 </div>
                 
+                {totals.tax > 0 && (
                 <div className="flex justify-between items-center py-1">
                   <span className="text-xs lg:text-sm font-medium text-gray-700">Tax</span>
                   <span className="font-medium text-gray-900 text-xs lg:text-sm">Ksh {totals.tax.toFixed(2)}</span>
                 </div>
-                
+                )}
+
                 <div className="flex justify-between items-center py-1">
                   <div className="flex items-center space-x-1 lg:space-x-2">
                     <span className="text-xs lg:text-sm font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
@@ -1939,11 +1943,13 @@ export default function ProductGrid({
                     <span className="text-red-500 font-medium text-xs lg:text-base">- Ksh {totals.discount.toFixed(2)}</span>
                   </div>
                   
+                  {totals.tax > 0 && (
                   <div className="flex justify-between items-center py-1 lg:py-2">
                     <span className="text-xs lg:text-base font-medium text-gray-700">Tax</span>
                     <span className="font-medium text-gray-900 text-xs lg:text-base">Ksh {totals.tax.toFixed(2)}</span>
                   </div>
-                  
+                  )}
+
                   <div className="flex justify-between items-center py-1 lg:py-2">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs lg:text-base font-medium text-gray-700">{extraChargeAmount > 0 ? extraChargeLabel : "Extra Charges"}</span>
