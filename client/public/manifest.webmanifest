@@ -3,7 +3,7 @@
   "short_name": "Pointify",
   "description": "An enterprise at your hand.",
   "theme_color": "#9333ea",
-  "background_color": "#f8f5ff",
+  "background_color": "#9333ea",
   "display": "standalone",
   "orientation": "portrait-primary",
   "scope": "/",

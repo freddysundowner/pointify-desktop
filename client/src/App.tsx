@@ -96,6 +96,15 @@ function AppContent() {
   const [, setLocation] = useLocation();
   const [location] = useLocation();
 
+  // Dismiss the HTML splash screen the moment auth state is known.
+  // The splash was kept alive (instead of removed on first rAF) so the
+  // user never sees a white flash while isLoading is still true.
+  useEffect(() => {
+    if (!isLoading) {
+      (window as any).__hideSplash?.();
+    }
+  }, [isLoading]);
+
   // Check if user has a primary shop from admin data
   const hasPrimaryShop = admin?.primaryShop;
 
