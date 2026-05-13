@@ -90,6 +90,9 @@ export default function ProductGrid({
   const [showCardInterface, setShowCardInterface] = useState(false);
   const [isProcessingCard, setIsProcessingCard] = useState(false);
   const [showCategoriesDrawer, setShowCategoriesDrawer] = useState(false);
+  const [showCategoryBar, setShowCategoryBar] = useState(() => {
+    try { return localStorage.getItem('pos_showCategoryBar') !== 'false'; } catch { return true; }
+  });
   const [showPriceDialog, setShowPriceDialog] = useState(false);
   const [selectedPriceItem, setSelectedPriceItem] = useState<CartItem | null>(null);
   const [newPrice, setNewPrice] = useState("");
@@ -250,7 +253,7 @@ export default function ProductGrid({
       // F2 or Cmd/Ctrl+P → open payment dialog
       if (e.key === "F2" || (meta && e.key === "p")) {
         e.preventDefault();
-        if (cartItems.length > 0 && !showPaymentDialog) setShowPaymentDialog(true);
+        if (cartItems.length > 0 && !showPaymentDialog) openPaymentDialog();
         return;
       }
 
@@ -992,6 +995,19 @@ export default function ProductGrid({
     setShowHoldCustomerDialog(false);
   };
 
+  const toggleCategoryBar = () => {
+    setShowCategoryBar(prev => {
+      const next = !prev;
+      try { localStorage.setItem('pos_showCategoryBar', String(next)); } catch {}
+      return next;
+    });
+  };
+
+  const openPaymentDialog = () => {
+    onCategoryChange("all");
+    setShowPaymentDialog(true);
+  };
+
   const resetPaymentDialog = () => {
     setShowPaymentDialog(false);
     setSelectedPaymentMethod("");
@@ -1034,30 +1050,64 @@ export default function ProductGrid({
           <div className="flex items-center gap-1.5">
             {showMobileCart ? (
               <button
-                onClick={() => cartItems.length > 0 && setShowPaymentDialog(true)}
+                onClick={() => cartItems.length > 0 && openPaymentDialog()}
                 disabled={cartItems.length === 0}
                 className="bg-white text-purple-700 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
               >
                 Pay
               </button>
-            ) : viewMode === 'grid' ? (
-              <button
-                onClick={() => setShowCategoriesDrawer(true)}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 active:bg-white/25"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
             ) : (
-              <button
-                onClick={() => cartItems.length > 0 && setShowPaymentDialog(true)}
-                disabled={cartItems.length === 0}
-                className="bg-white text-purple-700 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
-              >
-                {cartItems.length > 0 ? `Pay · ${cartItems.length}` : 'Pay'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={toggleCategoryBar}
+                  title={showCategoryBar ? "Hide categories" : "Show categories"}
+                  className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors ${showCategoryBar ? 'bg-white/30' : 'bg-white/15 active:bg-white/25'}`}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => cartItems.length > 0 && openPaymentDialog()}
+                  disabled={cartItems.length === 0}
+                  className="bg-white text-purple-700 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                >
+                  {cartItems.length > 0 ? `Pay · ${cartItems.length}` : 'Pay'}
+                </button>
+              </div>
             )}
           </div>
         </div>
+
+        {/* Mobile category pill bar */}
+        {!showMobileCart && showCategoryBar && categories.length > 0 && (
+          <div className="flex gap-2 px-3 pb-2 overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => onCategoryChange("all")}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                activeCategory === "all"
+                  ? "bg-white text-purple-700 border-white"
+                  : "bg-white/15 text-white border-white/20 active:bg-white/30"
+              }`}
+            >
+              All
+            </button>
+            {categories.map((cat: any) => {
+              const id = cat.id || cat._id || cat.name;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onCategoryChange(id)}
+                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    activeCategory === id
+                      ? "bg-white text-purple-700 border-white"
+                      : "bg-white/15 text-white border-white/20 active:bg-white/30"
+                  }`}
+                >
+                  {cat.name || cat.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Mobile search bar — shown only on products tab in grid mode */}
         {!showMobileCart && viewMode !== 'table' && (
@@ -1182,15 +1232,51 @@ export default function ProductGrid({
                 </Button>
               </div>
               
-              {viewMode === 'grid' ? <Button
-                onClick={() => setShowCategoriesDrawer(true)}
-                className="bg-red-600 hover:bg-red-700 text-white h-8 px-3 text-sm whitespace-nowrap"
+              <Button
+                onClick={toggleCategoryBar}
+                variant="outline"
+                size="sm"
+                title={showCategoryBar ? "Hide categories" : "Show categories"}
+                className={`h-8 px-3 text-sm whitespace-nowrap ${showCategoryBar ? 'bg-purple-50 border-purple-300 text-purple-700' : ''}`}
               >
-                Category
-              </Button> : <></>}
+                <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+                Categories
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Desktop category pill bar */}
+        {showCategoryBar && categories.length > 0 && (
+          <div className="flex gap-2 px-6 py-2 overflow-x-auto scrollbar-none border-t border-gray-100 bg-white">
+            <button
+              onClick={() => onCategoryChange("all")}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                activeCategory === "all"
+                  ? "bg-purple-600 text-white border-purple-600"
+                  : "bg-gray-50 text-gray-600 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+              }`}
+            >
+              All
+            </button>
+            {categories.map((cat: any) => {
+              const id = cat.id || cat._id || cat.name;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onCategoryChange(id)}
+                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    activeCategory === id
+                      ? "bg-purple-600 text-white border-purple-600"
+                      : "bg-gray-50 text-gray-600 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"
+                  }`}
+                >
+                  {cat.name || cat.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
@@ -1697,7 +1783,7 @@ export default function ProductGrid({
               </div>
               <div className="px-3 pt-2 pb-3 space-y-2">
                 <Button
-                  onClick={() => setShowPaymentDialog(true)}
+                  onClick={() => openPaymentDialog()}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 text-sm font-semibold rounded-lg"
                   disabled={cartItems.length === 0}
                 >
@@ -1790,7 +1876,7 @@ export default function ProductGrid({
             <div className="p-3 lg:p-4 bg-white">
               <div className="grid grid-cols-3 gap-2 lg:gap-3">
                 <Button 
-                  onClick={() => setShowPaymentDialog(true)}
+                  onClick={() => openPaymentDialog()}
                   className="bg-purple-600 hover:bg-purple-700 text-white py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
                   disabled={cartItems.length === 0}
                 >
@@ -2029,7 +2115,7 @@ export default function ProductGrid({
               <div className="mt-2 lg:mt-6">
                 <div className="space-y-2 lg:space-y-3">
                   <Button 
-                    onClick={() => setShowPaymentDialog(true)}
+                    onClick={() => openPaymentDialog()}
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 lg:py-4 text-sm lg:text-lg font-semibold rounded-lg"
                     disabled={cartItems.length === 0}
                   >
