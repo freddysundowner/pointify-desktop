@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound, MoreVertical } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Link } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/dashboard-layout';
@@ -615,12 +616,32 @@ export default function Attendants() {
                           </Badge>
                         </td>
                         <td className="px-3 py-2">
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900" title="Permissions"><Settings className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900" title="Edit"><Edit className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleResetPassword(attendant)} className="h-7 w-7 p-0 text-amber-600 hover:text-amber-900" title="Reset Password"><KeyRound className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="h-7 w-7 p-0 text-red-600 hover:text-red-900" title="Delete"><Trash2 className="h-3 w-3" /></Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(attendant)}>
+                                <Edit className="h-4 w-4 mr-2 text-blue-600" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditPermissions(attendant)}>
+                                <Settings className="h-4 w-4 mr-2 text-blue-600" />
+                                Permissions
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleResetPassword(attendant)}>
+                                <KeyRound className="h-4 w-4 mr-2 text-amber-600" />
+                                Reset Password
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDelete(attendant)} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}
