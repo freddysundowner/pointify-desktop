@@ -1,281 +1,150 @@
 import { useState } from 'react';
-import { ArrowLeft, Download, Calendar, DollarSign, TrendingUp, Filter, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
+import { DollarSign, TrendingUp, RotateCcw, Wallet, CreditCard, Clock, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/layout/dashboard-layout';
-import { Link } from 'wouter';
+import { RootState } from '@/store';
+import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
+import { usePrimaryShop } from '@/hooks/usePrimaryShop';
+import { useNavigationRoute } from '@/lib/navigation-utils';
 
-interface IncomeData {
-  date: string;
-  cashSales: number;
-  creditSales: number;
-  walletPayments: number;
-  cardPayments: number;
-  total: number;
+interface SalesSummary {
+  cash?: number;
+  credit?: number;
+  debtpaid?: number;
+  returns?: number;
+  wallet?: number;
+  hold?: number;
 }
 
-const incomeData: IncomeData[] = [
-  {
-    date: '2025-06-19',
-    cashSales: 8500,
-    creditSales: 2200,
-    walletPayments: 1800,
-    cardPayments: 650,
-    total: 13150
-  },
-  {
-    date: '2025-06-18',
-    cashSales: 7200,
-    creditSales: 1950,
-    walletPayments: 1200,
-    cardPayments: 800,
-    total: 11150
-  },
-  {
-    date: '2025-06-17',
-    cashSales: 9800,
-    creditSales: 2800,
-    walletPayments: 1650,
-    cardPayments: 550,
-    total: 14800
-  },
-  {
-    date: '2025-06-16',
-    cashSales: 4700,
-    creditSales: 1800,
-    walletPayments: 0,
-    cardPayments: 0,
-    total: 6500
-  }
+const today = () => new Date().toISOString().split('T')[0];
+const daysAgo = (n: number) => {
+  const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split('T')[0];
+};
+const yesterday = () => daysAgo(1);
+
+const fmtAmt = (n: number | undefined) => {
+  const v = n ?? 0;
+  return v >= 1_000_000 ? `${(v / 1_000_000).toFixed(2)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(1)}K` : String(Math.round(v));
+};
+
+const PERIOD_OPTS = [
+  { key: 'today',   label: 'Today',     from: () => today(),     to: () => today()     },
+  { key: 'yesterday', label: 'Yesterday', from: () => yesterday(), to: () => yesterday() },
+  { key: '7days',  label: '7 Days',    from: () => daysAgo(6),  to: () => today()     },
+  { key: '30days', label: '30 Days',   from: () => daysAgo(29), to: () => today()     },
 ];
 
 export default function IncomeReports() {
-  const [dateFilter, setDateFilter] = useState('thisWeek');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const { selectedShopId } = useSelector((state: RootState) => state.shop);
+  const { attendant } = useAttendantAuth();
+  const { shopId: primaryShopId } = usePrimaryShop();
+  const reportsRoute = useNavigationRoute('reports');
 
-  const filteredData = incomeData.filter(item =>
-    item.date.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const effectiveShopId = selectedShopId ||
+    (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShopId);
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const [period, setPeriod] = useState('7days');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
 
-  // Export functions
-  const exportToExcel = () => {
-    const csvContent = [
-      ['Date', 'Cash Sales', 'Credit Sales', 'Wallet Payments', 'Card Payments', 'Total'],
-      ...filteredData.map(item => [
-        item.date,
-        item.cashSales,
-        item.creditSales,
-        item.walletPayments,
-        item.cardPayments,
-        item.total
-      ])
-    ].map(row => row.join(',')).join('\n');
+  const opt = PERIOD_OPTS.find(p => p.key === period);
+  const fromDate = showCustom && customFrom ? customFrom : (opt?.from() ?? today());
+  const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'income-reports.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const summaryUrl = effectiveShopId
+    ? `/api/analysis/report/sales?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
+    : null;
 
-  const exportToPDF = () => {
-    const printContent = `
-      <html>
-        <head>
-          <title>Income Reports</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            h1 { color: #333; }
-          </style>
-        </head>
-        <body>
-          <h1>Income Reports</h1>
-          <p>Generated on: ${new Date().toLocaleDateString()}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Cash Sales</th>
-                <th>Credit Sales</th>
-                <th>Wallet Payments</th>
-                <th>Card Payments</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredData.map(item => `
-                <tr>
-                  <td>${item.date}</td>
-                  <td>KES ${item.cashSales.toLocaleString()}</td>
-                  <td>KES ${item.creditSales.toLocaleString()}</td>
-                  <td>KES ${item.walletPayments.toLocaleString()}</td>
-                  <td>KES ${item.cardPayments.toLocaleString()}</td>
-                  <td>KES ${item.total.toLocaleString()}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow!.document.write(printContent);
-    printWindow!.document.close();
-    printWindow!.print();
-  };
+  const { data, isLoading, isError } = useQuery<SalesSummary>({
+    queryKey: [summaryUrl],
+    enabled: !!summaryUrl,
+    staleTime: 60_000,
+  });
 
-  const totalIncome = filteredData.reduce((sum, day) => sum + day.total, 0);
-  const totalCash = filteredData.reduce((sum, day) => sum + day.cashSales, 0);
-  const totalCredit = filteredData.reduce((sum, day) => sum + day.creditSales, 0);
-  const totalWallet = filteredData.reduce((sum, day) => sum + day.walletPayments, 0);
-  const totalCard = filteredData.reduce((sum, day) => sum + day.cardPayments, 0);
+  const currency = useSelector((state: RootState) => state.currency) || 'KES';
 
-  const fmtK = (n: number) => n >= 1_000_000 ? `KES ${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `KES ${(n/1_000).toFixed(1)}K` : `KES ${n}`;
+  const tiles = [
+    { key: 'cash',     label: 'Cash Sales',       value: data?.cash,     icon: DollarSign, color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200' },
+    { key: 'credit',   label: 'Credit Sales',      value: data?.credit,   icon: CreditCard,  color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-blue-200'  },
+    { key: 'debtpaid', label: 'Collected Debt',    value: data?.debtpaid, icon: TrendingUp,  color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200'},
+    { key: 'returns',  label: 'Returns',           value: data?.returns,  icon: RotateCcw,   color: 'text-red-600',    bg: 'bg-red-50',    border: 'border-red-200'   },
+    { key: 'wallet',   label: 'Wallet Sales',      value: data?.wallet,   icon: Wallet,      color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200' },
+    { key: 'hold',     label: 'On Hold',           value: data?.hold,     icon: Clock,       color: 'text-gray-600',   bg: 'bg-gray-50',   border: 'border-gray-200'  },
+  ];
+
+  const totalSales = (data?.cash ?? 0) + (data?.credit ?? 0) + (data?.wallet ?? 0);
 
   return (
-    <DashboardLayout title="Income Reports">
-      <div className="space-y-3">
-        <PageHeader
-          title="Income Reports"
-          backHref="/reports"
-          actions={<>
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportToExcel}>
-              <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
-            </Button>
-            <Button size="sm" className="h-8 text-xs" onClick={exportToPDF}>
-              <FileText className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">PDF</span>
-            </Button>
-          </>}
-        />
+    <DashboardLayout title="Sales Summary">
+      <div className="space-y-3 pb-24 lg:pb-6">
+        <PageHeader title="Sales Summary" backHref={reportsRoute} />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-          <Card className="sm:col-span-1">
-            <CardContent className="p-2">
-              <div className="text-[10px] text-gray-500">Total</div>
-              <div className="text-xs font-bold">{fmtK(totalIncome)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-2">
-              <div className="text-[10px] text-gray-500">Cash</div>
-              <div className="text-xs font-bold text-green-600">{fmtK(totalCash)}</div>
-              <div className="text-[10px] text-gray-400">{((totalCash/totalIncome)*100).toFixed(1)}%</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-2">
-              <div className="text-[10px] text-gray-500">Credit</div>
-              <div className="text-xs font-bold text-blue-600">{fmtK(totalCredit)}</div>
-              <div className="text-[10px] text-gray-400">{((totalCredit/totalIncome)*100).toFixed(1)}%</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-2">
-              <div className="text-[10px] text-gray-500">Wallet</div>
-              <div className="text-xs font-bold text-purple-600">{fmtK(totalWallet)}</div>
-              <div className="text-[10px] text-gray-400">{((totalWallet/totalIncome)*100).toFixed(1)}%</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-2">
-              <div className="text-[10px] text-gray-500">Card</div>
-              <div className="text-xs font-bold text-orange-600">{fmtK(totalCard)}</div>
-              <div className="text-[10px] text-gray-400">{((totalCard/totalIncome)*100).toFixed(1)}%</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-gray-50 border rounded-lg">
-          {['today', 'thisWeek', 'thisMonth', 'thisYear'].map((period) => (
-            <Button key={period} variant={dateFilter === period ? 'default' : 'outline'} size="sm"
-              onClick={() => setDateFilter(period)} className="h-7 text-xs px-2">
-              {period === 'thisWeek' ? 'Week' : period === 'thisMonth' ? 'Month' : period === 'thisYear' ? 'Year' : 'Today'}
+        {/* Period Filter */}
+        <div className="flex flex-wrap gap-1.5">
+          {PERIOD_OPTS.map(p => (
+            <Button key={p.key} size="sm"
+              variant={period === p.key && !showCustom ? 'default' : 'outline'}
+              className="h-7 text-xs px-2.5"
+              onClick={() => { setPeriod(p.key); setShowCustom(false); }}>
+              {p.label}
             </Button>
           ))}
-          <Input placeholder="Search by date..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} className="h-7 text-xs w-36 ml-auto" />
+          <Button size="sm" variant={showCustom ? 'default' : 'outline'} className="h-7 text-xs px-2.5"
+            onClick={() => setShowCustom(v => !v)}>Custom</Button>
         </div>
+        {showCustom && (
+          <div className="flex gap-2 items-center flex-wrap">
+            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+              className="h-8 text-xs border rounded px-2 bg-white" />
+            <span className="text-xs text-gray-500">to</span>
+            <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+              className="h-8 text-xs border rounded px-2 bg-white" />
+          </div>
+        )}
 
-        {/* Table */}
-        <Card>
-          <CardHeader className="py-2 px-3">
-            <CardTitle className="text-sm font-semibold">Daily Income Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-50 border-b">
-                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Date</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Cash</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Credit</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden sm:table-cell">Wallet</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 hidden md:table-cell">Card</th>
-                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedData.map((day, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-xs font-medium">{new Date(day.date).toLocaleDateString()}</td>
-                    <td className="px-3 py-2 text-right text-xs text-green-600">KES {day.cashSales.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right text-xs text-blue-600 hidden sm:table-cell">KES {day.creditSales.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right text-xs text-purple-600 hidden sm:table-cell">KES {day.walletPayments.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right text-xs text-orange-600 hidden md:table-cell">KES {day.cardPayments.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right text-xs font-bold">KES {day.total.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-3 py-2 border-t">
-                <span className="text-xs text-gray-500">{currentPage}/{totalPages}</span>
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
-                    onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>Prev</Button>
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs"
-                    onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next</Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Total banner */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+          </div>
+        ) : isError ? (
+          <div className="text-center py-8 text-sm text-red-500">Failed to load sales summary.</div>
+        ) : (
+          <>
+            <div className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 p-4 text-white">
+              <div className="text-xs opacity-80 mb-1">Total Sales ({fromDate} – {toDate})</div>
+              <div className="text-2xl font-bold">{currency} {fmtAmt(totalSales)}</div>
+              <div className="text-xs opacity-70 mt-1">Cash + Credit + Wallet</div>
+            </div>
 
-        {/* Performance Insights */}
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="p-3 bg-green-50 rounded-lg">
-            <div className="text-xs font-semibold text-green-800">Best Day</div>
-            <div className="text-[10px] text-green-600">June 17, 2025</div>
-            <div className="text-sm font-bold text-green-800">KES 14,800</div>
-          </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <div className="text-xs font-semibold text-blue-800">Avg Daily</div>
-            <div className="text-[10px] text-blue-600">Last 7 days</div>
-            <div className="text-sm font-bold text-blue-800">KES {(totalIncome/incomeData.length).toLocaleString()}</div>
-          </div>
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <div className="text-xs font-semibold text-purple-800">Top Method</div>
-            <div className="text-[10px] text-purple-600">Cash dominates</div>
-            <div className="text-sm font-bold text-purple-800">{((totalCash/totalIncome)*100).toFixed(1)}%</div>
-          </div>
-        </div>
+            {/* 6 tiles */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {tiles.map(({ key, label, value, icon: Icon, color, bg, border }) => (
+                <Card key={key} className={`border ${border}`}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className={`h-3.5 w-3.5 ${color}`} />
+                      </div>
+                      <span className="text-[11px] text-gray-500 leading-tight">{label}</span>
+                    </div>
+                    <div className={`text-base font-bold ${color}`}>{currency} {fmtAmt(value)}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Date range note */}
+            <p className="text-[11px] text-gray-400 text-center">
+              Showing data from <strong>{fromDate}</strong> to <strong>{toDate}</strong>
+            </p>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

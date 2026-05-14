@@ -292,6 +292,21 @@ export function registerAnalyticsRoutes(app: Express) {
     }
   });
 
+  // Stock report per shop (paginated, searchable by name)
+  app.get("/api/product/stockreport/:shopid", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) return res.status(401).json({ error: "Authorization token required" });
+      const { shopid } = req.params;
+      const queryParams = new URLSearchParams(req.query as any);
+      const endpoint = `/product/stockreport/${shopid}?${queryParams.toString()}`;
+      const data = await makePointifyRequest(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch stock report" });
+    }
+  });
+
   // Alternative endpoint for file download (with /file path)
   app.get("/api/analysis/pdf/download/file", async (req, res) => {
     try {

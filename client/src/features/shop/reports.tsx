@@ -1,26 +1,34 @@
 import { useLocation } from "wouter";
-import { ArrowLeft, TrendingUp, DollarSign, Tag, Package, ArrowUpDown, BarChart3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { TrendingUp, DollarSign, Tag, Package, BarChart2, BarChart3, RotateCcw, ShoppingCart, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { useNavigationRoute } from "@/lib/navigation-utils";
 
 const reportCards = [
+  {
+    href: "/income-reports",
+    icon: DollarSign,
+    color: "text-green-600",
+    bg: "bg-green-50",
+    title: "Sales Summary",
+    desc: "Cash, credit, wallet and on-hold totals",
+  },
   {
     href: "/profit-analysis",
     icon: TrendingUp,
     color: "text-purple-600",
     bg: "bg-purple-50",
     title: "Profit Analysis",
-    desc: "View profit margins per product and period",
+    desc: "Net/gross profit by product and period",
   },
   {
-    href: "/income-reports",
-    icon: DollarSign,
-    color: "text-green-600",
-    bg: "bg-green-50",
-    title: "Income Reports",
-    desc: "Breakdown of revenue by payment type and date",
+    href: "/product-sales",
+    icon: BarChart2,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    title: "Product Sales",
+    desc: "Sales breakdown by product and type",
   },
   {
     href: "/discount-reports",
@@ -28,23 +36,39 @@ const reportCards = [
     color: "text-orange-600",
     bg: "bg-orange-50",
     title: "Discount Reports",
-    desc: "Track discounts applied across all sales",
+    desc: "Discounts applied across all sales",
+  },
+  {
+    href: "/sales-returns",
+    icon: RotateCcw,
+    color: "text-red-600",
+    bg: "bg-red-50",
+    title: "Sales Returns",
+    desc: "Returned sales and refund records",
   },
   {
     href: "/stock-report",
     icon: Package,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
+    color: "text-teal-600",
+    bg: "bg-teal-50",
     title: "Stock Report",
-    desc: "Current stock levels, value and alerts",
+    desc: "Per-product stock levels and sales",
   },
   {
-    href: "/product-movements",
-    icon: ArrowUpDown,
+    href: "/purchases-summary",
+    icon: ShoppingCart,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    title: "Purchases",
+    desc: "Cash, credit and return purchase totals",
+  },
+  {
+    href: "/debtors",
+    icon: Users,
     color: "text-rose-600",
     bg: "bg-rose-50",
-    title: "Product Movements",
-    desc: "In/out stock movements and adjustments",
+    title: "Debtors",
+    desc: "Customers with outstanding balances",
   },
   {
     href: "/profit-loss",
@@ -58,17 +82,17 @@ const reportCards = [
 
 export default function ReportsHub() {
   const [, navigate] = useLocation();
+  const dashboardRoute = useNavigationRoute('dashboard');
 
   return (
     <DashboardLayout title="Reports">
-      <div className="space-y-3">
+      <div className="space-y-3 pb-24 lg:pb-6">
         <PageHeader
           title="Reports"
           subtitle="Choose a report to view"
-          onBack={() => navigate("/dashboard")}
+          onBack={() => navigate(dashboardRoute)}
         />
 
-        {/* Report Cards Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
           {reportCards.map(({ href, icon: Icon, color, bg, title, desc }) => (
             <Card

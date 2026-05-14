@@ -61,6 +61,9 @@ import ProfitAnalysis from "@/features/reports/profit-analysis";
 import DiscountReports from "@/features/reports/discount-reports";
 import StockReport from "@/features/reports/stock-report";
 import ProductMovements from "@/features/reports/product-movements";
+import ProductSalesReport from "@/features/reports/product-sales-report";
+import SalesReturnsReport from "@/features/reports/sales-returns-report";
+import PurchasesSummary from "@/features/reports/purchases-summary";
 import SubscriptionPage from "@/pages/subscription";
 import PaymentWaiting from "@/pages/payment-waiting"; 
 import EditProfilePage from "@/pages/edit-profile";
@@ -467,6 +470,9 @@ function AppContent() {
             <Route path="/discount-reports" component={DiscountReports} />
             <Route path="/stock-report" component={StockReport} />
             <Route path="/product-movements" component={ProductMovements} />
+            <Route path="/product-sales" component={ProductSalesReport} />
+            <Route path="/sales-returns" component={SalesReturnsReport} />
+            <Route path="/purchases-summary" component={PurchasesSummary} />
             <Route path="/shops" component={Shops} />
             <Route path="/shop/:id" component={ShopDetails} />
             <Route path="/shop-setup" component={ShopSetup} />

@@ -769,4 +769,18 @@ export function registerSalesRoutes(app: Express) {
       res.status(500).json({ error: "Failed to delete online sales order" });
     }
   });
+
+  // Product-wise sales report
+  app.get("/api/sales/products/reports", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) return res.status(401).json({ error: "Authorization token required" });
+      const queryParams = new URLSearchParams(req.query as any);
+      const endpoint = `/sales/products/reports?${queryParams.toString()}`;
+      const data = await makePointifyRequest(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch product sales report" });
+    }
+  });
 }

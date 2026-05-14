@@ -65,10 +65,10 @@ export default function ProfitAnalysis() {
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { user } = useSelector((state: RootState) => state.auth);
   const { attendant } = useAttendantAuth();
-  const { primaryShop } = usePrimaryShop();
+  const { shopId: primaryShopId } = usePrimaryShop();
 
   const effectiveShopId = selectedShopId ||
-    (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShop?._id);
+    (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShopId);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('grossProfit');

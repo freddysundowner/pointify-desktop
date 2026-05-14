@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
-import { Tag, Loader2, Download, FileText, Search } from 'lucide-react';
+import { BarChart2, Loader2, Download, Search } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,14 @@ const fmtDate = (d: string) => {
   catch { return d; }
 };
 
-export default function DiscountReports() {
+const saleTypeBadge: Record<string, string> = {
+  Wholesale: 'bg-blue-100 text-blue-800',
+  Retail: 'bg-green-100 text-green-800',
+  Dealer: 'bg-purple-100 text-purple-800',
+  Receipt: 'bg-amber-100 text-amber-800',
+};
+
+export default function ProductSalesReport() {
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { attendant } = useAttendantAuth();
   const { shopId: primaryShopId } = usePrimaryShop();
@@ -61,29 +68,29 @@ export default function DiscountReports() {
   const fromDate = showCustom && customFrom ? customFrom : (opt?.from() ?? today());
   const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
-  const discountUrl = effectiveShopId
-    ? `/api/sales/discount/reports?shop=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&saleType=${saleType === 'All' ? '' : saleType}&product=${encodeURIComponent(productSearch)}`
+  const url = effectiveShopId
+    ? `/api/sales/products/reports?shop=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&saleType=${saleType === 'All' ? '' : saleType}&product=${encodeURIComponent(productSearch)}`
     : null;
 
   const { data: rawData, isLoading, isError } = useQuery<any>({
-    queryKey: [discountUrl],
-    enabled: !!discountUrl,
+    queryKey: [url],
+    enabled: !!url,
     staleTime: 60_000,
   });
 
   const items: any[] = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : []);
-
-  const totalDiscount = items.reduce((s: number, i: any) => s + (Number(i.lineDiscount ?? i.discount ?? i.totalDiscount ?? 0)), 0);
-  const totalPages = Math.ceil(items.length / PER_PAGE);
-  const pageItems = items.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalSales  = items.reduce((s: number, i: any) => s + (Number(i.totalAmount ?? i.amount ?? i.price ?? 0)), 0);
+  const totalQty    = items.reduce((s: number, i: any) => s + (Number(i.quantity ?? i.qty ?? 0)), 0);
+  const totalPages  = Math.ceil(items.length / PER_PAGE);
+  const pageItems   = items.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const exportCSV = () => {
     const rows = [
-      ['Product', 'Qty', 'Discount', 'Sale Type', 'Attendant', 'Date', 'Receipt'].join(','),
+      ['Product', 'Qty', 'Amount', 'Sale Type', 'Attendant', 'Date', 'Receipt'].join(','),
       ...items.map((i: any) => [
         i.productName ?? i.name ?? '',
         i.quantity ?? i.qty ?? '',
-        i.lineDiscount ?? i.discount ?? '',
+        i.totalAmount ?? i.amount ?? i.price ?? '',
         i.saleType ?? '',
         i.attendant?.name ?? i.attendantName ?? '',
         i.createdAt ?? i.date ?? '',
@@ -92,13 +99,13 @@ export default function DiscountReports() {
     ].join('\n');
     const blob = new Blob([rows], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'discount-report.csv'; a.click();
+    a.download = 'product-sales-report.csv'; a.click();
   };
 
   return (
-    <DashboardLayout title="Discount Reports">
+    <DashboardLayout title="Product Sales">
       <div className="space-y-3 pb-24 lg:pb-6">
-        <PageHeader title="Discount Reports" backHref={reportsRoute}
+        <PageHeader title="Product Sales" backHref={reportsRoute}
           actions={
             <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportCSV}>
               <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
@@ -147,17 +154,23 @@ export default function DiscountReports() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-2 gap-2">
-          <Card className="border-orange-200">
+        <div className="grid grid-cols-3 gap-2">
+          <Card className="border-green-200">
             <CardContent className="p-3">
-              <div className="text-[11px] text-gray-500">Total Discount Given</div>
-              <div className="text-lg font-bold text-orange-600">{currency} {fmtAmt(totalDiscount)}</div>
+              <div className="text-[11px] text-gray-500">Total Sales</div>
+              <div className="text-base font-bold text-green-600">{currency} {fmtAmt(totalSales)}</div>
             </CardContent>
           </Card>
           <Card className="border-blue-200">
             <CardContent className="p-3">
+              <div className="text-[11px] text-gray-500">Total Qty</div>
+              <div className="text-base font-bold text-blue-600">{totalQty}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-purple-200">
+            <CardContent className="p-3">
               <div className="text-[11px] text-gray-500">Transactions</div>
-              <div className="text-lg font-bold text-blue-600">{items.length}</div>
+              <div className="text-base font-bold text-purple-600">{items.length}</div>
             </CardContent>
           </Card>
         </div>
@@ -165,15 +178,18 @@ export default function DiscountReports() {
         {/* Table */}
         <Card>
           <CardHeader className="py-2 px-3">
-            <CardTitle className="text-sm font-semibold">Discount Details</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BarChart2 className="h-4 w-4 text-green-500" />
+              Sales by Product
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-purple-500" /></div>
             ) : isError ? (
-              <div className="text-center py-8 text-sm text-red-500">Failed to load discount data.</div>
+              <div className="text-center py-8 text-sm text-red-500">Failed to load data.</div>
             ) : items.length === 0 ? (
-              <div className="text-center py-8 text-sm text-gray-400">No discount records found.</div>
+              <div className="text-center py-8 text-sm text-gray-400">No records found for this period.</div>
             ) : (
               <>
                 {/* Mobile cards */}
@@ -182,11 +198,13 @@ export default function DiscountReports() {
                     <div key={i} className="p-3 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium">{item.productName ?? item.name ?? '—'}</span>
-                        <Badge className="text-[10px] bg-orange-100 text-orange-800">{item.saleType ?? '—'}</Badge>
+                        <Badge className={`text-[10px] ${saleTypeBadge[item.saleType] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {item.saleType ?? '—'}
+                        </Badge>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-gray-500">
                         <span>Qty: {item.quantity ?? item.qty ?? '—'}</span>
-                        <span className="font-semibold text-orange-600">-{currency} {fmtAmt(item.lineDiscount ?? item.discount ?? 0)}</span>
+                        <span className="font-semibold text-green-600">{currency} {fmtAmt(item.totalAmount ?? item.amount ?? item.price)}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-gray-400">
                         <span>{item.attendant?.name ?? item.attendantName ?? '—'}</span>
@@ -200,7 +218,7 @@ export default function DiscountReports() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-50 border-b">
-                        {['Product', 'Qty', 'Discount', 'Sale Type', 'Attendant', 'Date', 'Receipt'].map(h => (
+                        {['Product', 'Qty', 'Amount', 'Sale Type', 'Attendant', 'Date', 'Receipt'].map(h => (
                           <th key={h} className="text-left px-3 py-2 text-xs font-medium text-gray-500">{h}</th>
                         ))}
                       </tr>
@@ -210,8 +228,10 @@ export default function DiscountReports() {
                         <tr key={i} className="hover:bg-gray-50">
                           <td className="px-3 py-2 text-xs font-medium">{item.productName ?? item.name ?? '—'}</td>
                           <td className="px-3 py-2 text-xs">{item.quantity ?? item.qty ?? '—'}</td>
-                          <td className="px-3 py-2 text-xs text-orange-600 font-semibold">{currency} {fmtAmt(item.lineDiscount ?? item.discount ?? 0)}</td>
-                          <td className="px-3 py-2 text-xs"><Badge className="text-[10px] bg-orange-100 text-orange-800">{item.saleType ?? '—'}</Badge></td>
+                          <td className="px-3 py-2 text-xs text-green-600 font-semibold">{currency} {fmtAmt(item.totalAmount ?? item.amount ?? item.price)}</td>
+                          <td className="px-3 py-2 text-xs">
+                            <Badge className={`text-[10px] ${saleTypeBadge[item.saleType] ?? 'bg-gray-100 text-gray-700'}`}>{item.saleType ?? '—'}</Badge>
+                          </td>
                           <td className="px-3 py-2 text-xs">{item.attendant?.name ?? item.attendantName ?? '—'}</td>
                           <td className="px-3 py-2 text-xs">{fmtDate(item.createdAt ?? item.date ?? '')}</td>
                           <td className="px-3 py-2 text-xs font-mono">{item.receiptNo ?? item.saleId ?? '—'}</td>
