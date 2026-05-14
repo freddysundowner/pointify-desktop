@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Link } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
@@ -46,10 +46,13 @@ export default function Attendants() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
   const [isEditingPermissions, setIsEditingPermissions] = useState(false);
   const [selectedAttendant, setSelectedAttendant] = useState<Attendant | null>(null);
   const [generatedPin, setGeneratedPin] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
 
   const { admin } = useAuth(); // Use AuthProvider context instead of Redux
@@ -65,7 +68,6 @@ export default function Attendants() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    shopId: currentShopId || (availableShops.length > 0 ? availableShops[0].id : ''),
     permissions: [] as Permission[]
   });
 
@@ -261,6 +263,25 @@ export default function Attendants() {
     }
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      apiRequest('PUT', `/api/attendants/${id}`, { password }),
+    onSuccess: () => {
+      setIsResetPasswordDialogOpen(false);
+      setResetPasswordValue('');
+      setShowResetPassword(false);
+      setSelectedAttendant(null);
+      toast({ title: "Success", description: "Password reset successfully" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
+        variant: "destructive",
+      });
+    }
+  });
+
   const generateRandomPin = () => {
     // Generate a unique 5-digit PIN
     let pin;
@@ -282,7 +303,6 @@ export default function Attendants() {
     setFormData({
       username: '',
       password: '',
-      shopId: currentShopId || '',
       permissions: []
     });
     setSelectedAttendant(null);
@@ -293,20 +313,11 @@ export default function Attendants() {
   const handleCreate = () => {
     const pin = generateRandomPin();
     setGeneratedPin(pin);
-    
-    const defaultShopId = currentShopId || (availableShops.length > 0 ? availableShops[0].id : '');
-    console.log('Creating attendant with shop:', defaultShopId);
-    console.log('Available shops:', availableShops);
-    console.log('Current shop ID:', currentShopId);
-    
-    // Set form data with proper shop selection
     setFormData({
       username: '',
       password: '',
-      shopId: defaultShopId,
       permissions: []
     });
-    
     setSelectedAttendant(null);
     setShowPassword(false);
     setIsDialogOpen(true);
@@ -317,10 +328,16 @@ export default function Attendants() {
     setFormData({
       username: attendant.username,
       password: '',
-      shopId: typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id,
       permissions: attendant.permissions || []
     });
     setIsDialogOpen(true);
+  };
+
+  const handleResetPassword = (attendant: Attendant) => {
+    setSelectedAttendant(attendant);
+    setResetPasswordValue('');
+    setShowResetPassword(false);
+    setIsResetPasswordDialogOpen(true);
   };
 
   const handleEditPermissions = (attendant: Attendant) => {
@@ -335,17 +352,7 @@ export default function Attendants() {
   };
 
   const handleSubmit = () => {
-    console.log('Form data before validation:', formData);
-    console.log('Current shop ID:', currentShopId);
-    console.log('Available shops:', availableShops);
-    
-    if (!formData.username || (!selectedAttendant && !formData.password) || !formData.shopId) {
-      console.log('Validation failed:', {
-        username: formData.username,
-        password: formData.password,
-        shopId: formData.shopId,
-        selectedAttendant: selectedAttendant
-      });
+    if (!formData.username || (!selectedAttendant && !formData.password)) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -354,10 +361,11 @@ export default function Attendants() {
       return;
     }
 
+    const shopId = currentShopId || (availableShops.length > 0 ? availableShops[0].id : '');
     const submitData = {
       username: formData.username,
       uniqueDigits: selectedAttendant ? selectedAttendant.uniqueDigits : generatedPin,
-      shopId: formData.shopId,
+      shopId,
       adminId: admin?._id,
       permissions: formData.permissions,
       ...(formData.password && { password: formData.password })
@@ -608,9 +616,10 @@ export default function Attendants() {
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900"><Settings className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900"><Edit className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="h-7 w-7 p-0 text-red-600 hover:text-red-900"><Trash2 className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditPermissions(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900" title="Permissions"><Settings className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(attendant)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-900" title="Edit"><Edit className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleResetPassword(attendant)} className="h-7 w-7 p-0 text-amber-600 hover:text-amber-900" title="Reset Password"><KeyRound className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(attendant)} className="h-7 w-7 p-0 text-red-600 hover:text-red-900" title="Delete"><Trash2 className="h-3 w-3" /></Button>
                           </div>
                         </td>
                       </tr>
@@ -654,58 +663,36 @@ export default function Attendants() {
                   className="bg-gray-50"
                 />
                 <p className="text-xs text-gray-500">
-                  {selectedAttendant 
-                    ? "Existing PIN cannot be changed" 
+                  {selectedAttendant
+                    ? "Existing PIN cannot be changed"
                     : "Auto-generated 5-digit PIN for this attendant"
                   }
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">
-                  Password {selectedAttendant && "(Leave blank to keep current)"}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Enter password"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+              {!selectedAttendant && (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Enter password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shopId">Shop</Label>
-                <Select
-                  value={formData.shopId || ''}
-                  onValueChange={(value) => {
-                    console.log('Shop selected:', value);
-                    setFormData(prev => ({ ...prev, shopId: value }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select shop" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shops.map((shop) => (
-                      <SelectItem key={shop.id} value={shop.id}>
-                        {shop?.name} - {shop.location}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              )}
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-6">
@@ -725,6 +712,65 @@ export default function Attendants() {
                 disabled={createAttendantMutation.isPending || updateAttendantMutation.isPending}
               >
                 {selectedAttendant ? 'Update' : 'Create'} Attendant
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={isResetPasswordDialogOpen} onOpenChange={(open) => {
+          if (!open) { setIsResetPasswordDialogOpen(false); setResetPasswordValue(''); setShowResetPassword(false); }
+        }}>
+          <DialogContent className="w-[calc(100%-2rem)] max-w-sm p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for <strong>{selectedAttendant?.username}</strong>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 mt-2">
+              <Label htmlFor="reset-password">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="reset-password"
+                  type={showResetPassword ? "text" : "password"}
+                  value={resetPasswordValue}
+                  onChange={(e) => setResetPasswordValue(e.target.value)}
+                  placeholder="Enter new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowResetPassword(!showResetPassword)}
+                >
+                  {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-6">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => { setIsResetPasswordDialogOpen(false); setResetPasswordValue(''); setShowResetPassword(false); }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  if (!resetPasswordValue.trim()) {
+                    toast({ title: "Error", description: "Please enter a new password", variant: "destructive" });
+                    return;
+                  }
+                  if (selectedAttendant) {
+                    resetPasswordMutation.mutate({ id: selectedAttendant._id, password: resetPasswordValue });
+                  }
+                }}
+                disabled={resetPasswordMutation.isPending}
+              >
+                {resetPasswordMutation.isPending ? 'Resetting...' : 'Reset Password'}
               </Button>
             </div>
           </DialogContent>
