@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, DollarSign, History, ArrowLeft, CreditCard } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, DollarSign, History, ArrowLeft, CreditCard, MoreHorizontal } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -426,14 +427,33 @@ export default function SuppliersPage() {
                           ) : <span className="text-xs text-muted-foreground">0.00</span>}
                         </TableCell>
                         <TableCell className="py-2 px-2 sm:px-4">
-                          <div className="flex items-center gap-1">
-                            {supplier.wallet && supplier.wallet < 0 && (
-                              <Button variant="default" size="sm" onClick={() => handlePayDebt(supplier)} className="bg-green-600 hover:bg-green-700 h-7 w-7 p-0"><CreditCard className="h-3 w-3" /></Button>
-                            )}
-                            <Button variant="outline" size="sm" onClick={() => handleViewHistory(supplier)} className="h-7 w-7 p-0"><History className="h-3 w-3" /></Button>
-                            <Button variant="outline" size="sm" onClick={() => handleEdit(supplier)} className="h-7 w-7 p-0"><Edit className="h-3 w-3" /></Button>
-                            <Button variant="outline" size="sm" onClick={() => handleDelete(supplier)} className="h-7 w-7 p-0"><Trash2 className="h-3 w-3" /></Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewHistory(supplier)}>
+                                <History className="mr-2 h-4 w-4" />History
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(supplier)}>
+                                <Edit className="mr-2 h-4 w-4" />Edit
+                              </DropdownMenuItem>
+                              {supplier.wallet && supplier.wallet < 0 && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handlePayDebt(supplier)} className="text-green-600 focus:text-green-600">
+                                    <CreditCard className="mr-2 h-4 w-4" />Pay Debt
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDelete(supplier)} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" />Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
