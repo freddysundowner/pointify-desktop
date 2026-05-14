@@ -279,7 +279,7 @@ export default function ReturnSale() {
                       {currency} {item.unitPrice.toFixed(2)} · max {item.quantity}
                     </p>
                   </div>
-                  {/* +/- stepper */}
+                  {/* +/- stepper with editable qty */}
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       type="button"
@@ -289,9 +289,18 @@ export default function ReturnSale() {
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className={`w-6 text-center text-sm font-semibold tabular-nums ${!item.shouldReturn ? 'text-gray-300' : 'text-gray-900'}`}>
-                      {item.shouldReturn ? item.returnQuantity : 0}
-                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={item.quantity}
+                      disabled={!item.shouldReturn}
+                      value={item.shouldReturn ? item.returnQuantity : 0}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value) || 1;
+                        updateReturnItem(index, 'returnQuantity', Math.min(item.quantity, Math.max(1, v)));
+                      }}
+                      className="w-10 h-7 text-center text-sm font-semibold tabular-nums border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-30 disabled:bg-gray-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
                     <button
                       type="button"
                       disabled={!item.shouldReturn || item.returnQuantity >= item.quantity}
