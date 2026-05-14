@@ -872,12 +872,12 @@ export default function StockProducts() {
       {/* ═══════════════════════════════════════════
           MOBILE layout  (below lg)
       ═══════════════════════════════════════════ */}
-      <div className="lg:hidden flex flex-col -mx-3 overflow-x-hidden">
+      <div className="lg:hidden flex flex-col">
 
         {/* Sticky top bar — sticks below the fixed app header (top-14) */}
         <div className="sticky top-14 z-10 bg-white border-b shadow-sm">
           {/* Header row */}
-          <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+          <div className="flex items-center gap-3 px-1 pt-3 pb-2">
             <button onClick={handleBack} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
@@ -924,7 +924,8 @@ export default function StockProducts() {
 
           {/* Stats pills */}
           {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
-            <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
+            <div className="w-full overflow-x-auto">
+            <div className="flex gap-2 px-3 pb-3 w-max">
               <button
                 onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${stockFilter === "lowstock" ? "bg-orange-500 text-white border-orange-500" : "bg-orange-50 text-orange-700 border-orange-200"}`}
@@ -951,6 +952,7 @@ export default function StockProducts() {
                 <Package className="h-3 w-3" />
                 Total · {totalStockCount}
               </span>
+            </div>
             </div>
           )}
 
