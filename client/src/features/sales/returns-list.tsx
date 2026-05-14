@@ -17,10 +17,13 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 
 function ReturnsList() {
   const { hasPermission, user } = usePermissions();
   const { admin } = useAuth();
+  const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const [location, setLocation] = useLocation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
@@ -38,7 +41,7 @@ function ReturnsList() {
 
   // Get shop and admin details
   const primaryShop = typeof admin?.primaryShop === 'object' ? admin.primaryShop : null;
-  const shopId = (primaryShop as any)?._id;
+  const shopId = selectedShopId || (primaryShop as any)?._id;
   const attendantId = admin?._id;
   const primaryShopCurrency = (primaryShop as any)?.currency || 'KES';
 

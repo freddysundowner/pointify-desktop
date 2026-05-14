@@ -263,6 +263,16 @@ export default function BusinessDashboard() {
         const fullShop = (shopsData as any[]).find((s: any) => s._id === resolvedShopId);
         if (fullShop) {
           dispatch(setSelectedShopData(fullShop));
+
+          // Also sync admin.primaryShop so pages that read it directly (without selectedShopId
+          // fallback) also reflect the correct shop — especially important after page refresh
+          const currentPrimaryId = typeof admin?.primaryShop === 'string'
+            ? admin.primaryShop
+            : (admin?.primaryShop as any)?._id;
+          if (currentPrimaryId !== resolvedShopId) {
+            const storedAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
+            updateAdmin({ ...storedAdmin, primaryShop: fullShop });
+          }
         }
       }
     }
