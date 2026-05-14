@@ -145,11 +145,10 @@ export default function ProductHistory() {
 
   const handleGoBack = () => {
     if (isAdmin) {
-      navigate("/products");
+      navigate("/stock/products");
     } else {
       navigate("/attendant/products");
     }
-    // setLocation("/attendant/stock-summary");
   };
 
   if (!productId) {
