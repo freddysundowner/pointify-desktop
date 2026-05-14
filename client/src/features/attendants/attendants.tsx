@@ -160,13 +160,14 @@ export default function Attendants() {
     availableShopsCount: availableShops.length
   });
 
+  const effectiveAdminId = effectiveAdmin?._id || effectiveAdmin?.id || '';
+
   const { data: attendants = [], isLoading, error } = useQuery({
-    queryKey: ['/api/attendants/all', effectiveAdmin?._id || effectiveAdmin?.id],
+    queryKey: ['/api/attendants/shop/filter', currentShopId, effectiveAdminId],
     queryFn: () => {
-      const adminId = effectiveAdmin?._id || effectiveAdmin?.id;
-      console.log('Fetching all attendants for adminId:', adminId);
+      console.log('Fetching attendants for shopId:', currentShopId, 'adminId:', effectiveAdminId);
       const token = localStorage.getItem('authToken');
-      return fetch(`/api/attendants/all/${adminId}`, {
+      return fetch(`/api/attendants/shop/filter?shopId=${currentShopId}&adminId=${effectiveAdminId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -184,7 +185,7 @@ export default function Attendants() {
           return Array.isArray(data) ? data : data.data || [];
         });
     },
-    enabled: !!(effectiveAdmin?._id || effectiveAdmin?.id),
+    enabled: !!currentShopId && !!effectiveAdminId,
     onError: (error: Error) => {
       console.error('Error fetching attendants:', error);
       toast({
