@@ -568,47 +568,47 @@ export default function SupplierHistoryPage() {
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-blue-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-lg sm:text-2xl font-bold">{totalCount}</p>
+                <Package className="h-4 w-4 text-blue-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Total Orders</p>
+                  <p className="text-lg font-bold">{totalCount}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-sm sm:text-2xl font-bold truncate">{shopCurrency} {totalAmount.toFixed(2)}</p>
+                <DollarSign className="h-4 w-4 text-green-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Total Amount</p>
+                  <p className="text-sm font-bold truncate">{shopCurrency} {totalAmount.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-purple-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Amount Paid</p>
-                  <p className="text-sm sm:text-2xl font-bold truncate">{shopCurrency} {totalPaid.toFixed(2)}</p>
+                <CreditCard className="h-4 w-4 text-purple-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Amount Paid</p>
+                  <p className="text-sm font-bold truncate">{shopCurrency} {totalPaid.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-red-600" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Outstanding</p>
-                  <p className="text-sm sm:text-2xl font-bold text-red-600 truncate">{shopCurrency} {totalOutstanding.toFixed(2)}</p>
+                <Receipt className="h-4 w-4 text-red-600 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Outstanding</p>
+                  <p className="text-sm font-bold text-red-600 truncate">{shopCurrency} {totalOutstanding.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
