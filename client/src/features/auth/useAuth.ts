@@ -95,6 +95,9 @@ export const useAuthProvider = (): AuthContextType => {
           // shop. If localStorage still holds a selectedShopId that differs
           // from the server value, restore it from the React-Query cache or
           // from the previously-stored adminData so the selection isn't lost.
+          // localStorage selectedShopId is the source of truth.
+          // If the server returns a different primaryShop, override it so the
+          // user's shop selection is never silently reset on page load.
           let adminData: any = rawAdminData;
           const storedSelectedId = localStorage.getItem('selectedShopId');
           const serverPrimaryId = typeof rawAdminData?.primaryShop === 'string'
@@ -102,7 +105,7 @@ export const useAuthProvider = (): AuthContextType => {
             : rawAdminData?.primaryShop?._id;
 
           if (storedSelectedId && storedSelectedId !== serverPrimaryId) {
-            // Try React-Query shop cache first (most up-to-date full objects)
+            // 1. Try React-Query shop cache — has full shop objects
             const cachedShops = queryClient.getQueryData(["shops", rawAdminData._id]) as any[] | undefined;
             const cachedShop = Array.isArray(cachedShops)
               ? cachedShops.find((s: any) => s._id === storedSelectedId)
@@ -111,14 +114,20 @@ export const useAuthProvider = (): AuthContextType => {
             if (cachedShop) {
               adminData = { ...rawAdminData, primaryShop: cachedShop };
             } else {
-              // Fall back: use primaryShop stored in localStorage before overwrite
+              // 2. Try previously-stored adminData (written by handleShopSwitch)
               try {
                 const storedAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
                 const storedPrimaryId = typeof storedAdmin?.primaryShop === 'string'
                   ? storedAdmin.primaryShop
                   : storedAdmin?.primaryShop?._id;
-                if (storedPrimaryId === storedSelectedId && storedAdmin.primaryShop) {
-                  adminData = { ...rawAdminData, primaryShop: storedAdmin.primaryShop };
+                if (storedAdmin.primaryShop) {
+                  // Use the stored primaryShop if it matches the selection,
+                  // otherwise at minimum record the correct ID so nothing
+                  // reads the server's stale primaryShop.
+                  const restoredShop = storedPrimaryId === storedSelectedId
+                    ? storedAdmin.primaryShop
+                    : storedSelectedId;          // bare ID until shops load
+                  adminData = { ...rawAdminData, primaryShop: restoredShop };
                 }
               } catch { /* ignore parse errors */ }
             }

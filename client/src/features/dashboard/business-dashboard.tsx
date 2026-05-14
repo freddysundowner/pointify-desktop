@@ -222,57 +222,44 @@ export default function BusinessDashboard() {
 
   // Initialize selected shop from admin data - reset shop selection for new users
   useEffect(() => {
-    if (availableShops.length > 0 && admin?._id) {
-      // localStorage selection always wins over the API's primaryShop so
-      // manual shop switches persist across page refreshes
-      const storedShopId = localStorage.getItem('selectedShopId');
-      const storedBelongsToAdmin = storedShopId
-        ? availableShops.find(s => s.id === storedShopId)
-        : null;
+    if (availableShops.length === 0 || !admin?._id) return;
 
-      const primaryShopId = typeof admin?.primaryShop === 'string'
-        ? admin.primaryShop
-        : admin?.primaryShop?._id || admin?.primaryShop?.id;
+    // The locally stored selection is the source of truth — never fall back to
+    // the server's primaryShop.  Resolution order:
+    //   1. localStorage selectedShopId  (if the shop belongs to this admin)
+    //   2. First shop in the list       (absolute fallback for first-time users)
+    const storedShopId = localStorage.getItem('selectedShopId');
+    const storedShopInList = storedShopId
+      ? availableShops.find(s => s.id === storedShopId)
+      : null;
 
-      const currentShopBelongsToAdmin = availableShops.find(shop => shop.id === selectedShopId);
+    let resolvedShopId: string;
 
-      let resolvedShopId = selectedShopId;
+    if (storedShopInList) {
+      resolvedShopId = storedShopId!;
+    } else {
+      resolvedShopId = availableShops[0]?.id ?? '';
+    }
 
-      if (!selectedShopId || !currentShopBelongsToAdmin) {
-        // Prefer: stored user selection → API primaryShop → first shop
-        const preferredId = storedBelongsToAdmin
-          ? storedShopId!
-          : primaryShopId;
+    if (!resolvedShopId) return;
 
-        if (preferredId) {
-          const shopExists = availableShops.find(shop => shop.id === preferredId);
-          const shopToSelect = shopExists ? preferredId : availableShops[0]?.id;
-          if (shopToSelect) {
-            dispatch(setSelectedShop(shopToSelect));
-            resolvedShopId = shopToSelect;
-          }
-        } else if (availableShops[0]?.id) {
-          dispatch(setSelectedShop(availableShops[0].id));
-          resolvedShopId = availableShops[0].id;
-        }
-      }
+    if (selectedShopId !== resolvedShopId) {
+      dispatch(setSelectedShop(resolvedShopId));
+    }
 
-      // Always ensure Redux + localStorage have the full shop object for the resolved shop
-      // so usePrimaryShop can derive shopCategoryId (e.g. for laundry features) reactively
-      if (resolvedShopId && Array.isArray(shopsData)) {
-        const fullShop = (shopsData as any[]).find((s: any) => s._id === resolvedShopId);
-        if (fullShop) {
-          dispatch(setSelectedShopData(fullShop));
+    // Sync the full shop object into Redux + admin.primaryShop so every page
+    // that reads either source gets the correct shop without extra fallbacks.
+    if (Array.isArray(shopsData)) {
+      const fullShop = (shopsData as any[]).find((s: any) => s._id === resolvedShopId);
+      if (fullShop) {
+        dispatch(setSelectedShopData(fullShop));
 
-          // Also sync admin.primaryShop so pages that read it directly (without selectedShopId
-          // fallback) also reflect the correct shop — especially important after page refresh
-          const currentPrimaryId = typeof admin?.primaryShop === 'string'
-            ? admin.primaryShop
-            : (admin?.primaryShop as any)?._id;
-          if (currentPrimaryId !== resolvedShopId) {
-            const storedAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
-            updateAdmin({ ...storedAdmin, primaryShop: fullShop });
-          }
+        const currentPrimaryId = typeof admin?.primaryShop === 'string'
+          ? admin.primaryShop
+          : (admin?.primaryShop as any)?._id;
+        if (currentPrimaryId !== resolvedShopId) {
+          const storedAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
+          updateAdmin({ ...storedAdmin, primaryShop: fullShop });
         }
       }
     }
