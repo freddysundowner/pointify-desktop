@@ -872,10 +872,10 @@ export default function StockProducts() {
       {/* ═══════════════════════════════════════════
           MOBILE layout  (below lg)
       ═══════════════════════════════════════════ */}
-      <div className="lg:hidden flex flex-col min-h-full -mx-4 -mt-4">
+      <div className="lg:hidden flex flex-col -mx-3 -mt-14 overflow-x-hidden">
 
-        {/* Sticky top bar */}
-        <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
+        {/* Sticky top bar — sits right below the fixed app header (top-14) */}
+        <div className="sticky top-14 z-10 bg-white border-b shadow-sm">
           {/* Header row */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
             <button onClick={handleBack} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">
@@ -971,7 +971,7 @@ export default function StockProducts() {
         </div>
 
         {/* Product cards */}
-        <div className="flex-1 px-4 pt-2 pb-24 space-y-1.5">
+        <div className="flex-1 bg-gray-100 px-3 pt-2 pb-28 space-y-1.5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
@@ -1059,7 +1059,7 @@ export default function StockProducts() {
 
         {/* Pagination footer */}
         {totalPages > 1 && (
-          <div className="sticky bottom-0 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
+          <div className="sticky bottom-16 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
             <button onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Prev</button>
             <span className="text-xs text-gray-500">Page {currentPage} of {totalPages} · {totalProducts} items</span>
             <button onClick={() => setPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage >= totalPages} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Next</button>
