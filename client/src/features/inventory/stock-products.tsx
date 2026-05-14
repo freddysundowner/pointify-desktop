@@ -1012,40 +1012,52 @@ export default function StockProducts() {
                       {categoryName && <p className="text-xs text-gray-400 mt-0.5 truncate">{categoryName}</p>}
                       {(product as any).barcode && <p className="text-xs text-gray-300 mt-0.5 font-mono">{(product as any).barcode}</p>}
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-gray-900">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
-                      {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
-                        <p className="text-xs text-gray-400 mt-0.5">Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}</p>
-                      )}
-                      <p className={`text-sm font-bold mt-1 ${qtyColor}`}>{isVirtual ? "Service" : `Qty: ${quantity}`}</p>
+                    <div className="flex items-start gap-2 shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-900">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
+                        {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
+                          <p className="text-xs text-gray-400 mt-0.5">Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}</p>
+                        )}
+                        <p className={`text-sm font-bold mt-1 ${qtyColor}`}>{isVirtual ? "Service" : `Qty: ${quantity}`}</p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 mt-0.5">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
+                            <DropdownMenuItem onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
+                              <History className="h-4 w-4 mr-2" />Product History
+                            </DropdownMenuItem>
+                          )}
+                          {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                            <DropdownMenuItem onClick={() => {
+                              (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
+                              setLocation(`${editProductRoute}/${product._id}`);
+                            }}>
+                              <Edit className="h-4 w-4 mr-2" />Edit
+                            </DropdownMenuItem>
+                          )}
+                          {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
+                            <DropdownMenuItem onClick={() => openAdjustDialog(product)}>
+                              <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
+                            </DropdownMenuItem>
+                          )}
+                          {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
+                            <DropdownMenuItem onClick={() => openHistoryDialog(product)}>
+                              <FileText className="h-4 w-4 mr-2" />Adjustment History
+                            </DropdownMenuItem>
+                          )}
+                          {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
+                              <Trash2 className="h-4 w-4 mr-2" />Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </div>
-                  <div className="flex border-t border-gray-100 divide-x divide-gray-100">
-                    {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
-                      <button onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                        <History className="h-4 w-4" /><span className="text-[10px]">History</span>
-                      </button>
-                    )}
-                    {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
-                      <button onClick={() => { (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true }; setLocation(`${editProductRoute}/${product._id}`); }} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors">
-                        <Edit className="h-4 w-4" /><span className="text-[10px]">Edit</span>
-                      </button>
-                    )}
-                    {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
-                      <button onClick={() => openAdjustDialog(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-purple-600 hover:bg-purple-50 active:bg-purple-100 transition-colors">
-                        <TrendingUp className="h-4 w-4" /><span className="text-[10px]">Adjust</span>
-                      </button>
-                    )}
-                    {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
-                      <button onClick={() => openHistoryDialog(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                        <FileText className="h-4 w-4" /><span className="text-[10px]">Adjust Log</span>
-                      </button>
-                    )}
-                    {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                      <button onClick={() => setSingleDeleteProduct(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors">
-                        <Trash2 className="h-4 w-4" /><span className="text-[10px]">Delete</span>
-                      </button>
-                    )}
                   </div>
                 </div>
               );
