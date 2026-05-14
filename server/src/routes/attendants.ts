@@ -119,6 +119,7 @@ export function registerAttendantRoutes(app: Express) {
           method: "GET",
           headers: { 'Authorization': `Bearer ${token}` },
         });
+        res.setHeader('Cache-Control', 'no-store');
         res.json(data);
       } catch (apiError) {
         console.log("Pointify API not available, using local storage");
@@ -127,6 +128,7 @@ export function registerAttendantRoutes(app: Express) {
         const shopAttendants = Array.from(attendantsStorage.values())
           .filter(attendant => attendant.shopId === shopId);
         
+        res.setHeader('Cache-Control', 'no-store');
         res.json(shopAttendants);
       }
     } catch (error) {

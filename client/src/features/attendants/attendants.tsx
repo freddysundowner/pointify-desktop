@@ -175,7 +175,8 @@ export default function Attendants() {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        cache: 'no-store'
       })
         .then(res => {
           if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -184,6 +185,8 @@ export default function Attendants() {
         .then(data => Array.isArray(data) ? data : data.data || []);
     },
     enabled: !!effectiveAdminId && !!currentShopId,
+    staleTime: 0,
+    refetchOnMount: true,
     onError: (error: Error) => {
       console.error('Error fetching attendants:', error);
       toast({
