@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, CreditCard, Eye, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, CreditCard, Eye, ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -524,15 +525,30 @@ export default function Customers() {
                           ) : <span className="text-xs text-gray-400">—</span>}
                         </TableCell>
                         <TableCell className="py-2 px-2 sm:px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Link href={getCustomerOverviewUrl(customer._id)}>
-                              <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-blue-600"
-                                onClick={() => { (window as any).__customerData = { _id: customer._id, name: customer.name, email: customer.email, phonenumber: customer.phonenumber || customer.phone, address: customer.address, wallet: customer.wallet, customerType: customer.customerType }; }}
-                              ><Eye className="h-3 w-3" /></Button>
-                            </Link>
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(customer)} className="h-7 w-7 p-0"><Edit className="h-3 w-3" /></Button>
-                            <Button size="sm" variant="outline" onClick={() => handleDeleteCustomer(customer._id)} className="h-7 w-7 p-0 text-red-600"><Trash2 className="h-3 w-3" /></Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={getCustomerOverviewUrl(customer._id)}
+                                  onClick={() => { (window as any).__customerData = { _id: customer._id, name: customer.name, email: customer.email, phonenumber: customer.phonenumber || customer.phone, address: customer.address, wallet: customer.wallet, customerType: customer.customerType }; }}
+                                  className="flex items-center cursor-pointer"
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />View
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(customer)}>
+                                <Edit className="mr-2 h-4 w-4" />Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleDeleteCustomer(customer._id)} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" />Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
