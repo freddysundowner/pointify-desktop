@@ -314,54 +314,31 @@ export default function SuppliersPage() {
                   <span className="sm:hidden">Add</span>
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
               <DialogHeader>
-                <DialogTitle>Create New Supplier</DialogTitle>
+                <DialogTitle className="text-base">Create New Supplier</DialogTitle>
               </DialogHeader>
-              <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
+              <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-3">
                 <div>
-                  <Label htmlFor="name">Supplier Name *</Label>
-                  <Input
-                    id="name"
-                    {...createForm.register('name', { required: true })}
-                    placeholder="Enter supplier name"
-                  />
+                  <Label htmlFor="name" className="text-xs font-medium mb-1 block">Supplier Name *</Label>
+                  <Input id="name" {...createForm.register('name', { required: true })} placeholder="Enter supplier name" className="h-9 text-sm" />
                 </div>
                 <div>
-                  <Label htmlFor="phoneNumber">Phone Number *</Label>
-                  <Input
-                    id="phoneNumber"
-                    {...createForm.register('phoneNumber', { required: true })}
-                    placeholder="Enter phone number"
-                  />
+                  <Label htmlFor="phoneNumber" className="text-xs font-medium mb-1 block">Phone Number *</Label>
+                  <Input id="phoneNumber" {...createForm.register('phoneNumber', { required: true })} placeholder="Enter phone number" className="h-9 text-sm" />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...createForm.register('email', { required: true })}
-                    placeholder="Enter email address"
-                  />
+                  <Label htmlFor="email" className="text-xs font-medium mb-1 block">Email *</Label>
+                  <Input id="email" type="email" {...createForm.register('email', { required: true })} placeholder="Enter email address" className="h-9 text-sm" />
                 </div>
                 <div>
-                  <Label htmlFor="address">Address *</Label>
-                  <Textarea
-                    id="address"
-                    {...createForm.register('address', { required: true })}
-                    placeholder="Enter address"
-                  />
+                  <Label htmlFor="address" className="text-xs font-medium mb-1 block">Address *</Label>
+                  <Textarea id="address" {...createForm.register('address', { required: true })} placeholder="Enter address" className="text-sm min-h-[72px] resize-none" />
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending}>
-                    {createMutation.isPending ? 'Creating...' : 'Create Supplier'}
+                <div className="flex gap-2 pt-1">
+                  <Button type="button" variant="outline" className="flex-1 h-9" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                  <Button type="submit" className="flex-1 h-9" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? 'Creating...' : 'Create'}
                   </Button>
                 </div>
               </form>
@@ -469,54 +446,31 @@ export default function SuppliersPage() {
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
             <DialogHeader>
-              <DialogTitle>Edit Supplier</DialogTitle>
+              <DialogTitle className="text-base">Edit Supplier</DialogTitle>
             </DialogHeader>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-3">
               <div>
-                <Label htmlFor="edit-name">Supplier Name *</Label>
-                <Input
-                  id="edit-name"
-                  {...editForm.register('name', { required: true })}
-                  placeholder="Enter supplier name"
-                />
+                <Label htmlFor="edit-name" className="text-xs font-medium mb-1 block">Supplier Name *</Label>
+                <Input id="edit-name" {...editForm.register('name', { required: true })} placeholder="Enter supplier name" className="h-9 text-sm" />
               </div>
               <div>
-                <Label htmlFor="edit-phoneNumber">Phone Number *</Label>
-                <Input
-                  id="edit-phoneNumber"
-                  {...editForm.register('phoneNumber', { required: true })}
-                  placeholder="Enter phone number"
-                />
+                <Label htmlFor="edit-phoneNumber" className="text-xs font-medium mb-1 block">Phone Number *</Label>
+                <Input id="edit-phoneNumber" {...editForm.register('phoneNumber', { required: true })} placeholder="Enter phone number" className="h-9 text-sm" />
               </div>
               <div>
-                <Label htmlFor="edit-email">Email *</Label>
-                <Input
-                  id="edit-email"
-                  type="email"
-                  {...editForm.register('email', { required: true })}
-                  placeholder="Enter email address"
-                />
+                <Label htmlFor="edit-email" className="text-xs font-medium mb-1 block">Email *</Label>
+                <Input id="edit-email" type="email" {...editForm.register('email', { required: true })} placeholder="Enter email address" className="h-9 text-sm" />
               </div>
               <div>
-                <Label htmlFor="edit-address">Address *</Label>
-                <Textarea
-                  id="edit-address"
-                  {...editForm.register('address', { required: true })}
-                  placeholder="Enter address"
-                />
+                <Label htmlFor="edit-address" className="text-xs font-medium mb-1 block">Address *</Label>
+                <Textarea id="edit-address" {...editForm.register('address', { required: true })} placeholder="Enter address" className="text-sm min-h-[72px] resize-none" />
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Updating...' : 'Update Supplier'}
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" className="flex-1 h-9" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" className="flex-1 h-9" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? 'Updating...' : 'Update'}
                 </Button>
               </div>
             </form>
@@ -527,46 +481,37 @@ export default function SuppliersPage() {
 
         {/* Pay Debt Dialog */}
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
             <DialogHeader>
-              <DialogTitle>Pay Supplier Debt</DialogTitle>
+              <DialogTitle className="text-base">Pay Supplier Debt</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Paying debt for: <span className="font-medium">{selectedSupplier?.name}</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Current debt: <span className="font-medium text-red-600">
-                    {Math.abs(selectedSupplier?.wallet || 0).toFixed(2)}
-                  </span>
-                </p>
+            <div className="space-y-3">
+              <div className="bg-red-50 rounded-lg px-3 py-2.5 flex justify-between items-center">
+                <span className="text-sm text-gray-600">{selectedSupplier?.name}</span>
+                <span className="text-base font-bold text-red-600">
+                  {Math.abs(selectedSupplier?.wallet || 0).toFixed(2)}
+                </span>
               </div>
               <div>
-                <Label htmlFor="paymentAmount">Payment Amount</Label>
+                <Label htmlFor="paymentAmount" className="text-xs font-medium mb-1 block">Payment Amount</Label>
                 <Input
                   id="paymentAmount"
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  placeholder="Enter payment amount"
+                  placeholder="Enter amount"
                   min="0"
                   max={Math.abs(selectedSupplier?.wallet || 0)}
                   step="0.01"
+                  className="h-9 text-sm"
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" className="flex-1 h-9" onClick={() => setIsPaymentDialogOpen(false)}>Cancel</Button>
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsPaymentDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
+                  className="flex-1 h-9 bg-green-600 hover:bg-green-700"
                   onClick={handlePaymentSubmit}
                   disabled={payDebtMutation.isPending || paymentAmount <= 0}
-                  className="bg-green-600 hover:bg-green-700"
                 >
                   {payDebtMutation.isPending ? 'Processing...' : 'Pay Debt'}
                 </Button>
