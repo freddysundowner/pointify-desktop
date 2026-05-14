@@ -88,7 +88,7 @@ export default function AnalysisReportPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 pb-24 lg:pb-8 max-w-6xl mx-auto">
+      <div className="space-y-4 pb-24 lg:pb-8 w-full">
         <PageHeader title="Graphical Analysis" subtitle="Monthly sales, profit and expenses" backHref={reportsRoute} />
 
         {/* Year filter + tab controls */}

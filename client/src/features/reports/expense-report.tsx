@@ -91,7 +91,7 @@ export default function ExpenseReportPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 pb-24 lg:pb-8 max-w-6xl mx-auto">
+      <div className="space-y-4 pb-24 lg:pb-8 w-full">
         <PageHeader title="Expenses Report" subtitle="Track your expenditures over time" backHref={reportsRoute} />
 
         {/* Filters row */}

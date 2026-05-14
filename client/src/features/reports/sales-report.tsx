@@ -80,7 +80,7 @@ export default function SalesReportPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 pb-24 lg:pb-8 max-w-6xl mx-auto">
+      <div className="space-y-4 pb-24 lg:pb-8 w-full">
         <PageHeader title="Sales Report" subtitle="Summary of all sales by payment type" backHref={reportsRoute} />
 
         {/* Filters */}
