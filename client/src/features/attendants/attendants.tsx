@@ -167,10 +167,10 @@ export default function Attendants() {
   const effectiveAdminId = effectiveAdmin?._id || effectiveAdmin?.id || '';
 
   const { data: attendants = [], isLoading, error } = useQuery({
-    queryKey: ['/api/attendants/shop/filter', effectiveAdminId, currentShopId],
+    queryKey: ['/api/attendants/shop/filter', currentShopId],
     queryFn: () => {
       const token = localStorage.getItem('authToken');
-      const params = new URLSearchParams({ shopId: currentShopId!, adminId: effectiveAdminId });
+      const params = new URLSearchParams({ shopId: currentShopId! });
       return fetch(`/api/attendants/shop/filter?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -184,7 +184,7 @@ export default function Attendants() {
         })
         .then(data => Array.isArray(data) ? data : data.data || []);
     },
-    enabled: !!effectiveAdminId && !!currentShopId,
+    enabled: !!currentShopId,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: true,

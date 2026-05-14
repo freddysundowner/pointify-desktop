@@ -107,13 +107,13 @@ export function registerAttendantRoutes(app: Express) {
         return res.status(401).json({ error: "Authorization token required" });
       }
 
-      if (!shopId || !adminId) {
-        return res.status(400).json({ error: "shopId and adminId query parameters required" });
+      if (!shopId) {
+        return res.status(400).json({ error: "shopId query parameter required" });
       }
 
       res.setHeader('Cache-Control', 'no-store');
 
-      const queryParams = new URLSearchParams({ shopId: shopId as string, adminId: adminId as string });
+      const queryParams = new URLSearchParams({ shopId: shopId as string });
 
       try {
         const data = await makePointifyRequest(`/attendants/shop/filter?${queryParams.toString()}`, {
