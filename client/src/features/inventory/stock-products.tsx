@@ -872,9 +872,9 @@ export default function StockProducts() {
       {/* ═══════════════════════════════════════════
           MOBILE layout  (below lg)
       ═══════════════════════════════════════════ */}
-      <div className="lg:hidden flex flex-col -mx-3 -mt-14 overflow-x-hidden">
+      <div className="lg:hidden flex flex-col -mx-3 overflow-x-hidden">
 
-        {/* Sticky top bar — sits right below the fixed app header (top-14) */}
+        {/* Sticky top bar — sticks below the fixed app header (top-14) */}
         <div className="sticky top-14 z-10 bg-white border-b shadow-sm">
           {/* Header row */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
