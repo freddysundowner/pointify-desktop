@@ -1320,28 +1320,21 @@ function SalesList() {
             )}
           </div>
 
-          {/* Sales History Table */}
+          {/* Sales History */}
           <Card className="flex-1">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <CardTitle className="text-lg">
+            <CardHeader className="pb-3 px-4">
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="text-base">
                   Sales History
                   {statusFilter !== "all" && (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      -{" "}
-                      {statusFilter.charAt(0).toUpperCase() +
-                        statusFilter.slice(1)}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground capitalize">
+                      · {statusFilter}
                     </span>
                   )}
                 </CardTitle>
                 <div className="flex items-center gap-2 text-sm">
-                  <Label htmlFor="items-per-page" className="whitespace-nowrap">
-                    Show:
-                  </Label>
-                  <Select
-                    value={itemsPerPage.toString()}
-                    onValueChange={handleItemsPerPageChange}
-                  >
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Show:</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
                     <SelectTrigger className="w-16 h-8">
                       <SelectValue />
                     </SelectTrigger>
@@ -1356,224 +1349,224 @@ function SalesList() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              {/* Single responsive table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Receipt</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Customer</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Amount</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Date</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden sm:table-cell">Payment</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Status</th>
-                      <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm hidden md:table-cell">Attendant</th>
-                      {(hasPermission("sales_edit") || hasPermission("sales_delete") || hasPermission("sales_return")) && (
-                        <th className="text-left py-2 px-2 sm:px-3 font-medium text-xs sm:text-sm">Actions</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={8} className="py-8 text-center">
-                          <div className="flex flex-col items-center space-y-2">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            <p className="text-sm text-gray-500">Loading sales data...</p>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : paginatedData.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="py-8 text-center text-gray-500">
-                          No sales found for the selected filters
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedData.map((sale: any) => (
-                        <tr
-                          key={sale.id}
-                          className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            <CardContent className="pt-0 px-0">
+
+              {/* ── Loading / Empty states ── */}
+              {isLoading ? (
+                <div className="py-12 flex flex-col items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  <p className="text-sm">Loading sales…</p>
+                </div>
+              ) : paginatedData.length === 0 ? (
+                <div className="py-12 text-center text-sm text-gray-400 px-4">
+                  No sales found for the selected filters
+                </div>
+              ) : (
+                <>
+                  {/* ── Mobile card list ── */}
+                  <div className="lg:hidden divide-y divide-gray-100">
+                    {paginatedData.map((sale: any) => (
+                      <div key={sale.id} className="flex items-start gap-2 px-4 py-3">
+                        {/* Main info — tappable */}
+                        <button
+                          className="flex-1 min-w-0 text-left"
+                          onClick={() => handleViewSale(sale)}
                         >
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm font-mono">
-                            <div>
-                              <button
-                                onClick={() => handleViewSale(sale)}
-                                className="hover:text-blue-600 hover:underline cursor-pointer font-semibold"
-                                title="View sale details"
-                              >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold font-mono text-primary truncate">
                                 #{sale.receiptNo}
-                              </button>
-                              <p className="text-[10px] text-gray-500 sm:hidden">{new Date(sale.saleDate).toLocaleDateString()}</p>
+                              </p>
+                              <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
+                                <span className="text-[11px] text-gray-500">
+                                  {new Date(sale.saleDate).toLocaleDateString()}
+                                </span>
+                                <span className="text-[11px] text-gray-400 capitalize">
+                                  {sale.paymentTag}
+                                </span>
+                                {sale.customerName && sale.customerName !== "Walk-in" && (
+                                  <span className="text-[11px] text-gray-500 truncate max-w-[120px]">
+                                    {sale.customerName}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </td>
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden sm:table-cell">
-                            {sale.customerName}
-                          </td>
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm font-medium">
-                            {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
-                          </td>
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden sm:table-cell">
-                            {new Date(sale.saleDate).toLocaleDateString()}
-                          </td>
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm capitalize hidden sm:table-cell">
-                            {sale.paymentTag}
-                          </td>
-                          <td className="py-2 px-2 sm:px-3">
-                            <Badge variant={getStatusBadgeVariant(sale.status)} className="text-[10px] sm:text-xs">
-                              {sale.status}
-                            </Badge>
-                          </td>
-                          <td className="py-2 px-2 sm:px-3 text-xs sm:text-sm hidden md:table-cell">
-                            {sale.attendantName}
-                          </td>
-                          <td className="py-2 px-3">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleViewSale(sale)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Receipt
+                            <div className="text-right shrink-0">
+                              <p className="text-sm font-bold text-gray-900">
+                                {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
+                              </p>
+                              <Badge
+                                variant={getStatusBadgeVariant(sale.status)}
+                                className="text-[10px] mt-0.5"
+                              >
+                                {sale.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Actions */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 shrink-0 mt-0.5">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewSale(sale)}>
+                              <Eye className="mr-2 h-4 w-4" />View Receipt
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
+                              <FileText className="mr-2 h-4 w-4" />Quotation
+                            </DropdownMenuItem>
+                            {sale.status === "hold" && (
+                              <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}>
+                                <Receipt className="mr-2 h-4 w-4" />Invoice
+                              </DropdownMenuItem>
+                            )}
+                            {sale.status === "hold" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
+                                  <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
                                 </DropdownMenuItem>
-
-                                {/* Quotation (Download / Email) - available for all sales */}
-                                <DropdownMenuItem
-                                  onClick={() => openQuotationDialog(sale)}
-                                >
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Quotation
+                              </>
+                            )}
+                            {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
+                              <DropdownMenuItem onClick={() => handleReturnSale(sale)}>
+                                <RefreshCw className="mr-2 h-4 w-4" />Return Sale
+                              </DropdownMenuItem>
+                            )}
+                            {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600 focus:text-red-600">
+                                  <Trash2 className="mr-2 h-4 w-4" />Delete Sale
                                 </DropdownMenuItem>
-
-                                {/* Invoice (Download / Email) - only for hold (unpaid) sales */}
-                                {sale.status === "hold" && (
-                                  <DropdownMenuItem
-                                    onClick={() => openInvoiceDialog(sale)}
-                                  >
-                                    <Receipt className="mr-2 h-4 w-4" />
-                                    Invoice
-                                  </DropdownMenuItem>
-                                )}
-
-                                {/* Complete Sale - only for hold status */}
-                                {sale.status === "hold" && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => handleCompleteSale(sale)}
-                                      className="text-green-600 focus:text-green-600"
-                                    >
-                                      <CheckCircle className="mr-2 h-4 w-4" />
-                                      Complete Sale
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-
-                                {/* Return Sale - Show for completed sales, for all admins or attendants with return permission */}
-                                {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleReturnSale(sale)}
-                                  >
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                    Return Sale
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                {/* Delete Sale - Show for all admins or attendants with permission */}
-                                {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => handleDeleteSale(sale)}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete Sale
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              {totalCount > 0 && (
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-3 border-t">
-                  <div className="text-xs text-muted-foreground">
-                    {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                    {Math.min(currentPage * itemsPerPage, totalCount)} of{" "}
-                    {totalCount}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
                   </div>
 
+                  {/* ── Desktop table ── */}
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-gray-50">
+                          <th className="text-left py-2 px-3 font-medium text-xs">Receipt</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Customer</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Amount</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Date</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Payment</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Status</th>
+                          <th className="text-left py-2 px-3 font-medium text-xs">Attendant</th>
+                          {(hasPermission("sales_edit") || hasPermission("sales_delete") || hasPermission("sales_return")) && (
+                            <th className="text-left py-2 px-3 font-medium text-xs">Actions</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedData.map((sale: any) => (
+                          <tr key={sale.id} className="border-b hover:bg-gray-50">
+                            <td className="py-2 px-3 text-sm font-mono">
+                              <button onClick={() => handleViewSale(sale)} className="font-semibold hover:text-blue-600 hover:underline">
+                                #{sale.receiptNo}
+                              </button>
+                            </td>
+                            <td className="py-2 px-3 text-sm">{sale.customerName}</td>
+                            <td className="py-2 px-3 text-sm font-medium">
+                              {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
+                            </td>
+                            <td className="py-2 px-3 text-sm">{new Date(sale.saleDate).toLocaleDateString()}</td>
+                            <td className="py-2 px-3 text-sm capitalize">{sale.paymentTag}</td>
+                            <td className="py-2 px-3">
+                              <Badge variant={getStatusBadgeVariant(sale.status)} className="text-xs">
+                                {sale.status}
+                              </Badge>
+                            </td>
+                            <td className="py-2 px-3 text-sm">{sale.attendantName}</td>
+                            <td className="py-2 px-3">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleViewSale(sale)}>
+                                    <Eye className="mr-2 h-4 w-4" />View Receipt
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
+                                    <FileText className="mr-2 h-4 w-4" />Quotation
+                                  </DropdownMenuItem>
+                                  {sale.status === "hold" && (
+                                    <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}>
+                                      <Receipt className="mr-2 h-4 w-4" />Invoice
+                                    </DropdownMenuItem>
+                                  )}
+                                  {sale.status === "hold" && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
+                                        <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
+                                    <DropdownMenuItem onClick={() => handleReturnSale(sale)}>
+                                      <RefreshCw className="mr-2 h-4 w-4" />Return Sale
+                                    </DropdownMenuItem>
+                                  )}
+                                  {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600 focus:text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" />Delete Sale
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {/* Pagination */}
+              {totalCount > 0 && (
+                <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t px-4">
+                  <span className="text-xs text-muted-foreground">
+                    {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
+                  </span>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={currentPage === 1}
-                      className="h-8 px-2"
-                    >
+                    <Button variant="outline" size="sm" className="h-8 px-2"
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}>
                       <ChevronLeft className="h-3 w-3" />
                     </Button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from(
-                        { length: Math.min(5, apiTotalPages) },
-                        (_, i) => {
-                          let pageNum;
-                          if (apiTotalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= apiTotalPages - 2) {
-                            pageNum = apiTotalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={
-                                currentPage === pageNum ? "default" : "outline"
-                              }
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                              className="w-8 h-8 p-0 text-xs"
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        },
-                      )}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCurrentPage((prev) =>
-                          Math.min(prev + 1, apiTotalPages),
-                        )
-                      }
-                      disabled={currentPage === apiTotalPages}
-                      className="h-8 px-2"
-                    >
+                    {Array.from({ length: Math.min(5, apiTotalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (apiTotalPages <= 5) pageNum = i + 1;
+                      else if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= apiTotalPages - 2) pageNum = apiTotalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+                      return (
+                        <Button key={pageNum} variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm" onClick={() => setCurrentPage(pageNum)} className="w-8 h-8 p-0 text-xs">
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    <Button variant="outline" size="sm" className="h-8 px-2"
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, apiTotalPages))}
+                      disabled={currentPage === apiTotalPages}>
                       <ChevronRight className="h-3 w-3" />
                     </Button>
                   </div>
