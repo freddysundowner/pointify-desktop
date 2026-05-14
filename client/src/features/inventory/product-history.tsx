@@ -186,16 +186,15 @@ export default function ProductHistory() {
 
         {/* Stats row */}
         {summary && (
-          <div className="grid grid-cols-2 gap-2 px-3 pt-3">
+          <div className="grid grid-cols-3 gap-2 px-3 pt-3">
             {[
-              { label: "Total Sales",  value: `${currency} ${summary.totalSales?.toFixed(2) || "0.00"}`, color: "text-gray-900" },
-              { label: "Units Sold",   value: summary.totalUnitsSold || 0,                                color: "text-gray-900" },
-              { label: "Stock In",     value: `+${summary.totalStockIn || 0}`,                            color: "text-green-600" },
-              { label: "Stock Out",    value: `-${summary.totalStockOut || 0}`,                           color: "text-red-600" },
+              { label: "Total Sales", value: `${currency} ${summary.totalSales?.toFixed(2) || "0.00"}`, color: "text-gray-900" },
+              { label: "Units Sold",  value: summary.totalUnitsSold || 0,                                color: "text-gray-900" },
+              { label: "Stock In",    value: `+${summary.totalStockIn || 0}`,                            color: "text-green-600" },
             ].map(s => (
               <div key={s.label} className="bg-white rounded-xl border px-3 py-2.5">
                 <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{s.label}</p>
-                <p className={`text-lg font-bold ${s.color} leading-tight`}>{s.value}</p>
+                <p className={`text-base font-bold ${s.color} leading-tight`}>{s.value}</p>
               </div>
             ))}
           </div>
@@ -321,12 +320,11 @@ export default function ProductHistory() {
 
         {/* Summary cards */}
         {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {[
-              { label: "Total Sales",  value: `${currency} ${summary.totalSales?.toFixed(2) || "0.00"}`, color: "text-gray-900" },
-              { label: "Units Sold",   value: summary.totalUnitsSold || 0,                                color: "text-gray-900" },
-              { label: "Stock In",     value: `+${summary.totalStockIn || 0}`,                            color: "text-green-600" },
-              { label: "Stock Out",    value: `-${summary.totalStockOut || 0}`,                           color: "text-red-600" },
+              { label: "Total Sales", value: `${currency} ${summary.totalSales?.toFixed(2) || "0.00"}`, color: "text-gray-900" },
+              { label: "Units Sold",  value: summary.totalUnitsSold || 0,                                color: "text-gray-900" },
+              { label: "Stock In",    value: `+${summary.totalStockIn || 0}`,                            color: "text-green-600" },
             ].map(s => (
               <Card key={s.label}>
                 <CardContent className="p-5">
