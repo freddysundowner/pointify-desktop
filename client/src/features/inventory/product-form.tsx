@@ -523,22 +523,42 @@ export default function ProductForm() {
 
   return (
     <DashboardLayout title={isEditMode ? "Edit Product" : "Add New Product"}>
-      <div className="max-w-7xl mx-auto p-6">
-        <PageHeader
-          title={isEditMode ? "Edit Product" : "Add New Product"}
-          onBack={() => navigate(productsRoute)}
-        />
+      {/* Mobile sticky header */}
+      <div className="lg:hidden sticky top-14 z-10 bg-white border-b shadow-sm flex items-center gap-3 px-4 py-3 -mx-3">
+        <button type="button" onClick={() => navigate(productsRoute)} className="p-1 -ml-1 rounded-full hover:bg-gray-100">
+          <ArrowLeft className="h-5 w-5 text-gray-600" />
+        </button>
+        <h1 className="flex-1 text-base font-semibold text-gray-900">
+          {isEditMode ? "Edit Product" : "Add Product"}
+        </h1>
+        <button
+          type="submit"
+          form="product-form"
+          disabled={mutation.isPending}
+          className="px-4 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded-full disabled:opacity-50"
+        >
+          {mutation.isPending ? "Saving…" : "Save"}
+        </button>
+      </div>
+
+      <div className="lg:max-w-7xl lg:mx-auto lg:p-6">
+        <div className="hidden lg:block">
+          <PageHeader
+            title={isEditMode ? "Edit Product" : "Add New Product"}
+            onBack={() => navigate(productsRoute)}
+          />
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <form id="product-form" onSubmit={form.handleSubmit(onSubmit)} className="lg:space-y-8 pb-32 lg:pb-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
               {/* Left Column - Basic Information */}
-              <div className="lg:col-span-2 space-y-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Basic Information</CardTitle>
+              <div className="lg:col-span-2 lg:space-y-8">
+                <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                  <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                    <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Basic Information</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-5 px-4 pb-5 lg:p-6 lg:pt-0 lg:space-y-6">
                     {/* Product Type Selection */}
                     <FormField
                       control={form.control}
@@ -1177,14 +1197,14 @@ export default function ProductForm() {
 
                 {/* Additional Information - only for products */}
                 {form.watch("productType") === "product" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Additional Information</CardTitle>
-                      <p className="text-sm text-gray-500">
+                  <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                    <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                      <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Additional Information</CardTitle>
+                      <p className="text-xs text-gray-400 lg:text-sm lg:text-gray-500">
                         Add optional product details
                       </p>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="px-4 pb-5 lg:p-6 lg:pt-0 space-y-6">
                       <div className="flex flex-wrap gap-2">
                         {!expandedSections.manufacturer && (
                           <button
@@ -1302,14 +1322,14 @@ export default function ProductForm() {
                 {/* Bundle Products Selector - only for bundle products */}
                 {form.watch("productType") === "product" &&
                   form.watch("isBundle") && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Bundle Products</CardTitle>
-                        <p className="text-sm text-muted-foreground">
+                    <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                      <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                        <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Bundle Products</CardTitle>
+                        <p className="text-xs text-gray-400 lg:text-sm lg:text-muted-foreground">
                           Select products to include in this bundle
                         </p>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="px-4 pb-5 lg:p-6 lg:pt-0">
                         <div className="space-y-4">
                           <Button
                             type="button"
@@ -1478,14 +1498,14 @@ export default function ProductForm() {
               </div>
 
               {/* Right Column - Product Settings & Actions */}
-              <div className="space-y-8">
+              <div className="lg:space-y-8">
                 {/* Product Settings - only for products */}
                 {form.watch("productType") === "product" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Product Settings</CardTitle>
+                  <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                    <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                      <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Product Settings</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-4 pb-5 lg:p-6 lg:pt-0">
                       <FormField
                         control={form.control}
                         name="isBundle"
@@ -1552,7 +1572,8 @@ export default function ProductForm() {
                   </Card>
                 )}
 
-                <Card>
+                {/* Actions — desktop only card */}
+                <Card className="hidden lg:block">
                   <CardHeader>
                     <CardTitle>Actions</CardTitle>
                   </CardHeader>
@@ -1563,12 +1584,8 @@ export default function ProductForm() {
                       className="w-full bg-purple-600 hover:bg-purple-700"
                     >
                       {mutation.isPending
-                        ? isEditMode
-                          ? "Updating..."
-                          : "Creating..."
-                        : isEditMode
-                          ? "Update Product"
-                          : "Create Product"}
+                        ? isEditMode ? "Updating..." : "Creating..."
+                        : isEditMode ? "Update Product" : "Create Product"}
                     </Button>
                     <Button
                       type="button"
@@ -1581,6 +1598,27 @@ export default function ProductForm() {
                   </CardContent>
                 </Card>
               </div>
+            </div>
+
+            {/* Mobile sticky save bar */}
+            <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-white border-t px-4 py-3 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(productsRoute)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+              >
+                {mutation.isPending
+                  ? isEditMode ? "Updating..." : "Creating..."
+                  : isEditMode ? "Update Product" : "Create Product"}
+              </Button>
             </div>
           </form>
         </Form>
