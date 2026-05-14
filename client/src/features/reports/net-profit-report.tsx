@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Loader2 } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { TrendingUp, Loader2, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export default function NetProfitReport() {
   const { shopId: primaryShopId } = usePrimaryShop();
   const currency = useSelector((state: RootState) => state.currency) || 'KES';
   const reportsRoute = useNavigationRoute('reports');
+  const [, navigate] = useLocation();
 
   const effectiveShopId = selectedShopId ||
     (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShopId);
@@ -86,14 +88,14 @@ export default function NetProfitReport() {
   const heroValue = (cashSales + debtPaid) - expenses;
 
   const rows = [
-    { label: 'Total Sales Paid',  value: cashSales,   color: 'text-gray-800' },
-    { label: 'Debt Collected',    value: debtPaid,    color: 'text-blue-600' },
-    { label: 'Gross Profit',      value: grossProfit, color: 'text-green-600', bold: true },
-    { label: 'Net Profit',        value: netProfit,   color: netProfit >= 0 ? 'text-green-700' : 'text-red-600', bold: true },
-    { label: 'Total Taxes',       value: taxes,       color: 'text-gray-600' },
-    { label: 'Total Expenses',    value: expenses,    color: 'text-orange-600' },
-    { label: 'Bad Stock',         value: badStock,    color: 'text-red-500' },
-  ].filter(r => r.value !== 0);
+    { label: 'Total Sales Paid',  value: cashSales,   color: 'text-gray-800',                                      href: '/sales-report'    },
+    { label: 'Debt Collected',    value: debtPaid,    color: 'text-blue-600',                                      href: '/debtors'         },
+    { label: 'Gross Profit',      value: grossProfit, color: 'text-green-600', bold: true,                         href: null               },
+    { label: 'Net Profit',        value: netProfit,   color: netProfit >= 0 ? 'text-green-700' : 'text-red-600', bold: true, href: null  },
+    { label: 'Total Taxes',       value: taxes,       color: 'text-gray-600',                                      href: null               },
+    { label: 'Total Expenses',    value: expenses,    color: 'text-orange-600',                                    href: '/expense-report'  },
+    { label: 'Bad Stock',         value: badStock,    color: 'text-red-500',                                       href: null               },
+  ].filter(r => r.label === 'Bad Stock' || r.value !== 0);
 
   return (
     <DashboardLayout title="Income Report">
@@ -156,11 +158,19 @@ export default function NetProfitReport() {
               <Card>
                 <CardContent className="p-0 divide-y">
                   {rows.map(row => (
-                    <div key={row.label} className="flex items-center justify-between px-4 py-3">
-                      <span className="text-sm text-gray-600">{row.label}</span>
+                    <div
+                      key={row.label}
+                      onClick={() => row.href && navigate(row.href)}
+                      className={`flex items-center justify-between px-4 py-3 gap-2 ${row.href ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/60 transition-colors' : ''}`}
+                    >
+                      <span className="text-sm text-gray-600 flex-1">{row.label}</span>
                       <span className={`text-sm font-semibold ${row.color} ${row.bold ? 'text-base' : ''}`}>
                         {currency} {fmtAmt(row.value)}
                       </span>
+                      {row.href
+                        ? <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                        : <span className="w-4 shrink-0" />
+                      }
                     </div>
                   ))}
                 </CardContent>
