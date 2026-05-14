@@ -971,7 +971,7 @@ export default function StockProducts() {
         </div>
 
         {/* Product cards */}
-        <div className="flex-1 px-4 pt-3 pb-24 space-y-2.5">
+        <div className="flex-1 px-4 pt-2 pb-24 space-y-1.5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
@@ -997,28 +997,20 @@ export default function StockProducts() {
               const qtyColor = isVirtual ? "text-gray-400" : isOutOfStock ? "text-red-600" : isLowStock ? "text-amber-600" : "text-green-600";
               const cardBg = isSelected ? "bg-purple-50 border-purple-300" : isOutOfStock ? "bg-red-50/60 border-red-100" : isLowStock ? "bg-amber-50/60 border-amber-100" : "bg-white border-gray-100";
               return (
-                <div key={product._id} className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${cardBg}`}>
-                  <div className="flex items-start gap-3 p-4">
+                <div key={product._id} className={`rounded-xl border overflow-hidden transition-all ${cardBg}`}>
+                  <div className="flex items-center gap-2 px-3 py-2.5">
                     {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                      <div className="pt-0.5">
-                        <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} />
-                      </div>
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} />
                     )}
-                    <div className="pt-1.5 shrink-0">
-                      <div className={`w-2.5 h-2.5 rounded-full ${isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"}`} />
-                    </div>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm leading-snug truncate">{product.name}</p>
-                      {categoryName && <p className="text-xs text-gray-400 mt-0.5 truncate">{categoryName}</p>}
-                      {(product as any).barcode && <p className="text-xs text-gray-300 mt-0.5 font-mono">{(product as any).barcode}</p>}
+                      <p className="font-medium text-gray-900 text-sm truncate leading-tight">{product.name}</p>
+                      {categoryName && <p className="text-[11px] text-gray-400 truncate leading-tight">{categoryName}</p>}
                     </div>
-                    <div className="flex items-start gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
-                        {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
-                          <p className="text-xs text-gray-400 mt-0.5">Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}</p>
-                        )}
-                        <p className={`text-sm font-bold mt-1 ${qtyColor}`}>{isVirtual ? "Service" : `Qty: ${quantity}`}</p>
+                        <p className="text-sm font-bold text-gray-900 leading-tight">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
+                        <p className={`text-xs font-semibold leading-tight ${qtyColor}`}>{isVirtual ? "Service" : `Qty ${quantity}`}</p>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
