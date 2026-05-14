@@ -89,7 +89,11 @@ import UserSwitchPage from "@/components/UserSwitchPage";
 import AdminRouteHandler from "@/components/AdminRouteHandler";
 import ServerUnavailable from "@/components/ui/server-unavailable";
 
-
+function RedirectToStockProducts() {
+  const [, navigate] = useLocation();
+  useEffect(() => { navigate('/stock/products'); }, []);
+  return null;
+}
 
 function AppContent() {
   const { isAuthenticated, isLoading, admin, serverError } = useAuth();
@@ -483,6 +487,8 @@ function AppContent() {
             <Route path="/subscription" component={SubscriptionPage} />
             <Route path="/payment-waiting" component={PaymentWaiting} />
             <Route path="/edit-profile" component={EditProfilePage} />
+            {/* Legacy / mis-typed routes — redirect to correct paths */}
+            <Route path="/products" component={RedirectToStockProducts} />
             <Route component={() => <BusinessDashboard />} />
           </>
         ) : (
