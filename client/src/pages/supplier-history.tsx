@@ -14,7 +14,9 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
-  CreditCard
+  CreditCard,
+  SlidersHorizontal,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +36,13 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { PageHeader } from '@/components/layout/page-header';
 import { apiRequest } from '@/lib/queryClient';
@@ -85,6 +94,7 @@ export default function SupplierHistoryPage() {
   const [dateTo, setDateTo] = useState('');
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   
   // Get admin data for shop context
   const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
@@ -605,51 +615,56 @@ export default function SupplierHistoryPage() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
+        {/* Filters — mobile: search bar + filter button; desktop: full card */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search purchase no..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 px-3 gap-1.5 shrink-0"
+            onClick={() => setIsFilterSheetOpen(true)}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="text-xs">Filters</span>
+            {(statusFilter !== 'all' || dateFrom || dateTo) && (
+              <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
+            )}
+          </Button>
+        </div>
+
+        {/* Desktop filters */}
+        <Card className="hidden lg:block">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Filter className="h-4 w-4" />Filters
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <CardContent className="pb-4">
+            <div className="grid grid-cols-5 gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by purchase number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input placeholder="Search by purchase no..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-9 text-sm" />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="credit">Credit</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                type="date"
-                placeholder="From date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-              <Input
-                type="date"
-                placeholder="To date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm" />
+              <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="5">5 per page</SelectItem>
                   <SelectItem value="10">10 per page</SelectItem>
@@ -661,162 +676,190 @@ export default function SupplierHistoryPage() {
           </CardContent>
         </Card>
 
-        {/* Purchase History Table */}
+        {/* Mobile filter bottom sheet */}
+        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+          <SheetContent side="bottom" className="rounded-t-2xl px-4 pb-8 pt-4 max-h-[75vh] overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle className="text-base text-left">Filters</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs font-medium mb-1 block">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="All Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="credit">Credit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-medium mb-1 block">From Date</Label>
+                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-medium mb-1 block">To Date</Label>
+                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-medium mb-1 block">Items Per Page</Label>
+                <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1 h-10" onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); setItemsPerPage(10); }}>
+                  Clear
+                </Button>
+                <Button className="flex-1 h-10" onClick={() => setIsFilterSheetOpen(false)}>
+                  Apply
+                </Button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Purchase History */}
         <Card>
-          <CardHeader>
-            <CardTitle>Purchase History</CardTitle>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Purchase History ({totalCount})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 lg:p-6 lg:pt-0">
             {isLoading ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading purchase history...</p>
+                <p className="text-muted-foreground text-sm">Loading purchase history...</p>
               </div>
             ) : purchases.length === 0 ? (
               <div className="text-center py-8">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No purchases found</p>
+                <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground text-sm">No purchases found</p>
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Purchase No</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead>Total Amount</TableHead>
-                      <TableHead>Amount Paid</TableHead>
-                      <TableHead>Outstanding</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {purchases.map((purchase: Purchase) => (
-                      <TableRow key={purchase._id}>
-                        <TableCell className="font-medium">
-                          {purchase.purchaseNo || `P-${purchase._id.slice(-6)}`}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(purchase.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            {purchase.items && purchase.items.length > 0 ? (
-                              <div className="space-y-1">
-                                {purchase.items.slice(0, 2).map((item, index) => (
-                                  <div key={index} className="text-sm">
-                                    {item.product?.name || 'Unknown Product'} 
-                                    <span className="text-muted-foreground"> x{item.quantity}</span>
-                                  </div>
-                                ))}
-                                {purchase.items.length > 2 && (
-                                  <p className="text-xs text-muted-foreground">
-                                    +{purchase.items.length - 2} more items
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">No items</span>
-                            )}
+                {/* Mobile cards */}
+                <div className="divide-y lg:hidden">
+                  {purchases.map((purchase: Purchase) => {
+                    const outstandingBalance = (purchase as any).outstandingBalance || 0;
+                    const isPaid = (purchase as any).paymentType !== 'credit' || outstandingBalance <= 0.01;
+                    return (
+                      <div key={purchase._id} className="px-3 py-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{purchase.purchaseNo || `P-${purchase._id.slice(-6)}`}</p>
+                            <p className="text-[11px] text-muted-foreground">{new Date(purchase.createdAt).toLocaleDateString()}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">
-                            {shopCurrency} {purchase.totalAmount?.toFixed(2) || '0.00'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {shopCurrency} {purchase.amountPaid?.toFixed(2) || '0.00'}
-                        </TableCell>
-                        <TableCell>
-                          {(() => {
-                            // Use the outstandingBalance key directly
-                            const outstandingBalance = (purchase as any).outstandingBalance || 0;
-                            
-                            return (
-                              <span className={`font-medium ${
-                                outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'
-                              }`}>
-                                {shopCurrency} {outstandingBalance.toFixed(2)}
-                              </span>
-                            );
-                          })()}
-                        </TableCell>
-                        <TableCell>
-                          {(() => {
-                            // First check if paymentType is credit
-                            if ((purchase as any).paymentType === 'credit') {
-                              // Use the outstandingBalance key directly
-                              const outstandingBalance = (purchase as any).outstandingBalance || 0;
-                              
-                              // Credit purchase is "Paid" only if outstanding balance is 0 or negative
-                              const isPaid = outstandingBalance <= 0.01;
-                              
-                              return (
-                                <Badge variant={isPaid ? 'default' : 'secondary'}>
-                                  {isPaid ? 'Paid' : 'Credit'}
-                                </Badge>
-                              );
-                            } else {
-                              // For cash purchases, always show as "Paid"
-                              return (
-                                <Badge variant="default">
-                                  Paid
-                                </Badge>
-                              );
-                            }
-                          })()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => viewPaymentHistory(purchase)}
-                            >
-                              <Receipt className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownloadPaymentHistory(purchase._id)}
-                            >
-                              <Download className="h-3 w-3" />
-                            </Button>
+                          <Badge variant={isPaid ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+                            {isPaid ? 'Paid' : 'Credit'}
+                          </Badge>
+                        </div>
+                        {purchase.items && purchase.items.length > 0 && (
+                          <p className="text-[11px] text-muted-foreground">
+                            {purchase.items.slice(0, 2).map(i => `${i.product?.name || 'Product'} x${i.quantity}`).join(', ')}
+                            {purchase.items.length > 2 && ` +${purchase.items.length - 2} more`}
+                          </p>
+                        )}
+                        <div className="grid grid-cols-3 gap-1 text-[11px]">
+                          <div>
+                            <span className="text-muted-foreground block">Total</span>
+                            <span className="font-medium">{shopCurrency} {purchase.totalAmount?.toFixed(2) || '0.00'}</span>
                           </div>
-                        </TableCell>
+                          <div>
+                            <span className="text-muted-foreground block">Paid</span>
+                            <span className="font-medium text-green-600">{shopCurrency} {purchase.amountPaid?.toFixed(2) || '0.00'}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block">Balance</span>
+                            <span className={`font-medium ${outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>{shopCurrency} {outstandingBalance.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={() => viewPaymentHistory(purchase)}>
+                            <Receipt className="h-3 w-3" />Payments
+                          </Button>
+                          <Button variant="outline" size="sm" className="flex-1 h-8 text-xs gap-1" onClick={() => handleDownloadPaymentHistory(purchase._id)}>
+                            <Download className="h-3 w-3" />PDF
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="text-xs py-2">Purchase No</TableHead>
+                        <TableHead className="text-xs py-2">Date</TableHead>
+                        <TableHead className="text-xs py-2">Items</TableHead>
+                        <TableHead className="text-xs py-2">Total</TableHead>
+                        <TableHead className="text-xs py-2">Paid</TableHead>
+                        <TableHead className="text-xs py-2">Outstanding</TableHead>
+                        <TableHead className="text-xs py-2">Status</TableHead>
+                        <TableHead className="text-xs py-2">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {purchases.map((purchase: Purchase) => {
+                        const outstandingBalance = (purchase as any).outstandingBalance || 0;
+                        const isPaid = (purchase as any).paymentType !== 'credit' || outstandingBalance <= 0.01;
+                        return (
+                          <TableRow key={purchase._id}>
+                            <TableCell className="py-2 text-xs font-medium">{purchase.purchaseNo || `P-${purchase._id.slice(-6)}`}</TableCell>
+                            <TableCell className="py-2 text-xs">{new Date(purchase.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell className="py-2">
+                              <div className="max-w-[160px] space-y-0.5">
+                                {purchase.items && purchase.items.length > 0 ? (
+                                  <>
+                                    {purchase.items.slice(0, 2).map((item, index) => (
+                                      <div key={index} className="text-xs">{item.product?.name || 'Product'} <span className="text-muted-foreground">x{item.quantity}</span></div>
+                                    ))}
+                                    {purchase.items.length > 2 && <p className="text-[10px] text-muted-foreground">+{purchase.items.length - 2} more</p>}
+                                  </>
+                                ) : <span className="text-xs text-muted-foreground">—</span>}
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2 text-xs font-medium">{shopCurrency} {purchase.totalAmount?.toFixed(2) || '0.00'}</TableCell>
+                            <TableCell className="py-2 text-xs">{shopCurrency} {purchase.amountPaid?.toFixed(2) || '0.00'}</TableCell>
+                            <TableCell className="py-2 text-xs">
+                              <span className={`font-medium ${outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>{shopCurrency} {outstandingBalance.toFixed(2)}</span>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <Badge variant={isPaid ? 'default' : 'secondary'} className="text-[10px]">{isPaid ? 'Paid' : 'Credit'}</Badge>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <div className="flex items-center gap-1">
+                                <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => viewPaymentHistory(purchase)}><Receipt className="h-3 w-3" /></Button>
+                                <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownloadPaymentHistory(purchase._id)}><Download className="h-3 w-3" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between mt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} entries
+                <div className="flex items-center justify-between px-3 lg:px-0 py-3 border-t mt-0">
+                  <p className="text-[11px] text-muted-foreground">
+                    {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                      <ChevronLeft className="h-3.5 w-3.5" />Prev
                     </Button>
-                    <span className="text-sm">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
+                    <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
+                    <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
+                      Next<ChevronRight className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -827,74 +870,56 @@ export default function SupplierHistoryPage() {
 
         {/* Payment History Dialog */}
         <Dialog open={isPaymentHistoryOpen} onOpenChange={setIsPaymentHistoryOpen}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg rounded-xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Receipt className="h-5 w-5" />
-                Payment History - {selectedPurchase?.purchaseNo || `P-${selectedPurchase?._id.slice(-6)}`}
+              <DialogTitle className="text-base flex items-center gap-2">
+                <Receipt className="h-4 w-4" />
+                Payments — {selectedPurchase?.purchaseNo || `P-${selectedPurchase?._id.slice(-6)}`}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {selectedPurchase?.payments && selectedPurchase.payments.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Amount</p>
-                      <p className="text-lg font-bold">
-                        {selectedPurchase.shopId?.currency || shopCurrency} {selectedPurchase.totalAmount?.toFixed(2)}
-                      </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-gray-50 rounded-lg px-3 py-2">
+                      <p className="text-[11px] text-muted-foreground">Total Amount</p>
+                      <p className="text-sm font-bold">{selectedPurchase.shopId?.currency || shopCurrency} {selectedPurchase.totalAmount?.toFixed(2)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Outstanding Balance</p>
-                      <p className="text-lg font-bold text-red-600">
+                    <div className="bg-red-50 rounded-lg px-3 py-2">
+                      <p className="text-[11px] text-muted-foreground">Outstanding</p>
+                      <p className="text-sm font-bold text-red-600">
                         {selectedPurchase.shopId?.currency || shopCurrency} {((selectedPurchase.totalAmount || 0) - (selectedPurchase.amountPaid || 0)).toFixed(2)}
                       </p>
                     </div>
                   </div>
-                  
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Payment No</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Balance After</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedPurchase.payments.map((payment, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{payment.paymentNo}</TableCell>
-                          <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            {selectedPurchase.shopId?.currency || shopCurrency} {payment.amount.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            {selectedPurchase.shopId?.currency || shopCurrency} {payment.balance?.toFixed(2)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+
+                  <div className="divide-y border rounded-lg overflow-hidden">
+                    {selectedPurchase.payments.map((payment, index) => (
+                      <div key={index} className="px-3 py-2.5 flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-xs font-medium">{payment.paymentNo}</p>
+                          <p className="text-[11px] text-muted-foreground">{new Date(payment.date).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-green-700">{selectedPurchase.shopId?.currency || shopCurrency} {payment.amount.toFixed(2)}</p>
+                          <p className="text-[11px] text-muted-foreground">Bal: {selectedPurchase.shopId?.currency || shopCurrency} {payment.balance?.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No payments recorded for this purchase</p>
+                  <Receipt className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground text-sm">No payments recorded for this purchase</p>
                 </div>
               )}
-              
-              <div className="flex justify-between pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => selectedPurchase && handleDownloadPaymentHistory(selectedPurchase._id)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Payment History
+
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => selectedPurchase && handleDownloadPaymentHistory(selectedPurchase._id)}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" />PDF
                 </Button>
-                <Button onClick={() => setIsPaymentHistoryOpen(false)}>
-                  Close
-                </Button>
+                <Button className="flex-1 h-9 text-sm" onClick={() => setIsPaymentHistoryOpen(false)}>Close</Button>
               </div>
             </div>
           </DialogContent>
