@@ -667,28 +667,24 @@ export default function CustomerOverview() {
         throw new Error('Customer data not available');
       }
 
-      const currentWallet = customerData.wallet || 0;
-      const newWalletBalance = currentWallet + depositData.amount; // Add to current balance
-
       // Get attendantId based on user type
       let attendantId = null;
       const attendantData = localStorage.getItem("attendantData");
       
       if (attendantData) {
-        // If attendant is logged in, use their _id
         const parsedAttendantData = JSON.parse(attendantData);
         attendantId = parsedAttendantData._id;
       } else if (admin) {
-        // If admin is logged in, get attendantId from localStorage or sales data
         const storedAttendantId = localStorage.getItem("attendantId");
         attendantId = storedAttendantId || 
                      salesData?.data?.[0]?.attendantId || 
                      salesData?.data?.[0]?.items?.[0]?.attendantId ||
                      admin._id;
       }
-      
+
+      // Send only the deposit amount — the API adds it to the existing balance
       const updateData = {
-        wallet: newWalletBalance,
+        wallet: depositData.amount,
         shopId: selectedShopId,
         attendantId: attendantId
       };
