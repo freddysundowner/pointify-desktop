@@ -594,35 +594,296 @@ export default function StockProducts() {
     setLocation(route);
   };
 
+  // Shared back-navigation handler
+  const handleBack = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasFilter = urlParams.has('filter');
+    if (hasFilter) {
+      setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
+    } else {
+      setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
+    }
+  };
+
   return (
     <DashboardLayout title="Stock Products">
-      <div className="flex flex-col min-h-full -mx-4 sm:-mx-6 -mt-4">
 
-        {/* ── Sticky top bar ── */}
+      {/* ═══════════════════════════════════════════
+          DESKTOP layout  (lg and above)
+      ═══════════════════════════════════════════ */}
+      <div className="hidden lg:block space-y-5">
+        <PageHeader title="Stock Products" onBack={handleBack} />
+
+        {/* Stats grid */}
+        {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
+          <div className="grid grid-cols-5 gap-4">
+            <Card
+              className={`cursor-pointer transition-colors ${stockFilter === "lowstock" ? "ring-2 ring-orange-400 bg-orange-50" : "hover:bg-orange-50/50"}`}
+              onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Low Qty</p>
+                    <p className="text-xl font-bold text-orange-600">{lowQuantityProducts}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card
+              className={`cursor-pointer transition-colors ${stockFilter === "outofstock" ? "ring-2 ring-red-400 bg-red-50" : "hover:bg-red-50/50"}`}
+              onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Out of Stock</p>
+                    <p className="text-xl font-bold text-red-600">{outOfStockProducts}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Stock Value</p>
+                    <p className="text-base font-bold text-green-600 truncate">{currency} {totalStockValue.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-purple-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Profit Est.</p>
+                    <p className="text-base font-bold text-purple-600 truncate">{currency} {profitEstimate.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-indigo-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">Total Products</p>
+                    <p className="text-xl font-bold text-indigo-600">{totalStockCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Table card */}
+        <Card>
+          <CardHeader className="py-4">
+            <CardTitle className="text-base">Product Inventory</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {/* Toolbar */}
+            <div className="flex gap-2 mb-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-8 text-sm"
+                />
+              </div>
+              <Select value={stockFilter} onValueChange={(value: "all" | "outofstock" | "lowstock") => setStockFilter(value)}>
+                <SelectTrigger className="w-44 h-8 text-sm">
+                  <SelectValue placeholder="Stock status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="outofstock">Out of Stock</SelectItem>
+                  <SelectItem value="lowstock">Running Low</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                <Button variant="destructive" className="h-8 text-sm gap-1.5" onClick={() => setBulkDeleteConfirmOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                  Delete {selectedIds.length}
+                </Button>
+              )}
+              {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                <Button variant="outline" className="h-8 text-sm gap-1.5 border-red-300 text-red-600 hover:bg-red-50" onClick={() => setDeleteAllConfirmOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                  Delete All
+                </Button>
+              )}
+              {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
+                <>
+                  <Link href="/stock/import-products">
+                    <Button variant="outline" className="h-8 text-sm border-purple-300 text-purple-700 hover:bg-purple-50">
+                      <Upload className="h-4 w-4 mr-1.5" />
+                      Import
+                    </Button>
+                  </Link>
+                  <Link href={addProductRoute}>
+                    <Button className="bg-purple-600 hover:bg-purple-700 h-8 text-sm">
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Add Product
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Table */}
+            <div className="rounded-md border">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="border-b bg-gray-50">
+                    <tr>
+                      <th className="p-3 w-8">
+                        <Checkbox
+                          checked={filteredProducts.length > 0 && filteredProducts.every((p: any) => selectedIds.includes(p._id))}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </th>
+                      <th className="text-left p-3 text-sm font-medium">Product</th>
+                      <th className="text-left p-3 text-sm font-medium">SKU / Barcode</th>
+                      <th className="text-left p-3 text-sm font-medium">Selling Price</th>
+                      {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
+                        <th className="text-left p-3 text-sm font-medium">Buying Price</th>
+                      )}
+                      <th className="text-left p-3 text-sm font-medium">Qty</th>
+                      <th className="text-left p-3 text-sm font-medium">Status</th>
+                      <th className="text-left p-3 text-sm font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr><td colSpan={8} className="text-center p-10 text-gray-400">Loading products…</td></tr>
+                    ) : filteredProducts.length === 0 ? (
+                      <tr><td colSpan={8} className="text-center p-10 text-gray-400">No products found</td></tr>
+                    ) : filteredProducts.map((product: Product) => {
+                      const stockStatus = getQuantityStatus(product);
+                      const quantity = (product as any).quantity || 0;
+                      const reorderLevel = (product as any).reorderLevel || 0;
+                      const isVirtual = (product as any).virtual;
+                      const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
+                      const isOutOfStock = !isVirtual && quantity === 0;
+                      const isSelected = selectedIds.includes(product._id);
+                      const rowBg = isSelected ? "bg-purple-50" : isOutOfStock ? "bg-red-50 hover:bg-red-100" : isLowStock ? "bg-amber-50 hover:bg-amber-100" : "hover:bg-gray-50";
+                      return (
+                        <tr key={product._id} className={`border-b ${rowBg}`}>
+                          <td className="p-3 w-8">
+                            <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} />
+                          </td>
+                          <td className="p-3">
+                            <p className="font-medium text-sm">{product.name}</p>
+                            <p className="text-xs text-gray-500">{(product as any).productCategoryId?.name || product.category || "No Category"}</p>
+                          </td>
+                          <td className="p-3 text-xs text-gray-500">{(product as any).barcode || "—"}</td>
+                          <td className="p-3 font-medium text-sm">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</td>
+                          {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
+                            <td className="p-3 font-medium text-sm">{currency} {((product as any).buyingPrice || 0).toLocaleString()}</td>
+                          )}
+                          <td className="p-3">
+                            {isVirtual ? (
+                              <span className="text-gray-400 text-sm">N/A</span>
+                            ) : (
+                              <span className={`font-semibold text-sm ${isOutOfStock ? "text-red-600" : isLowStock ? "text-amber-600" : "text-green-600"}`}>{quantity}</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <Badge variant={stockStatus.variant} className="text-xs">{stockStatus.label}</Badge>
+                          </td>
+                          <td className="p-3">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
+                                  <DropdownMenuItem onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
+                                    <History className="h-4 w-4 mr-2" />Product History
+                                  </DropdownMenuItem>
+                                )}
+                                {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                                  <DropdownMenuItem onClick={() => {
+                                    (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
+                                    setLocation(`${editProductRoute}/${product._id}`);
+                                  }}>
+                                    <Edit className="h-4 w-4 mr-2" />Edit
+                                  </DropdownMenuItem>
+                                )}
+                                {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
+                                  <DropdownMenuItem onClick={() => openAdjustDialog(product)}>
+                                    <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
+                                  </DropdownMenuItem>
+                                )}
+                                {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
+                                  <DropdownMenuItem onClick={() => openHistoryDialog(product)}>
+                                    <FileText className="h-4 w-4 mr-2" />Adjustment History
+                                  </DropdownMenuItem>
+                                )}
+                                {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                                  <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
+                                    <Trash2 className="h-4 w-4 mr-2" />Delete
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-2 pt-3 gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Per page:</span>
+                <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setPage(1); }} className="border rounded px-1.5 py-0.5 text-xs">
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+              <span className="text-xs text-gray-400">{(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalProducts)} of {totalProducts}</span>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1}>Prev</Button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(i => (
+                  <Button key={i} variant={currentPage === i ? "default" : "outline"} size="sm" onClick={() => setPage(i)} className="w-7 h-7 p-0 text-xs">{i}</Button>
+                ))}
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage >= totalPages}>Next</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          MOBILE layout  (below lg)
+      ═══════════════════════════════════════════ */}
+      <div className="lg:hidden flex flex-col min-h-full -mx-4 -mt-4">
+
+        {/* Sticky top bar */}
         <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
           {/* Header row */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-            <button
-              onClick={() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const hasFilter = urlParams.has('filter');
-                if (hasFilter) {
-                  setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
-                } else {
-                  setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
-                }
-              }}
-              className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors"
-            >
+            <button onClick={handleBack} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
             <h1 className="flex-1 text-lg font-bold text-gray-900">Products</h1>
-            {/* Bulk delete badge */}
             {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-              <button
-                onClick={() => setBulkDeleteConfirmOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200"
-              >
+              <button onClick={() => setBulkDeleteConfirmOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200">
                 <Trash2 className="h-3.5 w-3.5" />
                 {selectedIds.length} selected
               </button>
@@ -636,7 +897,7 @@ export default function StockProducts() {
             )}
           </div>
 
-          {/* Search + filter row */}
+          {/* Search + filter */}
           <div className="flex items-center gap-2 px-4 pb-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -655,37 +916,25 @@ export default function StockProducts() {
             </div>
             <button
               onClick={() => setFilterSheetOpen(true)}
-              className={`flex items-center justify-center w-11 h-11 rounded-xl transition-colors shrink-0 ${
-                stockFilter !== "all"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
+              className={`flex items-center justify-center w-11 h-11 rounded-xl transition-colors shrink-0 ${stockFilter !== "all" ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-600"}`}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Stats pills — horizontal scroll */}
+          {/* Stats pills */}
           {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
-            <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
               <button
                 onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${
-                  stockFilter === "lowstock"
-                    ? "bg-orange-500 text-white border-orange-500"
-                    : "bg-orange-50 text-orange-700 border-orange-200"
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${stockFilter === "lowstock" ? "bg-orange-500 text-white border-orange-500" : "bg-orange-50 text-orange-700 border-orange-200"}`}
               >
                 <AlertTriangle className="h-3 w-3" />
                 Low Qty · {lowQuantityProducts}
               </button>
               <button
                 onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${
-                  stockFilter === "outofstock"
-                    ? "bg-red-500 text-white border-red-500"
-                    : "bg-red-50 text-red-700 border-red-200"
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${stockFilter === "outofstock" ? "bg-red-500 text-white border-red-500" : "bg-red-50 text-red-700 border-red-200"}`}
               >
                 <AlertTriangle className="h-3 w-3" />
                 Out of Stock · {outOfStockProducts}
@@ -705,30 +954,23 @@ export default function StockProducts() {
             </div>
           )}
 
-          {/* Select-all row (shows when ≥1 item exists) */}
+          {/* Select all */}
           {filteredProducts.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
             <div className="flex items-center gap-2 px-4 pb-2 border-t pt-2">
               <Checkbox
                 checked={filteredProducts.length > 0 && filteredProducts.every((p: any) => selectedIds.includes(p._id))}
                 onCheckedChange={toggleSelectAll}
-                id="select-all"
+                id="mob-select-all"
               />
-              <label htmlFor="select-all" className="text-xs text-gray-500 cursor-pointer">
-                Select all on this page
-              </label>
-              {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                <button
-                  onClick={() => setDeleteAllConfirmOpen(true)}
-                  className="ml-auto text-xs text-red-500 hover:text-red-700 transition-colors"
-                >
-                  Delete all products
-                </button>
-              )}
+              <label htmlFor="mob-select-all" className="text-xs text-gray-500 cursor-pointer">Select all on this page</label>
+              <button onClick={() => setDeleteAllConfirmOpen(true)} className="ml-auto text-xs text-red-500 hover:text-red-700 transition-colors">
+                Delete all products
+              </button>
             </div>
           )}
         </div>
 
-        {/* ── Product list ── */}
+        {/* Product cards */}
         <div className="flex-1 px-4 pt-3 pb-24 space-y-2.5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -741,9 +983,7 @@ export default function StockProducts() {
                 <Package className="h-8 w-8 text-gray-300" />
               </div>
               <p className="text-sm font-medium text-gray-500">No products found</p>
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-xs text-purple-600 underline">Clear search</button>
-              )}
+              {searchQuery && <button onClick={() => setSearchQuery("")} className="text-xs text-purple-600 underline">Clear search</button>}
             </div>
           ) : (
             filteredProducts.map((product: Product) => {
@@ -754,126 +994,56 @@ export default function StockProducts() {
               const isOutOfStock = !isVirtual && quantity === 0;
               const isSelected = selectedIds.includes(product._id);
               const categoryName = (product as any).productCategoryId?.name || product.category || "";
-
-              const qtyColor = isVirtual
-                ? "text-gray-400"
-                : isOutOfStock
-                  ? "text-red-600"
-                  : isLowStock
-                    ? "text-amber-600"
-                    : "text-green-600";
-
-              const cardBg = isSelected
-                ? "bg-purple-50 border-purple-300"
-                : isOutOfStock
-                  ? "bg-red-50/60 border-red-100"
-                  : isLowStock
-                    ? "bg-amber-50/60 border-amber-100"
-                    : "bg-white border-gray-100";
-
+              const qtyColor = isVirtual ? "text-gray-400" : isOutOfStock ? "text-red-600" : isLowStock ? "text-amber-600" : "text-green-600";
+              const cardBg = isSelected ? "bg-purple-50 border-purple-300" : isOutOfStock ? "bg-red-50/60 border-red-100" : isLowStock ? "bg-amber-50/60 border-amber-100" : "bg-white border-gray-100";
               return (
-                <div
-                  key={product._id}
-                  className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${cardBg}`}
-                >
-                  {/* Main card row */}
+                <div key={product._id} className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${cardBg}`}>
                   <div className="flex items-start gap-3 p-4">
-                    {/* Checkbox */}
                     {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
                       <div className="pt-0.5">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleSelect(product._id)}
-                        />
+                        <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} />
                       </div>
                     )}
-
-                    {/* Status dot */}
                     <div className="pt-1.5 shrink-0">
-                      <div className={`w-2.5 h-2.5 rounded-full ${
-                        isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"
-                      }`} />
+                      <div className={`w-2.5 h-2.5 rounded-full ${isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"}`} />
                     </div>
-
-                    {/* Name + category */}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 text-sm leading-snug truncate">{product.name}</p>
-                      {categoryName && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{categoryName}</p>
-                      )}
-                      {(product as any).barcode && (
-                        <p className="text-xs text-gray-300 mt-0.5 font-mono">{(product as any).barcode}</p>
-                      )}
+                      {categoryName && <p className="text-xs text-gray-400 mt-0.5 truncate">{categoryName}</p>}
+                      {(product as any).barcode && <p className="text-xs text-gray-300 mt-0.5 font-mono">{(product as any).barcode}</p>}
                     </div>
-
-                    {/* Price + qty */}
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-gray-900">
-                        {currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}
-                      </p>
+                      <p className="text-sm font-bold text-gray-900">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
                       {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}
-                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}</p>
                       )}
-                      <p className={`text-sm font-bold mt-1 ${qtyColor}`}>
-                        {isVirtual ? "Service" : `Qty: ${quantity}`}
-                      </p>
+                      <p className={`text-sm font-bold mt-1 ${qtyColor}`}>{isVirtual ? "Service" : `Qty: ${quantity}`}</p>
                     </div>
                   </div>
-
-                  {/* Action button strip */}
                   <div className="flex border-t border-gray-100 divide-x divide-gray-100">
                     {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
-                      <button
-                        onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}
-                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                      >
-                        <History className="h-4 w-4" />
-                        <span className="text-[10px]">History</span>
+                      <button onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                        <History className="h-4 w-4" /><span className="text-[10px]">History</span>
                       </button>
                     )}
                     {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
-                      <button
-                        onClick={() => {
-                          (window as any).productEditData = {
-                            bundleItems: (product as any).bundleItems || (product as any).items || [],
-                            productData: product,
-                            passedBundleItems: true,
-                          };
-                          setLocation(`${editProductRoute}/${product._id}`);
-                        }}
-                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors"
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span className="text-[10px]">Edit</span>
+                      <button onClick={() => { (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true }; setLocation(`${editProductRoute}/${product._id}`); }} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors">
+                        <Edit className="h-4 w-4" /><span className="text-[10px]">Edit</span>
                       </button>
                     )}
                     {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
-                      <button
-                        onClick={() => openAdjustDialog(product)}
-                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-purple-600 hover:bg-purple-50 active:bg-purple-100 transition-colors"
-                      >
-                        <TrendingUp className="h-4 w-4" />
-                        <span className="text-[10px]">Adjust</span>
+                      <button onClick={() => openAdjustDialog(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-purple-600 hover:bg-purple-50 active:bg-purple-100 transition-colors">
+                        <TrendingUp className="h-4 w-4" /><span className="text-[10px]">Adjust</span>
                       </button>
                     )}
                     {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
-                      <button
-                        onClick={() => openHistoryDialog(product)}
-                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span className="text-[10px]">Adjust Log</span>
+                      <button onClick={() => openHistoryDialog(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                        <FileText className="h-4 w-4" /><span className="text-[10px]">Adjust Log</span>
                       </button>
                     )}
                     {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                      <button
-                        onClick={() => setSingleDeleteProduct(product)}
-                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="text-[10px]">Delete</span>
+                      <button onClick={() => setSingleDeleteProduct(product)} className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors">
+                        <Trash2 className="h-4 w-4" /><span className="text-[10px]">Delete</span>
                       </button>
                     )}
                   </div>
@@ -883,31 +1053,17 @@ export default function StockProducts() {
           )}
         </div>
 
-        {/* ── Pagination footer ── */}
+        {/* Pagination footer */}
         {totalPages > 1 && (
-          <div className="sticky bottom-16 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
-            <button
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40 active:bg-gray-100"
-            >
-              Prev
-            </button>
-            <span className="text-xs text-gray-500">
-              Page {currentPage} of {totalPages} · {totalProducts} items
-            </span>
-            <button
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage >= totalPages}
-              className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40 active:bg-gray-100"
-            >
-              Next
-            </button>
+          <div className="sticky bottom-0 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
+            <button onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Prev</button>
+            <span className="text-xs text-gray-500">Page {currentPage} of {totalPages} · {totalProducts} items</span>
+            <button onClick={() => setPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage >= totalPages} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Next</button>
           </div>
         )}
       </div>
 
-      {/* ── Filter bottom sheet ── */}
+      {/* Filter bottom sheet (shared) */}
       <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
         <SheetContent side="bottom" className="p-0 rounded-t-3xl">
           <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1" />
@@ -922,9 +1078,7 @@ export default function StockProducts() {
             ] as const).map((opt) => (
               <button
                 key={opt.value}
-                className={`w-full flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
-                  stockFilter === opt.value ? "bg-purple-50 text-purple-700 font-semibold" : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`w-full flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${stockFilter === opt.value ? "bg-purple-50 text-purple-700 font-semibold" : "text-gray-700 hover:bg-gray-50"}`}
                 onClick={() => { setStockFilter(opt.value); setFilterSheetOpen(false); }}
               >
                 <opt.icon className={`h-4 w-4 ${stockFilter === opt.value ? "text-purple-600" : opt.color}`} />
@@ -934,20 +1088,15 @@ export default function StockProducts() {
             ))}
           </div>
           <div className="px-5 pb-8 pt-2 border-t">
-            <button
-              className="w-full py-3 rounded-xl bg-gray-100 text-sm font-medium text-gray-700 active:bg-gray-200 transition-colors"
-              onClick={() => setFilterSheetOpen(false)}
-            >
-              Close
-            </button>
+            <button className="w-full py-3 rounded-xl bg-gray-100 text-sm font-medium text-gray-700" onClick={() => setFilterSheetOpen(false)}>Close</button>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* ── Floating Add button ── */}
+      {/* Floating Add button — mobile only */}
       {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
         <Link href={addProductRoute}>
-          <button className="fixed bottom-20 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
+          <button className="lg:hidden fixed bottom-6 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
             <Plus className="h-5 w-5" />
             Add Product
           </button>
