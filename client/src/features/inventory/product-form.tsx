@@ -550,7 +550,7 @@ export default function ProductForm() {
         </div>
 
         <Form {...form}>
-          <form id="product-form" onSubmit={form.handleSubmit(onSubmit)} className="lg:space-y-8 pb-32 lg:pb-0">
+          <form id="product-form" onSubmit={form.handleSubmit(onSubmit)} className="lg:space-y-8 pb-20 lg:pb-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
               {/* Left Column - Basic Information */}
               <div className="lg:col-span-2 lg:space-y-8">
@@ -1601,7 +1601,7 @@ export default function ProductForm() {
             </div>
 
             {/* Mobile sticky save bar */}
-            <div className="lg:hidden fixed bottom-16 left-0 right-0 z-20 bg-white border-t px-4 py-3 flex gap-3">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t px-4 py-3 flex gap-3" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
               <Button
                 type="button"
                 variant="outline"

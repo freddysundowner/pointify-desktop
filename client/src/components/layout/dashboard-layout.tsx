@@ -51,6 +51,21 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     { href: posRoute, icon: ScanBarcode, label: "Point of Sale" },
   ];
 
+  // Top-level routes where the bottom tab bar should be visible.
+  // Form/detail/inner pages are excluded.
+  const topLevelRoutes = new Set([
+    dashboardRoute, posRoute,
+    '/shops', '/attendants',
+    '/sales', '/returns', '/orders',
+    '/purchases', '/purchase-returns',
+    '/customers', '/suppliers',
+    '/stock/products', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
+    '/expenses', '/cashflow', '/profit-loss', '/debtors',
+    '/printer-config', '/sms-settings', '/subscription',
+    '/settings', '/edit-profile', '/reports',
+  ]);
+  const isTopLevelRoute = topLevelRoutes.has(location) || location.startsWith('/reports/');
+
   const handleLogout = () => {
     logout();
     toast({
@@ -495,14 +510,14 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         )}
 
         {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
-        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
+        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${isTopLevelRoute ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
           {children}
         </div>
 
       </div>
 
-      {/* ── Mobile Bottom Tab Bar ──────────────────────────────────────────── */}
-      {!isAttendantRoute && (
+      {/* ── Mobile Bottom Tab Bar (top-level pages only) ─────────────────── */}
+      {!isAttendantRoute && isTopLevelRoute && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-stretch">

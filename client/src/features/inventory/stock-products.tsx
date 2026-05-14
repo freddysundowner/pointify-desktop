@@ -1081,7 +1081,7 @@ export default function StockProducts() {
 
         {/* Pagination footer */}
         {totalPages > 1 && (
-          <div className="sticky bottom-16 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
+          <div className="sticky bottom-0 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
             <button onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Prev</button>
             <span className="text-xs text-gray-500">Page {currentPage} of {totalPages} · {totalProducts} items</span>
             <button onClick={() => setPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage >= totalPages} className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40">Next</button>
@@ -1122,7 +1122,7 @@ export default function StockProducts() {
       {/* Floating Add button — mobile only */}
       {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
         <Link href={addProductRoute}>
-          <button className="lg:hidden fixed bottom-20 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
+          <button className="lg:hidden fixed bottom-5 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
             <Plus className="h-5 w-5" />
             Add Product
           </button>
