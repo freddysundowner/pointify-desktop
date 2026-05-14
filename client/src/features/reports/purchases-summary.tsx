@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
-import { ShoppingCart, DollarSign, CreditCard, RotateCcw, Loader2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, RotateCcw, Loader2, Clock } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,11 +71,10 @@ export default function PurchasesSummary() {
   };
 
   const tiles = [
-    { label: 'Total Purchases',   key: 'totalpurchases', icon: ShoppingCart, color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-blue-200' },
-    { label: 'Cash Purchases',    key: 'cash',           icon: DollarSign,   color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200' },
-    { label: 'Credit Purchases',  key: 'credit',         icon: CreditCard,   color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200' },
-    { label: 'Purchase Returns',  key: 'returns',        icon: RotateCcw,    color: 'text-red-600',    bg: 'bg-red-50',    border: 'border-red-200' },
-    { label: 'Debt Paid',         key: 'paid',           icon: DollarSign,   color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
+    { label: 'Total Purchases',  key: 'cash',    icon: ShoppingCart, color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-blue-200' },
+    { label: 'Credit Purchases', key: 'credit',  icon: CreditCard,   color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200' },
+    { label: 'Returns',          key: 'returns', icon: RotateCcw,    color: 'text-red-600',    bg: 'bg-red-50',    border: 'border-red-200' },
+    { label: 'On Hold',          key: 'hold',    icon: Clock,        color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' },
   ];
 
   const normalizedCards = Array.isArray(rawData) ? rawData : null;
