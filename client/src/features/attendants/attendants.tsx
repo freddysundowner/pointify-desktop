@@ -825,7 +825,7 @@ export default function Attendants() {
             setIsEditingPermissions(false);
           }
         }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogContent className="w-[calc(100%-2rem)] max-w-4xl max-h-[90vh] flex flex-col p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>
                 {isEditingPermissions ? 'Edit Permissions' : 'View Permissions'}
@@ -835,13 +835,13 @@ export default function Attendants() {
               </DialogDescription>
             </DialogHeader>
             
-            <div className="flex-1 overflow-y-auto pr-2">
+            <div className="flex-1 overflow-y-auto mt-2">
               {isLoadingPermissions ? (
                 <div className="text-center py-8">Loading permissions...</div>
               ) : (
                 <div className="space-y-4">
-                  <h4 className="font-medium">Available Permissions for {selectedAttendant?.username}:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <h4 className="font-medium text-sm">Available Permissions for {selectedAttendant?.username}:</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {adminPermissions.map((permission: Permission) => (
                       <div key={permission.key} className="border rounded-lg p-3">
                         <h5 className="font-medium text-sm mb-3 text-blue-700 capitalize">{permission.key}</h5>
@@ -874,9 +874,10 @@ export default function Attendants() {
               )}
             </div>
             
-            <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-4 pt-4 border-t">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setIsPermissionsDialogOpen(false);
                   setEditingPermissions([]);
@@ -885,6 +886,7 @@ export default function Attendants() {
                 Cancel
               </Button>
               <Button
+                className="w-full sm:w-auto"
                 onClick={() => {
                   if (!selectedAttendant) return;
                   
