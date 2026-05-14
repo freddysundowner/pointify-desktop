@@ -167,10 +167,11 @@ export default function Attendants() {
   const effectiveAdminId = effectiveAdmin?._id || effectiveAdmin?.id || '';
 
   const { data: attendants = [], isLoading, error } = useQuery({
-    queryKey: ['/api/attendants/all', effectiveAdminId],
+    queryKey: ['/api/attendants/shop/filter', effectiveAdminId, currentShopId],
     queryFn: () => {
       const token = localStorage.getItem('authToken');
-      return fetch(`/api/attendants/all/${effectiveAdminId}`, {
+      const params = new URLSearchParams({ shopId: currentShopId!, adminId: effectiveAdminId });
+      return fetch(`/api/attendants/shop/filter?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -182,7 +183,7 @@ export default function Attendants() {
         })
         .then(data => Array.isArray(data) ? data : data.data || []);
     },
-    enabled: !!effectiveAdminId,
+    enabled: !!effectiveAdminId && !!currentShopId,
     onError: (error: Error) => {
       console.error('Error fetching attendants:', error);
       toast({
@@ -197,7 +198,7 @@ export default function Attendants() {
   const createAttendantMutation = useMutation({
     mutationFn: (data: any) => apiRequest('POST', '/api/attendants', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/attendants/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/attendants/shop/filter'] });
       setIsDialogOpen(false);
       resetForm();
       toast({
@@ -218,7 +219,7 @@ export default function Attendants() {
   const updateAttendantMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => apiRequest('PUT', `/api/attendants/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/attendants/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/attendants/shop/filter'] });
       setIsDialogOpen(false);
       setIsPermissionsDialogOpen(false);
       setIsEditingPermissions(false);
@@ -241,7 +242,7 @@ export default function Attendants() {
   const deleteAttendantMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/attendants/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/attendants/all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/attendants/shop/filter'] });
       setIsDeleteDialogOpen(false);
       setSelectedAttendant(null);
       toast({
