@@ -73,6 +73,13 @@ export const getMenuGroups = (isAttendant: boolean): MenuGroup[] => [
     label: "Reports",
     icon: DollarSign,
     items: [
+      { href: "/reports", label: "All Reports" },
+      { href: "/net-profit-report", label: "Income Report" },
+      { href: "/sales-report", label: "Sales Report" },
+      { href: "/expense-report", label: "Expense Report" },
+      { href: "/due-sales", label: "Due Sales" },
+      { href: "/purchases-report", label: "Purchases Report" },
+      { href: "/analysis-report", label: "Analysis" },
       { href: getNavigationRoute('expenses', isAttendant), label: "Expenses" },
       { href: getNavigationRoute('cashflow', isAttendant), label: "Cash Flow" },
       { href: "/profit-loss", label: "Profit & Loss" },
@@ -140,9 +147,17 @@ export const menuGroups: MenuGroup[] = [
     label: "Reports",
     icon: DollarSign,
     items: [
+      { href: "/reports", label: "All Reports" },
+      { href: "/net-profit-report", label: "Income Report" },
+      { href: "/sales-report", label: "Sales Report" },
+      { href: "/expense-report", label: "Expense Report" },
+      { href: "/due-sales", label: "Due Sales" },
+      { href: "/purchases-report", label: "Purchases Report" },
+      { href: "/analysis-report", label: "Analysis" },
       { href: "/expenses", label: "Expenses" },
       { href: "/cashflow", label: "Cash Flow" },
       { href: "/profit-loss", label: "Profit & Loss" },
+      { href: "/debtors", label: "Debtors" },
     ]
   },
   {

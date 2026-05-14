@@ -20,7 +20,16 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const { admin, logout } = useAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
+    // Auto-expand whichever group owns the current route on first render
+    const initial: Record<string, boolean> = {};
+    for (const group of getMenuGroups(false)) {
+      if (group.items.some(item => item.href === window.location.pathname)) {
+        initial[group.key] = true;
+      }
+    }
+    return initial;
+  });
   const { isExpired: isSubscriptionExpired } = useSubscriptionStatus();
   const [currentTime, setCurrentTime] = useState(new Date());
 
