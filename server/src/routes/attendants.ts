@@ -97,7 +97,9 @@ export function registerAttendantRoutes(app: Express) {
     }
   });
 
-  // Get all attendants for a shop with filter (legacy route)
+  // Get all attendants for a shop with filter
+  // The upstream Pointify /attendants/shop/filter does not reliably filter by shopId,
+  // so we fetch all attendants via /attendants/all/:adminId and filter server-side.
   app.get("/api/attendants/shop/filter", async (req, res) => {
     try {
       const { shopId, adminId } = req.query;
@@ -111,24 +113,26 @@ export function registerAttendantRoutes(app: Express) {
         return res.status(400).json({ error: "shopId and adminId query parameters required" });
       }
 
-      // Build query string for GET request
-      const queryParams = new URLSearchParams({ shopId: shopId as string, adminId: adminId as string });
+      res.setHeader('Cache-Control', 'no-store');
 
       try {
-        const data = await makePointifyRequest(`/attendants/shop/filter?${queryParams.toString()}`, {
+        // Fetch all attendants for this admin, then filter by shopId server-side
+        const all = await makePointifyRequest(`/attendants/all/${adminId}`, {
           method: "GET",
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        res.setHeader('Cache-Control', 'no-store');
-        res.json(data);
+
+        const allArray: any[] = Array.isArray(all) ? all : (all as any).data || [];
+        const filtered = allArray.filter((a: any) => {
+          const aShopId = typeof a.shopId === 'string' ? a.shopId : a.shopId?._id;
+          return aShopId === shopId;
+        });
+
+        res.json(filtered);
       } catch (apiError) {
         console.log("Pointify API not available, using local storage");
-        
-        // Fallback to local storage
         const shopAttendants = Array.from(attendantsStorage.values())
           .filter(attendant => attendant.shopId === shopId);
-        
-        res.setHeader('Cache-Control', 'no-store');
         res.json(shopAttendants);
       }
     } catch (error) {
