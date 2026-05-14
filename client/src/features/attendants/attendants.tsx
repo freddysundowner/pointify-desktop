@@ -588,7 +588,6 @@ export default function Attendants() {
                     <tr>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Name</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">PIN</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 hidden sm:table-cell">Shop</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 hidden md:table-cell">Last Seen</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Status</th>
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Actions</th>
@@ -599,13 +598,9 @@ export default function Attendants() {
                       <tr key={attendant._id} className="hover:bg-gray-50">
                         <td className="px-3 py-2">
                           <div className="text-xs font-medium text-gray-900">{attendant.username}</div>
-                          <div className="sm:hidden text-[10px] text-gray-400">{getShopName(attendant.shopId)}</div>
                         </td>
                         <td className="px-3 py-2">
                           <span className="text-xs font-mono text-gray-500">{attendant.uniqueDigits}</span>
-                        </td>
-                        <td className="px-3 py-2 hidden sm:table-cell">
-                          <span className="text-xs text-gray-700">{getShopName(attendant.shopId)}</span>
                         </td>
                         <td className="px-3 py-2 hidden md:table-cell">
                           <span className="text-xs text-gray-500">{attendant.last_seen ? new Date(attendant.last_seen).toLocaleDateString() : 'Never'}</span>
