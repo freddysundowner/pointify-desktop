@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, TrendingDown, Download, Eye, FileText, Calendar, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Download, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -261,77 +261,79 @@ export default function ProfitAnalysis() {
           {/* ── Products Tab ── */}
           <TabsContent value="products" className="space-y-3">
             <Card>
-              <CardHeader className="py-2.5 px-3">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    className="h-8 text-xs flex-1"
-                  />
-                  {/* Mobile filter sheet */}
-                  <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-                    <SheetTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-8 px-2.5 relative lg:hidden">
-                        <Filter className="h-3.5 w-3.5" />
-                        {filtersActive && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500" />}
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="rounded-t-2xl pb-8">
-                      <SheetHeader className="mb-4">
-                        <SheetTitle className="text-sm">Sort Products</SheetTitle>
-                      </SheetHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-medium mb-1.5 block">Sort By</Label>
-                          <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="grossProfit">Gross Profit</SelectItem>
-                              <SelectItem value="profitMargin">Margin %</SelectItem>
-                              <SelectItem value="totalSales">Sales</SelectItem>
-                              <SelectItem value="unitsSold">Units Sold</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs font-medium mb-1.5 block">Order</Label>
-                          <div className="flex gap-2">
-                            <Button variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm" className="flex-1 h-9" onClick={() => setSortOrder('desc')}>↓ High–Low</Button>
-                            <Button variant={sortOrder === 'asc' ? 'default' : 'outline'} size="sm" className="flex-1 h-9" onClick={() => setSortOrder('asc')}>↑ Low–High</Button>
+              {products.length > 0 && (
+                <CardHeader className="py-2.5 px-3">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                      className="h-8 text-xs flex-1"
+                    />
+                    {/* Mobile filter sheet */}
+                    <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+                      <SheetTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 px-2.5 relative lg:hidden">
+                          <Filter className="h-3.5 w-3.5" />
+                          {filtersActive && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500" />}
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+                        <SheetHeader className="mb-4">
+                          <SheetTitle className="text-sm">Sort Products</SheetTitle>
+                        </SheetHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-xs font-medium mb-1.5 block">Sort By</Label>
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="grossProfit">Gross Profit</SelectItem>
+                                <SelectItem value="profitMargin">Margin %</SelectItem>
+                                <SelectItem value="totalSales">Sales</SelectItem>
+                                <SelectItem value="unitsSold">Units Sold</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium mb-1.5 block">Order</Label>
+                            <div className="flex gap-2">
+                              <Button variant={sortOrder === 'desc' ? 'default' : 'outline'} size="sm" className="flex-1 h-9" onClick={() => setSortOrder('desc')}>↓ High–Low</Button>
+                              <Button variant={sortOrder === 'asc' ? 'default' : 'outline'} size="sm" className="flex-1 h-9" onClick={() => setSortOrder('asc')}>↑ Low–High</Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            <Button variant="outline" className="flex-1 h-9" onClick={() => { setSortBy('grossProfit'); setSortOrder('desc'); }}>Reset</Button>
+                            <Button className="flex-1 h-9" onClick={() => setFilterSheetOpen(false)}>Apply</Button>
                           </div>
                         </div>
-                        <div className="flex gap-2 pt-1">
-                          <Button variant="outline" className="flex-1 h-9" onClick={() => { setSortBy('grossProfit'); setSortOrder('desc'); }}>Reset</Button>
-                          <Button className="flex-1 h-9" onClick={() => setFilterSheetOpen(false)}>Apply</Button>
-                        </div>
-                      </div>
-                    </SheetContent>
-                  </Sheet>
+                      </SheetContent>
+                    </Sheet>
 
-                  {/* Desktop controls */}
-                  <div className="hidden lg:flex items-center gap-2">
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="grossProfit">Gross Profit</SelectItem>
-                        <SelectItem value="profitMargin">Margin %</SelectItem>
-                        <SelectItem value="totalSales">Sales</SelectItem>
-                        <SelectItem value="unitsSold">Units Sold</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
-                      {sortOrder === 'desc' ? '↓ High–Low' : '↑ Low–High'}
-                    </Button>
-                  </div>
+                    {/* Desktop controls */}
+                    <div className="hidden lg:flex items-center gap-2">
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="grossProfit">Gross Profit</SelectItem>
+                          <SelectItem value="profitMargin">Margin %</SelectItem>
+                          <SelectItem value="totalSales">Sales</SelectItem>
+                          <SelectItem value="unitsSold">Units Sold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
+                        {sortOrder === 'desc' ? '↓ High–Low' : '↑ Low–High'}
+                      </Button>
+                    </div>
 
-                  <div className="flex gap-1 ml-auto">
-                    <Button onClick={exportToCSV} variant="outline" size="sm" className="h-8 text-xs px-2">
-                      <Download className="h-3 w-3 lg:mr-1" /><span className="hidden lg:inline">CSV</span>
-                    </Button>
+                    <div className="flex gap-1 ml-auto">
+                      <Button onClick={exportToCSV} variant="outline" size="sm" className="h-8 text-xs px-2">
+                        <Download className="h-3 w-3 lg:mr-1" /><span className="hidden lg:inline">CSV</span>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
+                </CardHeader>
+              )}
 
               <CardContent className="p-0">
                 {productLoading ? (
@@ -349,10 +351,7 @@ export default function ProfitAnalysis() {
                       {paginatedProducts.map((item) => (
                         <div key={item.id} className="px-3 py-3">
                           <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{item.name}</p>
-                              <p className="text-[11px] text-muted-foreground">{item.category}</p>
-                            </div>
+                            <p className="text-sm font-medium truncate">{item.name}</p>
                             {item.profitMargin > 0 && (
                               <Badge
                                 variant={item.profitMargin >= 40 ? 'default' : item.profitMargin >= 20 ? 'secondary' : 'destructive'}
@@ -386,7 +385,6 @@ export default function ProfitAnalysis() {
                         <TableHeader>
                           <TableRow className="bg-muted/40">
                             <TableHead className="text-xs py-2">Product</TableHead>
-                            <TableHead className="text-xs py-2">Category</TableHead>
                             <TableHead className="text-xs py-2 text-right">Sales</TableHead>
                             <TableHead className="text-xs py-2 text-right">Costs</TableHead>
                             <TableHead className="text-xs py-2 text-right">Gross Profit</TableHead>
@@ -398,9 +396,6 @@ export default function ProfitAnalysis() {
                           {paginatedProducts.map((item) => (
                             <TableRow key={item.id}>
                               <TableCell className="py-2 text-xs font-medium">{item.name}</TableCell>
-                              <TableCell className="py-2">
-                                <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
-                              </TableCell>
                               <TableCell className="py-2 text-right text-xs">{formatCurrency(item.totalSales)}</TableCell>
                               <TableCell className="py-2 text-right text-xs text-red-600">{formatCurrency(item.totalCost)}</TableCell>
                               <TableCell className="py-2 text-right text-xs font-medium text-green-600">{formatCurrency(item.grossProfit)}</TableCell>
@@ -549,7 +544,7 @@ export default function ProfitAnalysis() {
                       { label: 'Cash Sales',        value: mainData.totalProfitAndSalesValue?.totalCashSales,   color: 'text-green-600' },
                       { label: 'Credit Sales',      value: mainData.creditTotals,                               color: 'text-blue-600' },
                       { label: 'Debt Collected',    value: mainData.debtPaid,                                   color: 'text-purple-600' },
-                    ].map(row => (
+                    ].filter(row => (row.value ?? 0) !== 0).map(row => (
                       <div key={row.label} className="flex justify-between items-center py-1.5 border-b last:border-0">
                         <span className="text-xs text-muted-foreground">{row.label}</span>
                         <span className={`text-sm font-semibold ${row.color}`}>{formatCurrency(row.value)}</span>
@@ -568,7 +563,7 @@ export default function ProfitAnalysis() {
                       { label: 'Total Expenses', value: mainData.totalExpenses?.totalExpenses,               color: 'text-orange-600' },
                       { label: 'Bad Stock',      value: mainData.badStockValue?.badStockValue,               color: 'text-red-400' },
                       { label: 'Taxes',          value: mainData.totalTaxes,                                 color: 'text-gray-600' },
-                    ].map(row => (
+                    ].filter(row => (row.value ?? 0) !== 0).map(row => (
                       <div key={row.label} className="flex justify-between items-center py-1.5 border-b last:border-0">
                         <span className="text-xs text-muted-foreground">{row.label}</span>
                         <span className={`text-sm font-semibold ${row.color}`}>{formatCurrency(row.value)}</span>
@@ -597,14 +592,13 @@ export default function ProfitAnalysis() {
         </Tabs>
 
         {/* Bottom actions */}
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" className="h-9 text-xs" onClick={exportToCSV}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
-          </Button>
-          <Button variant="outline" size="sm" className="h-9 text-xs">
-            <Eye className="h-3.5 w-3.5 mr-1.5" />Detailed View
-          </Button>
-        </div>
+        {products.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="h-9 text-xs" onClick={exportToCSV}>
+              <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
+            </Button>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
