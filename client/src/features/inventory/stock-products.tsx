@@ -1132,20 +1132,18 @@ export default function StockProducts() {
 
       {/* Adjust Stock Dialog */}
       <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-2xl sm:rounded-lg">
           <DialogHeader>
             <DialogTitle>Adjust Stock</DialogTitle>
-            <DialogDescription>
-              Adjust the stock quantity for {selectedProduct?.name}
+            <DialogDescription className="text-sm">
+              {selectedProduct?.name}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="adjustType" className="text-right">
-                Type
-              </Label>
+          <div className="flex flex-col gap-4 pt-1 pb-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="adjustType">Type</Label>
               <Select value={adjustType} onValueChange={(value: "increase" | "decrease") => setAdjustType(value)}>
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger id="adjustType" className="h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1154,30 +1152,29 @@ export default function StockProducts() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantity" className="text-right">
-                Quantity
-              </Label>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="quantity">Quantity</Label>
               <Input
                 id="quantity"
                 type="number"
                 value={adjustQuantity}
                 onChange={(e) => setAdjustQuantity(e.target.value)}
-                className="col-span-3"
+                className="h-11"
                 placeholder="Enter quantity"
                 min="1"
               />
             </div>
-
           </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
+          <DialogFooter className="flex-row gap-2 pt-1">
+            <Button
+              variant="outline"
+              className="flex-1"
               onClick={() => setAdjustDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
+              className="flex-1"
               onClick={handleAdjustStock}
               disabled={isAdjusting || !adjustQuantity}
             >
