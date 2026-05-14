@@ -1122,7 +1122,7 @@ export default function StockProducts() {
       {/* Floating Add button — mobile only */}
       {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
         <Link href={addProductRoute}>
-          <button className="lg:hidden fixed bottom-6 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
+          <button className="lg:hidden fixed bottom-20 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
             <Plus className="h-5 w-5" />
             Add Product
           </button>
