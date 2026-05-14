@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { AlertCircle, ArrowLeft, RotateCcw, Loader2, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -26,21 +25,17 @@ interface ReturnItem extends SaleItem {
 }
 
 export default function ReturnSale() {
-  // Try both admin and attendant routes
   const [adminMatch, adminParams] = useRoute("/sales/return/:id");
   const [attendantMatch, attendantParams] = useRoute("/attendant/sales/return/:id");
   const [, setLocation] = useLocation();
   const { attendant } = useAttendantAuth();
   
-  // Extract sale ID from whichever route matched
   const match = adminMatch || attendantMatch;
   const params = adminParams || attendantParams;
   const saleId = params?.id;
   
-  // Determine if this is an attendant user
   const isAttendant = attendantMatch && attendant;
   
-  // Get sale data from navigation state
   const [originalSale, setOriginalSale] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -56,23 +51,17 @@ export default function ReturnSale() {
       setIsLoading(false);
       return;
     }
-
-    // Get data from navigation state
     const navigationState = (window.history.state?.saleData as any);
-    
     if (navigationState) {
       setOriginalSale(navigationState);
       setIsLoading(false);
       return;
     }
-
-    // If no navigation state, we can't proceed with return
     setIsLoading(false);
   }, [saleId]);
   
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
 
-  // Update returnItems when originalSale data is loaded
   useEffect(() => {
     if (originalSale?.items) {
       setReturnItems(
@@ -96,9 +85,9 @@ export default function ReturnSale() {
   if (isLoading) {
     return (
       <DashboardLayout title="Loading Return Data...">
-        <div className="p-6 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading sale data...</p>
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+          <p className="text-sm text-gray-500">Loading sale data...</p>
         </div>
       </DashboardLayout>
     );
@@ -107,14 +96,13 @@ export default function ReturnSale() {
   if (!originalSale) {
     return (
       <DashboardLayout title="Sale Not Found">
-        <div className="p-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Sale Not Found
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            The requested sale could not be found.
-          </p>
-          <Button className="mt-4" onClick={() => window.history.back()}>
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
+          <AlertCircle className="h-12 w-12 text-gray-300" />
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Sale Not Found</h1>
+            <p className="text-sm text-gray-500 mt-1">The requested sale could not be found.</p>
+          </div>
+          <Button size="sm" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
           </Button>
@@ -126,15 +114,13 @@ export default function ReturnSale() {
   if (originalSale.status === "returned") {
     return (
       <DashboardLayout title="Return Not Available">
-        <div className="p-6 text-center">
-          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Sale Already Returned
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            This sale has already been processed as a return.
-          </p>
-          <Button className="mt-4" onClick={() => window.history.back()}>
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
+          <AlertCircle className="h-12 w-12 text-yellow-400" />
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Already Returned</h1>
+            <p className="text-sm text-gray-500 mt-1">This sale has already been processed as a return.</p>
+          </div>
+          <Button size="sm" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
           </Button>
@@ -159,32 +145,26 @@ export default function ReturnSale() {
     const itemsToReturn = returnItems.filter(item => item.shouldReturn);
     
     if (itemsToReturn.length === 0) {
-      setAlertConfig({
-        title: "No Items Selected",
-        description: "Please select at least one item to return.",
-        type: 'error'
-      });
+      setAlertConfig({ title: "No Items Selected", description: "Please select at least one item to return.", type: 'error' });
       setShowAlert(true);
       return;
     }
 
     setIsProcessing(true);
 
-    // Extract attendantId and shopId from sale data
     const attendantIdRaw = originalSale.attendantId || originalSale.items?.[0]?.attendantId;
     const attendantId = typeof attendantIdRaw === 'string' ? attendantIdRaw : attendantIdRaw?._id;
     const shopId = originalSale.shopId?._id || originalSale.shopId || originalSale.items?.[0]?.shopId;
 
-    // Format items for API
     const formattedItems = itemsToReturn.map((item: any) => ({
       product: item.product?._id || item._id,
       quantity: parseFloat(item.returnQuantity.toString())
     }));
 
     const returnPayload = {
-      saleid: originalSale._id, // Use _id instead of id
-      attendantId: attendantId, // Ensure it's a string ID
-      shopId: shopId,
+      saleid: originalSale._id,
+      attendantId,
+      shopId,
       items: formattedItems,
       reason: returnNotes || "Return processed",
       deleteReceipt: false
@@ -192,18 +172,13 @@ export default function ReturnSale() {
 
     try {
       console.log("Processing return with payload:", returnPayload);
-      
-      // Get the appropriate token (admin or attendant)
       const authToken = localStorage.getItem('authToken');
       const attendantToken = localStorage.getItem('attendantToken');
       const token = authToken || attendantToken;
       
       const response = await fetch('/api/salereturns', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
         body: JSON.stringify(returnPayload)
       });
@@ -211,38 +186,21 @@ export default function ReturnSale() {
       if (response.ok) {
         const result = await response.json();
         console.log('Return processed successfully:', result);
-        
-        // Invalidate sales data to force refresh
         queryClient.invalidateQueries({ queryKey: ['/api/sales/filter'] });
         queryClient.invalidateQueries({ queryKey: ['/api/analysis/report/sales'] });
-        
-        setAlertConfig({
-          title: "Return Successful",
-          description: "The return has been processed successfully.",
-          type: 'success'
-        });
+        setAlertConfig({ title: "Return Successful", description: "The return has been processed successfully.", type: 'success' });
         setShowAlert(true);
-        
-        // Navigate back to correct sales route
         const salesRoute = isAttendant ? '/attendant/sales' : '/sales';
         setLocation(salesRoute);
       } else {
         const error = await response.text();
         console.error('Return processing failed:', error);
-        setAlertConfig({
-          title: "Return Failed",
-          description: `Failed to process return: ${error}`,
-          type: 'error'
-        });
+        setAlertConfig({ title: "Return Failed", description: `Failed to process return: ${error}`, type: 'error' });
         setShowAlert(true);
       }
     } catch (error) {
       console.error('Error processing return:', error);
-      setAlertConfig({
-        title: "Return Error",
-        description: "An error occurred while processing the return. Please try again.",
-        type: 'error'
-      });
+      setAlertConfig({ title: "Return Error", description: "An error occurred while processing the return. Please try again.", type: 'error' });
       setShowAlert(true);
     } finally {
       setIsProcessing(false);
@@ -250,94 +208,96 @@ export default function ReturnSale() {
   };
 
   const selectedItemsCount = returnItems.filter(item => item.shouldReturn).length;
+  const currency = originalSale.shopId?.currency || originalSale.shop?.currency || 'KES';
 
   return (
     <DashboardLayout title={`Return Sale #${originalSale.receiptNo || originalSale.id}`}>
-      <div className="p-6 w-full">
-        <PageHeader
-          title={`Process Return - Sale #${originalSale.receiptNo || originalSale.id}`}
-          subtitle="Select items to return and specify return reasons"
-          onBack={() => window.history.back()}
-          actions={
-            <Button 
-              size="sm"
-              onClick={handleProcessReturn}
-              disabled={selectedItemsCount === 0 || isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Process Return
-                </>
-              )}
-            </Button>
-          }
-        />
+      <PageHeader
+        title={`Return #${originalSale.receiptNo || originalSale.id}`}
+        subtitle="Select items to return"
+        onBack={() => window.history.back()}
+        actions={
+          <Button
+            size="sm"
+            onClick={handleProcessReturn}
+            disabled={selectedItemsCount === 0 || isProcessing}
+          >
+            {isProcessing ? (
+              <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /><span className="hidden sm:inline">Processing...</span><span className="sm:hidden">...</span></>
+            ) : (
+              <><RotateCcw className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Process Return</span><span className="sm:hidden">Return</span></>
+            )}
+          </Button>
+        }
+      />
 
-        <div className="grid gap-6">
-          {/* Original Sale Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Original Sale Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="font-medium">Customer:</p>
-                  <p>{originalSale.customerName}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Sale Date:</p>
-                  <p>{new Date(originalSale.saleDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Original Total:</p>
-                  <p>{originalSale.shopId?.currency || originalSale.shop?.currency || 'KES'} {originalSale.totalAmount.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Status:</p>
-                  <Badge variant="default">{originalSale.status}</Badge>
-                </div>
+      <div className="space-y-4">
+        {/* Original Sale Info */}
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold text-gray-700">Original Sale</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Customer</p>
+                <p className="font-medium truncate">{originalSale.customerName}</p>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-xs text-muted-foreground">Date</p>
+                <p className="font-medium">{new Date(originalSale.saleDate).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="font-medium">{currency} {originalSale.totalAmount.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Status</p>
+                <Badge variant="default" className="text-xs px-1.5 py-0">{originalSale.status}</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Return Items */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Items to Return</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Select items you want to return and specify quantities
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {returnItems.map((item, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        checked={item.shouldReturn}
-                        onCheckedChange={(checked) => 
-                          updateReturnItem(index, 'shouldReturn', checked)
-                        }
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="md:col-span-2">
-                          <Label className="font-medium">{item.productName}</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Original: {item.quantity} × {originalSale.shopId?.currency || originalSale.shop?.currency || 'KES'} {item.unitPrice.toFixed(2)} = {originalSale.shopId?.currency || originalSale.shop?.currency || 'KES'} {item.totalPrice.toFixed(2)}
-                          </p>
-                        </div>
-                        
+        {/* Return Items */}
+        <Card>
+          <CardHeader className="pb-2 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold text-gray-700">Items to Return</CardTitle>
+            <p className="text-xs text-muted-foreground">Select items and specify quantities</p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="space-y-3">
+              {returnItems.map((item, index) => (
+                <div key={index} className="border rounded-lg p-3">
+                  {/* Item header row */}
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={item.shouldReturn}
+                      onCheckedChange={(checked) => updateReturnItem(index, 'shouldReturn', checked)}
+                      className="mt-0.5 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight">{item.productName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {item.quantity} × {currency} {item.unitPrice.toFixed(2)} = {currency} {item.totalPrice.toFixed(2)}
+                      </p>
+                    </div>
+                    {item.shouldReturn && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xs text-muted-foreground">Refund</p>
+                        <p className="text-sm font-semibold text-green-600">
+                          {currency} {(item.unitPrice * item.returnQuantity).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Expanded fields when selected */}
+                  {item.shouldReturn && (
+                    <div className="mt-3 pl-7 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <Label htmlFor={`quantity-${index}`}>Return Quantity</Label>
+                          <Label htmlFor={`quantity-${index}`} className="text-xs">Return Qty</Label>
                           <Input
                             id={`quantity-${index}`}
                             type="number"
@@ -345,99 +305,106 @@ export default function ReturnSale() {
                             max={item.quantity}
                             value={item.returnQuantity}
                             onChange={(e) => updateReturnItem(index, 'returnQuantity', parseInt(e.target.value) || 1)}
-                            disabled={!item.shouldReturn}
+                            className="h-8 text-sm mt-0.5"
                           />
                         </div>
-                        
                         <div>
-                          <Label>Return Amount</Label>
-                          <p className="font-medium">
-                            {originalSale.shopId?.currency || originalSale.shop?.currency || 'KES'} {item.shouldReturn ? (item.unitPrice * item.returnQuantity).toFixed(2) : '0.00'}
-                          </p>
+                          <Label className="text-xs">Max Qty</Label>
+                          <div className="h-8 mt-0.5 flex items-center">
+                            <span className="text-sm text-muted-foreground">{item.quantity}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {item.shouldReturn && (
-                      <div className="mt-4">
-                        <Label htmlFor={`reason-${index}`}>Return Reason</Label>
+                      <div>
+                        <Label htmlFor={`reason-${index}`} className="text-xs">Reason</Label>
                         <Input
                           id={`reason-${index}`}
                           value={item.returnReason}
                           onChange={(e) => updateReturnItem(index, 'returnReason', e.target.value)}
-                          placeholder="e.g., Defective, Wrong size, Customer changed mind"
-                          className="mt-1"
+                          placeholder="e.g. Defective, Wrong size..."
+                          className="h-8 text-sm mt-0.5"
                         />
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Return Summary */}
+        {selectedItemsCount > 0 && (
+          <Card>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-semibold text-gray-700">Return Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-3">
+              {/* Refund amount prominently */}
+              <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2.5">
+                <span className="text-sm text-gray-600">Total Refund</span>
+                <span className="text-xl font-bold text-green-600">
+                  {currency} {calculateRefundAmount().toFixed(2)}
+                </span>
+              </div>
+
+              <div>
+                <Label htmlFor="refund-method" className="text-xs">Refund Method</Label>
+                <select
+                  id="refund-method"
+                  value={refundMethod}
+                  onChange={(e) => setRefundMethod(e.target.value)}
+                  className="w-full mt-1 h-9 px-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="original">Original Payment Method</option>
+                  <option value="cash">Cash</option>
+                  <option value="store-credit">Store Credit</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="return-notes" className="text-xs">Additional Notes</Label>
+                <Textarea
+                  id="return-notes"
+                  value={returnNotes}
+                  onChange={(e) => setReturnNotes(e.target.value)}
+                  placeholder="Any additional notes about this return..."
+                  className="mt-1 text-sm min-h-[72px]"
+                />
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Return Summary */}
-          {selectedItemsCount > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Return Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="refund-method">Refund Method</Label>
-                      <select
-                        id="refund-method"
-                        value={refundMethod}
-                        onChange={(e) => setRefundMethod(e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="original">Original Payment Method</option>
-                        <option value="cash">Cash</option>
-                        <option value="store-credit">Store Credit</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <Label>Total Refund Amount</Label>
-                      <p className="text-2xl font-bold text-green-600 mt-1">
-                        {originalSale.shopId?.currency || originalSale.shop?.currency || 'KES'} {calculateRefundAmount().toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="return-notes">Additional Notes</Label>
-                    <Textarea
-                      id="return-notes"
-                      value={returnNotes}
-                      onChange={(e) => setReturnNotes(e.target.value)}
-                      placeholder="Any additional notes about this return..."
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Warning */}
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-xs text-amber-700">
+            Processing a return will update inventory and create a refund record. This action cannot be undone.
+          </AlertDescription>
+        </Alert>
 
-          {/* Warning */}
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Processing a return will update inventory levels and create a refund record. 
-              This action cannot be undone. Please verify all details before proceeding.
-            </AlertDescription>
-          </Alert>
+        {/* Mobile sticky submit */}
+        <div className="lg:hidden pb-2">
+          <Button
+            className="w-full h-11"
+            onClick={handleProcessReturn}
+            disabled={selectedItemsCount === 0 || isProcessing}
+          >
+            {isProcessing ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
+            ) : (
+              <><RotateCcw className="mr-2 h-4 w-4" />Process Return ({selectedItemsCount} item{selectedItemsCount !== 1 ? 's' : ''})</>
+            )}
+          </Button>
         </div>
       </div>
 
       {/* Alert Dialog */}
       <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center gap-2 text-base">
               {alertConfig.type === 'success' ? (
                 <CheckCircle className="h-5 w-5 text-green-600" />
               ) : (
@@ -445,16 +412,14 @@ export default function ReturnSale() {
               )}
               {alertConfig.title}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-sm">
               {alertConfig.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowAlert(false);
-              if (alertConfig.type === 'success') {
-                window.history.back();
-              }
+              if (alertConfig.type === 'success') window.history.back();
             }}>
               OK
             </AlertDialogAction>
