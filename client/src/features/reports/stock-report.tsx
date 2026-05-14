@@ -23,7 +23,7 @@ interface StockItem {
 
 const fmtAmt = (n: any) => {
   const v = Number(n) || 0;
-  return v >= 1_000_000 ? `${(v / 1_000_000).toFixed(2)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(1)}K` : String(Math.round(v));
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 };
 
 export default function StockReport() {
