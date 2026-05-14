@@ -596,547 +596,364 @@ export default function StockProducts() {
 
   return (
     <DashboardLayout title="Stock Products">
-      <div className="space-y-3 sm:space-y-5">
-        <PageHeader
-          title="Stock Products"
-          onBack={() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasFilter = urlParams.has('filter');
-            if (hasFilter) {
-              const backRoute = isAttendant ? '/attendant/stock/summary' : '/stock/summary';
-              setLocation(backRoute);
-            } else {
-              const backRoute = isAttendant ? '/attendant/dashboard' : '/dashboard';
-              setLocation(backRoute);
-            }
-          }}
-        />
-        {/* Stats Cards - Show for admins always, attendants only if they have stock_summary permission */}
-        {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-            <Card
-              className={`cursor-pointer transition-colors ${stockFilter === "lowstock" ? "ring-2 ring-orange-400 bg-orange-50" : "hover:bg-orange-50/50"}`}
-              onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
+      <div className="flex flex-col min-h-full -mx-4 sm:-mx-6 -mt-4">
+
+        {/* ── Sticky top bar ── */}
+        <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
+          {/* Header row */}
+          <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+            <button
+              onClick={() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const hasFilter = urlParams.has('filter');
+                if (hasFilter) {
+                  setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
+                } else {
+                  setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
+                }
+              }}
+              className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <CardContent className="p-2.5 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 leading-tight">Low Qty</p>
-                    <p className="text-base sm:text-xl font-bold text-orange-600 leading-tight">{lowQuantityProducts}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <ArrowLeft className="h-5 w-5 text-gray-600" />
+            </button>
+            <h1 className="flex-1 text-lg font-bold text-gray-900">Products</h1>
+            {/* Bulk delete badge */}
+            {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+              <button
+                onClick={() => setBulkDeleteConfirmOpen(true)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {selectedIds.length} selected
+              </button>
+            )}
+            {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
+              <Link href="/stock/import-products">
+                <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                  <Upload className="h-5 w-5 text-gray-500" />
+                </button>
+              </Link>
+            )}
+          </div>
 
-            <Card
-              className={`cursor-pointer transition-colors ${stockFilter === "outofstock" ? "ring-2 ring-red-400 bg-red-50" : "hover:bg-red-50/50"}`}
-              onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
+          {/* Search + filter row */}
+          <div className="flex items-center gap-2 px-4 pb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-100 text-sm border-0 outline-none focus:bg-white focus:ring-2 focus:ring-purple-400 transition-all"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setFilterSheetOpen(true)}
+              className={`flex items-center justify-center w-11 h-11 rounded-xl transition-colors shrink-0 ${
+                stockFilter !== "all"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
             >
-              <CardContent className="p-2.5 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 leading-tight">Out of Stock</p>
-                    <p className="text-base sm:text-xl font-bold text-red-600 leading-tight">{outOfStockProducts}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <SlidersHorizontal className="h-4 w-4" />
+            </button>
+          </div>
 
-            <Card>
-              <CardContent className="p-2.5 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 leading-tight">Stock Value</p>
-                    <p className="text-xs sm:text-base font-bold text-green-600 truncate leading-tight">{currency} {totalStockValue.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Stats pills — horizontal scroll */}
+          {(hasPermission('inventory_view') || hasAttendantPermission("stocks", "stock_summary")) && (
+            <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+              <button
+                onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${
+                  stockFilter === "lowstock"
+                    ? "bg-orange-500 text-white border-orange-500"
+                    : "bg-orange-50 text-orange-700 border-orange-200"
+                }`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                Low Qty · {lowQuantityProducts}
+              </button>
+              <button
+                onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors shrink-0 ${
+                  stockFilter === "outofstock"
+                    ? "bg-red-500 text-white border-red-500"
+                    : "bg-red-50 text-red-700 border-red-200"
+                }`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                Out of Stock · {outOfStockProducts}
+              </button>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border bg-green-50 text-green-700 border-green-200 shrink-0">
+                <TrendingUp className="h-3 w-3" />
+                Value · {currency} {totalStockValue.toLocaleString()}
+              </span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border bg-purple-50 text-purple-700 border-purple-200 shrink-0">
+                <TrendingUp className="h-3 w-3" />
+                Profit · {currency} {profitEstimate.toLocaleString()}
+              </span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border bg-indigo-50 text-indigo-700 border-indigo-200 shrink-0">
+                <Package className="h-3 w-3" />
+                Total · {totalStockCount}
+              </span>
+            </div>
+          )}
 
-            <Card>
-              <CardContent className="p-2.5 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 leading-tight">Profit Est.</p>
-                    <p className="text-xs sm:text-base font-bold text-purple-600 truncate leading-tight">{currency} {profitEstimate.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Select-all row (shows when ≥1 item exists) */}
+          {filteredProducts.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+            <div className="flex items-center gap-2 px-4 pb-2 border-t pt-2">
+              <Checkbox
+                checked={filteredProducts.length > 0 && filteredProducts.every((p: any) => selectedIds.includes(p._id))}
+                onCheckedChange={toggleSelectAll}
+                id="select-all"
+              />
+              <label htmlFor="select-all" className="text-xs text-gray-500 cursor-pointer">
+                Select all on this page
+              </label>
+              {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                <button
+                  onClick={() => setDeleteAllConfirmOpen(true)}
+                  className="ml-auto text-xs text-red-500 hover:text-red-700 transition-colors"
+                >
+                  Delete all products
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
-            <Card>
-              <CardContent className="p-2.5 sm:p-4">
-                <div className="flex items-center gap-2">
-                  <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-600 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-500 leading-tight">Total Products</p>
-                    <p className="text-base sm:text-xl font-bold text-indigo-600 leading-tight">{totalStockCount}</p>
+        {/* ── Product list ── */}
+        <div className="flex-1 px-4 pt-3 pb-24 space-y-2.5">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-10 h-10 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
+              <p className="text-sm text-gray-400">Loading products…</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+                <Package className="h-8 w-8 text-gray-300" />
+              </div>
+              <p className="text-sm font-medium text-gray-500">No products found</p>
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-xs text-purple-600 underline">Clear search</button>
+              )}
+            </div>
+          ) : (
+            filteredProducts.map((product: Product) => {
+              const quantity = (product as any).quantity || 0;
+              const reorderLevel = (product as any).reorderLevel || 0;
+              const isVirtual = (product as any).virtual;
+              const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
+              const isOutOfStock = !isVirtual && quantity === 0;
+              const isSelected = selectedIds.includes(product._id);
+              const categoryName = (product as any).productCategoryId?.name || product.category || "";
+
+              const qtyColor = isVirtual
+                ? "text-gray-400"
+                : isOutOfStock
+                  ? "text-red-600"
+                  : isLowStock
+                    ? "text-amber-600"
+                    : "text-green-600";
+
+              const cardBg = isSelected
+                ? "bg-purple-50 border-purple-300"
+                : isOutOfStock
+                  ? "bg-red-50/60 border-red-100"
+                  : isLowStock
+                    ? "bg-amber-50/60 border-amber-100"
+                    : "bg-white border-gray-100";
+
+              return (
+                <div
+                  key={product._id}
+                  className={`rounded-2xl border shadow-sm overflow-hidden transition-all ${cardBg}`}
+                >
+                  {/* Main card row */}
+                  <div className="flex items-start gap-3 p-4">
+                    {/* Checkbox */}
+                    {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                      <div className="pt-0.5">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelect(product._id)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Status dot */}
+                    <div className="pt-1.5 shrink-0">
+                      <div className={`w-2.5 h-2.5 rounded-full ${
+                        isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"
+                      }`} />
+                    </div>
+
+                    {/* Name + category */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm leading-snug truncate">{product.name}</p>
+                      {categoryName && (
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{categoryName}</p>
+                      )}
+                      {(product as any).barcode && (
+                        <p className="text-xs text-gray-300 mt-0.5 font-mono">{(product as any).barcode}</p>
+                      )}
+                    </div>
+
+                    {/* Price + qty */}
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-gray-900">
+                        {currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}
+                      </p>
+                      {(hasPermission("inventory_view") || hasAttendantPermission("stocks", "view_buying_price")) && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Cost: {currency} {((product as any).buyingPrice || 0).toLocaleString()}
+                        </p>
+                      )}
+                      <p className={`text-sm font-bold mt-1 ${qtyColor}`}>
+                        {isVirtual ? "Service" : `Qty: ${quantity}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action button strip */}
+                  <div className="flex border-t border-gray-100 divide-x divide-gray-100">
+                    {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
+                      <button
+                        onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}
+                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                      >
+                        <History className="h-4 w-4" />
+                        <span className="text-[10px]">History</span>
+                      </button>
+                    )}
+                    {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                      <button
+                        onClick={() => {
+                          (window as any).productEditData = {
+                            bundleItems: (product as any).bundleItems || (product as any).items || [],
+                            productData: product,
+                            passedBundleItems: true,
+                          };
+                          setLocation(`${editProductRoute}/${product._id}`);
+                        }}
+                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors"
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="text-[10px]">Edit</span>
+                      </button>
+                    )}
+                    {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
+                      <button
+                        onClick={() => openAdjustDialog(product)}
+                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-purple-600 hover:bg-purple-50 active:bg-purple-100 transition-colors"
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="text-[10px]">Adjust</span>
+                      </button>
+                    )}
+                    {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
+                      <button
+                        onClick={() => openHistoryDialog(product)}
+                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-gray-500 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span className="text-[10px]">Adjust Log</span>
+                      </button>
+                    )}
+                    {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                      <button
+                        onClick={() => setSingleDeleteProduct(product)}
+                        className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="text-[10px]">Delete</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* ── Pagination footer ── */}
+        {totalPages > 1 && (
+          <div className="sticky bottom-16 bg-white border-t flex items-center justify-between px-4 py-2.5 shadow-sm">
+            <button
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage <= 1}
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40 active:bg-gray-100"
+            >
+              Prev
+            </button>
+            <span className="text-xs text-gray-500">
+              Page {currentPage} of {totalPages} · {totalProducts} items
+            </span>
+            <button
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages}
+              className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 disabled:opacity-40 active:bg-gray-100"
+            >
+              Next
+            </button>
           </div>
         )}
-
-        {/* Filters and Search */}
-        <Card>
-          <CardHeader className="py-3 sm:py-6">
-            <CardTitle className="text-base sm:text-lg">Product Inventory</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex gap-2 mb-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-8 text-sm"
-                />
-              </div>
-
-              {/* Mobile: filter icon button → bottom sheet */}
-              <Button
-                variant="outline"
-                size="icon"
-                className={`h-8 w-8 shrink-0 sm:hidden ${stockFilter !== "all" ? "border-purple-500 text-purple-600" : ""}`}
-                onClick={() => setFilterSheetOpen(true)}
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-              </Button>
-
-              {/* Desktop: inline Select */}
-              <Select value={stockFilter} onValueChange={(value: "all" | "outofstock" | "lowstock") => setStockFilter(value)}>
-                <SelectTrigger className="hidden sm:flex w-44 h-8 text-sm">
-                  <SelectValue placeholder="Stock status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Products</SelectItem>
-                  <SelectItem value="outofstock">Out of Stock</SelectItem>
-                  <SelectItem value="lowstock">Running Low</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                <Button
-                  variant="destructive"
-                  className="h-8 text-sm gap-1.5"
-                  onClick={() => setBulkDeleteConfirmOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Delete {selectedIds.length}</span>
-                </Button>
-              )}
-
-              {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                <Button
-                  variant="outline"
-                  className="h-8 text-sm gap-1.5 border-red-300 text-red-600 hover:bg-red-50"
-                  onClick={() => setDeleteAllConfirmOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Delete All</span>
-                </Button>
-              )}
-
-              {(hasPermission("inventory_add") ||
-                hasAttendantPermission("stocks", "add_products") ||
-                hasAttendantPermission("products", "add")) && (
-                <>
-                  <Link href="/stock/import-products">
-                    <Button
-                      variant="outline"
-                      className="h-8 text-sm border-purple-300 text-purple-700 hover:bg-purple-50"
-                    >
-                      <Upload className="h-4 w-4 mr-1.5" />
-                      <span className="hidden sm:inline">Import</span>
-                    </Button>
-                  </Link>
-                  <Link href={addProductRoute}>
-                    <Button className="bg-purple-600 hover:bg-purple-700 h-8 text-sm">
-                      <Plus className="h-4 w-4 mr-1.5" />
-                      <span className="hidden sm:inline">Add </span>Product
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-
-            {/* Filter Bottom Sheet (mobile) */}
-            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
-              <SheetContent side="bottom" className="p-0 rounded-t-2xl">
-                <SheetHeader className="px-5 pt-5 pb-3 border-b">
-                  <SheetTitle className="text-sm font-semibold">Filter by Stock Status</SheetTitle>
-                </SheetHeader>
-                <div className="py-2">
-                  {(
-                    [
-                      { value: "all", label: "All Products" },
-                      { value: "outofstock", label: "Out of Stock" },
-                      { value: "lowstock", label: "Running Low" },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.value}
-                      className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors ${
-                        stockFilter === opt.value
-                          ? "bg-purple-50 text-purple-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                      onClick={() => {
-                        setStockFilter(opt.value);
-                        setFilterSheetOpen(false);
-                      }}
-                    >
-                      <span>{opt.label}</span>
-                      {stockFilter === opt.value && <Check className="h-4 w-4 text-purple-600" />}
-                    </button>
-                  ))}
-                </div>
-                <div className="px-5 pb-6 pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    className="w-full h-9 text-sm"
-                    onClick={() => setFilterSheetOpen(false)}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            {/* Products Table */}
-            <div className="rounded-md border">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b bg-gray-50">
-                    <tr>
-                      <th className="p-2 sm:p-4 w-8">
-                        <Checkbox
-                          checked={filteredProducts.length > 0 && filteredProducts.every((p: any) => selectedIds.includes(p._id))}
-                          onCheckedChange={toggleSelectAll}
-                          aria-label="Select all"
-                        />
-                      </th>
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Product</th>
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">SKU</th>
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Price</th>
-                      {(hasPermission("inventory_view") ||
-                        hasAttendantPermission(
-                          "stocks",
-                          "view_buying_price",
-                        )) && <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">Buying Price</th>}
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Qty</th>
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium hidden sm:table-cell">Status</th>
-                      <th className="text-left p-2 sm:p-4 text-xs sm:text-sm font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="text-center p-8 text-gray-500"
-                        >
-                          Loading products...
-                        </td>
-                      </tr>
-                    ) : filteredProducts.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="text-center p-8 text-gray-500"
-                        >
-                          No products found
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredProducts.map((product: Product) => {
-                        const stockStatus = getQuantityStatus(product);
-                        const quantity = (product as any).quantity || 0;
-                        const reorderLevel = (product as any).reorderLevel || 0;
-                        const isVirtual = (product as any).virtual;
-                        const isLowStock =
-                          !isVirtual &&
-                          quantity > 0 &&
-                          reorderLevel > 0 &&
-                          quantity <= reorderLevel;
-                        const isOutOfStock = !isVirtual && quantity === 0;
-
-                        // No background styling for services (virtual products)
-                        let rowBgClass = "";
-                        if (!isVirtual) {
-                          if (isOutOfStock) {
-                            rowBgClass = "bg-red-50 hover:bg-red-100";
-                          } else if (isLowStock) {
-                            rowBgClass = "bg-amber-50 hover:bg-amber-100";
-                          }
-                        }
-
-                        return (
-                          <tr
-                            key={product._id}
-                            className={`border-b hover:bg-gray-50 ${rowBgClass} ${selectedIds.includes(product._id) ? "bg-purple-50 hover:bg-purple-100" : ""}`}
-                          >
-                            <td className="p-2 sm:p-4 w-8">
-                              <Checkbox
-                                checked={selectedIds.includes(product._id)}
-                                onCheckedChange={() => toggleSelect(product._id)}
-                                aria-label={`Select ${product.name}`}
-                              />
-                            </td>
-                            <td className="p-2 sm:p-4">
-                              <div>
-                                <p className="font-medium text-sm">{product.name}</p>
-                                <p className="text-xs text-gray-500">
-                                  {(product as any).productCategoryId?.name ||
-                                    product.category ||
-                                    "No Category"}
-                                </p>
-                              </div>
-                            </td>
-                            <td className="p-2 sm:p-4 text-xs text-gray-600 hidden sm:table-cell">
-                              {(product as any).barcode || "-"}
-                            </td>
-                            <td className="p-2 sm:p-4 font-medium text-sm">
-                              {currency}{" "}
-                              {(
-                                (product as any).sellingPrice ||
-                                product.price ||
-                                0
-                              ).toLocaleString()}
-                            </td>
-                            {(hasPermission("inventory_view") ||
-                              hasAttendantPermission(
-                                "stocks",
-                                "view_buying_price",
-                              )) && (
-                              <td className="p-2 sm:p-4 font-medium text-sm hidden sm:table-cell">
-                                {currency}{" "}
-                                {(
-                                  (product as any).buyingPrice ||
-                                  0
-                                ).toLocaleString()}
-                              </td>
-                            )}
-                            <td className="p-2 sm:p-4">
-                              {isVirtual ? (
-                                <span className="text-gray-500 font-medium text-sm">
-                                  N/A
-                                </span>
-                              ) : (
-                                <span
-                                  className={`font-medium ${
-                                    quantity === 0
-                                      ? "text-red-600"
-                                      : isLowStock
-                                        ? "text-amber-600"
-                                        : "text-green-600"
-                                  }`}
-                                >
-                                  {quantity}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-2 sm:p-4 hidden sm:table-cell">
-                              <Badge variant={stockStatus.variant} className="text-xs">
-                                {stockStatus.label}
-                              </Badge>
-                            </td>
-                            <td className="p-2 sm:p-4">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-48"
-                                >
-                                  {(hasPermission("inventory_history") ||
-                                    hasAttendantPermission(
-                                      "products",
-                                      "view_history",
-                                    )) && (
-                                    <DropdownMenuItem
-                                      className="flex items-center space-x-2"
-                                      onClick={() =>
-                                        setLocation(
-                                          `${productHistoryRoute}/${product._id}/history`,
-                                        )
-                                      }
-                                    >
-                                      <History className="h-4 w-4" />
-                                      <span>Product History</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                  {(hasPermission("inventory_edit") ||
-                                    hasAttendantPermission(
-                                      "products",
-                                      "edit",
-                                    )) && (
-                                    <DropdownMenuItem
-                                      className="flex items-center space-x-2"
-                                      onClick={() => {
-                                        const bundleItems =
-                                          (product as any).bundleItems ||
-                                          (product as any).items ||
-                                          [];
-
-                                        // Pass data through navigation state instead of sessionStorage
-                                        console.log(
-                                          "Passing product data to edit form:",
-                                          product,
-                                        );
-                                        (window as any).productEditData = {
-                                          bundleItems: bundleItems,
-                                          productData: product,
-                                          passedBundleItems: true,
-                                        };
-
-                                        // Use client-side navigation without page reload
-                                        setLocation(
-                                          `${editProductRoute}/${product._id}`,
-                                        );
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                      <span>Edit</span>
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {/* Hide stock adjustment options for services (virtual products) */}
-                                  {!(product as any).virtual && (hasPermission("inventory_adjust") ||
-                                    hasAttendantPermission(
-                                      "products",
-                                      "adjust_stock",
-                                    )) && (
-                                    <DropdownMenuItem 
-                                      className="flex items-center space-x-2"
-                                      onClick={() => openAdjustDialog(product)}
-                                    >
-                                      <TrendingUp className="h-4 w-4" />
-                                      <span>Adjust Stock</span>
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {/* Hide adjustment history for services (virtual products) */}
-                                  {!(product as any).virtual && (hasPermission("inventory_history") ||
-                                    hasAttendantPermission(
-                                      "products",
-                                      "view_adjustment_history",
-                                    )) && (
-                                    <DropdownMenuItem 
-                                      className="flex items-center space-x-2"
-                                      onClick={() => openHistoryDialog(product)}
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                      <span>Adjustment History</span>
-                                    </DropdownMenuItem>
-                                  )}
-
-                                  {(hasPermission("inventory_delete") ||
-                                    hasAttendantPermission(
-                                      "products",
-                                      "delete",
-                                    )) && (
-                                    <DropdownMenuItem
-                                      className="flex items-center space-x-2 text-red-600 focus:text-red-600"
-                                      onClick={() => setSingleDeleteProduct(product)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span>Delete</span>
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pagination Controls */}
-            <div className="flex items-center justify-between px-3 py-2 border-t gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-600 hidden sm:inline">Per page:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="border rounded px-1.5 py-0.5 text-xs"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-
-              <span className="text-xs text-gray-500 hidden sm:inline">
-                {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, totalProducts)} of {totalProducts}
-              </span>
-
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage <= 1}
-                >
-                  Prev
-                </Button>
-
-                <div className="flex items-center gap-0.5">
-                  {(() => {
-                    const pages = [];
-                    for (let i = 1; i <= Math.min(totalPages, 5); i++) {
-                      pages.push(
-                        <Button
-                          key={i}
-                          variant={currentPage === i ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setPage(i)}
-                          className="w-7 h-7 p-0 text-xs"
-                        >
-                          {i}
-                        </Button>,
-                      );
-                    }
-                    return pages;
-                  })()}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage >= totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* ── Filter bottom sheet ── */}
+      <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+        <SheetContent side="bottom" className="p-0 rounded-t-3xl">
+          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1" />
+          <SheetHeader className="px-5 pt-2 pb-3 border-b">
+            <SheetTitle className="text-base font-semibold">Filter Products</SheetTitle>
+          </SheetHeader>
+          <div className="py-2">
+            {([
+              { value: "all", label: "All Products", icon: Package, color: "text-gray-600" },
+              { value: "outofstock", label: "Out of Stock", icon: AlertTriangle, color: "text-red-600" },
+              { value: "lowstock", label: "Running Low", icon: AlertTriangle, color: "text-orange-600" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                className={`w-full flex items-center gap-3 px-5 py-3.5 text-sm transition-colors ${
+                  stockFilter === opt.value ? "bg-purple-50 text-purple-700 font-semibold" : "text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={() => { setStockFilter(opt.value); setFilterSheetOpen(false); }}
+              >
+                <opt.icon className={`h-4 w-4 ${stockFilter === opt.value ? "text-purple-600" : opt.color}`} />
+                <span className="flex-1 text-left">{opt.label}</span>
+                {stockFilter === opt.value && <Check className="h-4 w-4 text-purple-600" />}
+              </button>
+            ))}
+          </div>
+          <div className="px-5 pb-8 pt-2 border-t">
+            <button
+              className="w-full py-3 rounded-xl bg-gray-100 text-sm font-medium text-gray-700 active:bg-gray-200 transition-colors"
+              onClick={() => setFilterSheetOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Floating Add button ── */}
+      {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
+        <Link href={addProductRoute}>
+          <button className="fixed bottom-20 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
+            <Plus className="h-5 w-5" />
+            Add Product
+          </button>
+        </Link>
+      )}
+
 
       {/* Adjust Stock Dialog */}
       <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
