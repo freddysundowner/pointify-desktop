@@ -1157,20 +1157,16 @@ export default function CustomerOverview() {
           </CardContent>
         </Card>
 
-        {/* Deposit Dialog - Moved from wallet tab */}
+        {/* Deposit Dialog */}
         <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
             <DialogHeader>
-              <DialogTitle>Deposit to Wallet</DialogTitle>
-              <DialogDescription>
-                Add money to the customer's wallet balance
-              </DialogDescription>
+              <DialogTitle className="text-base">Deposit to Wallet</DialogTitle>
+              <DialogDescription className="text-xs">Add money to the customer's wallet balance</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="amount" className="text-right">
-                  Amount
-                </Label>
+            <div className="space-y-3 py-1">
+              <div>
+                <Label htmlFor="amount" className="text-xs font-medium mb-1 block">Amount</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -1179,18 +1175,16 @@ export default function CustomerOverview() {
                   placeholder="0.00"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="col-span-3"
+                  className="h-9 text-sm"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDepositDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleDeposit}>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1 h-9" onClick={() => setIsDepositDialogOpen(false)}>Cancel</Button>
+              <Button className="flex-1 h-9" onClick={handleDeposit}>
                 Deposit {currency} {depositAmount || '0.00'}
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -1206,134 +1200,119 @@ export default function CustomerOverview() {
 
           <TabsContent value="sales" className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Sales History</CardTitle>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Filter className="h-4 w-4 text-gray-500" />
-                    <Select value={salesFilter} onValueChange={handleFilterChange}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Sales</SelectItem>
-                        <SelectItem value="cash">Cash Sales</SelectItem>
-                        <SelectItem value="credit">Credit Sales</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <CardHeader className="py-3">
+                <div className="flex justify-between items-center gap-2">
+                  <CardTitle className="text-sm">Sales History</CardTitle>
+                  <Select value={salesFilter} onValueChange={handleFilterChange}>
+                    <SelectTrigger className="w-28 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sales</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Receipt No</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {salesLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8">
-                            Loading sales data...
-                          </TableCell>
-                        </TableRow>
-                      ) : paginatedTransactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                            No sales found for this customer
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        paginatedTransactions.map((transaction) => (
-                          <TableRow key={transaction._id}>
-                            <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <Badge className={getTransactionTypeColor(transaction.type)}>
+              <CardContent className="p-0 lg:p-6 lg:pt-0">
+                {salesLoading ? (
+                  <div className="text-center py-8 text-sm text-muted-foreground">Loading sales data...</div>
+                ) : paginatedTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-gray-500">No sales found for this customer</div>
+                ) : (
+                  <>
+                    {/* Mobile cards */}
+                    <div className="divide-y lg:hidden">
+                      {paginatedTransactions.map((transaction) => (
+                        <div key={transaction._id} className="px-3 py-3 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <Badge className={`text-[10px] ${getTransactionTypeColor(transaction.type)}`}>
                                 {transaction.paymentMethod?.charAt(0)?.toUpperCase() + transaction.paymentMethod?.slice(1) || transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-gray-500">{transaction.referenceNumber}</TableCell>
-                            <TableCell className="text-right">
-                              <span className="font-medium text-green-600">
-                                {transaction.currency} {transaction.amount.toLocaleString()}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Link 
-                                href={`/receipt/${transaction._id}`}
-                                onClick={() => {
-                                  const saleData = salesData?.data?.find(sale => sale._id === transaction._id);
-                                  if (saleData) {
-                                    // Store in window object for immediate access
-                                    (window as any).__receiptData = saleData;
-                                  }
-                                }}
-                              >
-                                <Button variant="outline" size="sm">
-                                  View Receipt
-                                </Button>
-                              </Link>
-                            </TableCell>
+                              <span className="text-[11px] text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate">{transaction.referenceNumber}</p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-sm font-semibold text-green-600">{transaction.currency} {transaction.amount.toLocaleString()}</span>
+                            <Link
+                              href={`/receipt/${transaction._id}`}
+                              onClick={() => { const s = salesData?.data?.find((sale: any) => sale._id === transaction._id); if (s) (window as any).__receiptData = s; }}
+                            >
+                              <Button variant="outline" size="sm" className="h-7 text-xs px-2">Receipt</Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden lg:block rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs py-2">Date</TableHead>
+                            <TableHead className="text-xs py-2">Type</TableHead>
+                            <TableHead className="text-xs py-2">Receipt No</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Amount</TableHead>
+                            <TableHead className="text-xs py-2">Actions</TableHead>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedTransactions.map((transaction) => (
+                            <TableRow key={transaction._id}>
+                              <TableCell className="text-xs py-2">{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                              <TableCell className="py-2">
+                                <Badge className={`text-[10px] ${getTransactionTypeColor(transaction.type)}`}>
+                                  {transaction.paymentMethod?.charAt(0)?.toUpperCase() + transaction.paymentMethod?.slice(1) || transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs py-2 text-gray-500">{transaction.referenceNumber}</TableCell>
+                              <TableCell className="text-xs py-2 text-right font-medium text-green-600">{transaction.currency} {transaction.amount.toLocaleString()}</TableCell>
+                              <TableCell className="py-2">
+                                <Link href={`/receipt/${transaction._id}`} onClick={() => { const s = salesData?.data?.find((sale: any) => sale._id === transaction._id); if (s) (window as any).__receiptData = s; }}>
+                                  <Button variant="outline" size="sm" className="h-7 text-xs">View Receipt</Button>
+                                </Link>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
+                )}
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between pt-4">
-                  <div className="text-sm text-gray-500">
-                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, salesTransactions.length)} of {salesTransactions.length} results
+                {paginatedTransactions.length > 0 && (
+                  <div className="flex items-center justify-between px-3 lg:px-0 py-3 border-t">
+                    <p className="text-[11px] text-muted-foreground">
+                      {startIndex + 1}–{Math.min(startIndex + itemsPerPage, salesTransactions.length)} of {salesTransactions.length}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                        <ChevronLeft className="h-3.5 w-3.5" />Prev
+                      </Button>
+                      <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
+                      <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                        Next<ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <span className="text-sm">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="statement" className="space-y-4">
             <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Account Statement</CardTitle>
-                  </div>
-                  <div className="flex items-center space-x-2">
+              <CardHeader className="py-3">
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <CardTitle className="text-sm">Account Statement</CardTitle>
+                  <div className="flex items-center gap-2">
                     <Select value={statementFilter} onValueChange={setStatementFilter}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Filter" />
-                      </SelectTrigger>
+                      <SelectTrigger className="w-28 h-8 text-xs"><SelectValue placeholder="Filter" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="deposit">Deposit</SelectItem>
@@ -1341,79 +1320,103 @@ export default function CustomerOverview() {
                         <SelectItem value="payment">Payment</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button onClick={downloadStatementCSV} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download CSV
+                    <Button onClick={downloadStatementCSV} variant="outline" size="sm" className="h-8 text-xs px-2">
+                      <Download className="h-3.5 w-3.5 mr-1" />CSV
                     </Button>
-                    <Button onClick={downloadStatementPDF} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
+                    <Button onClick={downloadStatementPDF} variant="outline" size="sm" className="h-8 text-xs px-2">
+                      <Download className="h-3.5 w-3.5 mr-1" />PDF
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Receipt & Attendant</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {isLoadingPayments ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center">Loading payment history...</TableCell>
-                        </TableRow>
-                      ) : customerPayments && customerPayments.length > 0 ? (
-                        customerPayments.map((payment: any) => {
-                          const date = new Date(payment.createdAt).toLocaleDateString();
-                          const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
-                          const amount = payment.totalAmount || 0;
-                          const paymentNo = payment.paymentNo || 'N/A';
-                          const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
-                          const attendant = payment.attendantId?.username || 'System';
-                          
-                          return (
-                            <TableRow key={payment._id}>
-                              <TableCell>{date}</TableCell>
-                              <TableCell>
-                                <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'}>
-                                  {type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className={`font-medium ${payment.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
-                                  {payment.type === 'withdraw' ? '-' : '+'}{currency} {amount.toFixed(2)}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="text-sm">{paymentNo}</span>
-                                  <span className="text-xs text-gray-500">{attendant}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                <span className={balance < 0 ? 'text-red-600' : 'text-green-600'}>
-                                  {currency} {Math.abs(balance).toFixed(2)}
-                                  {balance < 0 && <span className="text-xs ml-1">(DR)</span>}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-gray-500">No payment history found</TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+              <CardContent className="p-0 lg:p-6 lg:pt-0">
+                {isLoadingPayments ? (
+                  <div className="text-center py-8 text-sm text-muted-foreground">Loading payment history...</div>
+                ) : !customerPayments || customerPayments.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-gray-500">No payment history found</div>
+                ) : (
+                  <>
+                    {/* Mobile cards */}
+                    <div className="divide-y lg:hidden">
+                      {customerPayments.map((payment: any) => {
+                        const date = new Date(payment.createdAt).toLocaleDateString();
+                        const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
+                        const amount = payment.totalAmount || 0;
+                        const paymentNo = payment.paymentNo || 'N/A';
+                        const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
+                        const attendant = payment.attendantId?.username || 'System';
+                        return (
+                          <div key={payment._id} className="px-3 py-3 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
+                                <span className="text-[11px] text-muted-foreground">{date}</span>
+                              </div>
+                              <p className="text-xs text-gray-500">{paymentNo} · {attendant}</p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className={`text-sm font-semibold ${payment.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                                {payment.type === 'withdraw' ? '-' : '+'}{currency} {amount.toFixed(2)}
+                              </p>
+                              <p className={`text-[11px] font-medium ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                Bal: {currency} {Math.abs(balance).toFixed(2)}{balance < 0 ? ' DR' : ''}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden lg:block rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs py-2">Date</TableHead>
+                            <TableHead className="text-xs py-2">Type</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Amount</TableHead>
+                            <TableHead className="text-xs py-2">Receipt & Attendant</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Balance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customerPayments.map((payment: any) => {
+                            const date = new Date(payment.createdAt).toLocaleDateString();
+                            const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
+                            const amount = payment.totalAmount || 0;
+                            const paymentNo = payment.paymentNo || 'N/A';
+                            const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
+                            const attendant = payment.attendantId?.username || 'System';
+                            return (
+                              <TableRow key={payment._id}>
+                                <TableCell className="text-xs py-2">{date}</TableCell>
+                                <TableCell className="py-2">
+                                  <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
+                                </TableCell>
+                                <TableCell className="text-xs py-2 text-right">
+                                  <span className={`font-medium ${payment.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {payment.type === 'withdraw' ? '-' : '+'}{currency} {amount.toFixed(2)}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="py-2">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs">{paymentNo}</span>
+                                    <span className="text-[11px] text-gray-500">{attendant}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-xs py-2 text-right font-medium">
+                                  <span className={balance < 0 ? 'text-red-600' : 'text-green-600'}>
+                                    {currency} {Math.abs(balance).toFixed(2)}{balance < 0 && <span className="ml-1">(DR)</span>}
+                                  </span>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1460,16 +1463,14 @@ export default function CustomerOverview() {
 
         {/* Debt Payment Dialog */}
         <Dialog open={isDebtPaymentDialogOpen} onOpenChange={setIsDebtPaymentDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
             <DialogHeader>
-              <DialogTitle>Record Customer Debt Payment</DialogTitle>
-              <DialogDescription>
-                Record a payment made by the customer to reduce their outstanding debt.
-              </DialogDescription>
+              <DialogTitle className="text-base">Record Debt Payment</DialogTitle>
+              <DialogDescription className="text-xs">Record a payment to reduce the customer's outstanding debt.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
-                <Label htmlFor="debt-amount">Payment Amount</Label>
+                <Label htmlFor="debt-amount" className="text-xs font-medium mb-1 block">Payment Amount</Label>
                 <Input
                   id="debt-amount"
                   type="number"
@@ -1477,20 +1478,13 @@ export default function CustomerOverview() {
                   value={debtPaymentAmount}
                   onChange={(e) => setDebtPaymentAmount(e.target.value)}
                   placeholder="Enter payment amount"
-                  className="mt-1"
+                  className="h-9 text-sm"
                 />
-                {!salesLoading && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Outstanding balance: {currency} -
-                  </p>
-                )}
               </div>
               <div>
-                <Label htmlFor="payment-method">Payment Method</Label>
+                <Label htmlFor="payment-method" className="text-xs font-medium mb-1 block">Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Cash</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
@@ -1500,37 +1494,31 @@ export default function CustomerOverview() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="payment-notes">Notes (Optional)</Label>
+                <Label htmlFor="payment-notes" className="text-xs font-medium mb-1 block">Notes (Optional)</Label>
                 <Input
                   id="payment-notes"
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Payment notes or reference"
-                  className="mt-1"
+                  className="h-9 text-sm"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDebtPaymentDialogOpen(false)}>
-                Cancel
-              </Button>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1 h-9" onClick={() => setIsDebtPaymentDialogOpen(false)}>Cancel</Button>
               <Button
+                className="flex-1 h-9 bg-green-600 hover:bg-green-700"
                 onClick={() => {
                   const amount = parseFloat(debtPaymentAmount);
                   if (amount > 0) {
-                    debtPaymentMutation.mutate({
-                      amount: amount,
-                      paymentMethod: paymentMethod,
-                      notes: paymentNotes
-                    });
+                    debtPaymentMutation.mutate({ amount, paymentMethod, notes: paymentNotes });
                   }
                 }}
                 disabled={!debtPaymentAmount || parseFloat(debtPaymentAmount) <= 0 || debtPaymentMutation.isPending}
-                className="bg-green-600 hover:bg-green-700"
               >
                 {debtPaymentMutation.isPending ? "Recording..." : "Record Payment"}
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
