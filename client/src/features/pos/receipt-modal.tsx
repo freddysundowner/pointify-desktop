@@ -232,7 +232,7 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm sm:max-w-md rounded-2xl sm:rounded-xl bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0 max-h-[92dvh] gap-0">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm sm:max-w-md rounded-2xl sm:rounded-xl bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0 max-h-[92dvh] gap-0 [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Transaction Complete</DialogTitle>
 
         {/* Header */}
