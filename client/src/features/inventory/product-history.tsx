@@ -224,9 +224,9 @@ export default function ProductHistory() {
               ) : (
                 <div className="bg-white rounded-xl border overflow-hidden">
                   {purchases.map((p: any, i: number) => (
-                    <div key={p.receiptNo || i} className="flex items-center justify-between px-3 py-2.5 border-b last:border-0">
+                    <div key={p.purchaseNo || p.receiptNo || i} className="flex items-center justify-between px-3 py-2.5 border-b last:border-0">
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-mono text-gray-500">{p.receiptNo || "N/A"}</p>
+                        <p className="text-xs font-mono text-gray-500">{p.purchaseNo || p.receiptNo || "—"}</p>
                         <p className="text-sm font-medium text-gray-800 truncate">{p.supplier || "Direct"}</p>
                         <p className="text-[11px] text-gray-400">{fmtDate(p.date)} · <span className="capitalize">{p.paymentType || "cash"}</span></p>
                       </div>
@@ -369,8 +369,8 @@ export default function ProductHistory() {
                       </tr></thead>
                       <tbody>
                         {purchases.map((p: any, i: number) => (
-                          <tr key={p.receiptNo || i} className="border-b hover:bg-gray-50">
-                            <td className="p-4 font-mono text-sm">{p.receiptNo || "N/A"}</td>
+                          <tr key={p.purchaseNo || p.receiptNo || i} className="border-b hover:bg-gray-50">
+                            <td className="p-4 font-mono text-sm">{p.purchaseNo || p.receiptNo || "—"}</td>
                             <td className="p-4">{p.supplier || "Direct"}</td>
                             <td className="p-4 text-sm">{fmtDate(p.date)}</td>
                             <td className="p-4 capitalize">{p.paymentType || "cash"}</td>
