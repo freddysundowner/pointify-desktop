@@ -1227,25 +1227,17 @@ function SalesList() {
                 {userType === "admin" && (
                   <div>
                     <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">Attendant</Label>
-                    <div className="divide-y divide-gray-100 border rounded-lg overflow-hidden">
-                      <button
-                        className={`w-full flex items-center justify-between px-3 py-2 text-sm ${attendantFilter === "all" ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
-                        onClick={() => handleAttendantFilter("all")}
-                      >
-                        <span>All Attendants</span>
-                        {attendantFilter === "all" && <Check className="h-3.5 w-3.5 text-purple-600" />}
-                      </button>
-                      {uniqueAttendants.map((a: any) => (
-                        <button
-                          key={a._id}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-sm ${attendantFilter === a._id ? "bg-purple-50 text-purple-700 font-medium" : "text-gray-700 hover:bg-gray-50"}`}
-                          onClick={() => handleAttendantFilter(a._id)}
-                        >
-                          <span>{a.username}</span>
-                          {attendantFilter === a._id && <Check className="h-3.5 w-3.5 text-purple-600" />}
-                        </button>
-                      ))}
-                    </div>
+                    <Select value={attendantFilter} onValueChange={(v) => handleAttendantFilter(v)}>
+                      <SelectTrigger className="h-9 text-sm w-full">
+                        <SelectValue placeholder="All Attendants" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Attendants</SelectItem>
+                        {uniqueAttendants.map((a: any) => (
+                          <SelectItem key={a._id} value={a._id}>{a.username}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
