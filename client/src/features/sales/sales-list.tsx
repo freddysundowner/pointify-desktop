@@ -1033,7 +1033,7 @@ function SalesList() {
   return (
     <DashboardLayout title="Sales Reports">
       <div className="w-full">
-        <div className="space-y-3">
+        <div className="space-y-2">
           <PageHeader
             title="Sales Reports"
             subtitle={!startDate && !endDate ? "Showing all sales transactions" : startDate === endDate ? `Transactions for ${new Date(startDate).toLocaleDateString()}` : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
@@ -1322,7 +1322,7 @@ function SalesList() {
 
           {/* Sales History */}
           <Card className="flex-1">
-            <CardHeader className="pb-3 px-4">
+            <CardHeader className="pb-2 px-4 pt-3">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-base">
                   Sales History
@@ -1366,7 +1366,7 @@ function SalesList() {
                   {/* ── Mobile card list ── */}
                   <div className="lg:hidden divide-y divide-gray-100">
                     {paginatedData.map((sale: any) => (
-                      <div key={sale.id} className="flex items-start gap-2 px-4 py-3">
+                      <div key={sale.id} className="flex items-start gap-2 px-3 py-2">
                         {/* Main info — tappable */}
                         <button
                           className="flex-1 min-w-0 text-left"
@@ -1579,24 +1579,24 @@ function SalesList() {
 
       {/* Complete Sale Dialog */}
       <Dialog open={completeSaleOpen} onOpenChange={setCompleteSaleOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
               Complete Sale #{saleToComplete?.receiptNo}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 flex justify-between items-center">
-              <span className="text-sm font-medium text-green-800 dark:text-green-200">Total Amount Due</span>
-              <span className="text-xl font-bold text-green-700 dark:text-green-300">
+          <div className="space-y-3 pt-1">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg px-3 py-2.5 flex justify-between items-center">
+              <span className="text-sm text-green-800 dark:text-green-200">Amount Due</span>
+              <span className="text-lg font-bold text-green-700 dark:text-green-300">
                 {primaryShopCurrency} {Number(saleToComplete?.totalAmount || 0).toFixed(2)}
               </span>
             </div>
             <div>
-              <Label className="text-sm font-medium mb-2 block">Payment Method</Label>
+              <Label className="text-xs font-medium mb-1.5 block">Payment Method</Label>
               <Select value={completePaymentMethod} onValueChange={setCompletePaymentMethod}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-sm">
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1609,7 +1609,7 @@ function SalesList() {
               </Select>
             </div>
             <div>
-              <Label className="text-sm font-medium mb-2 block">Amount Paid</Label>
+              <Label className="text-xs font-medium mb-1.5 block">Amount Paid</Label>
               <Input
                 type="number"
                 value={completeAmountPaid}
@@ -1617,23 +1617,15 @@ function SalesList() {
                 placeholder="Enter amount paid"
                 min={0}
                 step="0.01"
+                className="h-9 text-sm"
               />
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setCompleteSaleOpen(false)}
-                disabled={isCompleting}
-              >
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-9" onClick={() => setCompleteSaleOpen(false)} disabled={isCompleting}>
                 Cancel
               </Button>
-              <Button
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                onClick={confirmCompleteSale}
-                disabled={isCompleting}
-              >
-                {isCompleting ? "Processing..." : "Complete Sale"}
+              <Button className="flex-1 h-9 bg-green-600 hover:bg-green-700 text-white" onClick={confirmCompleteSale} disabled={isCompleting}>
+                {isCompleting ? "Processing..." : "Complete"}
               </Button>
             </div>
           </div>
@@ -1642,23 +1634,23 @@ function SalesList() {
 
       {/* Invoice Dialog (Download / Email) */}
       <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Receipt className="h-4 w-4 flex-shrink-0" />
               Invoice #{invoiceSale?.receiptNo}
             </DialogTitle>
           </DialogHeader>
 
           {invoiceMode === "choose" ? (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               <p className="text-sm text-muted-foreground">
                 How would you like to share this invoice?
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="h-20 flex-col gap-2"
+                  className="h-16 flex-col gap-1.5 text-sm"
                   onClick={() => {
                     if (invoiceSale) generateSalePDF(invoiceSale, "INVOICE", "download");
                     setInvoiceDialogOpen(false);
@@ -1668,7 +1660,7 @@ function SalesList() {
                   <span>Download</span>
                 </Button>
                 <Button
-                  className="h-20 flex-col gap-2"
+                  className="h-16 flex-col gap-1.5 text-sm"
                   onClick={() => setInvoiceMode("email")}
                 >
                   <Mail className="h-5 w-5" />
@@ -1677,9 +1669,9 @@ function SalesList() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4 pt-2">
+            <div className="space-y-4 pt-1">
               <div>
-                <Label className="text-sm font-medium mb-2 block">
+                <Label className="text-sm font-medium mb-1.5 block">
                   Customer Email
                 </Label>
                 <Input
@@ -1688,22 +1680,23 @@ function SalesList() {
                   onChange={(e) => setInvoiceEmail(e.target.value)}
                   placeholder="customer@example.com"
                   disabled={isSendingInvoice}
+                  className="h-10"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   The invoice PDF will be attached to the email.
                 </p>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={() => setInvoiceMode("choose")}
                   disabled={isSendingInvoice}
                 >
                   Back
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={handleEmailInvoice}
                   disabled={isSendingInvoice || !invoiceEmail.trim()}
                 >
