@@ -278,6 +278,7 @@ export default function CustomerOverview() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [statementFilter, setStatementFilter] = useState("all");
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState(125.50);
   const [walletTransactions, setWalletTransactions] = useState([
     {
@@ -1350,7 +1351,7 @@ export default function CustomerOverview() {
                         const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
                         const attendant = payment.attendantId?.username || 'System';
                         return (
-                          <div key={payment._id} className="px-3 py-3 flex items-center justify-between gap-3">
+                          <div key={payment._id} className="px-3 py-3 flex items-center justify-between gap-3 cursor-pointer active:bg-muted/50" onClick={() => setSelectedPayment(payment)}>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
                                 <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
@@ -1392,7 +1393,7 @@ export default function CustomerOverview() {
                             const balance = payment.balance !== undefined ? payment.balance : (payment.customerId?.wallet || 0);
                             const attendant = payment.attendantId?.username || 'System';
                             return (
-                              <TableRow key={payment._id}>
+                              <TableRow key={payment._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedPayment(payment)}>
                                 <TableCell className="text-xs py-2">{date}</TableCell>
                                 <TableCell className="py-2">
                                   <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
@@ -1525,6 +1526,120 @@ export default function CustomerOverview() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Payment Receipt Dialog */}
+        {selectedPayment && (() => {
+          const p = selectedPayment;
+          const amount = p.totalAmount || 0;
+          const balance = p.balance !== undefined ? p.balance : (p.customerId?.wallet || 0);
+          const paymentNo = p.paymentNo || p._id?.slice(-8) || 'N/A';
+          const attendant = p.attendantId?.username || 'System';
+          const type = (p.type || '').charAt(0).toUpperCase() + (p.type || '').slice(1);
+          const shopName = (typeof admin?.primaryShop === 'object' ? (admin.primaryShop as any)?.name : null) || 'Shop';
+          const isDeposit = p.type === 'deposit';
+          const dateTime = new Date(p.createdAt);
+
+          const handlePrint = () => {
+            const printWindow = window.open('', '_blank', 'width=400,height=600');
+            if (!printWindow) return;
+            printWindow.document.write(`
+              <!DOCTYPE html><html><head><title>Receipt ${paymentNo}</title>
+              <style>
+                body { font-family: 'Courier New', monospace; max-width: 320px; margin: 0 auto; padding: 16px; font-size: 12px; }
+                .center { text-align: center; }
+                .divider { border-top: 1px dashed #999; margin: 8px 0; }
+                .row { display: flex; justify-content: space-between; margin: 4px 0; }
+                .bold { font-weight: bold; }
+                .large { font-size: 18px; font-weight: bold; }
+              </style></head><body>
+              <div class="center bold" style="font-size:15px;">${shopName}</div>
+              <div class="center" style="margin-bottom:6px;">Wallet ${type} Receipt</div>
+              <div class="divider"></div>
+              <div class="row"><span>Receipt No:</span><span>${paymentNo}</span></div>
+              <div class="row"><span>Date:</span><span>${dateTime.toLocaleDateString()}</span></div>
+              <div class="row"><span>Time:</span><span>${dateTime.toLocaleTimeString()}</span></div>
+              <div class="row"><span>Customer:</span><span>${customerOverviewData.name}</span></div>
+              <div class="row"><span>Attendant:</span><span>${attendant}</span></div>
+              <div class="divider"></div>
+              <div class="row"><span>Transaction:</span><span>${type}</span></div>
+              <div class="row bold large"><span>${isDeposit ? 'Deposited:' : 'Withdrawn:'}</span><span>${currency} ${amount.toFixed(2)}</span></div>
+              <div class="row"><span>New Balance:</span><span>${currency} ${Math.abs(balance).toFixed(2)}${balance < 0 ? ' DR' : ' CR'}</span></div>
+              <div class="divider"></div>
+              <div class="center" style="margin-top:8px;">Thank you!</div>
+              </body></html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
+          };
+
+          return (
+            <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
+              <DialogContent className="w-[calc(100%-1.5rem)] max-w-xs rounded-xl p-0 overflow-hidden">
+                {/* Receipt header */}
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 text-white px-5 py-4 text-center">
+                  <p className="text-xs font-medium opacity-80 uppercase tracking-wide">{shopName}</p>
+                  <p className="text-sm font-semibold mt-0.5">Wallet {type} Receipt</p>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 py-4 space-y-1 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Receipt No</span>
+                    <span className="font-semibold">{paymentNo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date</span>
+                    <span>{dateTime.toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Time</span>
+                    <span>{dateTime.toLocaleTimeString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Customer</span>
+                    <span className="truncate max-w-[160px] text-right">{customerOverviewData.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Attendant</span>
+                    <span>{attendant}</span>
+                  </div>
+
+                  <div className="border-t border-dashed my-2" />
+
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Transaction</span>
+                    <span>
+                      <Badge variant={isDeposit ? 'default' : 'destructive'} className="text-[10px]">{type}</Badge>
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-muted-foreground">{isDeposit ? 'Deposited' : 'Withdrawn'}</span>
+                    <span className={`text-base font-bold ${isDeposit ? 'text-green-600' : 'text-red-600'}`}>
+                      {isDeposit ? '+' : '-'}{currency} {amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">New Balance</span>
+                    <span className={`font-semibold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {currency} {Math.abs(balance).toFixed(2)} {balance < 0 ? 'DR' : 'CR'}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-dashed mt-2" />
+                  <p className="text-center text-muted-foreground pt-1">Thank you!</p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 px-5 pb-4">
+                  <Button variant="outline" className="flex-1 h-9 text-xs" onClick={() => setSelectedPayment(null)}>Close</Button>
+                  <Button className="flex-1 h-9 text-xs" onClick={handlePrint}>
+                    Print Receipt
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          );
+        })()}
       </div>
     </DashboardLayout>
   );
