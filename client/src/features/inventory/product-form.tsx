@@ -541,14 +541,7 @@ export default function ProductForm() {
         </button>
       </div>
 
-      <div className="lg:max-w-7xl lg:mx-auto lg:p-6">
-        <div className="hidden lg:block">
-          <PageHeader
-            title={isEditMode ? "Edit Product" : "Add New Product"}
-            onBack={() => navigate(productsRoute)}
-          />
-        </div>
-
+      <div className="lg:p-6">
         <Form {...form}>
           <form id="product-form" onSubmit={form.handleSubmit(onSubmit)} className="lg:space-y-8 pb-20 lg:pb-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
