@@ -167,29 +167,22 @@ export default function Attendants() {
   const effectiveAdminId = effectiveAdmin?._id || effectiveAdmin?.id || '';
 
   const { data: attendants = [], isLoading, error } = useQuery({
-    queryKey: ['/api/attendants/shop/filter', currentShopId, effectiveAdminId],
+    queryKey: ['/api/attendants/all', effectiveAdminId],
     queryFn: () => {
-      console.log('Fetching attendants for shopId:', currentShopId, 'adminId:', effectiveAdminId);
       const token = localStorage.getItem('authToken');
-      return fetch(`/api/attendants/shop/filter?shopId=${currentShopId}&adminId=${effectiveAdminId}`, {
+      return fetch(`/api/attendants/all/${effectiveAdminId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
         .then(res => {
-          console.log('Attendants API response status:', res.status);
-          if (!res.ok) {
-            throw new Error(`API error: ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`API error: ${res.status}`);
           return res.json();
         })
-        .then(data => {
-          console.log('Attendants API response data:', data);
-          return Array.isArray(data) ? data : data.data || [];
-        });
+        .then(data => Array.isArray(data) ? data : data.data || []);
     },
-    enabled: !!currentShopId && !!effectiveAdminId,
+    enabled: !!effectiveAdminId,
     onError: (error: Error) => {
       console.error('Error fetching attendants:', error);
       toast({
