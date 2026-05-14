@@ -292,6 +292,20 @@ export function registerAnalyticsRoutes(app: Express) {
     }
   });
 
+  // Sales report (Flutter: analysis/sales/report)
+  app.get("/api/analysis/sales/report", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) return res.status(401).json({ error: "Authorization token required" });
+      const queryParams = new URLSearchParams(req.query as any);
+      const endpoint = `/analysis/sales/report?${queryParams.toString()}`;
+      const data = await makePointifyRequest(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch sales report" });
+    }
+  });
+
   // Stock report per shop (paginated, searchable by name)
   app.get("/api/product/stockreport/:shopid", async (req, res) => {
     try {

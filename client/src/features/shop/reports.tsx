@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { TrendingUp, DollarSign, Tag, Package, BarChart2, BarChart3, RotateCcw, ShoppingCart, Users, LineChart } from "lucide-react";
+import { TrendingUp, DollarSign, Tag, Package, BarChart2, BarChart3, RotateCcw, ShoppingCart, Users, LineChart, Wallet, AlertCircle, ShoppingBag, BarChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
@@ -7,12 +7,20 @@ import { useNavigationRoute } from "@/lib/navigation-utils";
 
 const reportCards = [
   {
-    href: "/income-reports",
+    href: "/sales-report",
     icon: DollarSign,
     color: "text-green-600",
     bg: "bg-green-50",
+    title: "Sales Report",
+    desc: "Cash, credit, wallet and on-hold sales totals",
+  },
+  {
+    href: "/income-reports",
+    icon: BarChart2,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
     title: "Sales Summary",
-    desc: "Cash, credit, wallet and on-hold totals",
+    desc: "Detailed sales summary by date range",
   },
   {
     href: "/net-profit-report",
@@ -21,6 +29,38 @@ const reportCards = [
     bg: "bg-purple-50",
     title: "Income Report",
     desc: "Gross profit, net profit, taxes and expenses",
+  },
+  {
+    href: "/expense-report",
+    icon: Wallet,
+    color: "text-red-600",
+    bg: "bg-red-50",
+    title: "Expenses Report",
+    desc: "Track all expenses by date",
+  },
+  {
+    href: "/due-sales",
+    icon: AlertCircle,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    title: "Due Sales",
+    desc: "Credit sales which are due to be collected",
+  },
+  {
+    href: "/purchases-report",
+    icon: ShoppingBag,
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+    title: "Purchases Report",
+    desc: "Purchase invoices and records",
+  },
+  {
+    href: "/analysis-report",
+    icon: BarChart,
+    color: "text-cyan-600",
+    bg: "bg-cyan-50",
+    title: "Analysis",
+    desc: "Monthly sales, profit and expenses graph",
   },
   {
     href: "/profit-analysis",
