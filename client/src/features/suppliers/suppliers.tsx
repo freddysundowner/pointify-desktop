@@ -440,7 +440,7 @@ export default function SuppliersPage() {
                               <DropdownMenuItem onClick={() => handleEdit(supplier)}>
                                 <Edit className="mr-2 h-4 w-4" />Edit
                               </DropdownMenuItem>
-                              {supplier.wallet && supplier.wallet < 0 && (
+                              {!!supplier.wallet && supplier.wallet < 0 && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handlePayDebt(supplier)} className="text-green-600 focus:text-green-600">
