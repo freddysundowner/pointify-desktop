@@ -283,67 +283,73 @@ export default function Customers() {
                   <span className="sm:hidden">Add</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Customer</DialogTitle>
+                  <DialogTitle className="text-base">Add New Customer</DialogTitle>
                 </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="name">Customer Name *</Label>
+                  <Label htmlFor="name" className="text-xs font-medium mb-1 block">Customer Name *</Label>
                   <Input
                     id="name"
                     value={newCustomer.name}
                     onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                     placeholder="Enter customer name"
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-xs font-medium mb-1 block">Phone Number</Label>
                   <Input
                     id="phone"
                     value={newCustomer.phone}
                     onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                     placeholder="Enter phone number"
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-xs font-medium mb-1 block">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={newCustomer.email}
                     onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
                     placeholder="Enter email address"
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address" className="text-xs font-medium mb-1 block">Address</Label>
                   <Input
                     id="address"
                     value={newCustomer.address}
                     onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
                     placeholder="Enter address"
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="wallet">Initial Wallet Balance</Label>
+                  <Label htmlFor="wallet" className="text-xs font-medium mb-1 block">Initial Wallet Balance</Label>
                   <Input
                     id="wallet"
                     type="number"
                     value={newCustomer.wallet}
                     onChange={(e) => setNewCustomer({ ...newCustomer, wallet: Number(e.target.value) })}
                     placeholder="0"
+                    className="h-9 text-sm"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1 h-9" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
+                    className="flex-1 h-9"
                     onClick={handleCreateCustomer}
                     disabled={!newCustomer.name || createCustomerMutation.isPending}
                   >
-                    {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
+                    {createCustomerMutation.isPending ? 'Creating...' : 'Create'}
                   </Button>
                 </div>
               </div>
@@ -555,63 +561,69 @@ export default function Customers() {
 
         {/* Edit Customer Dialog */}
         <Dialog open={!!editingCustomer} onOpenChange={() => setEditingCustomer(null)}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
             <DialogHeader>
-              <DialogTitle>Edit Customer</DialogTitle>
+              <DialogTitle className="text-base">Edit Customer</DialogTitle>
             </DialogHeader>
             {editingCustomer && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="edit-name">Customer Name *</Label>
+                  <Label htmlFor="edit-name" className="text-xs font-medium mb-1 block">Customer Name *</Label>
                   <Input
                     id="edit-name"
                     value={editingCustomer.name}
                     onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-phone">Phone Number</Label>
+                  <Label htmlFor="edit-phone" className="text-xs font-medium mb-1 block">Phone Number</Label>
                   <Input
                     id="edit-phone"
                     value={editingCustomer.phonenumber || editingCustomer.phone || ''}
                     onChange={(e) => setEditingCustomer({ ...editingCustomer, phonenumber: e.target.value })}
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-email">Email</Label>
+                  <Label htmlFor="edit-email" className="text-xs font-medium mb-1 block">Email</Label>
                   <Input
                     id="edit-email"
                     type="email"
                     value={editingCustomer.email || ''}
                     onChange={(e) => setEditingCustomer({ ...editingCustomer, email: e.target.value })}
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-address">Address</Label>
+                  <Label htmlFor="edit-address" className="text-xs font-medium mb-1 block">Address</Label>
                   <Input
                     id="edit-address"
                     value={editingCustomer.address || ''}
                     onChange={(e) => setEditingCustomer({ ...editingCustomer, address: e.target.value })}
+                    className="h-9 text-sm"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-wallet">Wallet Balance</Label>
+                  <Label htmlFor="edit-wallet" className="text-xs font-medium mb-1 block">Wallet Balance</Label>
                   <Input
                     id="edit-wallet"
                     type="number"
                     value={editingCustomer.wallet || 0}
                     onChange={(e) => setEditingCustomer({ ...editingCustomer, wallet: Number(e.target.value) })}
+                    className="h-9 text-sm"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setEditingCustomer(null)}>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="outline" className="flex-1 h-9" onClick={() => setEditingCustomer(null)}>
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
+                    className="flex-1 h-9"
                     onClick={handleUpdateCustomer}
                     disabled={!editingCustomer.name || updateCustomerMutation.isPending}
                   >
-                    {updateCustomerMutation.isPending ? 'Updating...' : 'Update Customer'}
+                    {updateCustomerMutation.isPending ? 'Updating...' : 'Update'}
                   </Button>
                 </div>
               </div>
