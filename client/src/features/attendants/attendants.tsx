@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound, MoreVertical } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Link } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
@@ -55,6 +55,7 @@ export default function Attendants() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetPasswordValue, setResetPasswordValue] = useState('');
   const [editingPermissions, setEditingPermissions] = useState<Permission[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const { admin } = useAuth(); // Use AuthProvider context instead of Redux
   const { selectedShopId, availableShops } = useSelector((state: RootState) => state.shop);
@@ -837,33 +838,50 @@ export default function Attendants() {
                 <div className="space-y-4">
                   <h4 className="font-medium text-sm">Available Permissions for {selectedAttendant?.username}:</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {adminPermissions.map((permission: Permission) => (
-                      <div key={permission.key} className="border rounded-lg p-3">
-                        <h5 className="font-medium text-sm mb-3 text-blue-700 capitalize">{permission.key}</h5>
-                        <div className="space-y-2">
-                          {permission.value.map((action: string) => {
-                            // Check if attendant has this permission in editing state
-                            const isChecked = hasEditingPermission(permission.key, action);
-                            
-                            return (
-                              <div key={action} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={`${permission.key}-${action}`}
-                                  checked={isChecked}
-                                  onCheckedChange={(checked) => {
-                                    console.log(`Toggling ${permission.key}-${action}: ${checked}`);
-                                    toggleEditingPermission(permission.key, action, checked as boolean);
-                                  }}
-                                />
-                                <Label htmlFor={`${permission.key}-${action}`} className="text-xs font-normal cursor-pointer leading-tight">
-                                  {action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                </Label>
-                              </div>
-                            );
-                          })}
+                    {adminPermissions.map((permission: Permission) => {
+                      const isCollapsed = collapsedGroups.has(permission.key);
+                      const checkedCount = permission.value.filter(a => hasEditingPermission(permission.key, a)).length;
+                      return (
+                        <div key={permission.key} className="border rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+                            onClick={() => setCollapsedGroups(prev => {
+                              const next = new Set(prev);
+                              next.has(permission.key) ? next.delete(permission.key) : next.add(permission.key);
+                              return next;
+                            })}
+                          >
+                            <span className="font-medium text-sm text-blue-700 capitalize">{permission.key}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-gray-500">{checkedCount}/{permission.value.length}</span>
+                              {isCollapsed ? <ChevronDown className="h-3.5 w-3.5 text-gray-400" /> : <ChevronUp className="h-3.5 w-3.5 text-gray-400" />}
+                            </div>
+                          </button>
+                          {!isCollapsed && (
+                            <div className="p-3 space-y-2">
+                              {permission.value.map((action: string) => {
+                                const isChecked = hasEditingPermission(permission.key, action);
+                                return (
+                                  <div key={action} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`${permission.key}-${action}`}
+                                      checked={isChecked}
+                                      onCheckedChange={(checked) => {
+                                        toggleEditingPermission(permission.key, action, checked as boolean);
+                                      }}
+                                    />
+                                    <Label htmlFor={`${permission.key}-${action}`} className="text-xs font-normal cursor-pointer leading-tight">
+                                      {action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    </Label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
