@@ -289,6 +289,10 @@ export default function BusinessDashboard() {
     localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
     updateAdmin(mergedAdminData);
 
+    // Remove attendants cache entirely so the next visit always fetches fresh data
+    // for the new shop — prevents stale entries from a previous shop showing briefly.
+    queryClient.removeQueries({ queryKey: ['/api/attendants/shop/filter'] });
+
     // Invalidate every cached query across the whole app and immediately
     // refetch any that are currently mounted/active so all pages reflect
     // the new shop without waiting for their own stale-time to expire.

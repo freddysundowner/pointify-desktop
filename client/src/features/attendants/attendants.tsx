@@ -186,6 +186,7 @@ export default function Attendants() {
     },
     enabled: !!effectiveAdminId && !!currentShopId,
     staleTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
     onError: (error: Error) => {
       console.error('Error fetching attendants:', error);

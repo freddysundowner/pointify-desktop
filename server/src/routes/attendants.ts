@@ -97,9 +97,7 @@ export function registerAttendantRoutes(app: Express) {
     }
   });
 
-  // Get all attendants for a shop with filter
-  // The upstream Pointify /attendants/shop/filter does not reliably filter by shopId,
-  // so we fetch all attendants via /attendants/all/:adminId and filter server-side.
+  // Get attendants for a shop using the Pointify shop filter endpoint
   app.get("/api/attendants/shop/filter", async (req, res) => {
     try {
       const { shopId, adminId } = req.query;
@@ -115,20 +113,14 @@ export function registerAttendantRoutes(app: Express) {
 
       res.setHeader('Cache-Control', 'no-store');
 
+      const queryParams = new URLSearchParams({ shopId: shopId as string, adminId: adminId as string });
+
       try {
-        // Fetch all attendants for this admin, then filter by shopId server-side
-        const all = await makePointifyRequest(`/attendants/all/${adminId}`, {
+        const data = await makePointifyRequest(`/attendants/shop/filter?${queryParams.toString()}`, {
           method: "GET",
           headers: { 'Authorization': `Bearer ${token}` },
         });
-
-        const allArray: any[] = Array.isArray(all) ? all : (all as any).data || [];
-        const filtered = allArray.filter((a: any) => {
-          const aShopId = typeof a.shopId === 'string' ? a.shopId : a.shopId?._id;
-          return aShopId === shopId;
-        });
-
-        res.json(filtered);
+        res.json(data);
       } catch (apiError) {
         console.log("Pointify API not available, using local storage");
         const shopAttendants = Array.from(attendantsStorage.values())
