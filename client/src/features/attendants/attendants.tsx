@@ -624,7 +624,7 @@ export default function Attendants() {
 
         {/* Create/Edit Attendant Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[calc(100%-2rem)] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle>
                 {selectedAttendant ? 'Edit Attendant' : 'Create New Attendant'}
@@ -634,7 +634,7 @@ export default function Attendants() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -708,9 +708,10 @@ export default function Attendants() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3 mt-6">
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setIsDialogOpen(false);
                   resetForm();
@@ -719,6 +720,7 @@ export default function Attendants() {
                 Cancel
               </Button>
               <Button
+                className="w-full sm:w-auto"
                 onClick={handleSubmit}
                 disabled={createAttendantMutation.isPending || updateAttendantMutation.isPending}
               >
