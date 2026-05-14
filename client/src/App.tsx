@@ -57,6 +57,7 @@ import PermissionsInit from "@/components/PermissionsInit";
 import CashFlow from "@/features/cashflow/cashflow";
 import ReportsHub from "@/features/shop/reports";
 import IncomeReports from "@/features/reports/income-reports";
+import NetProfitReport from "@/features/reports/net-profit-report";
 import ProfitAnalysis from "@/features/reports/profit-analysis";
 import DiscountReports from "@/features/reports/discount-reports";
 import StockReport from "@/features/reports/stock-report";
@@ -460,6 +461,7 @@ function AppContent() {
             <Route path="/cashflow-categories" component={CashflowCategories} />
             <Route path="/reports" component={ReportsHub} />
             <Route path="/income-reports" component={IncomeReports} />
+            <Route path="/net-profit-report" component={NetProfitReport} />
             <Route path="/profit-analysis" component={ProfitAnalysis} />
             <Route path="/profit-loss" component={ProfitLossPage} />
             <Route path="/debtors" component={DebtorsPage} />

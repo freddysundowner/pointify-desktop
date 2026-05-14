@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { TrendingUp, DollarSign, Tag, Package, BarChart2, BarChart3, RotateCcw, ShoppingCart, Users } from "lucide-react";
+import { TrendingUp, DollarSign, Tag, Package, BarChart2, BarChart3, RotateCcw, ShoppingCart, Users, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,6 +13,14 @@ const reportCards = [
     bg: "bg-green-50",
     title: "Sales Summary",
     desc: "Cash, credit, wallet and on-hold totals",
+  },
+  {
+    href: "/net-profit-report",
+    icon: LineChart,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+    title: "Income Report",
+    desc: "Gross profit, net profit, taxes and expenses",
   },
   {
     href: "/profit-analysis",
