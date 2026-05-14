@@ -32,10 +32,14 @@ export default function ReceiptModal({
   const shopTaxRate = primaryShop?.tax || 0;
   const currency = primaryShop?.currency || 'KES';
 
-  const extraChargeAmount = (transaction as any)?.extraCharges || 0;
-  const extraChargeLabel = (transaction as any)?.salesnote || "Extra Charge";
-  const extraCharge = extraChargeAmount > 0
-    ? { label: extraChargeLabel, amount: extraChargeAmount }
+  const extraChargesArr: { name: string; amount: number }[] = Array.isArray((transaction as any)?.extraCharges)
+    ? (transaction as any).extraCharges
+    : [];
+  const extraChargesTotal: number = (transaction as any)?.extraChargesTotal
+    || extraChargesArr.reduce((s, c) => s + (c.amount || 0), 0);
+  const extraChargeLabel = extraChargesArr[0]?.name || (transaction as any)?.salesnote || "Extra Charge";
+  const extraCharge = extraChargesTotal > 0
+    ? { label: extraChargeLabel, amount: extraChargesTotal }
     : null;
 
   const getPrintData = () => ({

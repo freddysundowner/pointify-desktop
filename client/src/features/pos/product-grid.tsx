@@ -900,7 +900,8 @@ export default function ProductGrid({
       totalDiscount: parseFloat(totals.discount.toString()),
       customerId: selectedCustomerId || null,
       saleDiscount: 0.0,
-      extraCharges: extraChargeAmount,
+      extraCharges: extraChargeAmount > 0 ? [{ name: extraChargeLabel, amount: extraChargeAmount }] : [],
+      extraChargesTotal: extraChargeAmount,
       salesnote: extraChargeAmount > 0 ? extraChargeLabel : "",
     };
 

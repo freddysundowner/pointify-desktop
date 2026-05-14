@@ -104,7 +104,8 @@ export default function ReceiptView() {
     paymentTag: sale.paymentTag || sale.paymentType || "cash",
     saleType: sale.saleType || "Retail",
     salesnote: sale.salesnote || "",
-    extraCharges: sale.extraCharges || 0,
+    extraChargesArr: Array.isArray(sale.extraCharges) ? sale.extraCharges : [],
+    extraChargesTotal: sale.extraChargesTotal || (Array.isArray(sale.extraCharges) ? sale.extraCharges.reduce((s: number, c: any) => s + (c.amount || 0), 0) : (typeof sale.extraCharges === 'number' ? sale.extraCharges : 0)),
     items: (sale.items || []).map((item: any) => ({
       productName: item.product?.name || item.productName || "Unknown Product",
       quantity: item.quantity || 0,
@@ -143,10 +144,10 @@ export default function ReceiptView() {
   const itemDiscounts = saleData.items.reduce((s: number, i: any) => s + (i.lineDiscount || 0), 0);
   const date = new Date(saleData.saleDate);
 
-  const extraCharge = saleData.extraCharges > 0
-    ? { label: saleData.salesnote || "Extra Charge", amount: saleData.extraCharges }
+  const extraCharge = saleData.extraChargesTotal > 0
+    ? { label: saleData.extraChargesArr[0]?.name || saleData.salesnote || "Extra Charge", amount: saleData.extraChargesTotal }
     : undefined;
-  const effectiveTotal = saleData.totalWithDiscount + (saleData.extraCharges || 0);
+  const effectiveTotal = saleData.totalWithDiscount + (saleData.extraChargesTotal || 0);
 
   const getPrintData = () => ({
     shopName: saleData.shop.name,
@@ -223,7 +224,7 @@ ${item.lineDiscount > 0 ? `<div class="row" style="color:#888;font-size:11px;pad
 ${itemDiscounts > 0 ? `<div class="row"><span>Item Discounts:</span><span>-${fmt(itemDiscounts)}</span></div>` : ""}
 ${saleData.saleDiscount > 0 ? `<div class="row"><span>Sale Discount:</span><span>-${fmt(saleData.saleDiscount)}</span></div>` : ""}
 ${saleData.totaltax > 0 ? `<div class="row"><span>Tax:</span><span>${fmt(saleData.totaltax)}</span></div>` : ""}
-${saleData.extraCharges > 0 ? `<div class="row"><span>${saleData.salesnote || "Extra Charge"}:</span><span>${fmt(saleData.extraCharges)}</span></div>` : ""}
+${saleData.extraChargesTotal > 0 ? `<div class="row"><span>${saleData.extraChargesArr[0]?.name || saleData.salesnote || "Extra Charge"}:</span><span>${fmt(saleData.extraChargesTotal)}</span></div>` : ""}
 <hr class="divider">
 <div class="total-row"><span>TOTAL</span><span>${fmt(effectiveTotal)}</span></div>
 <hr class="divider">
@@ -459,7 +460,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
                 <ReceiptRow label="Customer" value={saleData.customerName} />
                 <ReceiptRow label="Cashier" value={saleData.attendantName} />
                 <ReceiptRow label="Type" value={saleData.saleType} />
-                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && saleData.extraCharges <= 0 && (
+                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && saleData.extraChargesTotal <= 0 && (
                   <ReceiptRow label="Note" value={saleData.salesnote} />
                 )}
               </div>
@@ -504,8 +505,8 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 
               {/* Totals */}
               {(() => {
-                const ec = saleData.extraCharges > 0
-                  ? { label: saleData.salesnote || "Extra Charge", amount: saleData.extraCharges }
+                const ec = saleData.extraChargesTotal > 0
+                  ? { label: saleData.extraChargesArr[0]?.name || saleData.salesnote || "Extra Charge", amount: saleData.extraChargesTotal }
                   : null;
                 return (
                   <div className="text-xs space-y-1 mb-2">
