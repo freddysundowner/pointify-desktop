@@ -710,15 +710,19 @@ export default function CustomerOverview() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedCustomer) => {
       toast({
         title: "Deposit Successful",
         description: `${currency} ${depositAmount} has been added to the wallet`,
       });
       setDepositAmount("");
       setIsDepositDialogOpen(false);
-      // Refresh the customer data without page reload
+      // Update local customer state so wallet balance reflects immediately
+      if (updatedCustomer && passedCustomerData) {
+        setPassedCustomerData({ ...passedCustomerData, wallet: updatedCustomer.wallet ?? updatedCustomer.data?.wallet ?? passedCustomerData.wallet });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/customers/payments', customerId] });
     },
     onError: (error: any) => {
       toast({
@@ -1181,8 +1185,12 @@ export default function CustomerOverview() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="outline" className="flex-1 h-9" onClick={() => setIsDepositDialogOpen(false)}>Cancel</Button>
-              <Button className="flex-1 h-9" onClick={handleDeposit}>
-                Deposit {currency} {depositAmount || '0.00'}
+              <Button
+                className="flex-1 h-9"
+                onClick={handleDeposit}
+                disabled={depositMutation.isPending || !depositAmount || parseFloat(depositAmount) <= 0}
+              >
+                {depositMutation.isPending ? "Processing..." : `Deposit ${currency} ${depositAmount || '0.00'}`}
               </Button>
             </div>
           </DialogContent>
