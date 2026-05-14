@@ -1717,23 +1717,23 @@ function SalesList() {
 
       {/* Quotation Dialog (Download / Email) */}
       <Dialog open={quotationDialogOpen} onOpenChange={setQuotationDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-4 w-4 flex-shrink-0" />
               Quotation #{quotationSale?.receiptNo}
             </DialogTitle>
           </DialogHeader>
 
           {quotationMode === "choose" ? (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               <p className="text-sm text-muted-foreground">
                 How would you like to share this quotation?
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="h-20 flex-col gap-2"
+                  className="h-16 flex-col gap-1.5 text-sm"
                   onClick={() => {
                     if (quotationSale) generateSalePDF(quotationSale, "QUOTATION", "download");
                     setQuotationDialogOpen(false);
@@ -1743,7 +1743,7 @@ function SalesList() {
                   <span>Download</span>
                 </Button>
                 <Button
-                  className="h-20 flex-col gap-2"
+                  className="h-16 flex-col gap-1.5 text-sm"
                   onClick={() => setQuotationMode("email")}
                 >
                   <Mail className="h-5 w-5" />
@@ -1752,9 +1752,9 @@ function SalesList() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4 pt-2">
+            <div className="space-y-4 pt-1">
               <div>
-                <Label className="text-sm font-medium mb-2 block">
+                <Label className="text-sm font-medium mb-1.5 block">
                   Customer Email
                 </Label>
                 <Input
@@ -1763,22 +1763,23 @@ function SalesList() {
                   onChange={(e) => setQuotationEmail(e.target.value)}
                   placeholder="customer@example.com"
                   disabled={isSendingQuotation}
+                  className="h-10"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   The quotation PDF will be attached to the email.
                 </p>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={() => setQuotationMode("choose")}
                   disabled={isSendingQuotation}
                 >
                   Back
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 h-10"
                   onClick={handleEmailQuotation}
                   disabled={isSendingQuotation || !quotationEmail.trim()}
                 >
