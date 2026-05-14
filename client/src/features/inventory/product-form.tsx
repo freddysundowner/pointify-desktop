@@ -524,7 +524,7 @@ export default function ProductForm() {
   return (
     <DashboardLayout title={isEditMode ? "Edit Product" : "Add New Product"}>
       {/* Mobile sticky header */}
-      <div className="lg:hidden sticky top-14 z-10 bg-white border-b shadow-sm flex items-center gap-3 px-4 py-3 -mx-3">
+      <div className="lg:hidden sticky top-0 z-10 bg-white border-b shadow-sm flex items-center gap-3 px-4 py-3 -mx-3">
         <button type="button" onClick={() => navigate(productsRoute)} className="p-1 -ml-1 rounded-full hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>

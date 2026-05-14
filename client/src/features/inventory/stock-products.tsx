@@ -874,8 +874,8 @@ export default function StockProducts() {
       ═══════════════════════════════════════════ */}
       <div className="lg:hidden flex flex-col">
 
-        {/* Sticky top bar — sticks below the fixed app header (top-14) */}
-        <div className="sticky top-14 z-10 bg-white border-b shadow-sm">
+        {/* Sticky top bar */}
+        <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
           {/* Header row */}
           <div className="flex items-center gap-3 px-1 pt-3 pb-2">
             <button onClick={handleBack} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">

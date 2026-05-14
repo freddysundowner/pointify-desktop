@@ -360,8 +360,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </div>
       )}
 
-      {/* ── Mobile App Header (hidden on desktop) ─────────────────────────── */}
-      {!isAttendantRoute && (
+      {/* ── Mobile App Header (dashboard only) ─────────────────────────── */}
+      {!isAttendantRoute && location === dashboardRoute && (
         <div className="lg:hidden fixed top-0 left-0 right-0 z-20 bg-white border-b border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-4 h-14">
             {/* Brand */}
@@ -494,8 +494,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
           </div>
         )}
 
-        {/* Page content — pt-14 on mobile (offset fixed mobile nav), no top padding on desktop */}
-        <div className="pt-14 lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none">
+        {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
+        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 pb-24 lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
           {children}
         </div>
 
