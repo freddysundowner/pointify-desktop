@@ -972,8 +972,20 @@ export default function StockProducts() {
           )}
         </div>
 
-        {/* Product cards */}
-        <div className="flex-1 bg-gray-100 px-3 pt-2 pb-28 space-y-1.5">
+        {/* Product table — minimal rows */}
+        <div className="flex-1 pb-28">
+          {/* Column headers */}
+          <div className="flex items-center px-3 py-1.5 bg-gray-50 border-b border-gray-200 gap-2">
+            {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+              <div className="w-5 shrink-0" />
+            )}
+            <div className="w-2 shrink-0" />
+            <p className="flex-1 min-w-0 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Product</p>
+            <p className="w-16 text-[10px] font-semibold text-gray-400 uppercase tracking-wide text-right">Buy</p>
+            <p className="w-16 text-[10px] font-semibold text-gray-400 uppercase tracking-wide text-right">Sell</p>
+            <p className="w-10 text-[10px] font-semibold text-gray-400 uppercase tracking-wide text-right">Qty</p>
+            <div className="w-7 shrink-0" />
+          </div>
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-10 h-10 rounded-full border-2 border-purple-600 border-t-transparent animate-spin" />
@@ -988,74 +1000,82 @@ export default function StockProducts() {
               {searchQuery && <button onClick={() => setSearchQuery("")} className="text-xs text-purple-600 underline">Clear search</button>}
             </div>
           ) : (
-            filteredProducts.map((product: Product) => {
-              const quantity = (product as any).quantity || 0;
-              const reorderLevel = (product as any).reorderLevel || 0;
-              const isVirtual = (product as any).virtual;
-              const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
-              const isOutOfStock = !isVirtual && quantity === 0;
-              const isSelected = selectedIds.includes(product._id);
-              const categoryName = (product as any).productCategoryId?.name || product.category || "";
-              const qtyColor = isVirtual ? "text-gray-400" : isOutOfStock ? "text-red-600" : isLowStock ? "text-amber-600" : "text-green-600";
-              const cardBg = isSelected ? "bg-purple-50 border-purple-300" : isOutOfStock ? "bg-red-50/60 border-red-100" : isLowStock ? "bg-amber-50/60 border-amber-100" : "bg-white border-gray-100";
-              return (
-                <div key={product._id} className={`rounded-xl border overflow-hidden transition-all ${cardBg}`}>
-                  <div className="flex items-center gap-2 px-3 py-2.5">
+            <div className="bg-white divide-y divide-gray-100">
+              {filteredProducts.map((product: Product) => {
+                const quantity = (product as any).quantity || 0;
+                const reorderLevel = (product as any).reorderLevel || 0;
+                const isVirtual = (product as any).virtual;
+                const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
+                const isOutOfStock = !isVirtual && quantity === 0;
+                const isSelected = selectedIds.includes(product._id);
+                const categoryName = (product as any).productCategoryId?.name || product.category || "";
+                const qtyColor = isVirtual ? "text-gray-400" : isOutOfStock ? "text-red-500" : isLowStock ? "text-amber-500" : "text-green-600";
+                const rowBg = isSelected ? "bg-purple-50" : isOutOfStock ? "bg-red-50/40" : isLowStock ? "bg-amber-50/40" : "";
+                return (
+                  <div key={product._id} className={`flex items-center px-3 py-2.5 gap-2 ${rowBg}`}>
                     {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} />
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} className="shrink-0" />
                     )}
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-500" : "bg-green-500"}`} />
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${isVirtual ? "bg-gray-300" : isOutOfStock ? "bg-red-500" : isLowStock ? "bg-amber-400" : "bg-green-500"}`} />
+                    {/* Name + category */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm truncate leading-tight">{product.name}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate leading-tight">{product.name}</p>
                       {categoryName && <p className="text-[11px] text-gray-400 truncate leading-tight">{categoryName}</p>}
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900 leading-tight">{currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}</p>
-                        <p className={`text-xs font-semibold leading-tight ${qtyColor}`}>{isVirtual ? "Service" : `Qty ${quantity}`}</p>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 mt-0.5">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                          {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
-                            <DropdownMenuItem onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
-                              <History className="h-4 w-4 mr-2" />Product History
-                            </DropdownMenuItem>
-                          )}
-                          {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
-                            <DropdownMenuItem onClick={() => {
-                              (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
-                              setLocation(`${editProductRoute}/${product._id}`);
-                            }}>
-                              <Edit className="h-4 w-4 mr-2" />Edit
-                            </DropdownMenuItem>
-                          )}
-                          {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
-                            <DropdownMenuItem onClick={() => openAdjustDialog(product)}>
-                              <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
-                            </DropdownMenuItem>
-                          )}
-                          {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
-                            <DropdownMenuItem onClick={() => openHistoryDialog(product)}>
-                              <FileText className="h-4 w-4 mr-2" />Adjustment History
-                            </DropdownMenuItem>
-                          )}
-                          {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
-                              <Trash2 className="h-4 w-4 mr-2" />Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    {/* Buy price */}
+                    <p className="w-16 text-xs text-gray-500 text-right shrink-0 leading-tight tabular-nums">
+                      {(product as any).buyingPrice ? `${currency} ${(product as any).buyingPrice.toLocaleString()}` : "—"}
+                    </p>
+                    {/* Sell price */}
+                    <p className="w-16 text-xs font-semibold text-gray-900 text-right shrink-0 leading-tight tabular-nums">
+                      {currency} {((product as any).sellingPrice || product.price || 0).toLocaleString()}
+                    </p>
+                    {/* Qty */}
+                    <p className={`w-10 text-xs font-semibold text-right shrink-0 leading-tight ${qtyColor}`}>
+                      {isVirtual ? "Svc" : quantity}
+                    </p>
+                    {/* Actions */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0 text-gray-400">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52">
+                        {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
+                          <DropdownMenuItem onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
+                            <History className="h-4 w-4 mr-2" />Product History
+                          </DropdownMenuItem>
+                        )}
+                        {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                          <DropdownMenuItem onClick={() => {
+                            (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
+                            setLocation(`${editProductRoute}/${product._id}`);
+                          }}>
+                            <Edit className="h-4 w-4 mr-2" />Edit
+                          </DropdownMenuItem>
+                        )}
+                        {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
+                          <DropdownMenuItem onClick={() => openAdjustDialog(product)}>
+                            <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
+                          </DropdownMenuItem>
+                        )}
+                        {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
+                          <DropdownMenuItem onClick={() => openHistoryDialog(product)}>
+                            <FileText className="h-4 w-4 mr-2" />Adjustment History
+                          </DropdownMenuItem>
+                        )}
+                        {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                          <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
+                            <Trash2 className="h-4 w-4 mr-2" />Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
 
