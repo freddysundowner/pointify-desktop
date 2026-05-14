@@ -21,11 +21,8 @@ export default function ReceiptModal({
   transaction,
   onNewTransaction,
 }: ReceiptModalProps) {
-  // ── All hooks must come before any early return ──────────────────────────
   const { toast } = useToast();
 
-  // Derive everything with optional chaining so these are safe even when
-  // transaction is null (hooks must not be called conditionally).
   const adminData = localStorage.getItem('adminData');
   const admin = adminData ? JSON.parse(adminData) : null;
   const primaryShop = admin?.primaryShop;
@@ -35,7 +32,6 @@ export default function ReceiptModal({
   const shopTaxRate = primaryShop?.tax || 0;
   const currency = primaryShop?.currency || 'KES';
 
-  // Parse extra charge from dedicated extraCharges field + salesnote label
   const extraChargeAmount = (transaction as any)?.extraCharges || 0;
   const extraChargeLabel = (transaction as any)?.salesnote || "Extra Charge";
   const extraCharge = extraChargeAmount > 0
@@ -72,7 +68,6 @@ export default function ReceiptModal({
     extraCharge: extraCharge || undefined,
   });
 
-  // Browser print fallback — opens a clean receipt window
   const browserPrint = () => {
     const cur = currency;
     const html = `<!DOCTYPE html><html><head><title>Receipt</title>
@@ -113,7 +108,6 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
     setTimeout(() => { w.focus(); w.print(); }, 400);
   };
 
-  // Thermal print — tries server first, falls back to browser print
   const printThermal = async (receiptData?: any) => {
     const data = (receiptData && typeof receiptData.preventDefault !== 'function')
       ? receiptData
@@ -129,22 +123,15 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
         if (!usbPrinter.isConnected()) return;
         try {
           await usbPrinter.printReceipt({
-            shopName: data.shopName,
-            shopAddress: data.shopAddress,
-            receiptNumber: data.receiptNumber,
-            date: data.date,
-            currency: data.currency,
+            shopName: data.shopName, shopAddress: data.shopAddress,
+            receiptNumber: data.receiptNumber, date: data.date, currency: data.currency,
             items: data.items.map((i: any) => ({
               name: i.name, quantity: i.quantity,
               unitPrice: i.unitPrice, total: i.total, discount: i.discount,
             })),
-            subtotal: data.subtotal,
-            tax: data.tax,
-            total: data.total,
-            paymentMethod: data.paymentMethod,
-            customerName: data.customerName,
-            attendant: data.attendant,
-            splitPayment: data.splitPayment,
+            subtotal: data.subtotal, tax: data.tax, total: data.total,
+            paymentMethod: data.paymentMethod, customerName: data.customerName,
+            attendant: data.attendant, splitPayment: data.splitPayment,
             extraCharge: data.extraCharge,
           });
           toast({ title: "Receipt Printed", description: "Sent to USB printer" });
@@ -154,10 +141,7 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
         return;
       }
 
-      if (status?.config?.type === 'BROWSER') {
-        browserPrint();
-        return;
-      }
+      if (status?.config?.type === 'BROWSER') { browserPrint(); return; }
 
       const response = await apiCall('/api/printer/salereceipt', {
         method: 'POST',
@@ -169,12 +153,9 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
       } else {
         browserPrint();
       }
-    } catch {
-      browserPrint();
-    }
+    } catch { browserPrint(); }
   };
 
-  // PDF generation
   const generatePDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
@@ -241,61 +222,70 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
     doc.save(`receipt-${transaction?.id}-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  // Auto-print effect — MUST be before any conditional return
   useEffect(() => {
     if (isOpen && transaction && admin?.autoPrint === true) {
       printThermal();
     }
   }, [isOpen, transaction]);
 
-  // ── Early return AFTER all hooks ─────────────────────────────────────────
   if (!transaction) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full max-h-[92dvh] bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm sm:max-w-md rounded-2xl sm:rounded-xl bg-white border-0 shadow-2xl flex flex-col overflow-hidden p-0 max-h-[92dvh] gap-0">
         <DialogTitle className="sr-only">Transaction Complete</DialogTitle>
 
-        {/* Fixed header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            Transaction Complete
-          </h2>
-          <button onClick={onClose} className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shrink-0">
+              <Check className="h-3.5 w-3.5 text-white" />
+            </div>
+            <h2 className="text-base font-bold text-gray-900">Transaction Complete</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
             <X className="h-3.5 w-3.5 text-gray-500" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
 
           {/* Success strip */}
-          <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5">
-            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-              <Check className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-green-700">Payment Successful</p>
+              <p className="text-[11px] text-gray-500">
+                {transactionDate.toLocaleDateString()} · {transactionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">Payment Successful!</p>
-              <p className="text-xs text-gray-500">{transactionDate.toLocaleDateString()} · {transactionDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
-            </div>
-            <span className="ml-auto text-xs font-mono text-gray-400">#{transaction.id || 'N/A'}</span>
+            <span className="text-[11px] font-mono text-gray-400 shrink-0">#{transaction.id || 'N/A'}</span>
           </div>
 
           {/* Receipt card */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden text-sm">
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
 
             {/* Store header */}
-            <div className="bg-gray-50 px-4 py-3 text-center border-b border-gray-200">
-              <p className="font-bold text-gray-900">{primaryShop?.name || 'Store Name'}</p>
-              {primaryShop?.address && <p className="text-xs text-gray-500 mt-0.5">{primaryShop.address}</p>}
-              <div className="flex flex-wrap justify-center gap-x-3 mt-0.5">
-                {primaryShop?.contact && <span className="text-xs text-gray-500">📞 {primaryShop.contact}</span>}
+            <div className="bg-gray-50 px-3 py-2.5 text-center border-b border-gray-200">
+              <p className="font-bold text-gray-900 text-sm">{primaryShop?.name || 'Store Name'}</p>
+              {primaryShop?.address && (
+                <p className="text-[11px] text-gray-500 mt-0.5 truncate">{primaryShop.address}</p>
+              )}
+              <div className="flex flex-wrap justify-center gap-x-2 mt-0.5">
+                {primaryShop?.contact && (
+                  <span className="text-[11px] text-gray-500">📞 {primaryShop.contact}</span>
+                )}
                 {((primaryShop as any)?.email_receipt || primaryShop?.receiptemail) && (
-                  <span className="text-xs text-gray-500">✉ {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail}</span>
+                  <span className="text-[11px] text-gray-500 truncate max-w-[160px]">
+                    ✉ {(primaryShop as any)?.email_receipt || primaryShop?.receiptemail}
+                  </span>
                 )}
               </div>
               {(primaryShop?.paybill_account || primaryShop?.paybill_till) && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-400 mt-0.5">
                   {primaryShop?.paybill_account ? `Paybill: ${primaryShop.paybill_account}` : `Buy Goods: ${primaryShop.paybill_till}`}
                   {primaryShop?.paybill_account && primaryShop?.paybill_till && ` · Acc: ${primaryShop.paybill_till}`}
                 </p>
@@ -303,25 +293,28 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
             </div>
 
             {/* Transaction meta */}
-            <div className="px-4 py-2.5 border-b border-dashed border-gray-200 grid grid-cols-2 gap-y-1">
+            <div className="px-3 py-2 border-b border-dashed border-gray-200 grid grid-cols-2 gap-y-1 text-xs">
               <span className="text-gray-500">Transaction</span>
               <span className="text-right font-medium">#{transaction.id || 'N/A'}</span>
               <span className="text-gray-500">Served by</span>
-              <span className="text-right font-medium">{attendantName}</span>
+              <span className="text-right font-medium truncate">{attendantName}</span>
             </div>
 
             {/* Items */}
-            <div className="px-4 py-2.5 border-b border-dashed border-gray-200 space-y-1.5">
+            <div className="px-3 py-2 border-b border-dashed border-gray-200 space-y-1.5 text-xs">
               {items.map((item, index) => (
                 <div key={`${item.id}-${index}`}>
-                  <div className="flex justify-between">
-                    <span className="font-medium text-gray-800 flex-1 truncate pr-2">{item.name}
-                      <span className="text-gray-400 font-normal"> x{item.quantity} @ {currency} {Number(item.price).toFixed(2)}</span>
+                  <div className="flex justify-between gap-2">
+                    <span className="font-medium text-gray-800 flex-1 min-w-0">
+                      <span className="block truncate">{item.name}</span>
+                      <span className="text-gray-400 font-normal">
+                        x{item.quantity} @ {currency} {Number(item.price).toFixed(2)}
+                      </span>
                     </span>
                     <span className="font-semibold shrink-0">{currency} {Number(item.total).toFixed(2)}</span>
                   </div>
                   {Number(item.discount) > 0 && (
-                    <div className="flex justify-between text-xs text-green-600 pl-2">
+                    <div className="flex justify-between text-green-600 pl-2">
                       <span>Discount</span>
                       <span>-{currency} {(Number(item.discount) * Number(item.quantity)).toFixed(2)}</span>
                     </div>
@@ -331,7 +324,7 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
             </div>
 
             {/* Totals */}
-            <div className="px-4 py-2.5 space-y-1">
+            <div className="px-3 py-2 space-y-1 text-xs">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
                 <span className="font-medium">{currency} {Number(transaction.subtotal).toFixed(2)}</span>
@@ -339,7 +332,9 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
               {items.some(item => Number(item.discount) > 0) && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
-                  <span className="font-medium">-{currency} {items.reduce((s, i) => s + (Number(i.discount) || 0) * i.quantity, 0).toFixed(2)}</span>
+                  <span className="font-medium">
+                    -{currency} {items.reduce((s, i) => s + (Number(i.discount) || 0) * i.quantity, 0).toFixed(2)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between text-gray-600">
@@ -352,52 +347,70 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
                   <span className="font-medium">{currency} {extraCharge.amount.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-base pt-1.5 border-t border-gray-200 mt-1">
+              <div className="flex justify-between font-bold text-sm pt-1.5 border-t border-gray-200">
                 <span>Total</span>
                 <span className="text-primary">{currency} {Number(transaction.total).toFixed(2)}</span>
               </div>
 
               {/* Payment method */}
               {transaction.paymentMethod !== 'split' ? (
-                <div className="flex justify-between text-gray-500 text-xs pt-1">
-                  <span>Payment Method</span>
+                <div className="flex justify-between text-gray-500 text-[11px] pt-0.5">
+                  <span>Payment</span>
                   <span className="capitalize font-medium">{transaction.paymentMethod}</span>
                 </div>
               ) : (
-                <div className="pt-1 space-y-0.5">
-                  <p className="text-xs text-gray-500 font-medium">Split Payment</p>
-                  {transaction.amountPaid > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">Cash</span><span>{currency} {Number(transaction.amountPaid).toFixed(2)}</span></div>}
-                  {(transaction as any).mpesaNewTotal > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">M-Pesa</span><span>{currency} {Number((transaction as any).mpesaNewTotal).toFixed(2)}</span></div>}
-                  {(transaction as any).bankTotal > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">Bank</span><span>{currency} {Number((transaction as any).bankTotal).toFixed(2)}</span></div>}
+                <div className="pt-1 space-y-0.5 text-[11px]">
+                  <p className="text-gray-500 font-medium">Split Payment</p>
+                  {transaction.amountPaid > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Cash</span>
+                      <span>{currency} {Number(transaction.amountPaid).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {(transaction as any).mpesaNewTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">M-Pesa</span>
+                      <span>{currency} {Number((transaction as any).mpesaNewTotal).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {(transaction as any).bankTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Bank</span>
+                      <span>{currency} {Number((transaction as any).bankTotal).toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 px-4 py-2 text-center border-t border-gray-200">
-              <p className="text-xs text-gray-400">Thank you for your business!</p>
+            <div className="bg-gray-50 px-3 py-2 text-center border-t border-gray-200">
+              <p className="text-[11px] text-gray-400">Thank you for your business!</p>
             </div>
           </div>
         </div>
 
         {/* Fixed action buttons */}
-        <div className="px-5 pb-4 pt-2 space-y-2 shrink-0 border-t border-gray-100">
+        <div className="px-4 pb-4 pt-2.5 space-y-2 shrink-0 border-t border-gray-100">
           <div className="grid grid-cols-3 gap-2">
-            <Button variant="outline" className="h-9 rounded-xl text-xs" onClick={printThermal}>
-              <Printer className="mr-1 h-3.5 w-3.5" /> Print
+            <Button variant="outline" size="sm" className="h-9 rounded-xl text-xs px-2" onClick={printThermal}>
+              <Printer className="h-3.5 w-3.5 mr-1 shrink-0" />
+              <span className="truncate">Print</span>
             </Button>
-            <Button variant="outline" className="h-9 rounded-xl text-xs" onClick={generatePDF}>
-              <Download className="mr-1 h-3.5 w-3.5" /> PDF
+            <Button variant="outline" size="sm" className="h-9 rounded-xl text-xs px-2" onClick={generatePDF}>
+              <Download className="h-3.5 w-3.5 mr-1 shrink-0" />
+              <span className="truncate">PDF</span>
             </Button>
-            <Button variant="outline" className="h-9 rounded-xl text-xs">
-              <Mail className="mr-1 h-3.5 w-3.5" /> Email
+            <Button variant="outline" size="sm" className="h-9 rounded-xl text-xs px-2">
+              <Mail className="h-3.5 w-3.5 mr-1 shrink-0" />
+              <span className="truncate">Email</span>
             </Button>
           </div>
           <Button
             onClick={onNewTransaction}
             className="w-full h-10 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 font-semibold text-sm"
           >
-            <Plus className="mr-1 h-4 w-4" /> New Transaction
+            <Plus className="mr-1.5 h-4 w-4" /> New Transaction
           </Button>
         </div>
 
