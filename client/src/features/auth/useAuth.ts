@@ -72,13 +72,13 @@ export const useAuthProvider = (): AuthContextType => {
         headers,
       });
       
-      const adminData = await response.json();
+      const rawAdminData = await response.json();
 
-      dispatch(setCurrency(adminData?.primaryShop?.currency || 'KES'));
+      dispatch(setCurrency(rawAdminData?.primaryShop?.currency || 'KES'));
       await checkAndTriggerAutoSync();
-      console.log("Fetched admin data:", adminData);
-      if (!adminData?._id) {
-        dispatch(setCurrency(adminData?.primaryShop?.currency || 'KES'));
+      console.log("Fetched admin data:", rawAdminData);
+      if (!rawAdminData?._id) {
+        dispatch(setCurrency(rawAdminData?.primaryShop?.currency || 'KES'));
         
         let localdata = await localStorage.getItem('adminData');
         if(localdata){
@@ -88,7 +88,42 @@ export const useAuthProvider = (): AuthContextType => {
         }
         logout();
       } else {
-        if (adminData?._id) {
+        if (rawAdminData?._id) {
+          // Preserve any manually-switched shop selection.
+          // When the server returns fresh admin data it carries the original
+          // primaryShop, but the user may have already switched to a different
+          // shop. If localStorage still holds a selectedShopId that differs
+          // from the server value, restore it from the React-Query cache or
+          // from the previously-stored adminData so the selection isn't lost.
+          let adminData: any = rawAdminData;
+          const storedSelectedId = localStorage.getItem('selectedShopId');
+          const serverPrimaryId = typeof rawAdminData?.primaryShop === 'string'
+            ? rawAdminData.primaryShop
+            : rawAdminData?.primaryShop?._id;
+
+          if (storedSelectedId && storedSelectedId !== serverPrimaryId) {
+            // Try React-Query shop cache first (most up-to-date full objects)
+            const cachedShops = queryClient.getQueryData(["shops", rawAdminData._id]) as any[] | undefined;
+            const cachedShop = Array.isArray(cachedShops)
+              ? cachedShops.find((s: any) => s._id === storedSelectedId)
+              : null;
+
+            if (cachedShop) {
+              adminData = { ...rawAdminData, primaryShop: cachedShop };
+            } else {
+              // Fall back: use primaryShop stored in localStorage before overwrite
+              try {
+                const storedAdmin = JSON.parse(localStorage.getItem('adminData') || '{}');
+                const storedPrimaryId = typeof storedAdmin?.primaryShop === 'string'
+                  ? storedAdmin.primaryShop
+                  : storedAdmin?.primaryShop?._id;
+                if (storedPrimaryId === storedSelectedId && storedAdmin.primaryShop) {
+                  adminData = { ...rawAdminData, primaryShop: storedAdmin.primaryShop };
+                }
+              } catch { /* ignore parse errors */ }
+            }
+          }
+
           setAdmin(adminData);
           localStorage.setItem("adminData", JSON.stringify(adminData));
           return adminData;

@@ -302,8 +302,10 @@ export default function BusinessDashboard() {
     localStorage.setItem('adminData', JSON.stringify(mergedAdminData));
     updateAdmin(mergedAdminData);
 
-    // Invalidate and refetch all queries for the new shop immediately
-    queryClient.invalidateQueries();
+    // Invalidate every cached query across the whole app and immediately
+    // refetch any that are currently mounted/active so all pages reflect
+    // the new shop without waiting for their own stale-time to expire.
+    queryClient.invalidateQueries({ refetchType: 'active' });
 
     toast({
       title: "Switching Shop",
