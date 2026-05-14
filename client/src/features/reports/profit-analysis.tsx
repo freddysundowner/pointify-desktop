@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Download, Eye, BarChart3, FileText, Calendar, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { useQuery } from '@tanstack/react-query';
+import { TrendingUp, TrendingDown, Download, Eye, FileText, Calendar, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,118 +12,185 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { RootState } from '@/store';
 import { useNavigationRoute } from '@/lib/navigation-utils';
+import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
+import { usePrimaryShop } from '@/hooks/usePrimaryShop';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 
-interface ProfitData {
-  id: string;
-  productName: string;
-  category: string;
-  totalSales: number;
-  totalCost: number;
-  grossProfit: number;
-  profitMargin: number;
-  unitsSold: number;
-  avgSellingPrice: number;
-  avgCostPrice: number;
-  profitPerUnit: number;
-  lastSold: string;
-  trend: 'up' | 'down' | 'stable';
-  trendPercentage: number;
+interface NetProfitData {
+  creditTotals: number;
+  debtPaid: number;
+  totalProfitAndSalesValue: {
+    totalProfit: number;
+    totalCashSales: number;
+    totalSales: number;
+    totalPurchases: number;
+    totalTaxes: number;
+  };
+  badStockValue: { badStockValue: number };
+  totalExpenses: { totalExpenses: number };
+  totalTaxes: number;
+  gross: number;
+  net: number;
 }
 
-interface PeriodProfit {
-  period: string;
-  revenue: number;
-  costs: number;
-  grossProfit: number;
-  netProfit: number;
-  profitMargin: number;
-  expenses: number;
-  itemsSold: number;
+interface ProductProfit {
+  _id?: string;
+  productId?: string;
+  productName?: string;
+  name?: string;
+  category?: string;
+  totalSales?: number;
+  totalRevenue?: number;
+  totalCost?: number;
+  grossProfit?: number;
+  profit?: number;
+  profitMargin?: number;
+  margin?: number;
+  unitsSold?: number;
+  quantity?: number;
 }
+
+// Date range helpers
+const today = () => new Date().toISOString().split('T')[0];
+const daysAgo = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
+};
+const yesterday = () => daysAgo(1);
 
 export default function ProfitAnalysis() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const { selectedShopId } = useSelector((state: RootState) => state.shop);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { attendant } = useAttendantAuth();
+  const { primaryShop } = usePrimaryShop();
+
+  const effectiveShopId = selectedShopId ||
+    (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShop?._id);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('grossProfit');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('7days');
 
-  const profitData: ProfitData[] = [
-    { id: '1', productName: 'Premium Coffee Beans', category: 'Beverages', totalSales: 45000, totalCost: 27000, grossProfit: 18000, profitMargin: 40.0, unitsSold: 150, avgSellingPrice: 300, avgCostPrice: 180, profitPerUnit: 120, lastSold: '2025-06-19', trend: 'up', trendPercentage: 12.5 },
-    { id: '2', productName: 'Wireless Headphones', category: 'Electronics', totalSales: 85000, totalCost: 55000, grossProfit: 30000, profitMargin: 35.3, unitsSold: 85, avgSellingPrice: 1000, avgCostPrice: 647, profitPerUnit: 353, lastSold: '2025-06-19', trend: 'up', trendPercentage: 8.2 },
-    { id: '3', productName: 'Organic Honey', category: 'Food', totalSales: 28000, totalCost: 16800, grossProfit: 11200, profitMargin: 40.0, unitsSold: 140, avgSellingPrice: 200, avgCostPrice: 120, profitPerUnit: 80, lastSold: '2025-06-18', trend: 'stable', trendPercentage: 0.5 },
-    { id: '4', productName: 'Designer T-Shirt', category: 'Clothing', totalSales: 36000, totalCost: 21600, grossProfit: 14400, profitMargin: 40.0, unitsSold: 120, avgSellingPrice: 300, avgCostPrice: 180, profitPerUnit: 120, lastSold: '2025-06-18', trend: 'down', trendPercentage: -5.2 },
-    { id: '5', productName: 'Smartphone Case', category: 'Electronics', totalSales: 15000, totalCost: 7500, grossProfit: 7500, profitMargin: 50.0, unitsSold: 100, avgSellingPrice: 150, avgCostPrice: 75, profitPerUnit: 75, lastSold: '2025-06-17', trend: 'up', trendPercentage: 15.8 },
-    { id: '6', productName: 'Notebook Set', category: 'Stationery', totalSales: 8000, totalCost: 5600, grossProfit: 2400, profitMargin: 30.0, unitsSold: 80, avgSellingPrice: 100, avgCostPrice: 70, profitPerUnit: 30, lastSold: '2025-06-17', trend: 'down', trendPercentage: -3.1 },
+  const reportsRoute = useNavigationRoute('reports');
+
+  const periodRange = (period: string) => {
+    switch (period) {
+      case 'today':     return { from: today(), to: today() };
+      case 'yesterday': return { from: yesterday(), to: yesterday() };
+      case '7days':     return { from: daysAgo(6), to: today() };
+      case '30days':    return { from: daysAgo(29), to: today() };
+      case '90days':    return { from: daysAgo(89), to: today() };
+      default:          return { from: daysAgo(6), to: today() };
+    }
+  };
+
+  const { from, to } = periodRange(selectedPeriod);
+
+  const buildNetProfitUrl = (fromDate: string, toDate: string) => {
+    const p = new URLSearchParams({ shopId: effectiveShopId || '', fromDate, toDate });
+    return `/api/analysis/netprofit?${p}`;
+  };
+
+  // Main period query (used for summary cards)
+  const { data: mainData, isLoading: mainLoading } = useQuery<NetProfitData>({
+    queryKey: [buildNetProfitUrl(from, to)],
+    enabled: !!effectiveShopId,
+    staleTime: 60_000,
+  });
+
+  // Product profit query
+  const { data: productData, isLoading: productLoading } = useQuery<ProductProfit[] | any>({
+    queryKey: ['/api/analysis/profit', effectiveShopId, from, to],
+    queryFn: async () => {
+      const p = new URLSearchParams({ shopId: effectiveShopId || '', fromDate: from, toDate: to });
+      const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
+      const res = await fetch(`/api/analysis/profit?${p}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Failed to fetch profit data');
+      return res.json();
+    },
+    enabled: !!effectiveShopId,
+    staleTime: 60_000,
+  });
+
+  // Periods queries — 4 fixed named hooks (no hooks in loops)
+  const periodDefs = [
+    { label: 'Today',        from: today(),     to: today()     },
+    { label: 'Yesterday',    from: yesterday(), to: yesterday() },
+    { label: 'Last 7 Days',  from: daysAgo(6),  to: today()     },
+    { label: 'Last 30 Days', from: daysAgo(29), to: today()     },
   ];
+  const pq0 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[0].from, periodDefs[0].to), 'p0'], enabled: !!effectiveShopId, staleTime: 300_000 });
+  const pq1 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[1].from, periodDefs[1].to), 'p1'], enabled: !!effectiveShopId, staleTime: 300_000 });
+  const pq2 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[2].from, periodDefs[2].to), 'p2'], enabled: !!effectiveShopId, staleTime: 300_000 });
+  const pq3 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[3].from, periodDefs[3].to), 'p3'], enabled: !!effectiveShopId, staleTime: 300_000 });
+  const periodQueries = [pq0, pq1, pq2, pq3];
 
-  const periodData: PeriodProfit[] = [
-    { period: 'Today', revenue: 35000, costs: 21000, grossProfit: 14000, netProfit: 11500, profitMargin: 32.9, expenses: 2500, itemsSold: 45 },
-    { period: 'Yesterday', revenue: 42000, costs: 25200, grossProfit: 16800, netProfit: 14300, profitMargin: 34.0, expenses: 2500, itemsSold: 52 },
-    { period: 'Last 7 Days', revenue: 287000, costs: 172200, grossProfit: 114800, netProfit: 97300, profitMargin: 33.9, expenses: 17500, itemsSold: 368 },
-    { period: 'Last 30 Days', revenue: 1250000, costs: 750000, grossProfit: 500000, netProfit: 425000, profitMargin: 34.0, expenses: 75000, itemsSold: 1580 },
-  ];
+  const formatCurrency = (n: number | undefined | null) => {
+    if (n == null || isNaN(n)) return 'KES 0';
+    return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+  };
 
-  const filteredData = profitData
-    .filter(item => {
-      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-      const matchesSearch = item.productName.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    })
+  // Normalise product data — the API may return various shapes
+  const rawProducts: ProductProfit[] = Array.isArray(productData)
+    ? productData
+    : productData?.data
+      ? productData.data
+      : productData?.products
+        ? productData.products
+        : [];
+
+  const products = rawProducts.map((p) => ({
+    id: p._id || p.productId || Math.random().toString(),
+    name: p.productName || p.name || 'Unknown',
+    category: p.category || '—',
+    totalSales: p.totalRevenue ?? p.totalSales ?? 0,
+    totalCost: p.totalCost ?? 0,
+    grossProfit: p.grossProfit ?? p.profit ?? 0,
+    profitMargin: p.profitMargin ?? p.margin ?? 0,
+    unitsSold: p.unitsSold ?? p.quantity ?? 0,
+  }));
+
+  const filteredProducts = products
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       const m = sortOrder === 'desc' ? -1 : 1;
-      if (sortBy === 'grossProfit') return (a.grossProfit - b.grossProfit) * m;
-      if (sortBy === 'profitMargin') return (a.profitMargin - b.profitMargin) * m;
-      if (sortBy === 'totalSales') return (a.totalSales - b.totalSales) * m;
-      if (sortBy === 'unitsSold') return (a.unitsSold - b.unitsSold) * m;
+      if (sortBy === 'grossProfit')   return (a.grossProfit - b.grossProfit) * m;
+      if (sortBy === 'profitMargin')  return (a.profitMargin - b.profitMargin) * m;
+      if (sortBy === 'totalSales')    return (a.totalSales - b.totalSales) * m;
+      if (sortBy === 'unitsSold')     return (a.unitsSold - b.unitsSold) * m;
       return 0;
     });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  const filtersActive = sortBy !== 'grossProfit' || sortOrder !== 'desc';
 
-  const categories = Array.from(new Set(profitData.map(item => item.category)));
-  const reportsRoute = useNavigationRoute('reports');
-
-  const totalRevenue = filteredData.reduce((sum, item) => sum + item.totalSales, 0);
-  const totalCosts = filteredData.reduce((sum, item) => sum + item.totalCost, 0);
-  const totalGrossProfit = totalRevenue - totalCosts;
-  const averageProfitMargin = filteredData.length > 0
-    ? filteredData.reduce((sum, item) => sum + item.profitMargin, 0) / filteredData.length : 0;
-
-  const filtersActive = selectedCategory !== 'all' || sortBy !== 'grossProfit' || sortOrder !== 'desc';
-
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-
-  const getTrendIcon = (trend: string) => {
-    if (trend === 'up') return <TrendingUp className="h-3.5 w-3.5 text-green-500" />;
-    if (trend === 'down') return <TrendingDown className="h-3.5 w-3.5 text-red-500" />;
-    return <div className="h-3.5 w-3.5 bg-gray-300 rounded-full" />;
-  };
+  // Summary totals from main query
+  const totalRevenue  = mainData?.totalProfitAndSalesValue?.totalSales ?? 0;
+  const totalCost     = mainData?.totalProfitAndSalesValue?.totalPurchases ?? 0;
+  const grossProfit   = mainData?.gross ?? 0;
+  const netProfit     = mainData?.net ?? 0;
+  const totalExpenses = mainData?.totalExpenses?.totalExpenses ?? 0;
 
   const exportToCSV = () => {
-    const csv = [
-      ['Product', 'Category', 'Sales', 'Costs', 'Gross Profit', 'Margin %', 'Units Sold', 'Profit/Unit'],
-      ...filteredData.map(item => [item.productName, item.category, item.totalSales, item.totalCost, item.grossProfit, item.profitMargin, item.unitsSold, item.profitPerUnit])
+    const rows = [
+      ['Product', 'Category', 'Sales', 'Costs', 'Gross Profit', 'Margin %', 'Units'],
+      ...filteredProducts.map(p => [p.name, p.category, p.totalSales, p.totalCost, p.grossProfit, p.profitMargin.toFixed(1), p.unitsSold]),
     ].map(r => r.join(',')).join('\n');
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.href = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }));
     a.download = 'profit-analysis.csv';
     a.click();
-  };
-
-  const exportToPDF = () => {
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(`<html><head><title>Profit Analysis</title><style>body{font-family:Arial;margin:20px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f2f2f2}</style></head><body><h1>Profit Analysis</h1><p>Generated: ${new Date().toLocaleDateString()}</p><table><thead><tr><th>Product</th><th>Category</th><th>Sales</th><th>Gross Profit</th><th>Margin</th><th>Units</th></tr></thead><tbody>${filteredData.map(item => `<tr><td>${item.productName}</td><td>${item.category}</td><td>${formatCurrency(item.totalSales)}</td><td>${formatCurrency(item.grossProfit)}</td><td>${item.profitMargin.toFixed(1)}%</td><td>${item.unitsSold}</td></tr>`).join('')}</tbody></table></body></html>`);
-    w.document.close();
-    w.print();
   };
 
   return (
@@ -129,34 +198,55 @@ export default function ProfitAnalysis() {
       <div className="space-y-3 pb-24 lg:pb-6">
         <PageHeader title="Profit Analysis" backHref={reportsRoute} />
 
-        {/* Summary stat cards — 2×2 on mobile, 4 across on desktop */}
+        {/* Period selector */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+          {[
+            { key: 'today',   label: 'Today'   },
+            { key: 'yesterday', label: 'Yesterday' },
+            { key: '7days',   label: '7 Days'  },
+            { key: '30days',  label: '30 Days' },
+            { key: '90days',  label: '90 Days' },
+          ].map(p => (
+            <Button
+              key={p.key}
+              variant={selectedPeriod === p.key ? 'default' : 'outline'}
+              size="sm"
+              className="h-7 text-xs px-3 shrink-0"
+              onClick={() => { setSelectedPeriod(p.key); setCurrentPage(1); }}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Summary stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           <Card>
             <CardContent className="p-3">
               <p className="text-[10px] text-muted-foreground">Revenue</p>
-              <p className="text-sm font-bold truncate">{formatCurrency(totalRevenue)}</p>
-              <p className="text-[10px] text-muted-foreground">{filteredData.length} products</p>
+              {mainLoading ? <div className="h-4 w-20 bg-muted animate-pulse rounded mt-1" /> : <p className="text-sm font-bold truncate">{formatCurrency(totalRevenue)}</p>}
+              <p className="text-[10px] text-muted-foreground">{filteredProducts.length} products</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3">
               <p className="text-[10px] text-muted-foreground">Gross Profit</p>
-              <p className="text-sm font-bold text-green-600 truncate">{formatCurrency(totalGrossProfit)}</p>
-              <p className="text-[10px] text-muted-foreground">{((totalGrossProfit / totalRevenue) * 100).toFixed(1)}% margin</p>
+              {mainLoading ? <div className="h-4 w-20 bg-muted animate-pulse rounded mt-1" /> : <p className="text-sm font-bold text-green-600 truncate">{formatCurrency(grossProfit)}</p>}
+              <p className="text-[10px] text-muted-foreground">{totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : '0'}% margin</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3">
-              <p className="text-[10px] text-muted-foreground">Total Costs</p>
-              <p className="text-sm font-bold text-red-600 truncate">{formatCurrency(totalCosts)}</p>
-              <p className="text-[10px] text-muted-foreground">Cost of goods</p>
+              <p className="text-[10px] text-muted-foreground">Net Profit</p>
+              {mainLoading ? <div className="h-4 w-20 bg-muted animate-pulse rounded mt-1" /> : <p className={`text-sm font-bold truncate ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(netProfit)}</p>}
+              <p className="text-[10px] text-muted-foreground">After expenses</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3">
-              <p className="text-[10px] text-muted-foreground">Avg Margin</p>
-              <p className="text-sm font-bold">{averageProfitMargin.toFixed(1)}%</p>
-              <p className="text-[10px] text-muted-foreground">All products</p>
+              <p className="text-[10px] text-muted-foreground">Expenses</p>
+              {mainLoading ? <div className="h-4 w-20 bg-muted animate-pulse rounded mt-1" /> : <p className="text-sm font-bold text-red-600 truncate">{formatCurrency(totalExpenses)}</p>}
+              <p className="text-[10px] text-muted-foreground">Total costs</p>
             </CardContent>
           </Card>
         </div>
@@ -165,13 +255,12 @@ export default function ProfitAnalysis() {
           <TabsList className="h-9 w-full grid grid-cols-3">
             <TabsTrigger value="products" className="text-xs">Products</TabsTrigger>
             <TabsTrigger value="periods" className="text-xs">Periods</TabsTrigger>
-            <TabsTrigger value="insights" className="text-xs">Insights</TabsTrigger>
+            <TabsTrigger value="summary" className="text-xs">Summary</TabsTrigger>
           </TabsList>
 
           {/* ── Products Tab ── */}
           <TabsContent value="products" className="space-y-3">
             <Card>
-              {/* Mobile toolbar: search + filter trigger + exports */}
               <CardHeader className="py-2.5 px-3">
                 <div className="flex gap-2">
                   <Input
@@ -190,19 +279,9 @@ export default function ProfitAnalysis() {
                     </SheetTrigger>
                     <SheetContent side="bottom" className="rounded-t-2xl pb-8">
                       <SheetHeader className="mb-4">
-                        <SheetTitle className="text-sm">Filter & Sort</SheetTitle>
+                        <SheetTitle className="text-sm">Sort Products</SheetTitle>
                       </SheetHeader>
                       <div className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-medium mb-1.5 block">Category</Label>
-                          <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setCurrentPage(1); }}>
-                            <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Categories</SelectItem>
-                              {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
                         <div>
                           <Label className="text-xs font-medium mb-1.5 block">Sort By</Label>
                           <Select value={sortBy} onValueChange={setSortBy}>
@@ -223,22 +302,15 @@ export default function ProfitAnalysis() {
                           </div>
                         </div>
                         <div className="flex gap-2 pt-1">
-                          <Button variant="outline" className="flex-1 h-9 text-sm" onClick={() => { setSelectedCategory('all'); setSortBy('grossProfit'); setSortOrder('desc'); }}>Reset</Button>
-                          <Button className="flex-1 h-9 text-sm" onClick={() => setFilterSheetOpen(false)}>Apply</Button>
+                          <Button variant="outline" className="flex-1 h-9" onClick={() => { setSortBy('grossProfit'); setSortOrder('desc'); }}>Reset</Button>
+                          <Button className="flex-1 h-9" onClick={() => setFilterSheetOpen(false)}>Apply</Button>
                         </div>
                       </div>
                     </SheetContent>
                   </Sheet>
 
-                  {/* Desktop filter controls */}
+                  {/* Desktop controls */}
                   <div className="hidden lg:flex items-center gap-2">
-                    <Select value={selectedCategory} onValueChange={(v) => { setSelectedCategory(v); setCurrentPage(1); }}>
-                      <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Category" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -253,123 +325,117 @@ export default function ProfitAnalysis() {
                     </Button>
                   </div>
 
-                  {/* Export buttons — both mobile and desktop */}
                   <div className="flex gap-1 ml-auto">
                     <Button onClick={exportToCSV} variant="outline" size="sm" className="h-8 text-xs px-2">
                       <Download className="h-3 w-3 lg:mr-1" /><span className="hidden lg:inline">CSV</span>
-                    </Button>
-                    <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 text-xs px-2">
-                      <FileText className="h-3 w-3 lg:mr-1" /><span className="hidden lg:inline">PDF</span>
                     </Button>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="p-0">
-                {/* Mobile card list */}
-                <div className="divide-y lg:hidden">
-                  {paginatedData.map((item) => (
-                    <div key={item.id} className="px-3 py-3">
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{item.productName}</p>
-                          <p className="text-[11px] text-muted-foreground">{item.category}</p>
-                        </div>
-                        <Badge
-                          variant={item.profitMargin >= 40 ? 'default' : item.profitMargin >= 30 ? 'secondary' : 'destructive'}
-                          className="text-[10px] shrink-0"
-                        >
-                          {item.profitMargin.toFixed(1)}%
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Sales</p>
-                          <p className="font-medium">{formatCurrency(item.totalSales)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-muted-foreground">Profit</p>
-                          <p className="font-medium text-green-600">{formatCurrency(item.grossProfit)}</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <p className="text-[10px] text-muted-foreground">Trend</p>
-                          <div className={`flex items-center gap-1 ${item.trend === 'up' ? 'text-green-600' : item.trend === 'down' ? 'text-red-600' : 'text-gray-500'}`}>
-                            {getTrendIcon(item.trend)}
-                            <span className="text-xs">{item.trendPercentage > 0 ? '+' : ''}{item.trendPercentage}%</span>
+                {productLoading ? (
+                  <div className="flex items-center justify-center py-12 gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />Loading product data...
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div className="text-center py-10 text-sm text-muted-foreground">
+                    {products.length === 0 ? 'No product profit data available for this period' : 'No products match your search'}
+                  </div>
+                ) : (
+                  <>
+                    {/* Mobile cards */}
+                    <div className="divide-y lg:hidden">
+                      {paginatedProducts.map((item) => (
+                        <div key={item.id} className="px-3 py-3">
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{item.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{item.category}</p>
+                            </div>
+                            {item.profitMargin > 0 && (
+                              <Badge
+                                variant={item.profitMargin >= 40 ? 'default' : item.profitMargin >= 20 ? 'secondary' : 'destructive'}
+                                className="text-[10px] shrink-0"
+                              >
+                                {item.profitMargin.toFixed(1)}%
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">Sales</p>
+                              <p className="font-medium">{formatCurrency(item.totalSales)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">Profit</p>
+                              <p className={`font-medium ${item.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(item.grossProfit)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-muted-foreground">Units</p>
+                              <p>{item.unitsSold}</p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                  {paginatedData.length === 0 && (
-                    <div className="px-3 py-8 text-center text-sm text-muted-foreground">No products found</div>
-                  )}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden lg:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/40">
-                        <TableHead className="text-xs py-2">Product</TableHead>
-                        <TableHead className="text-xs py-2">Category</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Sales</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Costs</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Profit</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Margin</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Units</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Profit/Unit</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Trend</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedData.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="py-2 text-xs font-medium">{item.productName}</TableCell>
-                          <TableCell className="py-2">
-                            <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-xs">{formatCurrency(item.totalSales)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-red-600">{formatCurrency(item.totalCost)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs font-medium text-green-600">{formatCurrency(item.grossProfit)}</TableCell>
-                          <TableCell className="py-2 text-right">
-                            <Badge variant={item.profitMargin >= 40 ? 'default' : item.profitMargin >= 30 ? 'secondary' : 'destructive'} className="text-[10px]">
-                              {item.profitMargin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-xs">{item.unitsSold}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-green-600">{formatCurrency(item.profitPerUnit)}</TableCell>
-                          <TableCell className="py-2 text-right">
-                            <div className={`flex items-center justify-end gap-1 ${item.trend === 'up' ? 'text-green-600' : item.trend === 'down' ? 'text-red-600' : 'text-gray-500'}`}>
-                              {getTrendIcon(item.trend)}
-                              <span className="text-xs">{item.trendPercentage}%</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
                       ))}
-                      {paginatedData.length === 0 && (
-                        <TableRow><TableCell colSpan={9} className="text-center py-8 text-sm text-muted-foreground">No products found</TableCell></TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination */}
-                {filteredData.length > itemsPerPage && (
-                  <div className="flex items-center justify-between px-3 py-3 border-t">
-                    <p className="text-[11px] text-muted-foreground">
-                      {startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length}
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
-                        <ChevronLeft className="h-3.5 w-3.5" />Prev
-                      </Button>
-                      <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
-                      <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
-                        Next<ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
-                  </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40">
+                            <TableHead className="text-xs py-2">Product</TableHead>
+                            <TableHead className="text-xs py-2">Category</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Sales</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Costs</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Gross Profit</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Margin</TableHead>
+                            <TableHead className="text-xs py-2 text-right">Units</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedProducts.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell className="py-2 text-xs font-medium">{item.name}</TableCell>
+                              <TableCell className="py-2">
+                                <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
+                              </TableCell>
+                              <TableCell className="py-2 text-right text-xs">{formatCurrency(item.totalSales)}</TableCell>
+                              <TableCell className="py-2 text-right text-xs text-red-600">{formatCurrency(item.totalCost)}</TableCell>
+                              <TableCell className="py-2 text-right text-xs font-medium text-green-600">{formatCurrency(item.grossProfit)}</TableCell>
+                              <TableCell className="py-2 text-right">
+                                {item.profitMargin > 0 && (
+                                  <Badge variant={item.profitMargin >= 40 ? 'default' : item.profitMargin >= 20 ? 'secondary' : 'destructive'} className="text-[10px]">
+                                    {item.profitMargin.toFixed(1)}%
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="py-2 text-right text-xs">{item.unitsSold}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Pagination */}
+                    {filteredProducts.length > itemsPerPage && (
+                      <div className="flex items-center justify-between px-3 py-3 border-t">
+                        <p className="text-[11px] text-muted-foreground">
+                          {startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredProducts.length)} of {filteredProducts.length}
+                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                            <ChevronLeft className="h-3.5 w-3.5" />Prev
+                          </Button>
+                          <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
+                          <Button variant="outline" size="sm" className="h-8 px-2.5 text-xs gap-1" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>
+                            Next<ChevronRight className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -379,39 +445,43 @@ export default function ProfitAnalysis() {
           <TabsContent value="periods" className="space-y-3">
             <Card>
               <CardHeader className="py-2.5 px-3">
-                <CardTitle className="text-sm">Period Profit Analysis</CardTitle>
+                <CardTitle className="text-sm">Period Comparison</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {/* Mobile cards */}
                 <div className="divide-y lg:hidden">
-                  {periodData.map((period, i) => (
-                    <div key={i} className="px-3 py-3">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <p className="text-sm font-semibold">{period.period}</p>
-                        <Badge variant={period.profitMargin >= 35 ? 'default' : period.profitMargin >= 25 ? 'secondary' : 'destructive'} className="text-[10px]">
-                          {period.profitMargin.toFixed(1)}%
-                        </Badge>
+                  {periodDefs.map((pd, i) => {
+                    const d = periodQueries[i].data;
+                    const loading = periodQueries[i].isLoading;
+                    const rev   = d?.totalProfitAndSalesValue?.totalSales ?? 0;
+                    const gross = d?.gross ?? 0;
+                    const net   = d?.net ?? 0;
+                    const margin = rev > 0 ? (gross / rev) * 100 : 0;
+                    return (
+                      <div key={pd.label} className="px-3 py-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <p className="text-sm font-semibold">{pd.label}</p>
+                          {loading
+                            ? <div className="h-5 w-12 bg-muted animate-pulse rounded-full" />
+                            : <Badge variant={margin >= 30 ? 'default' : margin >= 15 ? 'secondary' : 'destructive'} className="text-[10px]">{margin.toFixed(1)}%</Badge>
+                          }
+                        </div>
+                        {loading ? (
+                          <div className="space-y-1.5">
+                            <div className="h-3 w-full bg-muted animate-pulse rounded" />
+                            <div className="h-3 w-3/4 bg-muted animate-pulse rounded" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                            <div className="flex justify-between"><span className="text-muted-foreground">Revenue</span><span className="font-medium">{formatCurrency(rev)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Net Profit</span><span className={`font-semibold ${net >= 0 ? 'text-green-700' : 'text-red-600'}`}>{formatCurrency(net)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Gross</span><span className="text-green-600">{formatCurrency(gross)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">Expenses</span><span className="text-red-600">{formatCurrency(d?.totalExpenses?.totalExpenses ?? 0)}</span></div>
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Revenue</span>
-                          <span className="font-medium">{formatCurrency(period.revenue)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Net Profit</span>
-                          <span className="font-semibold text-green-700">{formatCurrency(period.netProfit)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Costs</span>
-                          <span className="text-red-600">{formatCurrency(period.costs)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Items Sold</span>
-                          <span>{period.itemsSold}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Desktop table */}
@@ -421,31 +491,39 @@ export default function ProfitAnalysis() {
                       <TableRow className="bg-muted/40">
                         <TableHead className="text-xs py-2">Period</TableHead>
                         <TableHead className="text-xs py-2 text-right">Revenue</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Costs</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Expenses</TableHead>
                         <TableHead className="text-xs py-2 text-right">Gross Profit</TableHead>
+                        <TableHead className="text-xs py-2 text-right">Expenses</TableHead>
                         <TableHead className="text-xs py-2 text-right">Net Profit</TableHead>
                         <TableHead className="text-xs py-2 text-right">Margin</TableHead>
-                        <TableHead className="text-xs py-2 text-right">Items</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {periodData.map((period, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="py-2 text-xs font-medium">{period.period}</TableCell>
-                          <TableCell className="py-2 text-right text-xs">{formatCurrency(period.revenue)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-red-600">{formatCurrency(period.costs)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-orange-600">{formatCurrency(period.expenses)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-green-600 font-medium">{formatCurrency(period.grossProfit)}</TableCell>
-                          <TableCell className="py-2 text-right text-xs text-green-700 font-bold">{formatCurrency(period.netProfit)}</TableCell>
-                          <TableCell className="py-2 text-right">
-                            <Badge variant={period.profitMargin >= 35 ? 'default' : period.profitMargin >= 25 ? 'secondary' : 'destructive'} className="text-[10px]">
-                              {period.profitMargin.toFixed(1)}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-2 text-right text-xs">{period.itemsSold}</TableCell>
-                        </TableRow>
-                      ))}
+                      {periodDefs.map((pd, i) => {
+                        const d = periodQueries[i].data;
+                        const loading = periodQueries[i].isLoading;
+                        const rev = d?.totalProfitAndSalesValue?.totalSales ?? 0;
+                        const gross = d?.gross ?? 0;
+                        const net = d?.net ?? 0;
+                        const exp = d?.totalExpenses?.totalExpenses ?? 0;
+                        const margin = rev > 0 ? (gross / rev) * 100 : 0;
+                        const cell = (content: React.ReactNode) =>
+                          loading ? <div className="h-3 w-16 bg-muted animate-pulse rounded inline-block" /> : content;
+                        return (
+                          <TableRow key={pd.label}>
+                            <TableCell className="py-2 text-xs font-medium">{pd.label}</TableCell>
+                            <TableCell className="py-2 text-right text-xs">{cell(formatCurrency(rev))}</TableCell>
+                            <TableCell className="py-2 text-right text-xs text-green-600 font-medium">{cell(formatCurrency(gross))}</TableCell>
+                            <TableCell className="py-2 text-right text-xs text-red-600">{cell(formatCurrency(exp))}</TableCell>
+                            <TableCell className="py-2 text-right text-xs font-bold text-green-700">{cell(formatCurrency(net))}</TableCell>
+                            <TableCell className="py-2 text-right">
+                              {loading
+                                ? <div className="h-5 w-12 bg-muted animate-pulse rounded-full inline-block" />
+                                : <Badge variant={margin >= 30 ? 'default' : margin >= 15 ? 'secondary' : 'destructive'} className="text-[10px]">{margin.toFixed(1)}%</Badge>
+                              }
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -453,81 +531,75 @@ export default function ProfitAnalysis() {
             </Card>
           </TabsContent>
 
-          {/* ── Insights Tab ── */}
-          <TabsContent value="insights" className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Card>
-                <CardHeader className="py-2.5 px-3">
-                  <CardTitle className="text-sm text-green-600">Top Performers</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 divide-y divide-gray-100">
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Highest Profit Margin</p>
-                    <p className="text-xs text-muted-foreground">Smartphone Case (50.0%)</p>
-                  </div>
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Highest Gross Profit</p>
-                    <p className="text-xs text-muted-foreground">Wireless Headphones ({formatCurrency(30000)})</p>
-                  </div>
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Best Selling</p>
-                    <p className="text-xs text-muted-foreground">Premium Coffee Beans (150 units)</p>
-                  </div>
-                </CardContent>
-              </Card>
+          {/* ── Summary Tab ── */}
+          <TabsContent value="summary" className="space-y-3">
+            {mainLoading ? (
+              <div className="flex items-center justify-center py-12 gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />Loading...
+              </div>
+            ) : mainData ? (
+              <div className="space-y-3">
+                <Card>
+                  <CardHeader className="py-2.5 px-3">
+                    <CardTitle className="text-sm">Income Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3 pt-0 space-y-2">
+                    {[
+                      { label: 'Total Sales',       value: mainData.totalProfitAndSalesValue?.totalSales,       color: '' },
+                      { label: 'Cash Sales',        value: mainData.totalProfitAndSalesValue?.totalCashSales,   color: 'text-green-600' },
+                      { label: 'Credit Sales',      value: mainData.creditTotals,                               color: 'text-blue-600' },
+                      { label: 'Debt Collected',    value: mainData.debtPaid,                                   color: 'text-purple-600' },
+                    ].map(row => (
+                      <div key={row.label} className="flex justify-between items-center py-1.5 border-b last:border-0">
+                        <span className="text-xs text-muted-foreground">{row.label}</span>
+                        <span className={`text-sm font-semibold ${row.color}`}>{formatCurrency(row.value)}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
 
-              <Card>
-                <CardHeader className="py-2.5 px-3">
-                  <CardTitle className="text-sm text-red-600">Areas for Improvement</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 divide-y divide-gray-100">
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Lowest Profit Margin</p>
-                    <p className="text-xs text-muted-foreground">Notebook Set (30.0%)</p>
-                  </div>
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Declining Trend</p>
-                    <p className="text-xs text-muted-foreground">Designer T-Shirt (-5.2%)</p>
-                  </div>
-                  <div className="py-2">
-                    <p className="text-xs font-medium">Low Volume, High Margin</p>
-                    <p className="text-xs text-muted-foreground">Consider promoting Smartphone Case</p>
-                  </div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader className="py-2.5 px-3">
+                    <CardTitle className="text-sm">Cost Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3 pt-0 space-y-2">
+                    {[
+                      { label: 'Cost of Goods',  value: mainData.totalProfitAndSalesValue?.totalPurchases,  color: 'text-red-600' },
+                      { label: 'Total Expenses', value: mainData.totalExpenses?.totalExpenses,               color: 'text-orange-600' },
+                      { label: 'Bad Stock',      value: mainData.badStockValue?.badStockValue,               color: 'text-red-400' },
+                      { label: 'Taxes',          value: mainData.totalTaxes,                                 color: 'text-gray-600' },
+                    ].map(row => (
+                      <div key={row.label} className="flex justify-between items-center py-1.5 border-b last:border-0">
+                        <span className="text-xs text-muted-foreground">{row.label}</span>
+                        <span className={`text-sm font-semibold ${row.color}`}>{formatCurrency(row.value)}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
 
-              <Card className="sm:col-span-2">
-                <CardHeader className="py-2.5 px-3">
-                  <CardTitle className="text-sm">Profit Analysis Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0">
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <p className="text-xs font-medium text-green-800">Strong Performance</p>
-                      <p className="text-[10px] text-green-600 mt-1">Electronics showing consistent 35%+ margins with strong volume</p>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-semibold">Gross Profit</span>
+                      <span className={`text-base font-bold ${grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(grossProfit)}</span>
                     </div>
-                    <div className="p-3 bg-yellow-50 rounded-lg">
-                      <p className="text-xs font-medium text-yellow-800">Optimization Opportunity</p>
-                      <p className="text-[10px] text-yellow-600 mt-1">F&B showing good margins — increase volume through promotions</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold">Net Profit</span>
+                      <span className={`text-base font-bold ${netProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>{formatCurrency(netProfit)}</span>
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs font-medium text-blue-800">Growth Potential</p>
-                      <p className="text-[10px] text-blue-600 mt-1">High-margin Smartphone Case has low volume — consider marketing</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-10 text-sm text-muted-foreground">No data available for this period</div>
+            )}
           </TabsContent>
         </Tabs>
 
-        {/* Bottom action buttons */}
+        {/* Bottom actions */}
         <div className="flex flex-wrap gap-2">
           <Button size="sm" className="h-9 text-xs" onClick={exportToCSV}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />Export Report
-          </Button>
-          <Button variant="outline" size="sm" className="h-9 text-xs">
-            <Calendar className="h-3.5 w-3.5 mr-1.5" />Schedule
+            <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
           </Button>
           <Button variant="outline" size="sm" className="h-9 text-xs">
             <Eye className="h-3.5 w-3.5 mr-1.5" />Detailed View
