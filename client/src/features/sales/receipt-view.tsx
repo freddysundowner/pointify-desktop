@@ -376,7 +376,6 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 
   return (
     <DashboardLayout title={`Receipt #${saleData.receiptNo}`}>
-      <div className="p-4 md:p-6">
         <PageHeader
           title={`Receipt #${saleData.receiptNo}`}
           onBack={() => window.history.back()}
@@ -397,7 +396,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
         />
 
         {/* Receipt paper */}
-        <div className="flex justify-center print:block">
+        <div className="-mx-3 lg:mx-0 flex justify-center print:block">
           <div
             className="bg-white w-full max-w-sm shadow-lg print:shadow-none receipt-content"
             style={{ fontFamily: "'Courier New', Courier, monospace" }}
@@ -603,7 +602,6 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
             />
           </div>
         </div>
-      </div>
 
       {/* Email Receipt Dialog */}
       <Dialog open={showEmailDialog} onOpenChange={(open) => { if (!open) { setShowEmailDialog(false); setEmailSent(false); } }}>
