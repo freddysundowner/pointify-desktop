@@ -1,11 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, ArrowLeft, RotateCcw, Loader2, CheckCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, RotateCcw, Loader2, CheckCircle, Minus, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import DashboardLayout from "@/components/layout/dashboard-layout";
@@ -261,120 +259,86 @@ export default function ReturnSale() {
 
         {/* Return Items */}
         <Card>
-          <CardHeader className="pb-2 pt-4 px-4">
-            <CardTitle className="text-sm font-semibold text-gray-700">Items to Return</CardTitle>
-            <p className="text-xs text-muted-foreground">Select items and specify quantities</p>
+          <CardHeader className="pb-0 pt-3 px-4">
+            <CardTitle className="text-sm font-semibold text-gray-700">Select Items to Return</CardTitle>
           </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="space-y-3">
+          <CardContent className="px-0 pb-0">
+            <div className="divide-y divide-gray-100">
               {returnItems.map((item, index) => (
-                <div key={index} className="border rounded-lg p-3">
-                  {/* Item header row */}
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={item.shouldReturn}
-                      onCheckedChange={(checked) => updateReturnItem(index, 'shouldReturn', checked)}
-                      className="mt-0.5 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight">{item.productName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {item.quantity} × {currency} {item.unitPrice.toFixed(2)} = {currency} {item.totalPrice.toFixed(2)}
-                      </p>
-                    </div>
-                    {item.shouldReturn && (
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">Refund</p>
-                        <p className="text-sm font-semibold text-green-600">
-                          {currency} {(item.unitPrice * item.returnQuantity).toFixed(2)}
-                        </p>
-                      </div>
-                    )}
+                <div key={index} className="flex items-center gap-3 px-4 py-2.5">
+                  <Checkbox
+                    checked={item.shouldReturn}
+                    onCheckedChange={(checked) => {
+                      updateReturnItem(index, 'shouldReturn', checked);
+                    }}
+                    className="flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium leading-tight truncate">{item.productName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {currency} {item.unitPrice.toFixed(2)} · max {item.quantity}
+                    </p>
                   </div>
-
-                  {/* Expanded fields when selected */}
-                  {item.shouldReturn && (
-                    <div className="mt-3 pl-7 space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor={`quantity-${index}`} className="text-xs">Return Qty</Label>
-                          <Input
-                            id={`quantity-${index}`}
-                            type="number"
-                            min="1"
-                            max={item.quantity}
-                            value={item.returnQuantity}
-                            onChange={(e) => updateReturnItem(index, 'returnQuantity', parseInt(e.target.value) || 1)}
-                            className="h-8 text-sm mt-0.5"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Max Qty</Label>
-                          <div className="h-8 mt-0.5 flex items-center">
-                            <span className="text-sm text-muted-foreground">{item.quantity}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor={`reason-${index}`} className="text-xs">Reason</Label>
-                        <Input
-                          id={`reason-${index}`}
-                          value={item.returnReason}
-                          onChange={(e) => updateReturnItem(index, 'returnReason', e.target.value)}
-                          placeholder="e.g. Defective, Wrong size..."
-                          className="h-8 text-sm mt-0.5"
-                        />
-                      </div>
-                    </div>
-                  )}
+                  {/* +/- stepper */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      disabled={!item.shouldReturn || item.returnQuantity <= 1}
+                      onClick={() => updateReturnItem(index, 'returnQuantity', Math.max(1, item.returnQuantity - 1))}
+                      className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center text-gray-600 disabled:opacity-30 hover:bg-gray-50 active:bg-gray-100"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className={`w-6 text-center text-sm font-semibold tabular-nums ${!item.shouldReturn ? 'text-gray-300' : 'text-gray-900'}`}>
+                      {item.shouldReturn ? item.returnQuantity : 0}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!item.shouldReturn || item.returnQuantity >= item.quantity}
+                      onClick={() => updateReturnItem(index, 'returnQuantity', Math.min(item.quantity, item.returnQuantity + 1))}
+                      className="w-7 h-7 rounded-md border border-gray-300 flex items-center justify-center text-gray-600 disabled:opacity-30 hover:bg-gray-50 active:bg-gray-100"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                  {/* Line refund */}
+                  <div className="w-20 text-right flex-shrink-0">
+                    <span className={`text-sm font-semibold ${item.shouldReturn ? 'text-green-600' : 'text-gray-300'}`}>
+                      {currency} {item.shouldReturn ? (item.unitPrice * item.returnQuantity).toFixed(2) : '0.00'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Return Summary */}
-        {selectedItemsCount > 0 && (
-          <Card>
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-semibold text-gray-700">Return Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-3">
-              {/* Refund amount prominently */}
-              <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2.5">
-                <span className="text-sm text-gray-600">Total Refund</span>
-                <span className="text-xl font-bold text-green-600">
-                  {currency} {calculateRefundAmount().toFixed(2)}
-                </span>
-              </div>
-
-              <div>
-                <Label htmlFor="refund-method" className="text-xs">Refund Method</Label>
-                <select
-                  id="refund-method"
-                  value={refundMethod}
-                  onChange={(e) => setRefundMethod(e.target.value)}
-                  className="w-full mt-1 h-9 px-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="original">Original Payment Method</option>
-                  <option value="cash">Cash</option>
-                  <option value="store-credit">Store Credit</option>
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="return-notes" className="text-xs">Additional Notes</Label>
+            {/* Total refund + reason inside same card */}
+            {selectedItemsCount > 0 && (
+              <div className="border-t mx-4 mt-1 pt-3 pb-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Total Refund</span>
+                  <span className="text-base font-bold text-green-600">{currency} {calculateRefundAmount().toFixed(2)}</span>
+                </div>
+                <div>
+                  <select
+                    value={refundMethod}
+                    onChange={(e) => setRefundMethod(e.target.value)}
+                    className="w-full h-9 px-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="original">Original Payment Method</option>
+                    <option value="cash">Cash</option>
+                    <option value="store-credit">Store Credit</option>
+                  </select>
+                </div>
                 <Textarea
-                  id="return-notes"
                   value={returnNotes}
                   onChange={(e) => setReturnNotes(e.target.value)}
-                  placeholder="Any additional notes about this return..."
-                  className="mt-1 text-sm min-h-[72px]"
+                  placeholder="Return reason (optional)..."
+                  className="text-sm min-h-[60px] resize-none"
                 />
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {/* Warning */}
         <Alert className="border-amber-200 bg-amber-50">
