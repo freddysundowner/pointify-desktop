@@ -29,7 +29,7 @@ const fmtAmt = (n: any) => {
 export default function StockReport() {
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { attendant } = useAttendantAuth();
-  const { shopId: primaryShopId } = usePrimaryShop();
+  const { shopId: primaryShopId, adminId } = usePrimaryShop();
   const currency = useSelector((state: RootState) => state.currency) || 'KES';
   const reportsRoute = useNavigationRoute('reports');
 
@@ -42,7 +42,7 @@ export default function StockReport() {
   const LIMIT = 50;
 
   const stockUrl = effectiveShopId
-    ? `/api/product/stockreport/${effectiveShopId}?page=${page}&limit=${LIMIT}&name=${encodeURIComponent(submittedSearch)}`
+    ? `/api/product/stockreport/${effectiveShopId}?page=${page}&limit=${LIMIT}&name=${encodeURIComponent(submittedSearch)}${adminId ? `&adminid=${adminId}` : ''}`
     : null;
 
   const { data: rawData, isLoading, isError } = useQuery<any>({

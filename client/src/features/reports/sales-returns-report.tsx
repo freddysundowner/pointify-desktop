@@ -56,7 +56,7 @@ export default function SalesReturnsReport() {
   const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
   const url = effectiveShopId
-    ? `/api/salereturns/filter?shop=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
+    ? `/api/salereturns/filter?shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
     : null;
 
   const { data: rawData, isLoading, isError } = useQuery<any>({
@@ -65,7 +65,9 @@ export default function SalesReturnsReport() {
     staleTime: 60_000,
   });
 
-  const items: any[] = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : []);
+  const items: any[] = Array.isArray(rawData) ? rawData
+    : (Array.isArray(rawData?.items) ? rawData.items
+    : (Array.isArray(rawData?.data) ? rawData.data : []));
   const totalReturned  = items.reduce((s: number, i: any) => s + (Number(i.totalAmount ?? i.amount ?? i.total ?? 0)), 0);
   const totalPages     = Math.ceil(items.length / PER_PAGE);
   const pageItems      = items.slice((page - 1) * PER_PAGE, page * PER_PAGE);

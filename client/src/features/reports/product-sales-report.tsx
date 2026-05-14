@@ -69,7 +69,7 @@ export default function ProductSalesReport() {
   const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
   const url = effectiveShopId
-    ? `/api/sales/products/reports?shop=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&saleType=${saleType === 'All' ? '' : saleType}&product=${encodeURIComponent(productSearch)}`
+    ? `/api/sales/products/reports?shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&saleType=${saleType === 'All' ? '' : saleType}&product=${encodeURIComponent(productSearch)}`
     : null;
 
   const { data: rawData, isLoading, isError } = useQuery<any>({
@@ -78,7 +78,9 @@ export default function ProductSalesReport() {
     staleTime: 60_000,
   });
 
-  const items: any[] = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : []);
+  const items: any[] = Array.isArray(rawData) ? rawData
+    : (Array.isArray(rawData?.items) ? rawData.items
+    : (Array.isArray(rawData?.data) ? rawData.data : []));
   const totalSales  = items.reduce((s: number, i: any) => s + (Number(i.totalAmount ?? i.amount ?? i.price ?? 0)), 0);
   const totalQty    = items.reduce((s: number, i: any) => s + (Number(i.quantity ?? i.qty ?? 0)), 0);
   const totalPages  = Math.ceil(items.length / PER_PAGE);
