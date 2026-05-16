@@ -1311,7 +1311,7 @@ function SalesList() {
 
             {/* Summary Stats - Permission Controlled */}
             {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {[
                   { label: "Total", value: salesReportData?.totalSales },
                   { label: "Count", value: filteredSalesCount, isCount: true },
@@ -1324,8 +1324,8 @@ function SalesList() {
                 ].map(({ label, value, isCount }) => (
                   <Card key={label} className="p-2">
                     <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
-                    <p className="text-xs sm:text-sm font-bold mt-0.5 truncate leading-tight">
-                      {isCount ? value : `${primaryShopCurrency} ${Number(value || 0).toFixed(2)}`}
+                    <p className="text-xs font-bold mt-0.5 leading-tight break-all">
+                      {isCount ? value : `${primaryShopCurrency} ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </p>
                   </Card>
                 ))}
