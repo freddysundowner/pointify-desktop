@@ -155,38 +155,85 @@ export default function SalesReportPage() {
           </Card>
         )}
 
-        {/* Summary card — matches Flutter summaryCard list */}
         {!isError && (
-          <Card className="shadow-md">
-            <CardContent className="p-4 lg:p-6">
+          <>
+            {/* ── Mobile: Flutter-style summary list ── */}
+            <Card className="shadow-md lg:hidden">
+              <CardContent className="p-4">
+                {isLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div>
+                    {ROWS.map((row, idx) => {
+                      const amount = data?.[row.key] ?? 0;
+                      const isLast = idx === ROWS.length - 1;
+                      return (
+                        <div key={row.key}>
+                          <div className="flex items-start justify-between py-4 cursor-pointer hover:bg-muted/20 -mx-4 px-4 transition-colors">
+                            <div className="flex-1 min-w-0 pr-4">
+                              <p className="text-base font-normal text-foreground">{row.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{row.description}</p>
+                            </div>
+                            <p className="text-base font-bold text-foreground shrink-0">
+                              {currency} {fmt(amount)}
+                            </p>
+                          </div>
+                          {!isLast && <div className="border-t border-border" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── Desktop: table layout ── */}
+            <Card className="hidden lg:block shadow-sm">
               {isLoading ? (
-                <div className="flex justify-center py-10">
+                <div className="flex justify-center py-16">
                   <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <div>
-                  {ROWS.map((row, idx) => {
-                    const amount = data?.[row.key] ?? 0;
-                    const isLast = idx === ROWS.length - 1;
-                    return (
-                      <div key={row.key}>
-                        <div className="flex items-start justify-between py-4 lg:py-5 cursor-pointer hover:bg-muted/20 -mx-4 px-4 lg:-mx-6 lg:px-6 transition-colors">
-                          <div className="flex-1 min-w-0 pr-4">
-                            <p className="text-base lg:text-lg font-normal text-foreground">{row.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{row.description}</p>
-                          </div>
-                          <p className="text-base lg:text-lg font-bold text-foreground shrink-0">
-                            {currency} {fmt(amount)}
-                          </p>
-                        </div>
-                        {!isLast && <div className="border-t border-border" />}
-                      </div>
-                    );
-                  })}
-                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Payment Type</th>
+                      <th className="text-left px-6 py-3.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Description</th>
+                      <th className="text-right px-6 py-3.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Amount</th>
+                      <th className="text-right px-6 py-3.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {ROWS.map((row) => {
+                      const amount = data?.[row.key] ?? 0;
+                      const share = total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0";
+                      return (
+                        <tr key={row.key} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-6 py-4 font-medium text-foreground">{row.title}</td>
+                          <td className="px-6 py-4 text-muted-foreground">{row.description}</td>
+                          <td className="px-6 py-4 text-right font-bold text-base text-foreground">{currency} {fmt(amount)}</td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{share}%</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 bg-muted/20 font-bold">
+                      <td className="px-6 py-4 text-foreground" colSpan={2}>Total</td>
+                      <td className="px-6 py-4 text-right text-base text-foreground">{currency} {fmt(total)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">100%</span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               )}
-            </CardContent>
-          </Card>
+            </Card>
+          </>
         )}
       </div>
     </DashboardLayout>
