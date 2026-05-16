@@ -108,11 +108,13 @@ function SalesList() {
       setLocation("/dashboard");
     }
   };
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Initialize dates from URL parameters if available
   const urlParams = new URLSearchParams(window.location.search);
+  const [statusFilter, setStatusFilter] = useState<string>(
+    urlParams.get("status") || "all"
+  );
   const [startDate, setStartDate] = useState<string>(
     urlParams.get("startDate") || "",
   );

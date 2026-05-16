@@ -6,8 +6,9 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, ChevronRight } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
+import { useLocation } from "wouter";
 
 const fmt = (val: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(val ?? 0);
@@ -68,10 +69,25 @@ const ROWS = [
   { key: "hold",     title: "On hold sales",  description: "Sales that has not been cashed in" },
 ];
 
+// Maps each summary row key to its drill-down route in the web app
+function getDrillDownPath(key: string, fromDate: string, toDate: string): string {
+  const dates = `&startDate=${fromDate}&endDate=${toDate}`;
+  switch (key) {
+    case "cash":     return `/sales?status=cash${dates}`;
+    case "credit":   return `/sales?status=credit${dates}`;
+    case "wallet":   return `/sales?status=wallet${dates}`;
+    case "hold":     return `/sales?status=hold${dates}`;
+    case "returns":  return `/sales-returns`;
+    case "debtpaid": return `/debtors`;
+    default:         return `/sales`;
+  }
+}
+
 export default function SalesReportPage() {
   const currency = useSelector((state: RootState) => state.currency);
   const { shopId: effectiveShopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
+  const [, navigate] = useLocation();
 
   const [activeKey, setActiveKey] = useState<DateRangeKey>("today");
   const [customFrom, setCustomFrom] = useState("");
@@ -171,14 +187,18 @@ export default function SalesReportPage() {
                       const isLast = idx === ROWS.length - 1;
                       return (
                         <div key={row.key}>
-                          <div className="flex items-start justify-between py-4 cursor-pointer hover:bg-muted/20 -mx-4 px-4 transition-colors">
-                            <div className="flex-1 min-w-0 pr-4">
+                          <div
+                            className="flex items-center justify-between py-4 cursor-pointer hover:bg-muted/20 active:bg-muted/40 -mx-4 px-4 transition-colors"
+                            onClick={() => navigate(getDrillDownPath(row.key, fromDate, toDate))}
+                          >
+                            <div className="flex-1 min-w-0 pr-3">
                               <p className="text-base font-normal text-foreground">{row.title}</p>
                               <p className="text-xs text-muted-foreground mt-0.5">{row.description}</p>
                             </div>
-                            <p className="text-base font-bold text-foreground shrink-0">
-                              {currency} {fmt(amount)}
-                            </p>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <p className="text-base font-bold text-foreground">{currency} {fmt(amount)}</p>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                            </div>
                           </div>
                           {!isLast && <div className="border-t border-border" />}
                         </div>
