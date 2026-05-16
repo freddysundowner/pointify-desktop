@@ -35,8 +35,7 @@ function customerPhone(s: DueSale) { return (s.customer as any)?.phone ?? null; 
 
 export default function DueSalesPage() {
   const currency = useSelector((state: RootState) => state.currency);
-  const { selectedShopId, attendant, primaryShopId } = usePrimaryShop();
-  const effectiveShopId = selectedShopId || (attendant ? (attendant as any).shopId?._id : primaryShopId);
+  const { shopId: effectiveShopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
 
   const [dueDate, setDueDate] = useState(toYMD(new Date()));

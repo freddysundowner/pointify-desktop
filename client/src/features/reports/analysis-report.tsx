@@ -26,8 +26,7 @@ function getYears() {
 
 export default function AnalysisReportPage() {
   const currency = useSelector((state: RootState) => state.currency);
-  const { selectedShopId, attendant, primaryShopId } = usePrimaryShop();
-  const effectiveShopId = selectedShopId || (attendant ? (attendant as any).shopId?._id : primaryShopId);
+  const { shopId: effectiveShopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
 
   const [year, setYear] = useState(new Date().getFullYear());
