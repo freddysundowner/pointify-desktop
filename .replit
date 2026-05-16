@@ -1,7 +1,7 @@
 modules = ["nodejs-20", "web", "python-3.11"]
 [agent]
 expertMode = true
-stack = "BEST_EFFORT_FALLBACK"
+stack = "FULLSTACK_JS"
 
 [nix]
 channel = "stable-25_05"
@@ -38,16 +38,15 @@ externalPort = 3001
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 5001
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "server/dist/index.cjs"]
-build = ["bash", "-c", "cd client && npm install && npm run build && cd ../server && npm install && npm run build"]
+run = ["node", "./dist/index.cjs"]
+build = ["npm", "run", "build"]
 
 [userenv]
 
 [userenv.shared]
 POINTIFY_API_URL = "https://sandbox.pointifypos.com"
+PORT = "1999"
+DEV = "false"
+NODE_ENV = "development"
