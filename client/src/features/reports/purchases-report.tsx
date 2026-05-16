@@ -66,22 +66,17 @@ export default function PurchasesReportPage() {
   const fromDate = showCustom ? customFrom : autoFrom;
   const toDate   = showCustom ? customTo   : autoTo;
 
-  const token = useSelector((state: RootState) => (state as any).auth?.token || localStorage.getItem("token") || "");
+  const params = new URLSearchParams({ shopId: effectiveShopId, start: fromDate, end: toDate, page: String(page), limit: String(LIMIT) });
+  if (paymentType !== "all") params.set("paymentType", paymentType);
+  const url = effectiveShopId ? `/api/purchases?${params.toString()}` : null;
 
-  const { data, isLoading, isError } = useQuery<{ purchases: Purchase[] }>({
-    queryKey: ["purchases-report", effectiveShopId, fromDate, toDate, paymentType, page],
-    enabled: !!effectiveShopId,
-    queryFn: async () => {
-      const params = new URLSearchParams({ shopId: effectiveShopId, start: fromDate, end: toDate, page: String(page), limit: String(LIMIT) });
-      if (paymentType !== "all") params.set("paymentType", paymentType);
-      const res = await fetch(`/api/purchases?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Failed");
-      const raw = await res.json();
-      return Array.isArray(raw) ? { purchases: raw } : { purchases: raw?.purchases ?? raw?.data ?? [] };
-    },
+  const { data: rawPurchases, isLoading, isError } = useQuery<any>({
+    queryKey: [url],
+    enabled: !!url,
+    staleTime: 60_000,
   });
 
-  const all = data?.purchases ?? [];
+  const all: Purchase[] = Array.isArray(rawPurchases) ? rawPurchases : (rawPurchases?.purchases ?? rawPurchases?.data ?? []);
   const filtered = search.trim()
     ? all.filter(p =>
         String(p.purchaseNo ?? p.invoiceNo ?? "").toLowerCase().includes(search.toLowerCase()) ||

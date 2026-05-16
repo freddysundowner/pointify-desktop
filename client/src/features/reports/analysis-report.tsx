@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { apiRequest } from "@/lib/queryClient";
+
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,8 +38,6 @@ export default function AnalysisReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  const token = useSelector((state: RootState) => (state as any).auth?.token || localStorage.getItem("token") || "");
-
   async function fetchData(y: number) {
     if (!effectiveShopId) return;
     setLoading(true); setError(false);
@@ -45,8 +45,8 @@ export default function AnalysisReportPage() {
     const toDate   = toYMD(new Date(y, 11, 31));
     try {
       const [salesRes, expRes] = await Promise.all([
-        fetch(`/api/sales/filter?shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&paginated=false`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`/api/expenses?shop=${effectiveShopId}&start=${fromDate}&end=${toDate}`, { headers: { Authorization: `Bearer ${token}` } }),
+        apiRequest('GET', `/api/sales/filter?shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&paginated=false`),
+        apiRequest('GET', `/api/expenses?shop=${effectiveShopId}&start=${fromDate}&end=${toDate}`),
       ]);
       const salesRaw = await salesRes.json();
       const sales = Array.isArray(salesRaw) ? salesRaw : (salesRaw?.data ?? []);

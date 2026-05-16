@@ -63,21 +63,17 @@ export default function ExpenseReportPage() {
   const fromDate = showCustom ? customFrom : autoFrom;
   const toDate   = showCustom ? customTo   : autoTo;
 
-  const token = useSelector((state: RootState) => (state as any).auth?.token || localStorage.getItem("token") || "");
+  const url = effectiveShopId
+    ? `/api/expenses?shop=${effectiveShopId}&start=${fromDate}&end=${toDate}`
+    : null;
 
-  const { data, isLoading, isError } = useQuery<Expense[]>({
-    queryKey: ["expense-report", effectiveShopId, fromDate, toDate],
-    enabled: !!effectiveShopId,
-    queryFn: async () => {
-      const res = await fetch(`/api/expenses?shop=${effectiveShopId}&start=${fromDate}&end=${toDate}`,
-        { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error("Failed");
-      const raw = await res.json();
-      return Array.isArray(raw) ? raw : (raw?.data ?? []);
-    },
+  const { data: rawExpenses, isLoading, isError } = useQuery<any>({
+    queryKey: [url],
+    enabled: !!url,
+    staleTime: 60_000,
   });
 
-  const expenses = data ?? [];
+  const expenses: Expense[] = Array.isArray(rawExpenses) ? rawExpenses : (rawExpenses?.data ?? []);
   const total = expenses.reduce((s, e) => s + (e.amount ?? 0), 0);
 
   // Group by category for desktop summary

@@ -39,23 +39,17 @@ export default function DueSalesPage() {
   const reportsRoute = useNavigationRoute("reports");
 
   const [dueDate, setDueDate] = useState(toYMD(new Date()));
-  const token = useSelector((state: RootState) => (state as any).auth?.token || localStorage.getItem("token") || "");
+  const url = effectiveShopId
+    ? `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&dueDate=${dueDate}&fromDate=${dueDate}&toDate=${dueDate}&paginated=false`
+    : null;
 
-  const { data, isLoading, isError } = useQuery<DueSale[]>({
-    queryKey: ["due-sales", effectiveShopId, dueDate],
-    enabled: !!effectiveShopId,
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&dueDate=${dueDate}&fromDate=${dueDate}&toDate=${dueDate}&paginated=false`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Failed");
-      const raw = await res.json();
-      return Array.isArray(raw) ? raw : (raw?.data ?? []);
-    },
+  const { data: rawSales, isLoading, isError } = useQuery<any>({
+    queryKey: [url],
+    enabled: !!url,
+    staleTime: 60_000,
   });
 
-  const sales = data ?? [];
+  const sales: DueSale[] = Array.isArray(rawSales) ? rawSales : (rawSales?.data ?? []);
   const total = sales.reduce((s, sale) => s + saleAmount(sale), 0);
 
   return (

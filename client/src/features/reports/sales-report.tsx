@@ -59,19 +59,14 @@ export default function SalesReportPage() {
   const fromDate = showCustom ? customFrom : autoFrom;
   const toDate   = showCustom ? customTo   : autoTo;
 
-  const token = useSelector((state: RootState) => (state as any).auth?.token || localStorage.getItem("token") || "");
+  const url = effectiveShopId
+    ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
+    : null;
 
   const { data, isLoading, isError } = useQuery<SalesReportData>({
-    queryKey: ["sales-report", effectiveShopId, fromDate, toDate],
-    enabled: !!effectiveShopId,
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!res.ok) throw new Error("Failed");
-      return res.json();
-    },
+    queryKey: [url],
+    enabled: !!url,
+    staleTime: 60_000,
   });
 
   const tiles = TILES.filter((t) => data && data[t.key] != null && data[t.key] !== 0);
