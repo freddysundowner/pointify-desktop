@@ -69,11 +69,14 @@ const ROWS = [
   { key: "hold",     title: "On hold sales",  description: "Sales that has not been cashed in" },
 ];
 
-// Maps each summary row key to its drill-down route in the web app
+// Maps each summary row key to its drill-down route in the web app.
+// "cash" uses status=completed (→ status=cashed, no paymentTag) because analytics
+// counts all completed sales with empty/unset paymentTag as "cash".
+// Other types have explicit paymentTag values set by the app on creation.
 function getDrillDownPath(key: string, fromDate: string, toDate: string): string {
   const dates = `&startDate=${fromDate}&endDate=${toDate}`;
   switch (key) {
-    case "cash":     return `/sales?status=cash${dates}`;
+    case "cash":     return `/sales?status=completed${dates}`;
     case "credit":   return `/sales?status=credit${dates}`;
     case "wallet":   return `/sales?status=wallet${dates}`;
     case "hold":     return `/sales?status=hold${dates}`;
