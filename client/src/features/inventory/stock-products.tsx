@@ -595,15 +595,7 @@ export default function StockProducts() {
   };
 
   // Shared back-navigation handler
-  const handleBack = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasFilter = urlParams.has('filter');
-    if (hasFilter) {
-      setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
-    } else {
-      setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
-    }
-  };
+  const handleBack = () => window.history.back();
 
   return (
     <DashboardLayout title="Stock Products">

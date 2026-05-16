@@ -266,7 +266,7 @@ export default function PurchaseOrderPage() {
         <PageHeader
           title="Create Purchase Order"
           subtitle={`#${purchaseOrderNumber}`}
-          onBack={() => setLocation('/purchases')}
+          onBack={() => window.history.back()}
         />
 
         <form onSubmit={handleSubmit} className="space-y-3">

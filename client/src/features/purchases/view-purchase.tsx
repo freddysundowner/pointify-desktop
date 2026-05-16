@@ -125,7 +125,7 @@ export default function ViewPurchase() {
       <div className="p-6 w-full">
         <PageHeader
           title={`Purchase Order #${purchase.id}`}
-          onBack={() => setLocation(purchasesRoute)}
+          onBack={() => window.history.back()}
           actions={<>
             <Button 
               variant="outline" 

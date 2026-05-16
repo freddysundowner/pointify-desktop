@@ -264,7 +264,7 @@ export default function PurchaseReturns() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Purchase Returns"
-          onBack={() => setLocation(backRoute)}
+          onBack={() => window.history.back()}
           actions={<>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />

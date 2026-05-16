@@ -221,7 +221,7 @@ export default function PurchaseEditPage() {
         <PageHeader
           title="Edit Purchase Order"
           subtitle={`#${purchaseFromState.purchaseNo}`}
-          onBack={() => setLocation(purchasesRoute)}
+          onBack={() => window.history.back()}
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">

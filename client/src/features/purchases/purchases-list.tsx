@@ -84,14 +84,7 @@ export default function PurchasesList() {
   // Determine if current user is admin (not attendant)
   const isAdmin = !!admin && !localStorage.getItem("attendantData");
 
-  const handleBackClick = () => {
-    // Navigate back to appropriate dashboard
-    if (isAdmin) {
-      navigate("/");
-    } else {
-      navigate("/attendant/dashboard");
-    }
-  };
+  const handleBackClick = () => window.history.back();
 
   // Check if user has permission to view purchases - admins always have access, attendants need permission
   const canViewPurchases =

@@ -678,7 +678,7 @@ export default function CashFlow() {
         <PageHeader
           title="Cash Flow"
           subtitle={shopName}
-          onBack={() => setLocation(dashboardRoute)}
+          onBack={() => window.history.back()}
         />
 
         {/* Cash at Hand - moved to top */}

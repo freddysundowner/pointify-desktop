@@ -274,7 +274,7 @@ export default function Customers() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Customers"
-          onBack={() => navigate(dashboardRoute)}
+          onBack={() => window.history.back()}
           actions={
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>

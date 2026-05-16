@@ -106,9 +106,7 @@ export default function ReceivePurchase() {
     setLocation("/purchases");
   };
 
-  const handleCancel = () => {
-    setLocation("/purchases");
-  };
+  const handleCancel = () => window.history.back();
 
   const totalReceivingNow = receiveItems.reduce((sum, item) => sum + item.receivingNow, 0);
   const hasItemsToReceive = totalReceivingNow > 0;

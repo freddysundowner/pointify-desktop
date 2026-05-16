@@ -114,7 +114,7 @@ export default function ProductHistory() {
 
   const { admin } = useAuth();
   const isAdmin = !!admin && !localStorage.getItem("attendantData");
-  const handleGoBack = () => navigate(isAdmin ? "/stock/products" : "/attendant/products");
+  const handleGoBack = () => window.history.back();
 
   const prevMonth = () => {
     if (selectedMonth === 1) { setSelectedMonth(12); setSelectedYear(y => y - 1); }

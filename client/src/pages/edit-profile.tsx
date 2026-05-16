@@ -194,7 +194,7 @@ export default function EditProfilePage() {
         <PageHeader
           title="Edit Profile"
           subtitle="Update your personal information and preferences"
-          onBack={() => setLocation('/dashboard')}
+          onBack={() => window.history.back()}
         />
 
         {/* Profile Form */}

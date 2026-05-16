@@ -54,15 +54,7 @@ export default function ProfitLossPage() {
   const effectiveAdminId = user?.id || attendant?.adminId;
   
   // Handle back navigation based on user type
-  const handleBack = () => {
-    if (attendant) {
-      // Navigate to attendant dashboard
-      setLocation('/attendant/dashboard');
-    } else {
-      // Navigate to admin dashboard
-      setLocation('/dashboard');
-    }
-  };
+  const handleBack = () => window.history.back();
   
   // Date range state - default to current month
   const [fromDate, setFromDate] = useState(() => {

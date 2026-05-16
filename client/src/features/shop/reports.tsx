@@ -138,7 +138,7 @@ export default function ReportsHub() {
         <PageHeader
           title="Reports"
           subtitle="Choose a report to view"
-          onBack={() => navigate(dashboardRoute)}
+          onBack={() => window.history.back()}
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">

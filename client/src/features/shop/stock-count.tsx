@@ -255,7 +255,7 @@ export default function StockCount() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Stock Count"
-          onBack={attendant ? () => setLocation(backRoute) : undefined}
+          onBack={attendant ? () => window.history.back() : undefined}
           actions={<>
             <Button 
               onClick={() => setLocation(attendant ? "/attendant/stock/count-history" : "/stock/count-history")}

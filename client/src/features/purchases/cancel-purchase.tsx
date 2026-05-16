@@ -80,9 +80,7 @@ export default function CancelPurchase() {
     setLocation(purchasesRoute);
   };
 
-  const handleGoBack = () => {
-    setLocation(purchasesRoute);
-  };
+  const handleGoBack = () => window.history.back();
 
   const getStatusBadge = (status: string) => {
     switch (status) {

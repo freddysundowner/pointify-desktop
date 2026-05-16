@@ -150,9 +150,7 @@ export default function EditPurchase() {
     setLocation(purchasesRoute);
   };
 
-  const handleCancel = () => {
-    setLocation(purchasesRoute);
-  };
+  const handleCancel = () => window.history.back();
 
   const canSave = supplierName.trim() && items.some(item => item.productName && item.quantity > 0);
 

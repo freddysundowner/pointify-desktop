@@ -175,7 +175,7 @@ export default function StockSummary() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Stock Summary"
-          onBack={() => { const a=localStorage.getItem('attendantData'); setLocation(a?'/attendant/dashboard':'/dashboard'); }}
+          onBack={() => window.history.back()}
         />
 
         {/* Summary Cards */}

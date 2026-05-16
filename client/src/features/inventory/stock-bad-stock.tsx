@@ -230,7 +230,7 @@ export default function StockBadStock() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Bad Stock"
-          onBack={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/bad-stock")}
+          onBack={() => window.history.back()}
         />
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">

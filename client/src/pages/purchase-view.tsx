@@ -46,7 +46,7 @@ export default function PurchaseViewPage() {
     <DashboardLayout title="Purchase Details">
       <PageHeader
         title="Purchase Details"
-        onBack={() => setLocation(purchasesRoute)}
+        onBack={() => window.history.back()}
         actions={
           <Badge variant={getStatusBadgeVariant(purchase.paymentType)} className="text-sm capitalize">
             {purchase.paymentType}

@@ -150,7 +150,7 @@ export default function PurchasePaymentPage() {
         <PageHeader
           title="Make Payment"
           subtitle={`#${purchase.purchaseNo}`}
-          onBack={() => setLocation(purchasesRoute)}
+          onBack={() => window.history.back()}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

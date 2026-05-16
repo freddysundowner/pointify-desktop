@@ -219,7 +219,7 @@ export default function StockCountHistoryPage() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Stock Count History"
-          onBack={() => setLocation(attendant ? "/attendant/dashboard" : "/stock/count")}
+          onBack={() => window.history.back()}
           actions={<>
             <Button variant="outline" size="sm" className="h-8" onClick={() => setIsAnalysisDialogOpen(true)}>
               <BarChart3 className="h-3.5 w-3.5" />

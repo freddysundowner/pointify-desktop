@@ -226,7 +226,7 @@ export default function CashflowCategories() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Cashflow Categories"
-          onBack={() => setLocation(attendant ? '/attendant/cashflow' : '/cashflow')}
+          onBack={() => window.history.back()}
           actions={
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>

@@ -189,15 +189,7 @@ export default function CreatePurchase() {
       <div className="space-y-6">
         <PageHeader
           title="Create Purchase Order"
-          onBack={() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasFilter = urlParams.has('filter');
-            if (hasFilter) {
-              setLocation(isAttendant ? '/attendant/stock/summary' : '/stock/summary');
-            } else {
-              setLocation(isAttendant ? '/attendant/dashboard' : '/dashboard');
-            }
-          }}
+          onBack={() => window.history.back()}
         />
         {/* Basic Information */}
         <Card>

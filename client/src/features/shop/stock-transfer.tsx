@@ -525,7 +525,7 @@ export default function StockTransfer() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title="Stock Transfer"
-          onBack={userType === 'attendant' ? () => setLocation('/attendant/dashboard') : undefined}
+          onBack={userType === 'attendant' ? () => window.history.back() : undefined}
           actions={
             <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-8 text-xs bg-purple-600 hover:bg-purple-700">
               <Plus className="h-4 w-4 sm:mr-1.5" />

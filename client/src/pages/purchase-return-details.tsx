@@ -108,7 +108,7 @@ export default function PurchaseReturnDetails() {
         <PageHeader
           title="Return Details"
           subtitle={returnData.purchaseReturnNo || returnData._id.slice(-8)}
-          onBack={() => setLocation(purchaseReturnsRoute)}
+          onBack={() => window.history.back()}
         />
 
         {/* Summary Cards */}

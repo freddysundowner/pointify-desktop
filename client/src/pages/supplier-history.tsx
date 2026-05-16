@@ -555,10 +555,7 @@ export default function SupplierHistoryPage() {
       <div className="space-y-3 sm:space-y-5">
         <PageHeader
           title={`Purchase History - ${supplierName}`}
-          onBack={() => {
-            const isAttendantRoute = window.location.pathname.startsWith('/attendant');
-            navigate(isAttendantRoute ? '/attendant/suppliers' : '/suppliers');
-          }}
+          onBack={() => window.history.back()}
           actions={
             <Button size="sm" onClick={handleDownloadStatement} className="flex items-center gap-2">
               <Download className="h-4 w-4" />

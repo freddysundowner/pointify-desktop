@@ -262,7 +262,7 @@ export default function ReturnPurchase() {
       <div className="w-full">
         <PageHeader
           title={`Return #${originalPurchase.invoiceNumber || originalPurchase.id}`}
-          onBack={() => window.location.href = purchasesRoute}
+          onBack={() => window.history.back()}
           actions={
             <Button 
               size="sm"

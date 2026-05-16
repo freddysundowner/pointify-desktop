@@ -60,13 +60,7 @@ export default function SuppliersPage() {
   const isAttendantRoute = window.location.pathname.startsWith('/attendant');
   
   // Handle back button navigation
-  const handleBack = () => {
-    if (isAttendantRoute) {
-      navigate('/attendant/dashboard');
-    } else {
-      navigate('/dashboard');
-    }
-  };
+  const handleBack = () => window.history.back();
 
   // Get shop ID based on user type
   const { selectedShopId } = useSelector((state: RootState) => state.shop);

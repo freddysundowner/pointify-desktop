@@ -101,13 +101,7 @@ function SalesList() {
   const isAdmin = userType === "admin" || user?.role === "admin";
 
   // Back button handler
-  const handleBackClick = () => {
-    if (userType === "attendant") {
-      setLocation("/attendant/dashboard");
-    } else {
-      setLocation("/dashboard");
-    }
-  };
+  const handleBackClick = () => window.history.back();
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // Initialize dates from URL parameters if available

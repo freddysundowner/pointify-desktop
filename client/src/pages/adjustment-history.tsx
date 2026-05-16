@@ -106,7 +106,7 @@ export default function AdjustmentHistoryPage() {
     toast({ title: "Exported", description: "Adjustment history exported to CSV" });
   };
 
-  const goBack = () => setLocation(isAttendant ? '/attendant/products' : '/stock/products');
+  const goBack = () => window.history.back();
 
   const openFilterSheet = () => {
     setPendingType(filterType);
