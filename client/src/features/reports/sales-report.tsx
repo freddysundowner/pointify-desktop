@@ -6,28 +6,51 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingCart, TrendingUp, CreditCard, RotateCcw, Wallet, Clock } from "lucide-react";
+import { Loader2, CreditCard } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 
 const fmt = (val: number) =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val ?? 0);
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(val ?? 0);
 
-type DateRange = { label: string; days: number };
+type DateRangeKey = "today" | "yesterday" | "week" | "month" | "year" | "custom";
+
+interface DateRange { label: string; key: DateRangeKey; }
 const DATE_RANGES: DateRange[] = [
-  { label: "Today", days: 0 },
-  { label: "Yesterday", days: 1 },
-  { label: "7 Days", days: 7 },
-  { label: "30 Days", days: 30 },
+  { label: "Today",      key: "today"     },
+  { label: "Yesterday",  key: "yesterday" },
+  { label: "This Week",  key: "week"      },
+  { label: "This Month", key: "month"     },
+  { label: "This Year",  key: "year"      },
+  { label: "Custom",     key: "custom"    },
 ];
 
 function toYMD(d: Date) { return d.toISOString().split("T")[0]; }
-function getRange(days: number): { from: string; to: string } {
+
+function getRange(key: DateRangeKey): { from: string; to: string } {
   const now = new Date();
-  if (days === 0) return { from: toYMD(now), to: toYMD(now) };
-  if (days === 1) { const y = new Date(now); y.setDate(y.getDate() - 1); return { from: toYMD(y), to: toYMD(y) }; }
-  const from = new Date(now); from.setDate(from.getDate() - days);
-  return { from: toYMD(from), to: toYMD(now) };
+  switch (key) {
+    case "today":
+      return { from: toYMD(now), to: toYMD(now) };
+    case "yesterday": {
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      return { from: toYMD(y), to: toYMD(y) };
+    }
+    case "week": {
+      const day = now.getDay() === 0 ? 6 : now.getDay() - 1; // Monday = 0
+      const mon = new Date(now); mon.setDate(now.getDate() - day);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      return { from: toYMD(mon), to: toYMD(sun) };
+    }
+    case "month": {
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      const last  = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { from: toYMD(first), to: toYMD(last) };
+    }
+    case "year":
+      return { from: `${now.getFullYear()}-01-01`, to: `${now.getFullYear()}-12-31` };
+    default:
+      return { from: toYMD(now), to: toYMD(now) };
+  }
 }
 
 interface SalesReportData {
@@ -36,13 +59,13 @@ interface SalesReportData {
   [key: string]: number | undefined;
 }
 
-const TILES = [
-  { key: "cash",     label: "Cash Sales",     desc: "All sales made on cash",           icon: ShoppingCart, color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200" },
-  { key: "credit",   label: "Credit Sales",   desc: "Sales made on credit",             icon: CreditCard,   color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" },
-  { key: "debtpaid", label: "Collected Debt", desc: "Total credit paid by debtors",     icon: TrendingUp,   color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200" },
-  { key: "returns",  label: "Returns",        desc: "Sales returned from customers",    icon: RotateCcw,    color: "text-red-700",    bg: "bg-red-50",    border: "border-red-200" },
-  { key: "wallet",   label: "Wallet Sales",   desc: "Sales through customer wallets",   icon: Wallet,       color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-200" },
-  { key: "hold",     label: "On Hold Sales",  desc: "Sales that have not been cashed",  icon: Clock,        color: "text-gray-700",   bg: "bg-gray-50",   border: "border-gray-200" },
+const ROWS = [
+  { key: "cash",     title: "Cash Sales",     description: "All Sales made on cash"            },
+  { key: "credit",   title: "Credit Sales",   description: "Sales made on credit"              },
+  { key: "debtpaid", title: "Collected Debt", description: "Total credit paid by debtors"      },
+  { key: "returns",  title: "Returns",        description: "Sales returned from customers"     },
+  { key: "wallet",   title: "Wallet Sales",   description: "Sales sold through customer wallets" },
+  { key: "hold",     title: "On hold sales",  description: "Sales that has not been cashed in" },
 ];
 
 export default function SalesReportPage() {
@@ -50,16 +73,16 @@ export default function SalesReportPage() {
   const { shopId: effectiveShopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
 
-  const [rangeIdx, setRangeIdx] = useState(0);
+  const [activeKey, setActiveKey] = useState<DateRangeKey>("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
 
-  const { from: autoFrom, to: autoTo } = getRange(DATE_RANGES[rangeIdx]?.days ?? 0);
-  const fromDate = showCustom ? customFrom : autoFrom;
-  const toDate   = showCustom ? customTo   : autoTo;
+  const isCustom = activeKey === "custom";
+  const { from: autoFrom, to: autoTo } = getRange(activeKey);
+  const fromDate = isCustom ? customFrom : autoFrom;
+  const toDate   = isCustom ? customTo   : autoTo;
 
-  const url = effectiveShopId
+  const url = effectiveShopId && (!isCustom || (customFrom && customTo))
     ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
     : null;
 
@@ -69,122 +92,101 @@ export default function SalesReportPage() {
     staleTime: 60_000,
   });
 
-  const tiles = TILES.filter((t) => data && data[t.key] != null && data[t.key] !== 0);
   const total = (data?.cash ?? 0) + (data?.credit ?? 0) + (data?.debtpaid ?? 0) + (data?.wallet ?? 0);
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 pb-24 lg:pb-8 w-full">
-        <PageHeader title="Sales Report" subtitle="Summary of all sales by payment type" backHref={reportsRoute} />
+      <div className="space-y-5 pb-24 lg:pb-8 w-full max-w-2xl mx-auto lg:max-w-none">
+        <PageHeader title="Sales Report" backHref={reportsRoute} />
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-1.5 items-center">
-          {DATE_RANGES.map((r, i) => (
-            <Button key={r.label} size="sm"
-              variant={!showCustom && rangeIdx === i ? "default" : "outline"}
-              className="h-7 text-xs px-2.5"
-              onClick={() => { setRangeIdx(i); setShowCustom(false); }}>
-              {r.label}
-            </Button>
-          ))}
-          <Button size="sm" variant={showCustom ? "default" : "outline"} className="h-7 text-xs px-2.5"
-            onClick={() => setShowCustom(true)}>Custom</Button>
-          {showCustom && (
-            <div className="flex gap-2 items-center ml-1 flex-wrap">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="h-7 text-xs border rounded px-2 bg-white" />
-              <span className="text-xs text-gray-500">to</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="h-7 text-xs border rounded px-2 bg-white" />
-            </div>
-          )}
-        </div>
-
-        {/* Hero total banner */}
-        <div className="rounded-xl bg-gradient-to-r from-green-600 to-green-500 p-4 lg:p-5 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs opacity-80 mb-1">Total Sales</p>
-              {isLoading
-                ? <div className="h-7 w-32 bg-white/20 animate-pulse rounded" />
-                : <p className="text-2xl lg:text-3xl font-bold">{currency} {fmt(total)}</p>}
-              <p className="text-xs opacity-70 mt-1">{fromDate === toDate ? fromDate : `${fromDate} – ${toDate}`}</p>
-            </div>
-            <ShoppingCart className="w-10 h-10 opacity-30" />
+        {/* Date filter tabs — horizontal scroll like Flutter */}
+        <div className="overflow-x-auto pb-1 -mx-4 px-4">
+          <div className="flex gap-3 w-max">
+            {DATE_RANGES.map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setActiveKey(r.key)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  activeKey === r.key
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white text-primary border border-primary/50 hover:border-primary"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {isLoading && <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>}
-        {isError && <Card><CardContent className="p-6 text-center text-red-500">Failed to load sales report.</CardContent></Card>}
-        {!isLoading && !isError && tiles.length === 0 && (
-          <Card><CardContent className="p-10 text-center text-muted-foreground">No sales data for this period.</CardContent></Card>
+        {/* Custom date pickers */}
+        {isCustom && (
+          <div className="flex gap-3 items-center flex-wrap">
+            <input
+              type="date" value={customFrom}
+              onChange={e => setCustomFrom(e.target.value)}
+              className="h-9 text-sm border border-input rounded-lg px-3 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <span className="text-sm text-muted-foreground">to</span>
+            <input
+              type="date" value={customTo}
+              onChange={e => setCustomTo(e.target.value)}
+              className="h-9 text-sm border border-input rounded-lg px-3 bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
         )}
 
-        {!isLoading && !isError && tiles.length > 0 && (
-          <>
-            {/* ── Mobile: icon cards in 2-col grid ── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 lg:hidden">
-              {tiles.map((t) => {
-                const Icon = t.icon;
-                return (
-                  <Card key={t.key} className={`border ${t.border}`}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-7 h-7 rounded-lg ${t.bg} flex items-center justify-center shrink-0`}>
-                          <Icon className={`w-3.5 h-3.5 ${t.color}`} />
-                        </div>
-                        <span className="text-[11px] text-muted-foreground leading-tight">{t.label}</span>
-                      </div>
-                      <p className={`text-base font-bold ${t.color}`}>{currency} {fmt(data?.[t.key] ?? 0)}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{t.desc}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+        {/* Total pill — centered purple like Flutter */}
+        <div className="flex justify-center mt-2">
+          <div className="inline-flex items-center gap-2.5 bg-primary text-white px-6 py-2.5 rounded-full">
+            <CreditCard className="w-5 h-5" />
+            {isLoading
+              ? <div className="h-5 w-24 bg-white/30 animate-pulse rounded-full" />
+              : <span className="text-base font-medium">{currency} {fmt(total)}</span>
+            }
+          </div>
+        </div>
 
-            {/* ── Desktop: full table ── */}
-            <Card className="hidden lg:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-5 py-3 font-medium text-muted-foreground text-xs w-10" />
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Payment Type</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Description</th>
-                    <th className="text-right px-5 py-3 font-medium text-muted-foreground text-xs">Amount</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground text-xs">Share</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {tiles.map((t) => {
-                    const Icon = t.icon;
-                    const val = data?.[t.key] ?? 0;
-                    const share = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
+        {/* Error state */}
+        {isError && (
+          <Card>
+            <CardContent className="p-6 text-center text-red-500">
+              Failed to load sales report.
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary card — matches Flutter summaryCard list */}
+        {!isError && (
+          <Card className="shadow-md">
+            <CardContent className="p-4 lg:p-6">
+              {isLoading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div>
+                  {ROWS.map((row, idx) => {
+                    const amount = data?.[row.key] ?? 0;
+                    const isLast = idx === ROWS.length - 1;
                     return (
-                      <tr key={t.key} className="hover:bg-muted/20 transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className={`w-8 h-8 rounded-lg ${t.bg} flex items-center justify-center`}>
-                            <Icon className={`w-4 h-4 ${t.color}`} />
+                      <div key={row.key}>
+                        <div className="flex items-start justify-between py-4 lg:py-5 cursor-pointer hover:bg-muted/20 -mx-4 px-4 lg:-mx-6 lg:px-6 transition-colors">
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-base lg:text-lg font-normal text-foreground">{row.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{row.description}</p>
                           </div>
-                        </td>
-                        <td className={`px-4 py-3.5 font-semibold ${t.color}`}>{t.label}</td>
-                        <td className="px-4 py-3.5 text-muted-foreground">{t.desc}</td>
-                        <td className={`px-5 py-3.5 text-right font-bold text-base ${t.color}`}>{currency} {fmt(val)}</td>
-                        <td className="px-4 py-3.5 text-right">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${t.bg} ${t.color} font-medium`}>{share}%</span>
-                        </td>
-                      </tr>
+                          <p className="text-base lg:text-lg font-bold text-foreground shrink-0">
+                            {currency} {fmt(amount)}
+                          </p>
+                        </div>
+                        {!isLast && <div className="border-t border-border" />}
+                      </div>
                     );
                   })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t bg-muted/20 font-bold">
-                    <td className="px-5 py-3" colSpan={3}>Total</td>
-                    <td className="px-5 py-3 text-right text-base">{currency} {fmt(total)}</td>
-                    <td className="px-4 py-3 text-right"><span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">100%</span></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </Card>
-          </>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
     </DashboardLayout>
