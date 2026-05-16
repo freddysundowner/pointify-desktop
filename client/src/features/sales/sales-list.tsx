@@ -246,7 +246,9 @@ function SalesList() {
     enabled: queryEnabled,
   });
 
-  // Build query parameters for sales report analysis
+  // Build query parameters for sales report analysis.
+  // Mirrors the same paymentTag/status mapping used by the list filter so
+  // the stat cards reflect the currently active filter.
   const buildReportParams = () => {
     const params = new URLSearchParams();
     if (shopId) params.append("shopid", shopId);
@@ -259,6 +261,29 @@ function SalesList() {
     // For admin users, filter by selected attendant if not "all"
     if (userType === "admin" && attendantFilter !== "all") {
       params.append("attendantId", attendantFilter);
+    }
+
+    // Pass payment-type filter so the analytics endpoint returns filtered totals
+    if (statusFilter !== "all") {
+      if (statusFilter === "cash") {
+        params.append("status", "cashed");
+        params.append("paymentTag", "cash");
+      } else if (statusFilter === "mpesa") {
+        params.append("status", "cashed");
+        params.append("paymentTag", "mpesa");
+      } else if (statusFilter === "credit") {
+        params.append("status", "cashed");
+        params.append("paymentTag", "credit");
+      } else if (statusFilter === "wallet") {
+        params.append("status", "cashed");
+        params.append("paymentTag", "wallet");
+      } else if (statusFilter === "bank") {
+        params.append("status", "cashed");
+        params.append("paymentTag", "bank");
+      } else {
+        const apiStatus = statusFilter === "completed" ? "cashed" : statusFilter;
+        params.append("status", apiStatus);
+      }
     }
 
     // Only add date filters if they are set (show all sales stats by default)
@@ -1284,9 +1309,8 @@ function SalesList() {
               </div>
             </div>
 
-            {/* Summary Stats - Permission Controlled; hidden when filtered to a specific type
-                because the analytics endpoint always returns all-sales totals, not filtered totals */}
-            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && statusFilter === "all" && (
+            {/* Summary Stats - Permission Controlled */}
+            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
               <div className="grid grid-cols-4 gap-1.5">
                 {[
                   { label: "Total", value: salesReportData?.totalSales },
