@@ -1290,8 +1290,9 @@ function SalesList() {
               </div>
             </div>
 
-            {/* Summary Stats - Permission Controlled */}
-            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
+            {/* Summary Stats - Permission Controlled; hidden when filtered to a specific type
+                because the analytics endpoint always returns all-sales totals, not filtered totals */}
+            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && statusFilter === "all" && (
               <div className="grid grid-cols-4 gap-1.5">
                 {[
                   { label: "Total", value: salesReportData?.totalSales },
