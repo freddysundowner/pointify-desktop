@@ -1311,7 +1311,30 @@ function SalesList() {
 
             {/* Summary Stats - Permission Controlled */}
             {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <>
+              {/* Mobile: horizontal scrolling chips */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide sm:hidden pb-0.5">
+                {[
+                  { label: "Total", value: salesReportData?.totalSales },
+                  { label: "Count", value: filteredSalesCount, isCount: true },
+                  { label: "Cash", value: salesReportData?.cashtransactions },
+                  { label: "M-Pesa", value: salesReportData?.mpesa },
+                  { label: "Credit", value: salesReportData?.credit },
+                  { label: "Wallet", value: salesReportData?.wallet },
+                  { label: "Hold", value: salesReportData?.hold },
+                  { label: "Bank", value: salesReportData?.bank },
+                ].map(({ label, value, isCount }) => (
+                  <div key={label} className="flex-shrink-0 bg-card border rounded-full px-3 py-1.5 shadow-sm">
+                    <p className="text-[9px] font-medium text-muted-foreground leading-tight whitespace-nowrap">{label}</p>
+                    <p className="text-xs font-bold leading-tight whitespace-nowrap">
+                      {isCount ? value : `${primaryShopCurrency} ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: 4-column grid */}
+              <div className="hidden sm:grid sm:grid-cols-4 gap-1.5">
                 {[
                   { label: "Total", value: salesReportData?.totalSales },
                   { label: "Count", value: filteredSalesCount, isCount: true },
@@ -1324,12 +1347,13 @@ function SalesList() {
                 ].map(({ label, value, isCount }) => (
                   <Card key={label} className="p-2">
                     <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
-                    <p className="text-xs font-bold mt-0.5 leading-tight break-all">
+                    <p className="text-xs font-bold mt-0.5 leading-tight">
                       {isCount ? value : `${primaryShopCurrency} ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </p>
                   </Card>
                 ))}
               </div>
+              </>
             )}
           </div>
 
