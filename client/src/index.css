@@ -9,6 +9,15 @@
   }
 }
 
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Custom scrollbar styles for mobile sidebar */
 .scrollbar-thin {
   scrollbar-width: thin;

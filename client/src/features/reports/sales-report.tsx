@@ -100,8 +100,8 @@ export default function SalesReportPage() {
         <PageHeader title="Sales Report" backHref={reportsRoute} />
 
         {/* Date filter tabs — horizontal scroll like Flutter */}
-        <div className="overflow-x-auto pb-1 -mx-4 px-4">
-          <div className="flex gap-3 w-max">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-3 w-max pb-0.5">
             {DATE_RANGES.map((r) => (
               <button
                 key={r.key}
