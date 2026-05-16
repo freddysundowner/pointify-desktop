@@ -233,7 +233,11 @@ export default function SalesReportPage() {
                       const amount = data?.[row.key] ?? 0;
                       const share = total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0";
                       return (
-                        <tr key={row.key} className="hover:bg-muted/20 transition-colors">
+                        <tr
+                          key={row.key}
+                          className="hover:bg-muted/20 transition-colors cursor-pointer"
+                          onClick={() => navigate(getDrillDownPath(row.key, fromDate, toDate))}
+                        >
                           <td className="px-6 py-4 font-medium text-foreground">{row.title}</td>
                           <td className="px-6 py-4 text-muted-foreground">{row.description}</td>
                           <td className="px-6 py-4 text-right font-bold text-base text-foreground">{currency} {fmt(amount)}</td>
