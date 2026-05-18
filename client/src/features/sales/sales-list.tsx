@@ -43,6 +43,7 @@ import {
   Download,
   SlidersHorizontal,
   Check,
+  CreditCard,
 } from "lucide-react";
 import {
   Dialog,
@@ -133,6 +134,13 @@ function SalesList() {
   const [completePaymentMethod, setCompletePaymentMethod] = useState("cash");
   const [completeAmountPaid, setCompleteAmountPaid] = useState("");
   const [isCompleting, setIsCompleting] = useState(false);
+
+  // Pay Credit (credit → cashed) dialog state
+  const [payDebtOpen, setPayDebtOpen] = useState(false);
+  const [saleToPayDebt, setSaleToPayDebt] = useState<any>(null);
+  const [payDebtMethod, setPayDebtMethod] = useState("cash");
+  const [payDebtAmount, setPayDebtAmount] = useState("");
+  const [isPayingDebt, setIsPayingDebt] = useState(false);
 
   // Invoice (download / email) dialog state
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
@@ -520,6 +528,59 @@ function SalesList() {
       });
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  const handlePayDebt = (sale: any) => {
+    setSaleToPayDebt(sale);
+    const outstanding = sale.outstandingBalance ?? sale.totalAmount ?? 0;
+    setPayDebtAmount(outstanding.toFixed(2));
+    setPayDebtMethod("cash");
+    setPayDebtOpen(true);
+  };
+
+  const confirmPayDebt = async () => {
+    if (!saleToPayDebt) return;
+    setIsPayingDebt(true);
+    try {
+      const response = await fetch(`/api/sales/${saleToPayDebt.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          status: "cashed",
+          paymentTag: payDebtMethod,
+          amountPaid: parseFloat(payDebtAmount) || saleToPayDebt.totalAmount,
+          outstandingBalance: 0,
+        }),
+      });
+      if (response.ok) {
+        refetch();
+        toast({
+          title: "Payment Recorded",
+          description: `Credit sale #${saleToPayDebt.receiptNo} has been marked as paid.`,
+        });
+        setPayDebtOpen(false);
+        setSaleToPayDebt(null);
+      } else {
+        const err = await response.json().catch(() => ({ error: "Unknown error" }));
+        toast({
+          title: "Payment Failed",
+          description: err.error || "An error occurred.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Payment Failed",
+        description: "Network error. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPayingDebt(false);
     }
   };
 
@@ -1482,6 +1543,14 @@ function SalesList() {
                                 </DropdownMenuItem>
                               </>
                             )}
+                            {sale.paymentTag === "credit" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handlePayDebt(sale)} className="text-blue-600 focus:text-blue-600">
+                                  <CreditCard className="mr-2 h-4 w-4" />Pay Credit
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
                               <DropdownMenuItem onClick={() => handleReturnSale(sale)}>
                                 <RefreshCw className="mr-2 h-4 w-4" />Return Sale
@@ -1562,6 +1631,14 @@ function SalesList() {
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
                                         <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {sale.paymentTag === "credit" && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handlePayDebt(sale)} className="text-blue-600 focus:text-blue-600">
+                                        <CreditCard className="mr-2 h-4 w-4" />Pay Credit
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -1676,6 +1753,64 @@ function SalesList() {
               </Button>
               <Button className="flex-1 h-9 bg-green-600 hover:bg-green-700 text-white" onClick={confirmCompleteSale} disabled={isCompleting}>
                 {isCompleting ? "Processing..." : "Complete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay Credit Dialog */}
+      <Dialog open={payDebtOpen} onOpenChange={setPayDebtOpen}>
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-sm rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <CreditCard className="h-4 w-4 text-blue-600 flex-shrink-0" />
+              Pay Credit — #{saleToPayDebt?.receiptNo}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2.5 flex justify-between items-center">
+              <span className="text-sm text-blue-800 dark:text-blue-200">Outstanding Balance</span>
+              <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                {primaryShopCurrency} {Number(saleToPayDebt?.outstandingBalance ?? saleToPayDebt?.totalAmount ?? 0).toFixed(2)}
+              </span>
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1.5 block">Payment Method</Label>
+              <Select value={payDebtMethod} onValueChange={setPayDebtMethod}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="mpesa">M-Pesa</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="wallet">Wallet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-medium mb-1.5 block">Amount Paid</Label>
+              <Input
+                type="number"
+                value={payDebtAmount}
+                onChange={(e) => setPayDebtAmount(e.target.value)}
+                placeholder="Enter amount paid"
+                min={0}
+                step="0.01"
+                className="h-9 text-sm"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-9" onClick={() => setPayDebtOpen(false)} disabled={isPayingDebt}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-9 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={confirmPayDebt}
+                disabled={isPayingDebt || !payDebtAmount || parseFloat(payDebtAmount) <= 0}
+              >
+                {isPayingDebt ? "Recording..." : "Record Payment"}
               </Button>
             </div>
           </div>
