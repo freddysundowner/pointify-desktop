@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { RotateCcw, Loader2, Download } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,14 +41,21 @@ export default function SalesReturnsReport() {
   const { shopId: primaryShopId } = usePrimaryShop();
   const currency = useSelector((state: RootState) => state.currency) || 'KES';
   const reportsRoute = useNavigationRoute('reports');
+  const [location] = useLocation();
 
   const effectiveShopId = selectedShopId ||
     (attendant ? (typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId._id) : primaryShopId);
 
-  const [period, setPeriod] = useState('7days');
-  const [showCustom, setShowCustom] = useState(false);
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTo, setCustomTo] = useState('');
+  // Read pre-set dates from URL query params (passed from sales report drill-down)
+  const urlParams = new URLSearchParams(location.split('?')[1] ?? '');
+  const urlFrom = urlParams.get('fromDate') ?? '';
+  const urlTo   = urlParams.get('toDate')   ?? '';
+  const hasUrlDates = !!(urlFrom && urlTo);
+
+  const [period, setPeriod] = useState(hasUrlDates ? 'custom' : '7days');
+  const [showCustom, setShowCustom] = useState(hasUrlDates);
+  const [customFrom, setCustomFrom] = useState(urlFrom);
+  const [customTo, setCustomTo] = useState(urlTo);
   const [page, setPage] = useState(1);
   const PER_PAGE = 20;
 
@@ -56,7 +64,7 @@ export default function SalesReturnsReport() {
   const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
   const url = effectiveShopId
-    ? `/api/salereturns/filter?shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
+    ? `/api/salereturns/filter?type=returns&shopId=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
     : null;
 
   const { data: rawData, isLoading, isError } = useQuery<any>({

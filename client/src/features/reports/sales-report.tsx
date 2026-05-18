@@ -80,7 +80,7 @@ function getDrillDownPath(key: string, fromDate: string, toDate: string): string
     case "credit":   return `/sales?status=credit${dates}`;
     case "wallet":   return `/sales?status=wallet${dates}`;
     case "hold":     return `/sales?status=hold${dates}`;
-    case "returns":  return `/sales-returns`;
+    case "returns":  return `/sales-returns?fromDate=${fromDate}&toDate=${toDate}`;
     case "debtpaid": return `/debt-payments?fromDate=${fromDate}&toDate=${toDate}`;
     default:         return `/sales`;
   }
