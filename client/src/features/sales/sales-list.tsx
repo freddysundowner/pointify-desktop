@@ -427,39 +427,42 @@ function SalesList() {
     if (!saleToDelete) return;
 
     setIsDeleting(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     try {
-      // Call delete sale API
       const response = await fetch(`/api/sales/${saleToDelete.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },
         credentials: "include",
+        signal: controller.signal,
       });
 
       if (response.ok) {
-        // Refresh sales data
         refetch();
         toast({
           title: "Sale Deleted",
           description: `Sale #${saleToDelete.receiptNo} has been successfully deleted.`,
         });
       } else {
-        const error = await response.text();
+        let errorMsg = `HTTP ${response.status}`;
+        try { const body = await response.json(); errorMsg = body.message || body.error || errorMsg; } catch { /* ignore */ }
         toast({
           title: "Delete Failed",
-          description: `Failed to delete sale: ${error}`,
+          description: errorMsg,
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting sale:", error);
       toast({
         title: "Delete Failed",
-        description: "Failed to delete sale. Please try again.",
+        description: error?.name === "AbortError" ? "Request timed out. Please try again." : "Failed to delete sale. Please try again.",
         variant: "destructive",
       });
     } finally {
+      clearTimeout(timeoutId);
       setIsDeleting(false);
       setDeleteDialogOpen(false);
       setSaleToDelete(null);
@@ -1830,7 +1833,7 @@ function SalesList() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { if (!isDeleting) setDeleteDialogOpen(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Sale</AlertDialogTitle>
@@ -1842,13 +1845,15 @@ function SalesList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <Button
               onClick={confirmDeleteSale}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {isDeleting ? "Deleting..." : "Delete Sale"}
-            </AlertDialogAction>
+              {isDeleting ? (
+                <><span className="inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin mr-2" />Deleting…</>
+              ) : "Delete Sale"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
