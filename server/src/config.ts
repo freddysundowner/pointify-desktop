@@ -92,11 +92,12 @@ export async function makeOnlinePointifyRequest(
   const response = await fetch(url, { ...options, headers });
 
   if (!response.ok) {
-    return {
-      success: false,
-      offline: false,
-      message: `HTTP error ${response.status}`,
-    };
+    let errorData: any = { success: false, offline: false, message: `HTTP error ${response.status}`, httpStatus: response.status };
+    try {
+      const body = await response.json();
+      errorData = { ...body, success: false, offline: false, httpStatus: response.status };
+    } catch { /* keep default */ }
+    return errorData;
   }
 
   const contentType = response.headers.get('content-type') ?? '';

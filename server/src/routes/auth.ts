@@ -71,12 +71,18 @@ app.post("/api/business/register", async (req, res) => {
         method: "POST",
         body: JSON.stringify(req.body),
       });
+
+      // Detect soft-fail: Pointify rejected credentials but graceful fallback returned [] or success:false
+      if (!data || Array.isArray(data) || data.success === false || !data.token) {
+        const status = data?.httpStatus || 401;
+        const message = data?.message || data?.error || "Invalid email or password. Please check your credentials and try again.";
+        return res.status(status).json({ error: "Authentication failed", message });
+      }
+
       const adminId = data?._id || data?.userdata?._id;
       if (adminId) {
         setGlobalApiMode(data?.userdata?.status || "online");
         setAdminId(data?.userdata);
-      } else {
-        console.log("❌ No admin ID found in login data");
       }
       
       res.json(data);
