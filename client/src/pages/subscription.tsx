@@ -370,18 +370,25 @@ export default function SubscriptionPage() {
     }
   };
 
+  const stepLabels = ['Plans', 'Shops', 'Payment'];
+
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-4">
+    <div className="flex items-center justify-center mb-6 px-2">
+      <div className="flex items-center">
         {[1, 2, 3].map((stepNum) => (
           <div key={stepNum} className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step >= stepNum ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-            }`}>
-              {stepNum}
+            <div className="flex flex-col items-center">
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors ${
+                step >= stepNum ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                {step > stepNum ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : stepNum}
+              </div>
+              <span className={`mt-1 text-[10px] sm:text-xs font-medium ${
+                step >= stepNum ? 'text-blue-500' : 'text-gray-400'
+              }`}>{stepLabels[stepNum - 1]}</span>
             </div>
             {stepNum < 3 && (
-              <div className={`w-12 h-1 ${step > stepNum ? 'bg-blue-500' : 'bg-gray-200'}`} />
+              <div className={`w-10 sm:w-16 h-0.5 mb-4 mx-1 sm:mx-2 transition-colors ${step > stepNum ? 'bg-blue-500' : 'bg-gray-200'}`} />
             )}
           </div>
         ))}
@@ -421,12 +428,12 @@ export default function SubscriptionPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {subscriptionPlans.map((plan: SubscriptionPlan, planIndex: number) => (
           <Card 
             key={plan.id} 
             className={`relative transition-all duration-300 hover:shadow-lg cursor-pointer ${
-              plan.popular ? 'ring-2 ring-blue-500 shadow-lg scale-105' : ''
+              plan.popular ? 'ring-2 ring-blue-500 shadow-lg sm:scale-105' : ''
             } ${
               plan.current ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300' : ''
             }`}
@@ -434,7 +441,7 @@ export default function SubscriptionPage() {
           >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-blue-500 text-white px-3 py-1 text-xs font-medium">
+                <Badge className="bg-blue-500 text-white px-3 py-1 text-xs font-medium whitespace-nowrap">
                   <Star className="h-3 w-3 mr-1" />
                   Most Popular
                 </Badge>
@@ -449,34 +456,40 @@ export default function SubscriptionPage() {
               </div>
             )}
 
-            <CardHeader className="pb-4">
-              <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${getGradientClass(plan.color)} flex items-center justify-center text-white mb-4`}>
-                {getPlanIcon(plan.id)}
+            <CardHeader className="pb-3 pt-5 px-4">
+              <div className="flex items-center gap-3 sm:block">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-r ${getGradientClass(plan.color)} flex items-center justify-center text-white sm:mb-4 flex-shrink-0`}>
+                  {getPlanIcon(plan.id)}
+                </div>
+                <div className="sm:block">
+                  <CardTitle className="text-lg sm:text-xl font-bold">{plan.name}</CardTitle>
+                  <CardDescription className="text-gray-600 text-xs sm:text-sm mt-0.5">
+                    {plan.description}
+                  </CardDescription>
+                </div>
               </div>
-              <CardTitle className="text-xl font-bold">{plan.name}</CardTitle>
-              <CardDescription className="text-gray-600">
-                {plan.description}
-              </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(plan.price)}
+            <CardContent className="space-y-3 px-4 pb-4">
+              <div className="flex items-center justify-between sm:block sm:text-center">
+                <div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    {formatCurrency(plan.price)}
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-600">for {plan.duration}</p>
                 </div>
-                <p className="text-sm text-gray-600">for {plan.duration}</p>
                 {plan.current && plan.daysRemaining !== null && (
-                  <div className="mt-2">
+                  <div className="sm:mt-2">
                     <Badge 
                       variant="outline" 
                       className={plan.daysRemaining > 0 
-                        ? "bg-green-50 text-green-700 border-green-200" 
-                        : "bg-red-50 text-red-700 border-red-200"
+                        ? "bg-green-50 text-green-700 border-green-200 text-xs" 
+                        : "bg-red-50 text-red-700 border-red-200 text-xs"
                       }
                     >
                       <Clock className="h-3 w-3 mr-1" />
                       {plan.daysRemaining > 0 
-                        ? `${plan.daysRemaining} days remaining`
+                        ? `${plan.daysRemaining}d left`
                         : 'Expired'
                       }
                     </Badge>
@@ -491,21 +504,21 @@ export default function SubscriptionPage() {
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {plan.features.filter((f: string) => !/\d+\s+shop/i.test(f)).map((feature, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700">{feature}</span>
+                  <div key={index} className="flex items-start space-x-2">
+                    <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-xs sm:text-sm text-gray-700 leading-snug">{feature}</span>
                   </div>
                 ))}
               </div>
 
               {plan.type !== 'trial' && (
                 <Button 
-                  className={`w-full transition-all duration-200 ${
+                  className={`w-full transition-all duration-200 text-sm ${
                     plan.current 
                       ? 'bg-green-500 hover:bg-green-600 text-white' 
-                      : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-xl transform hover:scale-105'
+                      : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-md'
                   }`}
                   variant={plan.current ? 'default' : 'default'}
                 >
@@ -513,10 +526,10 @@ export default function SubscriptionPage() {
                 </Button>
               )}
               {plan.type === 'trial' && (
-                <div className="w-full text-center py-3 px-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+                <div className="w-full text-center py-2.5 px-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                   <div className="flex items-center justify-center space-x-2">
                     <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-green-700 font-medium text-sm">Trial Plan - No Payment Required</span>
+                    <span className="text-green-700 font-medium text-xs sm:text-sm">Trial — No Payment Required</span>
                   </div>
                 </div>
               )}
@@ -549,24 +562,24 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Selected Plan Summary */}
-      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+      <Card className="mb-4 sm:mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-semibold text-blue-900">{selectedPlan.name}</h3>
-              <p className="text-blue-700">
-                {formatCurrency(selectedPlan.amount || selectedPlan.price)} • Up to {selectedPlan.maxShops} shops
+              <h3 className="text-base sm:text-lg font-semibold text-blue-900">{selectedPlan.name}</h3>
+              <p className="text-sm text-blue-700">
+                {formatCurrency(selectedPlan.amount || selectedPlan.price)} • Up to {selectedPlan.maxShops} {selectedPlan.maxShops === 1 ? 'shop' : 'shops'}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-blue-600">Selected: {selectedShops.length}/{selectedPlan.maxShops}</p>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-medium text-blue-600">{selectedShops.length}/{selectedPlan.maxShops} selected</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Shop Selection Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6 sm:mb-8">
         {isLoadingShops ? (
           // Loading state
           Array.from({ length: 6 }).map((_, index) => (
@@ -624,7 +637,7 @@ export default function SubscriptionPage() {
         <Button 
           onClick={handleProceedToPayment}
           disabled={selectedShops.length === 0}
-          className="bg-blue-500 hover:bg-blue-600"
+          className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
         >
           Proceed to Payment
         </Button>
@@ -652,21 +665,21 @@ export default function SubscriptionPage() {
 
       <div className="max-w-2xl mx-auto">
         {/* Order Summary */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
+            <CardTitle className="text-base sm:text-lg">Order Summary</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <span>Plan: {selectedPlan.name}</span>
+          <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
+            <div className="flex justify-between text-sm sm:text-base">
+              <span className="text-gray-600">Plan: <span className="font-medium text-gray-900">{selectedPlan.name}</span></span>
               <span className="font-medium">{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Selected Shops:</span>
-              <span className="font-medium">{selectedShops.length} shops</span>
+            <div className="flex justify-between text-sm sm:text-base">
+              <span className="text-gray-600">Selected Shops:</span>
+              <span className="font-medium">{selectedShops.length} {selectedShops.length === 1 ? 'shop' : 'shops'}</span>
             </div>
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-bold">
+            <div className="border-t pt-3">
+              <div className="flex justify-between text-base sm:text-lg font-bold">
                 <span>Total:</span>
                 <span>{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
               </div>
@@ -675,11 +688,11 @@ export default function SubscriptionPage() {
         </Card>
 
         {/* Payment Method */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Payment Method</CardTitle>
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
+            <CardTitle className="text-base sm:text-lg">Payment Method</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="grid gap-4">
               <div 
                 className={`border rounded-lg p-4 cursor-pointer transition-colors ${
@@ -811,11 +824,11 @@ export default function SubscriptionPage() {
         <Button 
           onClick={handlePayment}
           disabled={isProcessing}
-          className="w-full bg-blue-500 hover:bg-blue-600 h-12 text-lg"
+          className="w-full bg-blue-500 hover:bg-blue-600 h-11 sm:h-12 text-sm sm:text-base font-semibold"
         >
           {isProcessing ? (
             <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               <span>Processing Payment...</span>
             </div>
           ) : (
@@ -828,7 +841,7 @@ export default function SubscriptionPage() {
 
   return (
     <DashboardLayout title="Subscription">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto py-4 sm:py-6">
         {renderStepIndicator()}
         
         {step === 1 && renderPlanSelection()}
