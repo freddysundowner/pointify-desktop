@@ -965,7 +965,7 @@ export default function StockProducts() {
         </div>
 
         {/* Product table — minimal rows */}
-        <div className="flex-1 pb-28">
+        <div className="flex-1 pb-36">
           {/* Column headers */}
           <div className="flex items-center px-3 py-1.5 bg-gray-50 border-b border-gray-200 gap-2">
             {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
@@ -1114,7 +1114,10 @@ export default function StockProducts() {
       {/* Floating Add button — mobile only */}
       {(hasPermission("inventory_add") || hasAttendantPermission("stocks", "add_products") || hasAttendantPermission("products", "add")) && (
         <Link href={addProductRoute}>
-          <button className="lg:hidden fixed bottom-5 right-5 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold">
+          <button
+            className="lg:hidden fixed right-4 z-30 flex items-center gap-2 pl-4 pr-5 py-3.5 bg-purple-600 text-white rounded-full shadow-lg shadow-purple-200 active:scale-95 transition-transform text-sm font-semibold"
+            style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom) + 0.75rem)' }}
+          >
             <Plus className="h-5 w-5" />
             Add Product
           </button>
