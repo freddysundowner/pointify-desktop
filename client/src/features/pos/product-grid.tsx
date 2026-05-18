@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -2368,11 +2368,19 @@ export default function ProductGrid({
                         const customerId = customer._id || customer.id;
                         return (
                           <option key={customerId} value={customerId}>
-                            {customer.name}{customer.phone ? ` (${customer.phone})` : ""}
+                            {customer.name}{customer.phonenumber || customer.phone ? ` (${customer.phonenumber || customer.phone})` : ""}
                           </option>
                         );
                       })}
                     </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCustomerDialog(true)}
+                      className="w-full flex items-center justify-center gap-2 h-8 rounded-lg border-2 border-dashed border-orange-300 text-orange-500 hover:bg-orange-100 text-xs font-medium transition-colors"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      New customer
+                    </button>
                     <Input
                       type="date"
                       value={creditDueDate}
