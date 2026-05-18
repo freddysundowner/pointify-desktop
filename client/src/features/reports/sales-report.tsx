@@ -185,9 +185,9 @@ export default function SalesReportPage() {
                   </div>
                 ) : (
                   <div>
-                    {ROWS.map((row, idx) => {
+                    {ROWS.filter((row) => (data?.[row.key] ?? 0) > 0).map((row, idx, visibleRows) => {
                       const amount = data?.[row.key] ?? 0;
-                      const isLast = idx === ROWS.length - 1;
+                      const isLast = idx === visibleRows.length - 1;
                       return (
                         <div key={row.key}>
                           <div
@@ -229,7 +229,7 @@ export default function SalesReportPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {ROWS.map((row) => {
+                    {ROWS.filter((row) => (data?.[row.key] ?? 0) > 0).map((row) => {
                       const amount = data?.[row.key] ?? 0;
                       const share = total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0";
                       return (
