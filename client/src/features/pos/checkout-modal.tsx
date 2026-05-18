@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   X, CreditCard, Banknote, UserX, User, Wallet,
-  Smartphone, Building2, SplitSquareHorizontal, Check
+  Smartphone, Building2, SplitSquareHorizontal, Check,
+  UserPlus, ChevronDown
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,9 @@ export default function CheckoutModal({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [cashReceived, setCashReceived] = useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const { toast } = useToast();
   const { admin, token } = useAuth();
   const queryClient = useQueryClient();
@@ -92,10 +96,47 @@ export default function CheckoutModal({
     },
   });
 
+  const createCustomerMutation = useMutation({
+    mutationFn: async (payload: { name: string; phonenumber: string }) => {
+      const adminid = admin?._id || admin?.id;
+      const shopId = admin?.shopId || admin?.shop;
+      const response = await apiRequest("POST", "/api/customers", {
+        name: payload.name,
+        phonenumber: payload.phonenumber,
+        email: "",
+        address: "",
+        wallet: 0,
+        shopId,
+        adminid,
+      });
+      return response.json();
+    },
+    onSuccess: (newCustomer: any) => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      setSelectedCustomer(newCustomer);
+      setShowAddCustomer(false);
+      setNewCustomerName("");
+      setNewCustomerPhone("");
+      toast({ title: "Customer Added", description: `${newCustomer.name} was created and selected.` });
+    },
+    onError: () => {
+      toast({ title: "Failed to create customer", variant: "destructive" });
+    },
+  });
+
+  const handleCreateCustomer = () => {
+    const name = newCustomerName.trim();
+    if (!name) return;
+    createCustomerMutation.mutate({ name, phonenumber: newCustomerPhone.trim() });
+  };
+
   const resetModal = () => {
     setPaymentMethod(null);
     setCashReceived("");
     setSelectedCustomer(null);
+    setShowAddCustomer(false);
+    setNewCustomerName("");
+    setNewCustomerPhone("");
   };
 
   const handleClose = () => {
@@ -287,27 +328,38 @@ export default function CheckoutModal({
                 <UserX className="h-4 w-4 text-orange-500" />
                 <span className="text-sm font-semibold text-orange-700">Credit Sale</span>
               </div>
-              <div>
-                <Label className="text-sm font-semibold text-gray-700 mb-2 block">Select Customer *</Label>
-                <Select onValueChange={(value) => {
-                  setSelectedCustomer(customers.find((c: any) => c._id === value));
-                }}>
-                  <SelectTrigger className="h-12 rounded-xl border-orange-200 focus:border-orange-400 bg-white">
-                    <SelectValue placeholder="Choose a customer..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer: any) => (
-                      <SelectItem key={customer._id} value={customer._id}>
-                        <span className="font-medium">{customer.name}</span>
-                        {customer.phone && (
-                          <span className="text-sm text-gray-500 ml-2">({customer.phone})</span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {selectedCustomer && (
+
+              {/* Customer selector — hidden when add-customer form is open */}
+              {!showAddCustomer && (
+                <div>
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">Select Customer *</Label>
+                  <Select
+                    value={selectedCustomer?._id ?? ""}
+                    onValueChange={(value) => {
+                      setSelectedCustomer(customers.find((c: any) => c._id === value));
+                    }}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl border-orange-200 focus:border-orange-400 bg-white">
+                      <SelectValue placeholder="Choose a customer..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer: any) => (
+                        <SelectItem key={customer._id} value={customer._id}>
+                          <span className="font-medium">{customer.name}</span>
+                          {(customer.phonenumber || customer.phone) && (
+                            <span className="text-sm text-gray-500 ml-2">
+                              ({customer.phonenumber || customer.phone})
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Selected customer badge */}
+              {!showAddCustomer && selectedCustomer && (
                 <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-orange-200">
                   <div>
                     <p className="font-semibold text-gray-900">{selectedCustomer.name}</p>
@@ -318,6 +370,58 @@ export default function CheckoutModal({
                   </div>
                   <User className="h-7 w-7 text-orange-400" />
                 </div>
+              )}
+
+              {/* Add new customer inline form */}
+              {showAddCustomer ? (
+                <div className="bg-white rounded-xl border border-orange-200 p-3 space-y-2">
+                  <p className="text-xs font-semibold text-orange-700 mb-1">New Customer</p>
+                  <Input
+                    placeholder="Full name *"
+                    value={newCustomerName}
+                    onChange={(e) => setNewCustomerName(e.target.value)}
+                    className="h-10 rounded-lg border-orange-200 focus:border-orange-400 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateCustomer()}
+                  />
+                  <Input
+                    placeholder="Phone (optional)"
+                    value={newCustomerPhone}
+                    onChange={(e) => setNewCustomerPhone(e.target.value)}
+                    className="h-10 rounded-lg border-orange-200 focus:border-orange-400 text-sm"
+                    type="tel"
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateCustomer()}
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 rounded-lg border-gray-200 text-gray-600 text-xs"
+                      onClick={() => { setShowAddCustomer(false); setNewCustomerName(""); setNewCustomerPhone(""); }}
+                      disabled={createCustomerMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs"
+                      onClick={handleCreateCustomer}
+                      disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
+                    >
+                      {createCustomerMutation.isPending ? (
+                        <><span className="inline-block h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin mr-1" />Saving…</>
+                      ) : "Add & Select"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border-2 border-dashed border-orange-300 text-orange-500 hover:bg-orange-100 text-sm font-medium transition-colors"
+                  onClick={() => setShowAddCustomer(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  New customer
+                </button>
               )}
             </div>
           )}
