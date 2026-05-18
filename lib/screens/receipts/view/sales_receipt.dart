@@ -1,0 +1,1145 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:pointify/controllers/paymentcontroller.dart';
+import 'package:pointify/functions/functions.dart';
+import 'package:pointify/models/saleitem.dart';
+import 'package:pointify/screens/receipts/view/receipt_preview_page.dart';
+import 'package:printing/printing.dart';
+
+import '../../../controllers/salescontroller.dart';
+import '../../../controllers/shopcontroller.dart';
+import '../../../models/product.dart';
+import '../../../models/salemodel.dart';
+import '../../../utils/colors.dart';
+import '../../../utils/themer.dart';
+import '../../../widgets/alert.dart';
+import '../../cash_flow/payment_history.dart';
+import '../pdf/delivery_note_pdf.dart';
+
+class SalesReceipt extends StatelessWidget {
+  final SaleModel? salesModel;
+  final String? type;
+  final String? from;
+
+  SalesReceipt({
+    super.key,
+    this.salesModel,
+    this.type = "",
+    this.from = "",
+  }) {
+    salesController.currentReceipt.value = salesModel;
+  }
+
+  final ShopController shopController = Get.find<ShopController>();
+
+  final SalesController salesController = Get.find<SalesController>();
+
+  final PaymentController paymentController = Get.find<PaymentController>();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfff5f5f5),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Text(
+          "Receipt #${salesController.currentReceipt.value?.receiptNo ?? ""}",
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              if (value == 'Print') {
+                salesController.reprintReceipt(
+                  saleModel: salesController.currentReceipt.value!,
+                );
+              }
+
+              if (value == 'View') {
+                Get.to(
+                  () => ReceiptPreviewPage(
+                    saleModel: salesModel!,
+                  ),
+                );
+              }
+
+              if (value == 'Delivery') {
+                Get.to(
+                  () => Scaffold(
+                    appBar: AppBar(
+                      title: const Text("Print Delivery"),
+                    ),
+                    body: PdfPreview(
+                      build: (context) => deliveryNotePdf(
+                        salesController.currentReceipt.value!,
+                        "Delivery Note",
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              if (value == 'Delete') {
+                if (verifyPermission(category: "sales", permission: "delete") &&
+                    salesController.currentReceipt.value!.status != "order") {
+                  saleReceiptActions(
+                    saleModel: salesController.currentReceipt.value!,
+                    delete: true,
+                    from: from!,
+                  );
+                }
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                if (verifyPermission(category: "sales", permission: "delete") &&
+                    salesController.currentReceipt.value!.status != "order")
+                  const PopupMenuItem<String>(
+                    value: 'Delete',
+                    child: Text('Delete Receipt'),
+                  ),
+                const PopupMenuItem<String>(
+                  value: 'View',
+                  child: Text('View receipt'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Print',
+                  child: Text('Print receipt'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Delivery',
+                  child: Text('Delivery Note'),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Obx(
+          () {
+            final receipt = salesController.currentReceipt.value!;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    /// HEADER
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey.shade200,
+                          ),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "RECEIPT",
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "#${receipt.receiptNo}",
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  if (verifyPermission(
+                                    category: "sales",
+                                    permission: "return",
+                                  ))
+                                    InkWell(
+                                      onTap: () {
+                                        saleReceiptActions(
+                                          saleModel: receipt,
+                                          from: from ?? "",
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 7,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withOpacity(.08),
+                                          borderRadius:
+                                              BorderRadius.circular(30),
+                                        ),
+                                        child: const Text(
+                                          "Refund",
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 7,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _chechPaymentColor(
+                                        receipt,
+                                        type!,
+                                      ).withOpacity(.1),
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child: Text(
+                                      chechPayment(
+                                        receipt,
+                                        type!,
+                                      ),
+                                      style: TextStyle(
+                                        color: _chechPaymentColor(
+                                          receipt,
+                                          type!,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _metaItem(
+                                "Date",
+                                receipt.createdAt == null
+                                    ? "-"
+                                    : DateFormat(
+                                        "dd MMM yyyy",
+                                      ).format(
+                                        DateTime.parse(
+                                          receipt.createdAt!,
+                                        ),
+                                      ),
+                              ),
+                              _metaItem(
+                                "Time",
+                                receipt.createdAt == null
+                                    ? "-"
+                                    : DateFormat(
+                                        "hh:mm a",
+                                      ).format(
+                                        DateTime.parse(
+                                          receipt.createdAt!,
+                                        ),
+                                      ),
+                              ),
+                              _metaItem(
+                                "Served By",
+                                receipt.attendant?.username ?? "-",
+                              ),
+                            ],
+                          ),
+                          if (receipt.customerId != null) ...[
+                            const SizedBox(height: 15),
+                            _receiptInfoRow(
+                              title: "Customer",
+                              value: receipt.customerId!.name ?? "",
+                            ),
+                          ],
+                          if (receipt.salesnote != null &&
+                              receipt.salesnote!.isNotEmpty) ...[
+                            const SizedBox(height: 15),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                receipt.salesnote!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    /// ITEMS
+                    Column(
+                      children: List.generate(
+                        receipt.items!.length,
+                        (index) {
+                          SaleItem receiptitem = receipt.items![index];
+
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: InkWell(
+                                        onTap: () {
+                                          if (verifyPermission(
+                                            category: "sales",
+                                            permission: "return",
+                                          )) {
+                                            saleReceiptActions(
+                                              saleItem: receiptitem,
+                                              from: from!,
+                                            );
+                                          }
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              receiptitem
+                                                  .product!.name!.capitalize!,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                decoration:
+                                                    receiptitem.quantity == 0
+                                                        ? TextDecoration
+                                                            .lineThrough
+                                                        : null,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              "${receiptitem.quantity} × ${htmlPrice(receiptitem.unitPrice)}",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                                decoration:
+                                                    receiptitem.quantity == 0
+                                                        ? TextDecoration
+                                                            .lineThrough
+                                                        : null,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            htmlPrice(
+                                              receiptitem.totalLinePrice ?? 0,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          if (receiptitem.quantity == 0)
+                                            const Padding(
+                                              padding: EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Text(
+                                                "Returned",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (receipt.status != "order" &&
+                                        verifyPermission(
+                                          category: "sales",
+                                          permission: "return",
+                                        )) ...[
+                                      const SizedBox(width: 10),
+                                      InkWell(
+                                        onTap: () {
+                                          saleReceiptActions(
+                                            saleItem: receiptitem,
+                                            from: from ?? "",
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.withOpacity(.08),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.undo,
+                                            color: Colors.red,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (index != receipt.items!.length - 1)
+                                Divider(
+                                  height: 1,
+                                  color: Colors.grey.shade200,
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+
+                    /// TOTALS
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(18),
+                          bottomRight: Radius.circular(18),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          _totalRow(
+                            "Subtotal",
+                            htmlPrice(
+                              (receipt.totalWithDiscount ?? 0) -
+                                  (receipt.totaltax ?? 0) -
+                                  (receipt.extraChargesTotal ?? 0) +
+                                  (receipt.totalDiscount ?? 0),
+                            ),
+                          ),
+                          if ((receipt.totalDiscount ?? 0) > 0)
+                            _totalRow(
+                              "Discount",
+                              "- ${htmlPrice(receipt.totalDiscount)}",
+                              valueColor: Colors.red,
+                            ),
+                          if ((receipt.totaltax ?? 0) > 0)
+                            _totalRow(
+                              "VAT",
+                              htmlPrice(receipt.totaltax),
+                            ),
+                          if (receipt.extraCharges != null &&
+                              receipt.extraCharges!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            ...List.generate(
+                              receipt.extraCharges!.length,
+                              (index) {
+                                final charge = receipt.extraCharges![index];
+
+                                return _totalRow(
+                                  charge.name ?? "",
+                                  htmlPrice(
+                                    charge.amount ?? 0,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                          if (receipt.paymentTag == "split") ...[
+                            const SizedBox(height: 8),
+                            _totalRow(
+                              "Cash Paid",
+                              htmlPrice(
+                                receipt.amountPaid ?? 0,
+                              ),
+                            ),
+                            if ((receipt.mpesatotal ?? 0) > 0)
+                              _totalRow(
+                                "Mpesa Paid",
+                                htmlPrice(
+                                  receipt.mpesatotal ?? 0,
+                                ),
+                              ),
+                            if ((receipt.banktotal ?? 0) > 0)
+                              _totalRow(
+                                "Bank Paid",
+                                htmlPrice(
+                                  receipt.banktotal ?? 0,
+                                ),
+                              ),
+                          ],
+                          const Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: 10,
+                            ),
+                            child: Divider(
+                              height: 1,
+                            ),
+                          ),
+                          _totalRow(
+                            "TOTAL",
+                            htmlPrice(
+                              receipt.totalWithDiscount,
+                            ),
+                            bold: true,
+                            large: true,
+                          ),
+                          if ((receipt.totalWithDiscount ?? 0) >
+                              (receipt.outstandingBalance ?? 0)) ...[
+                            const SizedBox(height: 6),
+                            _totalRow(
+                              "PAID",
+                              htmlPrice(
+                                (receipt.totalWithDiscount ?? 0) -
+                                    (receipt.outstandingBalance ?? 0),
+                              ),
+                              valueColor: Colors.green,
+                              bold: true,
+                            ),
+                          ],
+                          if (receipt.outstandingBalance! > 0) ...[
+                            const SizedBox(height: 8),
+                            _totalRow(
+                              "BALANCE",
+                              htmlPrice(
+                                receipt.outstandingBalance,
+                              ),
+                              bold: true,
+                              valueColor: Colors.red,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    /// ACTIONS
+                    if (receipt.paymentTag == 'credit' ||
+                        (onCredit(receipt) && type != "returns")) ...[
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        child: Row(
+                          children: [
+                            if (receipt.paymentTag == 'credit')
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () {
+                                    paymentController.getSalesPaymentBySaleId(
+                                      receipt.sId!,
+                                    );
+
+                                    Get.to(
+                                      () => PaymentHistory(
+                                        saleId: receipt.sId!,
+                                        customerModel: salesModel!.customerId,
+                                      ),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "Payments",
+                                  ),
+                                ),
+                              ),
+                            if (receipt.paymentTag == 'credit')
+                              const SizedBox(width: 10),
+                            if (onCredit(receipt))
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    showAmountDialog(
+                                      receipt,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.mainColor,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text(
+                                    "Pay Now",
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+Widget _metaItem(
+  String title,
+  String value,
+) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: TextStyle(
+          color: Colors.grey.shade500,
+          fontSize: 11,
+        ),
+      ),
+      const SizedBox(height: 3),
+      Text(
+        value,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _totalRow(
+  String title,
+  String value, {
+  bool bold = false,
+  bool large = false,
+  Color? valueColor,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: large ? 15 : 13,
+            fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: large ? 18 : 13,
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+            color: valueColor ?? Colors.black,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _receiptInfoRow({
+  required String title,
+  required String value,
+}) {
+  if (value.isEmpty) {
+    return const SizedBox.shrink();
+  }
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Row(
+      children: [
+        Text(
+          "$title: ",
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 12,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String chechPayment(
+  SaleModel salesModel,
+  String? type,
+) {
+  if (salesModel.totalWithDiscount == 0 || type == "returns") {
+    return type == "returns" ? "RETURNED ITEMS" : "RETURNED";
+  }
+
+  if (salesModel.status == 'order') {
+    return "PENDING";
+  }
+
+  if (salesModel.outstandingBalance == 0) {
+    return "CASH SALE";
+  }
+
+  if (onCredit(salesModel) == true) {
+    return "NOT PAID";
+  }
+
+  return "";
+}
+
+bool onCredit(SaleModel salesModel) {
+  return salesModel.outstandingBalance! > 0;
+}
+
+Color _chechPaymentColor(
+  SaleModel salesModel,
+  String? type,
+) {
+  if (salesModel.totalWithDiscount! == 0 || type == "returns") {
+    return Colors.red;
+  }
+
+  if (salesModel.status == 'order') {
+    return Colors.amber;
+  }
+
+  if (salesModel.outstandingBalance == 0) {
+    return Colors.green;
+  }
+
+  if (onCredit(salesModel) == true) {
+    return Colors.red;
+  }
+
+  return Colors.black;
+}
+
+void saleReceiptActions({
+  SaleItem? saleItem,
+  SaleModel? saleModel,
+  bool delete = false,
+  String from = "",
+}) {
+  SalesController salesController = Get.find<SalesController>();
+
+  if (saleModel != null) {
+    generalAlert(
+      title: "Warning",
+      positiveText: "Yes",
+      negativeText: "Not now",
+      message:
+          "Are you sure you want to ${delete ? "delete" : "return"} ${salesController.currentReceipt.value?.items!.length} items?",
+      function: () {
+        if (delete == true) {
+          salesController.voidReceipt(
+            salesController.currentReceipt.value!,
+          );
+          return;
+        }
+
+        var items = salesController.currentReceipt.value?.items!
+            .map(
+              (e) => {
+                "product": e.product?.sId,
+                "quantity": e.quantity,
+              },
+            )
+            .toList();
+
+        if (from == "sales") {
+          Get.back();
+        }
+
+        salesController.returnSale(
+          saledId: salesController.currentReceipt.value!.sId,
+          returnItems: items,
+          from: from,
+          deleteReceipt: delete,
+        );
+      },
+    );
+  } else {
+    if (saleItem != null && saleItem.quantity! > 0) {
+      returnReceiptItem(
+        receiptItem: saleItem,
+      );
+    }
+  }
+}
+
+returnReceiptItem({
+  required SaleItem receiptItem,
+  Product? product,
+}) {
+  SalesController salesController = Get.find<SalesController>();
+
+  TextEditingController textEditingController = TextEditingController();
+
+  textEditingController.text = receiptItem.quantity.toString();
+
+  return showDialog(
+    context: Get.context!,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text(
+          "Return Product?",
+        ),
+        content: Container(
+          decoration: ThemeHelper().inputBoxDecorationShaddow(),
+          child: TextFormField(
+            controller: textEditingController,
+            decoration: ThemeHelper().textInputDecoration(
+              'Quantity',
+              'Enter quantity',
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: Text(
+              "Cancel".toUpperCase(),
+              style: TextStyle(
+                color: AppColors.mainColor,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              if (receiptItem.quantity! <
+                  double.parse(
+                    textEditingController.text.isEmpty
+                        ? "0"
+                        : textEditingController.text,
+                  )) {
+                generalAlert(
+                  title: "Error",
+                  message:
+                      "You cannot return more than ${receiptItem.quantity}",
+                );
+              } else if (double.parse(textEditingController.text) <= 0) {
+                generalAlert(
+                  title: "Error",
+                  message: "You must atleast return 1 item",
+                );
+              } else {
+                Get.back();
+
+                salesController.returnSale(
+                  saledId: receiptItem.sale,
+                  returnItems: [
+                    {
+                      "product": receiptItem.product?.sId,
+                      'name': receiptItem.product?.name,
+                      "quantity": double.parse(
+                        textEditingController.text,
+                      )
+                    }
+                  ],
+                );
+              }
+            },
+            child: Text(
+              "Okay".toUpperCase(),
+              style: TextStyle(
+                color: AppColors.mainColor,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+showAmountDialog(SaleModel salesBody) {
+  SalesController salesController = Get.find<SalesController>();
+
+  showDialog(
+    context: Get.context!,
+    builder: (_) {
+      return AlertDialog(
+        title: const Text(
+          "Pay invoice",
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: SizedBox(
+          child: Form(
+            child: Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Payment via",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    margin: const EdgeInsets.only(
+                      bottom: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Colors.grey,
+                      ),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: Get.context!,
+                          builder: (context) {
+                            return SimpleDialog(
+                              children: List.generate(
+                                salesController.receiptpaymentMethods.length,
+                                (index) => SimpleDialogOption(
+                                  onPressed: () {
+                                    salesController.paynowMethod.value =
+                                        salesController
+                                            .receiptpaymentMethods[index];
+
+                                    Navigator.pop(context);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 5,
+                                    ),
+                                    child: Text(
+                                      "${salesController.receiptpaymentMethods[index]}",
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Obx(
+                            () => Text(
+                              salesController.paynowMethod.value,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (salesController.paynowMethod.value == "Mpesa")
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Mpesa Code (Last 5 Digits)",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: salesController.mpesaCode,
+                          keyboardType: TextInputType.text,
+                          decoration: InputDecoration(
+                            hintText: "eg DV409",
+                            hintStyle: const TextStyle(
+                              fontSize: 10,
+                            ),
+                            fillColor: Colors.white,
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(
+                                8,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Enter Amount",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: salesController.amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: "eg ${salesBody.totalWithDiscount}",
+                      hintStyle: const TextStyle(
+                        fontSize: 10,
+                      ),
+                      fillColor: Colors.white,
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          8,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+            child: Text(
+              "Cancel".toUpperCase(),
+              style: TextStyle(
+                color: AppColors.mainColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+
+              var amountPaid = int.parse(
+                salesController.amountController.text.isEmpty
+                    ? "0"
+                    : salesController.amountController.text,
+              );
+
+              if (salesBody.outstandingBalance! < amountPaid) {
+                generalAlert(
+                  title: "Error",
+                  message:
+                      "You cannot pay more than ${htmlPrice(salesBody.outstandingBalance!.abs())}",
+                );
+              } else {
+                if (salesController.paynowMethod.value == "Wallet") {
+                  var walletBalance = (salesBody.customerId?.wallet ?? 0);
+
+                  if (walletBalance == 0) {
+                    generalAlert(
+                      title: "Error",
+                      message: "Wallet balance is ${htmlPrice(0)}",
+                    );
+                  } else {
+                    if (walletBalance < amountPaid) {
+                      generalAlert(
+                        title: "Warning",
+                        message: walletBalance < 0
+                            ? "Wallet balance is not sufficient to pay ${htmlPrice(amountPaid)}"
+                            : "Wallet balance can only pay ${htmlPrice(walletBalance)} continue?",
+                        function: () {
+                          salesController.payCredit(
+                            salesBody: salesBody,
+                            amount: amountPaid,
+                          );
+                        },
+                      );
+                    } else {
+                      salesController.payCredit(
+                        salesBody: salesBody,
+                        amount: amountPaid,
+                      );
+                    }
+                  }
+                } else {
+                  salesController.payCredit(
+                    salesBody: salesBody,
+                    amount: amountPaid,
+                  );
+                }
+              }
+            },
+            child: Text(
+              "Pay".toUpperCase(),
+              style: TextStyle(
+                color: AppColors.mainColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
