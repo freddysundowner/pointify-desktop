@@ -102,6 +102,10 @@ export const ROUTE_MAPPINGS = {
   profitAnalysis: {
     admin: "/profit-analysis",
     attendant: "/attendant/profit-analysis"
+  },
+  salesReport: {
+    admin: "/sales-report",
+    attendant: "/sales-report"
   }
 };
 

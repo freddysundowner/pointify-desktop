@@ -77,6 +77,7 @@ import ExpenseCategories from "@/pages/expense-categories";
 import CashflowCategories from "@/pages/cashflow-categories";
 import ProfitLossPage from "@/pages/profit-loss";
 import DebtorsPage from "@/pages/debtors";
+import DebtPaymentsPage from "@/pages/debt-payments";
 import PrinterConfigPage from "@/pages/printer-config";
 import SettingsPage from "@/pages/settings";
 import SmsSettingsPage from "@/pages/sms-settings";
@@ -475,6 +476,7 @@ function AppContent() {
             <Route path="/profit-analysis" component={ProfitAnalysis} />
             <Route path="/profit-loss" component={ProfitLossPage} />
             <Route path="/debtors" component={DebtorsPage} />
+            <Route path="/debt-payments" component={DebtPaymentsPage} />
             <Route path="/printer-config" component={PrinterConfigPage} />
             <Route path="/settings" component={SettingsPage} />
             <Route path="/sms-settings" component={SmsSettingsPage} />
