@@ -104,7 +104,7 @@ export default function SubscriptionPage() {
   };
 
   // Transform API data to match component expectations
-  const subscriptionPlans = packagesData?.data?.map((pkg: any, index: number) => {
+  const subscriptionPlans = packagesData?.data?.filter((pkg: any) => pkg.type !== 'trial').map((pkg: any, index: number) => {
     // Check if this is the current subscription plan by comparing with primaryShop subscription
     const isCurrentPlan = currentSubscription?.packageId?._id === pkg._id;
     
