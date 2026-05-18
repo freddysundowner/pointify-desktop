@@ -33,13 +33,14 @@ export default function DebtPaymentsPage() {
   const toDate   = params.get("toDate")   ?? "";
 
   const queryUrl = shopId
-    ? `/api/payments?shop=${shopId}&fromDate=${fromDate}&toDate=${toDate}`
+    ? `/api/payments?shopId=${shopId}&fromDate=${fromDate}&toDate=${toDate}`
     : null;
 
-  const { data, isLoading, isError } = useQuery<any>({
+  const { data, isLoading, isError, error } = useQuery<any>({
     queryKey: [queryUrl],
     enabled: !!queryUrl,
     staleTime: 60_000,
+    retry: 1,
   });
 
   const payments: any[] = Array.isArray(data)
