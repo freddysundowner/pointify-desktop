@@ -5,10 +5,10 @@ export function registerPackageRoutes(app: Express) {
   // Get packages with pagination
   app.get("/api/packages", async (req: Request, res: Response) => {
     try {
-      const { page = 1, limit = 20, admin = 'true', id } = req.query;
+      const { page = 1, limit = 20, id } = req.query;
       const idParam = id ? `&id=${id}` : '';
       
-      const data = await makePointifyRequest(`/packages?page=${page}&limit=${limit}&admin=${admin}${idParam}`, {
+      const data = await makePointifyRequest(`/packages?page=${page}&limit=${limit}${idParam}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
