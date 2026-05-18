@@ -193,7 +193,8 @@ function SalesList() {
         params.append("paymentTag", "credit");
       } else if (statusFilter === "wallet") {
         params.append("status", "cashed");
-        params.append("paymentTag", "wallet");
+        params.append("paymentTag", "cashed");
+        params.append("paymentType", "wallet");
       } else if (statusFilter === "bank") {
         params.append("status", "cashed");
         params.append("paymentTag", "bank");
@@ -276,7 +277,8 @@ function SalesList() {
         params.append("paymentTag", "credit");
       } else if (statusFilter === "wallet") {
         params.append("status", "cashed");
-        params.append("paymentTag", "wallet");
+        params.append("paymentTag", "cashed");
+        params.append("paymentType", "wallet");
       } else if (statusFilter === "bank") {
         params.append("status", "cashed");
         params.append("paymentTag", "bank");
