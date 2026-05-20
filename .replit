@@ -62,7 +62,6 @@ build = ["npm", "run", "build"]
 [userenv]
 
 [userenv.shared]
-POINTIFY_API_URL = "https://sandbox.pointifypos.com"
 PORT = "3000"
 DEV = "false"
 NODE_ENV = "development"
