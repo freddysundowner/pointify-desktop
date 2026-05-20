@@ -52,7 +52,7 @@ export default defineConfig({
     port: 5000,
     allowedHosts: true,
     proxy: {
-      '/api': 'http://localhost:1999',
+      '/api': 'http://localhost:3000',
     },
   },
 });

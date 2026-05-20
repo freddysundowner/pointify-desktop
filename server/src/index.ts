@@ -105,7 +105,7 @@ app.use((req, res, next) => {
   }
 
 
-  const port = parseInt(process.env.PORT || '1999', 10);
+  const port = parseInt(process.env.PORT || '3000', 10);
   app.listen(port, '0.0.0.0', () => {
     console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
     if (isElectron()) {
