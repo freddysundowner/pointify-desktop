@@ -47,7 +47,7 @@ title = "untitled_import_ready.xlsx"
 id = "4gTgP1OnZsi_mW5XAYxH1"
 uri = "file://attached_assets/products_import_ready.xlsx"
 type = "table"
-title = "products_import_ready.xlsx — 960 rows, import-ready"
+title = "products_import_ready.xlsx"
 
 [[outputs]]
 id = "jCzoT6daYUrDTeM36nojK"
