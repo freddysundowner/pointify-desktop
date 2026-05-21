@@ -52,7 +52,12 @@ export default defineConfig({
     port: 5000,
     allowedHosts: true,
     proxy: {
-      '/api': 'http://localhost:3000',
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        timeout: 600000,
+        proxyTimeout: 600000,
+      },
     },
   },
 });
