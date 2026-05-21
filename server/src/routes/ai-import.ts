@@ -115,12 +115,13 @@ export function registerAiImportRoutes(app: Express) {
         text: "Extract every product row from the attached file(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
       });
 
-      const completion = await anthropic.messages.create({
+      const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",
-        max_tokens: 64000,
+        max_tokens: 32000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content }],
       });
+      const completion = await stream.finalMessage();
       if (completion.stop_reason === "max_tokens") {
         console.warn("AI import: response hit max_tokens, JSON may be truncated.");
       }
