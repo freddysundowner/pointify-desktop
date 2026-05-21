@@ -117,10 +117,13 @@ export function registerAiImportRoutes(app: Express) {
 
       const completion = await anthropic.messages.create({
         model: "claude-sonnet-4-5",
-        max_tokens: 16000,
+        max_tokens: 64000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content }],
       });
+      if (completion.stop_reason === "max_tokens") {
+        console.warn("AI import: response hit max_tokens, JSON may be truncated.");
+      }
 
       const textBlock = completion.content.find((b) => b.type === "text") as
         | { type: "text"; text: string }
@@ -131,19 +134,36 @@ export function registerAiImportRoutes(app: Express) {
       const fenced = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (fenced) jsonText = fenced[1].trim();
       const firstBrace = jsonText.indexOf("{");
+      if (firstBrace >= 0) jsonText = jsonText.slice(firstBrace);
       const lastBrace = jsonText.lastIndexOf("}");
-      if (firstBrace >= 0 && lastBrace > firstBrace) {
-        jsonText = jsonText.slice(firstBrace, lastBrace + 1);
+      if (lastBrace > 0) jsonText = jsonText.slice(0, lastBrace + 1);
+
+      const tryParse = (s: string): { products?: any[] } | null => {
+        try { return JSON.parse(s); } catch { return null; }
+      };
+
+      let parsed: { products?: any[] } | null = tryParse(jsonText);
+
+      if (!parsed) {
+        // Recovery: extract individual product objects from a possibly truncated array.
+        const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
+        const matches = jsonText.match(objRegex) || [];
+        const recovered: any[] = [];
+        for (const m of matches) {
+          const obj = tryParse(m);
+          if (obj && typeof (obj as any).name === "string") recovered.push(obj);
+        }
+        if (recovered.length > 0) {
+          console.warn(`AI import: recovered ${recovered.length} products from truncated JSON.`);
+          parsed = { products: recovered };
+        }
       }
 
-      let parsed: { products?: any[] };
-      try {
-        parsed = JSON.parse(jsonText);
-      } catch (e) {
-        console.error("Failed to parse Claude JSON:", raw.slice(0, 500));
+      if (!parsed) {
+        console.error("Failed to parse Claude JSON. Length:", raw.length, "Tail:", raw.slice(-300));
         return res.status(502).json({
           error:
-            "AI returned an unparseable response. Try a clearer image, or split into smaller pages.",
+            "AI returned an unparseable response. Try splitting the PDF into fewer pages and uploading again.",
         });
       }
 

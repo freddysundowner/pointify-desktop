@@ -228,7 +228,7 @@ export default function ImportProductsPage() {
     const attendantToken = localStorage.getItem("attendantToken");
     const token = adminToken || attendantToken;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), 300000);
     let resp: Response;
     try {
       resp = await fetch("/api/import/parse-image", {
@@ -242,7 +242,7 @@ export default function ImportProductsPage() {
         credentials: "include",
       });
     } catch (err: any) {
-      if (err?.name === "AbortError") throw new Error("AI request timed out after 2 minutes. Try a smaller or clearer image.");
+      if (err?.name === "AbortError") throw new Error("AI request timed out after 5 minutes. Try a smaller PDF or fewer pages.");
       throw err;
     } finally {
       clearTimeout(timeoutId);
@@ -598,7 +598,7 @@ export default function ImportProductsPage() {
                 <div className="text-center text-gray-500">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-purple-500" />
                   <p className="text-sm">{aiStatus || "Reading file…"}</p>
-                  {aiStatus && <p className="text-xs text-gray-400 mt-1">This may take 20-60 seconds for large or handwritten lists.</p>}
+                  {aiStatus && <p className="text-xs text-gray-400 mt-1">This may take 1-3 minutes for large PDFs or handwritten lists.</p>}
                 </div>
               </Card>
             )}
