@@ -72,3 +72,9 @@ id = "Nat-ecEgiTLgGYJusqgrc"
 uri = "file://products_import.xlsx"
 type = "table"
 title = "Products Import — 226 items (exact format)"
+
+[[outputs]]
+id = "FlbGaZY4jxx2RYjBoOj_4"
+uri = "file://attached_assets/products_handwritten_import_ready.xlsx"
+type = "table"
+title = "products_handwritten_import_ready.xlsx"
