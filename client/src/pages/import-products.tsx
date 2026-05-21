@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
   Download,
@@ -16,6 +18,8 @@ import {
   X,
   AlertCircle,
   Loader2,
+  Image as ImageIcon,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
@@ -43,7 +47,7 @@ const COLUMNS = [
   { key: "measure", label: "Measure" },
 ];
 
-type PreviewRow = Record<string, string> & { _valid: boolean; _errors: string[] };
+type PreviewRow = Record<string, any> & { _valid: boolean; _errors: string[]; _originalQuantity?: string };
 type ResultRow = { name: string; success: boolean; error?: string };
 
 // Maps any reasonable header variation to the canonical key
@@ -125,15 +129,21 @@ export default function ImportProductsPage() {
   const [results, setResults] = useState<ResultRow[]>([]);
   const [isDone, setIsDone] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [resetQuantity, setResetQuantity] = useState(false);
+  const [aiStatus, setAiStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const ACCEPTED_TYPES = [
+  const EXCEL_TYPES = [
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
   ];
+  const IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
-  const isValidFile = (f: File) =>
-    ACCEPTED_TYPES.includes(f.type) || f.name.endsWith(".xlsx") || f.name.endsWith(".xls");
+  const isExcelFile = (f: File) =>
+    EXCEL_TYPES.includes(f.type) || /\.(xlsx|xls)$/i.test(f.name);
+  const isImageFile = (f: File) =>
+    IMAGE_TYPES.includes(f.type) || /\.(png|jpe?g|webp)$/i.test(f.name);
+  const isValidFile = (f: File) => isExcelFile(f) || isImageFile(f);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -155,7 +165,7 @@ export default function ImportProductsPage() {
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
     if (!isValidFile(dropped)) {
-      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx or .xls).", variant: "destructive" });
+      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx, .xls) or an image (.png, .jpg, .webp).", variant: "destructive" });
       return;
     }
     handleFileChange(dropped);
@@ -175,36 +185,112 @@ export default function ImportProductsPage() {
     XLSX.writeFile(wb, "products_sample.xlsx");
   };
 
+  const validateRow = (obj: Record<string, string>): PreviewRow => {
+    const errors: string[] = [];
+    if (!obj.name) errors.push("Name is required");
+    if (obj.sellingPrice !== "" && isNaN(Number(obj.sellingPrice))) errors.push("Selling price must be a number");
+    if (obj.buyingPrice !== "" && isNaN(Number(obj.buyingPrice))) errors.push("Buying price must be a number");
+    if (obj.quantity !== "" && isNaN(Number(obj.quantity))) errors.push("Quantity must be a number");
+    return { ...obj, _valid: errors.length === 0, _errors: errors };
+  };
+
+  const parseExcelFile = async (f: File) => {
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+    if (raw.length < 2) {
+      toast({ title: "Empty file", description: "The file has no data rows.", variant: "destructive" });
+      return [] as PreviewRow[];
+    }
+    const headers: string[] = (raw[0] as string[]).map((h) => normalizeHeader(String(h).trim()));
+    return raw.slice(1).map((row) => {
+      const obj: Record<string, string> = {};
+      headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
+      const originalQty = obj.quantity ?? "";
+      if (resetQuantity) obj.quantity = "0";
+      return validateRow({ ...obj, _originalQuantity: originalQty } as any);
+    }).filter((r) => r.name || Object.values(r).some((v) => v && v !== "true" && v !== "false"));
+  };
+
+  const fileToDataUrl = (f: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(f);
+  });
+
+  const parseImageFile = async (f: File) => {
+    setAiStatus("Reading image with AI…");
+    const dataUrl = await fileToDataUrl(f);
+    const adminToken = localStorage.getItem("authToken");
+    const attendantToken = localStorage.getItem("attendantToken");
+    const token = adminToken || attendantToken;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    let resp: Response;
+    try {
+      resp = await fetch("/api/import/parse-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ images: [dataUrl], resetQuantity }),
+        signal: controller.signal,
+        credentials: "include",
+      });
+    } catch (err: any) {
+      if (err?.name === "AbortError") throw new Error("AI request timed out after 2 minutes. Try a smaller or clearer image.");
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+    const products: any[] = Array.isArray(data?.products) ? data.products : [];
+    return products.map((p) => {
+      const obj: Record<string, string> = {
+        name: String(p.name ?? "").trim(),
+        category: String(p.category ?? "").trim(),
+        supplier: String(p.supplier ?? "").trim(),
+        buyingPrice: p.buyingPrice != null ? String(p.buyingPrice) : "",
+        sellingPrice: p.sellingPrice != null ? String(p.sellingPrice) : "",
+        wholesalePrice: p.wholesalePrice != null ? String(p.wholesalePrice) : "",
+        dealerPrice: p.dealerPrice != null ? String(p.dealerPrice) : "",
+        quantity: resetQuantity ? "0" : (p.quantity != null ? String(p.quantity) : ""),
+        sku: String(p.sku ?? "").trim(),
+        description: String(p.description ?? "").trim(),
+        lowStockThreshold: p.lowStockThreshold != null ? String(p.lowStockThreshold) : "",
+        reorderLevel: p.reorderLevel != null ? String(p.reorderLevel) : "",
+        unit: String(p.unit ?? "").trim(),
+        manufacturer: String(p.manufacturer ?? "").trim(),
+        measure: String(p.measure ?? "").trim(),
+      };
+      const originalQty = p.quantity != null ? String(p.quantity) : "";
+      return validateRow({ ...obj, _originalQuantity: originalQty } as any);
+    });
+  };
+
   const parseFile = async (f: File) => {
     setIsParsing(true);
     setRows([]);
     setResults([]);
     setIsDone(false);
+    setAiStatus("");
     try {
-      const buf = await f.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-      if (raw.length < 2) {
-        toast({ title: "Empty file", description: "The file has no data rows.", variant: "destructive" });
-        setIsParsing(false);
-        return;
-      }
-      const headers: string[] = (raw[0] as string[]).map((h) => normalizeHeader(String(h).trim()));
-      const parsed: PreviewRow[] = raw.slice(1).map((row) => {
-        const obj: Record<string, string> = {};
-        headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
-        const errors: string[] = [];
-        if (!obj.name) errors.push("Name is required");
-        if (obj.sellingPrice !== "" && isNaN(Number(obj.sellingPrice))) errors.push("Selling price must be a number");
-        if (obj.buyingPrice !== "" && isNaN(Number(obj.buyingPrice))) errors.push("Buying price must be a number");
-        if (obj.quantity !== "" && isNaN(Number(obj.quantity))) errors.push("Quantity must be a number");
-        return { ...obj, _valid: errors.length === 0, _errors: errors };
-      }).filter((r) => r.name || Object.values(r).some((v) => v && v !== "true" && v !== "false"));
+      const parsed = isImageFile(f) ? await parseImageFile(f) : await parseExcelFile(f);
       setRows(parsed);
+      if (isImageFile(f)) {
+        toast({
+          title: "Image processed",
+          description: `Extracted ${parsed.length} product${parsed.length !== 1 ? "s" : ""}. Review the preview before importing.`,
+        });
+      }
     } catch (e: any) {
       toast({ title: "Failed to read file", description: e.message, variant: "destructive" });
     }
+    setAiStatus("");
     setIsParsing(false);
   };
 
@@ -345,9 +431,10 @@ export default function ImportProductsPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                  accept=".xlsx,.xls,.png,.jpg,.jpeg,.webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                  data-testid="input-import-file"
                 />
                 <div
                   className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-5 cursor-pointer transition-colors ${
@@ -363,11 +450,16 @@ export default function ImportProductsPage() {
                 >
                   {file ? (
                     <div className="text-center">
-                      <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto mb-1" />
+                      {isImageFile(file) ? (
+                        <ImageIcon className="h-8 w-8 text-purple-600 mx-auto mb-1" />
+                      ) : (
+                        <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto mb-1" />
+                      )}
                       <p className="text-sm font-medium text-gray-700 break-all">{file.name}</p>
                       <button
                         className="mt-1 text-xs text-red-400 hover:text-red-600 flex items-center gap-1 mx-auto"
                         onClick={(e) => { e.stopPropagation(); resetPage(); }}
+                        data-testid="button-remove-file"
                       >
                         <X className="h-3 w-3" /> Remove
                       </button>
@@ -380,9 +472,46 @@ export default function ImportProductsPage() {
                   ) : (
                     <>
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500 text-center">Drag & drop or click to select<br /><span className="text-xs">.xlsx or .xls</span></p>
+                      <p className="text-sm text-gray-500 text-center">
+                        Drag & drop or click to select<br />
+                        <span className="text-xs">Excel (.xlsx, .xls) or Image (.png, .jpg, .webp)</span>
+                      </p>
                     </>
                   )}
+                </div>
+
+                <div className="rounded-md border border-purple-100 bg-purple-50 p-2.5 flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 shrink-0" />
+                  <div className="text-xs text-purple-900 leading-snug">
+                    <span className="font-medium">AI auto-format:</span> Upload a photo of a handwritten or printed list and AI will extract products into the template.
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <Label htmlFor="reset-qty" className="text-xs text-gray-700 cursor-pointer flex-1">
+                    Reset quantity to 0
+                    <span className="block text-[10px] text-gray-400 font-normal">Ignore quantity in source; import as 0.</span>
+                  </Label>
+                  <Switch
+                    id="reset-qty"
+                    checked={resetQuantity}
+                    onCheckedChange={(v) => {
+                      setResetQuantity(v);
+                      if (rows.length > 0) {
+                        setRows((prev) =>
+                          prev.map((r) => {
+                            const original = r._originalQuantity ?? r.quantity;
+                            return validateRow({
+                              ...r,
+                              _originalQuantity: original,
+                              quantity: v ? "0" : original,
+                            });
+                          }),
+                        );
+                      }
+                    }}
+                    data-testid="switch-reset-quantity"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -467,7 +596,8 @@ export default function ImportProductsPage() {
               <Card className="h-64 flex items-center justify-center">
                 <div className="text-center text-gray-500">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-purple-500" />
-                  <p className="text-sm">Reading file…</p>
+                  <p className="text-sm">{aiStatus || "Reading file…"}</p>
+                  {aiStatus && <p className="text-xs text-gray-400 mt-1">This may take 20-60 seconds for large or handwritten lists.</p>}
                 </div>
               </Card>
             )}

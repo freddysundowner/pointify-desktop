@@ -14,8 +14,8 @@ const __dirname = path.dirname(process.argv[1]);
 
 const app = express();
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use((req, res, next) => {
   const interceptMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
   if (interceptMethods.includes(req.method) && getGlobalApiMode() != "offline") {
