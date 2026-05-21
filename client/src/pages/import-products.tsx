@@ -141,7 +141,10 @@ export default function ImportProductsPage() {
     EXCEL_TYPES.includes(f.type) || /\.(xlsx|xls)$/i.test(f.name);
   const isImageFile = (f: File) =>
     (f.type || "").startsWith("image/") || /\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name);
-  const isValidFile = (f: File) => isExcelFile(f) || isImageFile(f);
+  const isPdfFile = (f: File) =>
+    f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+  const isAiFile = (f: File) => isImageFile(f) || isPdfFile(f);
+  const isValidFile = (f: File) => isExcelFile(f) || isAiFile(f);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -163,7 +166,7 @@ export default function ImportProductsPage() {
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
     if (!isValidFile(dropped)) {
-      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx, .xls) or an image (.png, .jpg, .webp).", variant: "destructive" });
+      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx, .xls), an image (.png, .jpg, .webp), or a PDF.", variant: "destructive" });
       return;
     }
     handleFileChange(dropped);
@@ -219,7 +222,7 @@ export default function ImportProductsPage() {
   });
 
   const parseImageFile = async (f: File) => {
-    setAiStatus("Reading image with AI…");
+    setAiStatus(isPdfFile(f) ? "Reading PDF with AI…" : "Reading image with AI…");
     const dataUrl = await fileToDataUrl(f);
     const adminToken = localStorage.getItem("authToken");
     const attendantToken = localStorage.getItem("attendantToken");
@@ -277,11 +280,11 @@ export default function ImportProductsPage() {
     setIsDone(false);
     setAiStatus("");
     try {
-      const parsed = isImageFile(f) ? await parseImageFile(f) : await parseExcelFile(f);
+      const parsed = isAiFile(f) ? await parseImageFile(f) : await parseExcelFile(f);
       setRows(parsed);
-      if (isImageFile(f)) {
+      if (isAiFile(f)) {
         toast({
-          title: "Image processed",
+          title: isPdfFile(f) ? "PDF processed" : "Image processed",
           description: `Extracted ${parsed.length} product${parsed.length !== 1 ? "s" : ""}. Review the preview before importing.`,
         });
       }
@@ -429,7 +432,7 @@ export default function ImportProductsPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xlsx,.xls,.png,.jpg,.jpeg,.webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/png,image/jpeg,image/webp"
+                  accept=".xlsx,.xls,.png,.jpg,.jpeg,.webp,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/png,image/jpeg,image/webp,application/pdf"
                   className="hidden"
                   onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                   data-testid="input-import-file"
@@ -448,7 +451,7 @@ export default function ImportProductsPage() {
                 >
                   {file ? (
                     <div className="text-center">
-                      {isImageFile(file) ? (
+                      {isAiFile(file) ? (
                         <ImageIcon className="h-8 w-8 text-purple-600 mx-auto mb-1" />
                       ) : (
                         <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto mb-1" />
@@ -472,7 +475,7 @@ export default function ImportProductsPage() {
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-500 text-center">
                         Drag & drop or click to select<br />
-                        <span className="text-xs">Excel (.xlsx, .xls) or Image (.png, .jpg, .webp)</span>
+                        <span className="text-xs">Excel (.xlsx, .xls), Image (.png, .jpg, .webp), or PDF</span>
                       </p>
                     </>
                   )}
@@ -481,7 +484,7 @@ export default function ImportProductsPage() {
                 <div className="rounded-md border border-purple-100 bg-purple-50 p-2.5 flex items-start gap-2">
                   <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 shrink-0" />
                   <div className="text-xs text-purple-900 leading-snug">
-                    <span className="font-medium">AI auto-format:</span> Upload a photo of a handwritten or printed list and AI will extract products into the template.
+                    <span className="font-medium">AI auto-format:</span> Upload a photo or PDF of a handwritten or printed list and AI will extract products into the template.
                   </div>
                 </div>
 

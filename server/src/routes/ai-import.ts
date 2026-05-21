@@ -79,28 +79,40 @@ export function registerAiImportRoutes(app: Express) {
 
       const content: Anthropic.Messages.ContentBlockParam[] = [];
       for (const dataUrl of images) {
-        const match = /^data:(image\/(png|jpeg|jpg|webp|gif));base64,(.+)$/.exec(
-          dataUrl,
-        );
+        const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
         if (!match) {
           return res
             .status(400)
-            .json({ error: "Image must be a base64 data URL (PNG/JPEG/WebP)." });
+            .json({ error: "File must be a base64 data URL (image or PDF)." });
         }
-        const mediaType = match[1] === "image/jpg" ? "image/jpeg" : (match[1] as
-          | "image/png"
-          | "image/jpeg"
-          | "image/webp"
-          | "image/gif");
-        const data = match[3];
-        content.push({
-          type: "image",
-          source: { type: "base64", media_type: mediaType, data },
-        });
+        let mime = match[1].toLowerCase();
+        const data = match[2];
+        if (mime === "image/jpg") mime = "image/jpeg";
+
+        if (mime === "application/pdf") {
+          content.push({
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data },
+          } as any);
+        } else if (
+          mime === "image/png" ||
+          mime === "image/jpeg" ||
+          mime === "image/webp" ||
+          mime === "image/gif"
+        ) {
+          content.push({
+            type: "image",
+            source: { type: "base64", media_type: mime as any, data },
+          });
+        } else {
+          return res.status(400).json({
+            error: `Unsupported file type: ${mime}. Use PNG, JPEG, WebP, GIF, or PDF.`,
+          });
+        }
       }
       content.push({
         type: "text",
-        text: "Extract every product row from the image(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
+        text: "Extract every product row from the attached file(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
       });
 
       const completion = await anthropic.messages.create({
