@@ -221,9 +221,75 @@ export default function ImportProductsPage() {
     reader.readAsDataURL(f);
   });
 
-  const parseImageFile = async (f: File) => {
-    setAiStatus(isPdfFile(f) ? "Reading PDF with AI…" : "Reading image with AI…");
+  const MAX_BYTES = 4_500_000;
+  const MAX_DIM = 2400;
+
+  const canvasToCompressedDataUrl = (canvas: HTMLCanvasElement): string => {
+    let quality = 0.9;
+    let dataUrl = canvas.toDataURL("image/jpeg", quality);
+    while (dataUrl.length * 0.75 > MAX_BYTES && quality > 0.4) {
+      quality -= 0.1;
+      dataUrl = canvas.toDataURL("image/jpeg", quality);
+    }
+    return dataUrl;
+  };
+
+  const compressImageFile = async (f: File): Promise<string> => {
     const dataUrl = await fileToDataUrl(f);
+    if (dataUrl.length * 0.75 <= MAX_BYTES && /image\/(png|jpeg|webp|gif)/.test(f.type || "")) {
+      return dataUrl;
+    }
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Could not load image"));
+      img.src = dataUrl;
+    });
+    const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvasToCompressedDataUrl(canvas);
+  };
+
+  const pdfToImageDataUrls = async (f: File): Promise<string[]> => {
+    const pdfjs: any = await import("pdfjs-dist");
+    const workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url" as any)).default;
+    pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+    const buf = await f.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    const pages: string[] = [];
+    const total = doc.numPages;
+    for (let i = 1; i <= total; i++) {
+      setAiStatus(`Rendering PDF page ${i} of ${total}…`);
+      const page = await doc.getPage(i);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(2, MAX_DIM / Math.max(baseViewport.width, baseViewport.height));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      pages.push(canvasToCompressedDataUrl(canvas));
+    }
+    return pages;
+  };
+
+  const parseImageFile = async (f: File) => {
+    setAiStatus(isPdfFile(f) ? "Preparing PDF…" : "Preparing image…");
+    const dataUrls: string[] = isPdfFile(f)
+      ? await pdfToImageDataUrls(f)
+      : [await compressImageFile(f)];
+    setAiStatus(isPdfFile(f) ? `Reading ${dataUrls.length} page${dataUrls.length !== 1 ? "s" : ""} with AI…` : "Reading image with AI…");
     const adminToken = localStorage.getItem("authToken");
     const attendantToken = localStorage.getItem("attendantToken");
     const token = adminToken || attendantToken;
@@ -237,7 +303,7 @@ export default function ImportProductsPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ images: [dataUrl], resetQuantity }),
+        body: JSON.stringify({ images: dataUrls, resetQuantity }),
         signal: controller.signal,
         credentials: "include",
       });
