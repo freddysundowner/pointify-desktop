@@ -61,24 +61,33 @@ export function registerAiImportRoutes(app: Express) {
         });
       }
 
-      const { images, resetQuantity } = req.body as {
+      const { images, text, resetQuantity } = req.body as {
         images?: string[];
+        text?: string;
         resetQuantity?: boolean;
       };
 
-      if (!Array.isArray(images) || images.length === 0) {
-        return res.status(400).json({ error: "No images provided." });
+      const hasImages = Array.isArray(images) && images.length > 0;
+      const hasText = typeof text === "string" && text.trim().length > 0;
+      if (!hasImages && !hasText) {
+        return res.status(400).json({ error: "No images or text provided." });
       }
-      if (images.length > 10) {
+      if (hasImages && images!.length > 20) {
         return res
           .status(400)
-          .json({ error: "Too many images. Maximum 10 per request." });
+          .json({ error: "Too many images. Maximum 20 per request." });
+      }
+      if (hasText && text!.length > 200_000) {
+        return res
+          .status(400)
+          .json({ error: "Text too large. Maximum 200,000 characters." });
       }
 
       const anthropic = new Anthropic({ apiKey });
 
+      const MAX_IMG_BYTES = 5 * 1024 * 1024;
       const content: Anthropic.Messages.ContentBlockParam[] = [];
-      for (const dataUrl of images) {
+      for (const dataUrl of hasImages ? images! : []) {
         const match = /^data:([^;]+);base64,(.+)$/.exec(dataUrl);
         if (!match) {
           return res
@@ -88,6 +97,12 @@ export function registerAiImportRoutes(app: Express) {
         let mime = match[1].toLowerCase();
         const data = match[2];
         if (mime === "image/jpg") mime = "image/jpeg";
+        const decodedBytes = Math.floor((data.length * 3) / 4);
+        if (mime !== "application/pdf" && decodedBytes > MAX_IMG_BYTES) {
+          return res.status(413).json({
+            error: `An image is too large (${(decodedBytes / 1024 / 1024).toFixed(1)}MB). Anthropic's per-image limit is 5MB. Try a smaller/clearer photo.`,
+          });
+        }
 
         if (mime === "application/pdf") {
           content.push({
@@ -110,10 +125,17 @@ export function registerAiImportRoutes(app: Express) {
           });
         }
       }
-      content.push({
-        type: "text",
-        text: "Extract every product row from the attached file(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
-      });
+      if (hasText) {
+        content.push({
+          type: "text",
+          text: `The following is the raw content of a messy spreadsheet (tab-separated, one row per line). Restructure it into the product JSON shape described in the system prompt. Ignore blank rows, header banners, totals, and section titles. Map columns intelligently even if header names differ.\n\n---\n${text}\n---`,
+        });
+      } else {
+        content.push({
+          type: "text",
+          text: "Extract every product row from the attached file(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
+        });
+      }
 
       const stream = anthropic.messages.stream({
         model: "claude-sonnet-4-5",

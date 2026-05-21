@@ -234,6 +234,20 @@ export default function ImportProductsPage() {
     return dataUrl;
   };
 
+  const renderImageAtScale = (img: HTMLImageElement, maxDim: number): HTMLCanvasElement => {
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas;
+  };
+
   const compressImageFile = async (f: File): Promise<string> => {
     const dataUrl = await fileToDataUrl(f);
     if (dataUrl.length * 0.75 <= MAX_BYTES && /image\/(png|jpeg|webp|gif)/.test(f.type || "")) {
@@ -245,17 +259,14 @@ export default function ImportProductsPage() {
       img.onerror = () => reject(new Error("Could not load image"));
       img.src = dataUrl;
     });
-    const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    return canvasToCompressedDataUrl(canvas);
+    let dim = MAX_DIM;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const canvas = renderImageAtScale(img, dim);
+      const out = canvasToCompressedDataUrl(canvas);
+      if (out.length * 0.75 <= MAX_BYTES) return out;
+      dim = Math.round(dim * 0.75);
+    }
+    throw new Error("Could not compress image under 5MB. Please use a smaller or clearer photo.");
   };
 
   const pdfToImageDataUrls = async (f: File): Promise<string[]> => {
@@ -270,26 +281,29 @@ export default function ImportProductsPage() {
       setAiStatus(`Rendering PDF page ${i} of ${total}…`);
       const page = await doc.getPage(i);
       const baseViewport = page.getViewport({ scale: 1 });
-      const scale = Math.min(2, MAX_DIM / Math.max(baseViewport.width, baseViewport.height));
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      pages.push(canvasToCompressedDataUrl(canvas));
+      let targetDim = MAX_DIM;
+      let out = "";
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const scale = Math.min(2, targetDim / Math.max(baseViewport.width, baseViewport.height));
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        out = canvasToCompressedDataUrl(canvas);
+        if (out.length * 0.75 <= MAX_BYTES) break;
+        targetDim = Math.round(targetDim * 0.75);
+      }
+      if (!out) throw new Error(`Could not compress PDF page ${i} under 5MB.`);
+      pages.push(out);
     }
     return pages;
   };
 
-  const parseImageFile = async (f: File) => {
-    setAiStatus(isPdfFile(f) ? "Preparing PDF…" : "Preparing image…");
-    const dataUrls: string[] = isPdfFile(f)
-      ? await pdfToImageDataUrls(f)
-      : [await compressImageFile(f)];
-    setAiStatus(isPdfFile(f) ? `Reading ${dataUrls.length} page${dataUrls.length !== 1 ? "s" : ""} with AI…` : "Reading image with AI…");
+  const callAiParse = async (payload: { images?: string[]; text?: string }) => {
     const adminToken = localStorage.getItem("authToken");
     const attendantToken = localStorage.getItem("attendantToken");
     const token = adminToken || attendantToken;
@@ -303,12 +317,12 @@ export default function ImportProductsPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ images: dataUrls, resetQuantity }),
+        body: JSON.stringify({ ...payload, resetQuantity }),
         signal: controller.signal,
         credentials: "include",
       });
     } catch (err: any) {
-      if (err?.name === "AbortError") throw new Error("AI request timed out after 5 minutes. Try a smaller PDF or fewer pages.");
+      if (err?.name === "AbortError") throw new Error("AI request timed out after 5 minutes. Try a smaller file.");
       throw err;
     } finally {
       clearTimeout(timeoutId);
@@ -337,6 +351,43 @@ export default function ImportProductsPage() {
       const originalQty = p.quantity != null ? String(p.quantity) : "";
       return validateRow({ ...obj, _originalQuantity: originalQty } as any);
     });
+  };
+
+  const reformatExcelWithAi = async () => {
+    if (!file) return;
+    setIsParsing(true);
+    setAiStatus("Reading spreadsheet with AI…");
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      let text = "";
+      for (const name of wb.SheetNames) {
+        const tsv = XLSX.utils.sheet_to_csv(wb.Sheets[name], { FS: "\t" });
+        text += `# Sheet: ${name}\n${tsv}\n\n`;
+      }
+      if (text.length > 180_000) text = text.slice(0, 180_000);
+      const parsed = await callAiParse({ text });
+      setRows(parsed);
+      setResults([]);
+      setIsDone(false);
+      toast({
+        title: "Spreadsheet reformatted",
+        description: `Extracted ${parsed.length} product${parsed.length !== 1 ? "s" : ""}. Review before importing.`,
+      });
+    } catch (e: any) {
+      toast({ title: "AI reformat failed", description: e.message, variant: "destructive" });
+    }
+    setAiStatus("");
+    setIsParsing(false);
+  };
+
+  const parseImageFile = async (f: File) => {
+    setAiStatus(isPdfFile(f) ? "Preparing PDF…" : "Preparing image…");
+    const dataUrls: string[] = isPdfFile(f)
+      ? await pdfToImageDataUrls(f)
+      : [await compressImageFile(f)];
+    setAiStatus(isPdfFile(f) ? `Reading ${dataUrls.length} page${dataUrls.length !== 1 ? "s" : ""} with AI…` : "Reading image with AI…");
+    return await callAiParse({ images: dataUrls });
   };
 
   const parseFile = async (f: File) => {
@@ -580,6 +631,25 @@ export default function ImportProductsPage() {
                     data-testid="switch-reset-quantity"
                   />
                 </div>
+
+                {file && !isAiFile(file) && rows.length > 0 && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                      onClick={reformatExcelWithAi}
+                      disabled={isParsing}
+                      data-testid="button-reformat-excel-ai"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {isParsing ? "Reformatting…" : "Auto-format with AI"}
+                    </Button>
+                    <p className="text-[10px] text-gray-400 mt-1.5 leading-snug">
+                      Use this if columns aren't mapping correctly or the layout is messy. AI will reshape the spreadsheet.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
