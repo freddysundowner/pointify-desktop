@@ -137,12 +137,10 @@ export default function ImportProductsPage() {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
   ];
-  const IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-
   const isExcelFile = (f: File) =>
     EXCEL_TYPES.includes(f.type) || /\.(xlsx|xls)$/i.test(f.name);
   const isImageFile = (f: File) =>
-    IMAGE_TYPES.includes(f.type) || /\.(png|jpe?g|webp)$/i.test(f.name);
+    (f.type || "").startsWith("image/") || /\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name);
   const isValidFile = (f: File) => isExcelFile(f) || isImageFile(f);
 
   const handleDragOver = (e: React.DragEvent) => {
