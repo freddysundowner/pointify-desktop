@@ -300,151 +300,62 @@ function ReturnsList() {
                 <Filter className="h-3.5 w-3.5" />
                 <span className="text-sm font-medium">Filters</span>
               </div>
-              
-              <div className="space-y-3">
-
-                {/* Attendant Filter */}
-                <div>
-                  <Label className="text-xs font-medium mb-1 block">Attendant</Label>
-                  <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Select attendant..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Attendants</SelectItem>
-                      {uniqueAttendants.map((attendant: any) => (
-                        <SelectItem key={attendant._id} value={attendant._id}>
-                          {attendant.username}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {attendantFilter !== 'all' && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Filtering by: {uniqueAttendants.find((a: any) => a._id === attendantFilter)?.username}
-                    </p>
-                  )}
-                </div>
-
-                {/* Date Range */}
-                <div>
-                  <Label className="text-xs font-medium mb-1 block">Date Range</Label>
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Date Inputs */}
-                    <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                      <div className="flex-1">
-                        <Label htmlFor="start-date" className="text-xs text-muted-foreground mb-1 block">
-                          From Date
-                        </Label>
-                        <Input
-                          id="start-date"
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Label htmlFor="end-date" className="text-xs text-muted-foreground mb-1 block">
-                          To Date
-                        </Label>
-                        <Input
-                          id="end-date"
-                          type="date"
-                          value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
-                          className="h-9"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Quick Date Filters */}
-                    <div className="flex flex-wrap gap-2 lg:w-auto">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(7)}
-                        className="h-9"
-                      >
-                        Last 7 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(30)}
-                        className="h-9"
-                      >
-                        Last 30 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDateRange(90)}
-                        className="h-9"
-                      >
-                        Last 90 Days
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={clearDateFilters}
-                        disabled={!startDate && !endDate}
-                        className="flex items-center gap-1 h-9"
-                      >
-                        <Calendar className="h-3 w-3" />
-                        Clear Dates
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {(startDate || endDate) && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Showing {transformedReturns.length} results from {startDate || "beginning"} to {endDate || "now"}
-                    </p>
-                  )}
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
+                  <SelectTrigger className="h-8 text-xs w-44"><SelectValue placeholder="All Attendants" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Attendants</SelectItem>
+                    {uniqueAttendants.map((attendant: any) => (
+                      <SelectItem key={attendant._id} value={attendant._id}>{attendant.username}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-8 text-xs w-32 cursor-pointer"
+                  aria-label="From date"
+                />
+                <span className="text-xs text-muted-foreground">→</span>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-8 text-xs w-32 cursor-pointer"
+                  aria-label="To date"
+                />
+                {(startDate || endDate) && (
+                  <Button variant="ghost" size="sm" onClick={clearDateFilters} className="h-8 px-2 text-xs text-muted-foreground">Clear dates</Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
           {/* Summary Stats */}
-          <div className="space-y-4 mb-4">
-            {/* Date Range Header */}
+          <div className="space-y-2 mb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">Summary Stats</h2>
-              <span className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                {!startDate && !endDate ? 
-                  `Today (${new Date().toLocaleDateString()})` : 
-                  startDate === endDate ? 
-                    `${new Date(startDate).toLocaleDateString()}` :
-                    `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
-                }
+              <h2 className="text-sm sm:text-base font-semibold">Summary</h2>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-1.5 py-0.5 rounded">
+                {!startDate && !endDate
+                  ? `Today (${new Date().toLocaleDateString()})`
+                  : startDate === endDate
+                    ? `${new Date(startDate).toLocaleDateString()}`
+                    : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}
               </span>
             </div>
-            
-            {/* Summary Metrics - Only Total Returns and Returns Count */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Returns</p>
-                    <p className="text-2xl font-bold">{primaryShopCurrency} {totalReturnsAmount.toFixed(2)}</p>
-                  </div>
-                  <DollarSign className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </Card>
-
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Returns Count</p>
-                    <p className="text-2xl font-bold">{totalCount}</p>
-                  </div>
-                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </Card>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total Returns</span>
+                <span className="text-xs font-bold">{primaryShopCurrency} {totalReturnsAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+                <span className="text-[10px] font-medium text-muted-foreground">Count</span>
+                <span className="text-xs font-bold">{totalCount}</span>
+              </div>
             </div>
-
           </div>
 
           {/* Returns History Table */}
