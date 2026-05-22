@@ -1229,9 +1229,27 @@ function SalesList() {
                     <SelectItem value="bank">Bank</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-xs w-32" aria-label="From date" />
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  onClick={(e) => { try { (e.currentTarget as any).showPicker?.(); } catch {} }}
+                  onFocus={(e) => { try { (e.currentTarget as any).showPicker?.(); } catch {} }}
+                  className="h-8 text-xs w-32 cursor-pointer"
+                  aria-label="From date"
+                />
                 <span className="text-xs text-muted-foreground">→</span>
-                <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 text-xs w-32" aria-label="To date" />
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  onClick={(e) => { try { (e.currentTarget as any).showPicker?.(); } catch {} }}
+                  onFocus={(e) => { try { (e.currentTarget as any).showPicker?.(); } catch {} }}
+                  className="h-8 text-xs w-32 cursor-pointer"
+                  aria-label="To date"
+                />
                 {(startDate || endDate) && (
                   <Button variant="ghost" size="sm" onClick={clearDateFilters} className="h-8 px-2 text-xs text-muted-foreground">Clear dates</Button>
                 )}
