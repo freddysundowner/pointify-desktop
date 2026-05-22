@@ -437,8 +437,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       {/* ── Main Content + Desktop Header (column layout) ───────────────────── */}
       <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
 
-        {/* Desktop Header — sticky inside the column, so PageHeader flows right below it */}
-        {!isAttendantRoute && (
+        {/* Desktop Header — only shown on dashboard, so non-dashboard pages don't get two headers */}
+        {!isAttendantRoute && (location === "/" || location === "/dashboard") && (
           <div className="hidden lg:block sticky top-0 z-20 bg-white shadow-sm border-b">
             <div className="flex items-center justify-between px-4 h-16">
               <div className="flex items-center gap-3">
