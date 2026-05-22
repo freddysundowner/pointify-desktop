@@ -345,10 +345,15 @@ export default function PurchasesList() {
       orderDate: purchase.createdAt || new Date().toISOString(),
       expectedDate: purchase.expectedDate,
       receivedDate: purchase.receivedDate,
-      status:
-        purchase.amountPaid >= purchase.totalAmount && purchase.totalAmount > 0
-          ? "paid"
-          : "unpaid",
+      status: (() => {
+        const total = Number(purchase.totalAmount || 0);
+        const paid = Number(purchase.amountPaid || 0);
+        if (total > 0 && paid >= total) return "paid";
+        if (paid > 0 && paid < total) return "partial";
+        // Cash purchases are paid by default even when the API doesn't echo amountPaid
+        if ((purchase.paymentType || "").toLowerCase() === "cash") return "paid";
+        return "unpaid";
+      })(),
       invoiceNumber: purchase.purchaseNo || purchase._id,
       currency: purchase.shopId?.currency || "KES",
     }));
