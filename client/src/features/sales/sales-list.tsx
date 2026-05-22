@@ -1232,11 +1232,6 @@ function SalesList() {
                 <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-xs w-32" aria-label="From date" />
                 <span className="text-xs text-muted-foreground">→</span>
                 <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 text-xs w-32" aria-label="To date" />
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(7)} className="h-8 px-2 text-xs">7d</Button>
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(30)} className="h-8 px-2 text-xs">30d</Button>
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(90)} className="h-8 px-2 text-xs">90d</Button>
-                </div>
                 {(startDate || endDate) && (
                   <Button variant="ghost" size="sm" onClick={clearDateFilters} className="h-8 px-2 text-xs text-muted-foreground">Clear dates</Button>
                 )}
