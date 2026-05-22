@@ -1350,54 +1350,42 @@ function SalesList() {
             </div>
 
             {/* Summary Stats - Permission Controlled */}
-            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (
-              <div className="space-y-2">
-                {/* Total + Count — always shown as 2 grid cards */}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Card className="p-2">
-                    <p className="text-[10px] font-medium text-muted-foreground leading-tight">Total</p>
-                    <p className="text-xs font-bold mt-0.5 leading-tight">
-                      {primaryShopCurrency} {Number(salesReportData?.totalSales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </Card>
-                  <Card className="p-2">
-                    <p className="text-[10px] font-medium text-muted-foreground leading-tight">Count</p>
-                    <p className="text-xs font-bold mt-0.5 leading-tight">{filteredSalesCount}</p>
-                  </Card>
-                </div>
-
-                {/* Payment breakdown — only show methods with activity */}
-                {(() => {
-                  const allMethods = [
-                    { label: "Cash", value: Number(salesReportData?.cashtransactions || 0) },
-                    { label: "M-Pesa", value: Number(salesReportData?.mpesa || 0) },
-                    { label: "Credit", value: Number(salesReportData?.credit || 0) },
-                    { label: "Wallet", value: Number(salesReportData?.wallet || 0) },
-                    { label: "Hold", value: Number(salesReportData?.hold || 0) },
-                    { label: "Bank", value: Number(salesReportData?.bank || 0) },
-                  ];
-                  const active = allMethods.filter((m) => m.value > 0);
-                  const shown = active.length > 0 ? active : allMethods.slice(0, 2);
-                  return (
-                    <div className="flex flex-wrap gap-1.5">
-                      {shown.map(({ label, value }) => (
-                        <div key={label} className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
-                          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
-                          <span className="text-xs font-bold">
-                            {primaryShopCurrency} {value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      ))}
-                      {active.length > 0 && active.length < allMethods.length && (
-                        <span className="text-[10px] text-muted-foreground self-center">
-                          ({allMethods.length - active.length} other method{allMethods.length - active.length !== 1 ? "s" : ""} at 0)
-                        </span>
-                      )}
+            {(isAdmin || hasAttendantPermission("sales", "view_summary")) && (() => {
+                const total = Number(salesReportData?.totalSales || 0);
+                const allMethods = [
+                  { label: "Cash", value: Number(salesReportData?.cashtransactions || 0) },
+                  { label: "M-Pesa", value: Number(salesReportData?.mpesa || 0) },
+                  { label: "Credit", value: Number(salesReportData?.credit || 0) },
+                  { label: "Wallet", value: Number(salesReportData?.wallet || 0) },
+                  { label: "Hold", value: Number(salesReportData?.hold || 0) },
+                  { label: "Bank", value: Number(salesReportData?.bank || 0) },
+                ];
+                const active = allMethods.filter((m) => m.value > 0);
+                const hiddenCount = allMethods.length - active.length;
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Total</span>
+                      <span className="text-xs font-bold">
+                        {primaryShopCurrency} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
                     </div>
-                  );
-                })()}
-              </div>
-            )}
+                    {active.map(({ label, value }) => (
+                      <div key={label} className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+                        <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
+                        <span className="text-xs font-bold">
+                          {primaryShopCurrency} {value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                    {active.length > 0 && hiddenCount > 0 && (
+                      <span className="text-[10px] text-muted-foreground self-center">
+                        ({hiddenCount} other method{hiddenCount !== 1 ? "s" : ""} at 0)
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
           </div>
 
           {/* Sales History */}
