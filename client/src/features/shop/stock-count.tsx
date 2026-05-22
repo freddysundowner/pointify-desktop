@@ -50,39 +50,27 @@ export default function StockCount() {
   const backRoute = attendant ? '/attendant/dashboard' : '/stock';
 
   const { data: productsResponse, isLoading, error } = useQuery({
-    queryKey: ["/api/product", "stock-count", adminId, shopId, currentPage, itemsPerPage, searchQuery, selectedStatus, selectedDate],
+    queryKey: ["/api/v2/products/list", "stock-count", adminId, shopId, currentPage, itemsPerPage, searchQuery, selectedStatus, selectedDate],
     enabled: !!adminId && !!shopId && (selectedStatus !== 'counteddate' || (selectedStatus === 'counteddate' && selectedDate !== '')),
     queryFn: async () => {
       if (!adminId || !shopId) return { data: [], count: 0, totalPages: 0 };
-      
-      try {
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          reason: "",
-          date: selectedDate || "",
-          limit: itemsPerPage.toString(),
-          name: searchQuery,
-          shopid: shopId,
-          type: "all",
-          sort: "",
-          productid: "",
-          barcodeid: "",
-          productType: "",
-          useWarehouse: "true",
-          warehouse: "false",
-          adminid: adminId
-        });
 
-        // Use appropriate token based on user type
-        const token = attendant 
+      try {
+        const token = attendant
           ? localStorage.getItem('attendantToken')
           : localStorage.getItem('authToken');
 
-        const response = await fetch(`/api/product?${params.toString()}`, {
+        const response = await fetch(`/api/v2/products/list`, {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            name: searchQuery || "",
+            page: currentPage,
+            limit: itemsPerPage,
+          })
         });
 
         if (!response.ok) {
@@ -90,12 +78,13 @@ export default function StockCount() {
         }
 
         const data = await response.json();
-        const products = Array.isArray(data) ? data : (data?.data || []);
-        
+        const products = Array.isArray(data) ? data : (data?.data || data?.products || []);
+        const total = data?.total ?? data?.count ?? data?.totalCount ?? products.length;
+
         return {
           data: products,
-          count: data?.total || products.length,
-          totalPages: Math.ceil((data?.total || products.length) / itemsPerPage)
+          count: total,
+          totalPages: data?.totalPages || Math.ceil(total / itemsPerPage)
         };
       } catch (error) {
         console.error("Failed to fetch products:", error);
