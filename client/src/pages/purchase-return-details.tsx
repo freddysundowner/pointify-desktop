@@ -2,18 +2,13 @@ import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package, Calendar, User, Receipt, DollarSign } from "lucide-react";
+import { ArrowLeft, Package } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { useNavigationRoute } from "@/lib/navigation-utils";
 
 interface PurchaseReturnItem {
-  product: {
-    _id: string;
-    name: string;
-  };
+  product: { _id: string; name: string };
   quantity: number;
   unitPrice: number;
   totalPrice?: number;
@@ -24,15 +19,8 @@ interface PurchaseReturnDetails {
   purchaseId: string;
   paymentType?: string;
   supplierId?: any;
-  attendantId: {
-    _id: string;
-    username: string;
-  };
-  shopId: {
-    _id: string;
-    name: string;
-    currency: string;
-  };
+  attendantId: { _id: string; username: string };
+  shopId: { _id: string; name: string; currency: string };
   items: PurchaseReturnItem[];
   refundAmount?: number;
   totalAmount?: number;
@@ -47,18 +35,14 @@ export default function PurchaseReturnDetails() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [returnData, setReturnData] = useState<PurchaseReturnDetails | null>(null);
-  // Determine the correct back route based on current path
   const currentPath = window.location.pathname;
-  const isAttendantRoute = currentPath.startsWith('/attendant/');
-  // For attendants, go to dashboard instead of returns page
-  const purchaseReturnsRoute = isAttendantRoute ? '/attendant/dashboard' : '/purchase-returns';
+  const isAttendantRoute = currentPath.startsWith("/attendant/");
+  const purchaseReturnsRoute = isAttendantRoute ? "/attendant/dashboard" : "/purchase-returns";
 
   useEffect(() => {
-    // Check if data was passed via window object
     const passedData = (window as any).__returnData;
     if (passedData) {
       setReturnData(passedData);
-      // Clean up the data after use
       delete (window as any).__returnData;
     }
   }, [id]);
@@ -66,23 +50,19 @@ export default function PurchaseReturnDetails() {
   if (!returnData) {
     return (
       <DashboardLayout title="Return Details">
-        <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setLocation(purchaseReturnsRoute)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {isAttendantRoute ? 'Back to Dashboard' : 'Back to Returns'}
-            </Button>
-          </div>
+        <div className="space-y-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation(purchaseReturnsRoute)}
+            className="h-8 text-xs"
+          >
+            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+            {isAttendantRoute ? "Back to Dashboard" : "Back to Returns"}
+          </Button>
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center text-muted-foreground">
-                Return details not found. Please go back and try again.
-              </div>
+            <CardContent className="pt-4 pb-4 text-center text-sm text-muted-foreground">
+              Return details not found. Please go back and try again.
             </CardContent>
           </Card>
         </div>
@@ -90,179 +70,88 @@ export default function PurchaseReturnDetails() {
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return `${returnData.shopId.currency} ${amount?.toLocaleString() || '0'}`;
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
-  };
+  const currency = returnData.shopId?.currency || "";
+  const formatCurrency = (amount: number) =>
+    `${currency} ${Number(amount || 0).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const formatDate = (s: string) =>
+    !s ? "N/A" : `${new Date(s).toLocaleDateString()} ${new Date(s).toLocaleTimeString()}`;
 
   const totalReturnAmount = returnData.refundAmount || returnData.totalAmount || 0;
   const totalItems = returnData.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
+  const Pill = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+      <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-bold">{value}</span>
+    </div>
+  );
+
   return (
     <DashboardLayout title="Purchase Return Details">
-      <div className="space-y-6">
+      <div className="space-y-3">
         <PageHeader
           title="Return Details"
           subtitle={returnData.purchaseReturnNo || returnData._id.slice(-8)}
           onBack={() => window.history.back()}
         />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Purchase ID
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold font-mono">
-                {returnData.purchaseId?.slice(-8) || 'N/A'}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Return Amount
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold">
-                {formatCurrency(totalReturnAmount)}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Total Items
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold">
-                {totalItems}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Return Date
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm">
-                {formatDate(returnData.createdAt || returnData.returnDate || '')}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Compact summary row */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Pill label="Purchase" value={<span className="font-mono">{returnData.purchaseId?.slice(-8) || "N/A"}</span>} />
+          <Pill label="Refund" value={formatCurrency(totalReturnAmount)} />
+          <Pill label="Items" value={totalItems} />
+          <Pill label="Date" value={formatDate(returnData.createdAt || returnData.returnDate || "")} />
+          <Pill label="Attendant" value={returnData.attendantId?.username || "Unknown"} />
+          <Pill label="Shop" value={returnData.shopId?.name || "Unknown"} />
+          {returnData.paymentType && <Pill label="Payment" value={returnData.paymentType} />}
         </div>
 
-        {/* Return Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {returnData.reason && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Return Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Attendant</label>
-                <div className="text-sm mt-1">{returnData.attendantId?.username || 'Unknown'}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Shop</label>
-                <div className="text-sm mt-1">{returnData.shopId?.name || 'Unknown'}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Payment Type</label>
-                <div className="text-sm mt-1">{returnData.paymentType || 'N/A'}</div>
-              </div>
-              {returnData.reason && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Reason</label>
-                  <div className="text-sm mt-1 p-2 bg-muted rounded">
-                    {returnData.reason}
-                  </div>
-                </div>
-              )}
+            <CardContent className="py-2 px-3">
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Reason</div>
+              <div className="text-sm">{returnData.reason}</div>
             </CardContent>
           </Card>
-
-          {/* Shop Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shop Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Shop Name</label>
-                <div className="text-sm mt-1">{returnData.shopId?.name || 'Unknown'}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Currency</label>
-                <div className="text-sm mt-1">{returnData.shopId?.currency || 'N/A'}</div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Return ID</label>
-                <div className="text-sm mt-1 font-mono">{returnData._id}</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        )}
 
         {/* Returned Items */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Returned Items
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
+            <div className="flex items-center gap-2 px-3 py-2 border-b">
+              <Package className="h-4 w-4" />
+              <span className="text-sm font-semibold">Returned Items</span>
+            </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead className="h-8 text-xs">Product</TableHead>
+                    <TableHead className="h-8 text-xs text-right">Qty</TableHead>
+                    <TableHead className="h-8 text-xs text-right">Unit Price</TableHead>
+                    <TableHead className="h-8 text-xs text-right">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {returnData.items?.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {item.product?.name || 'Unknown Product'}
-                      </TableCell>
-                      <TableCell>
-                        {item.quantity}
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(item.unitPrice || 0)}
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency((item.unitPrice || 0) * item.quantity)}
-                      </TableCell>
-                    </TableRow>
-                  )) || (
+                  {returnData.items?.length ? (
+                    returnData.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="py-2 text-sm font-medium">
+                          {item.product?.name || "Unknown Product"}
+                        </TableCell>
+                        <TableCell className="py-2 text-sm text-right">{item.quantity}</TableCell>
+                        <TableCell className="py-2 text-sm text-right">{formatCurrency(item.unitPrice || 0)}</TableCell>
+                        <TableCell className="py-2 text-sm text-right font-semibold">
+                          {formatCurrency((item.unitPrice || 0) * item.quantity)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-4">
                         No items found
                       </TableCell>
                     </TableRow>
@@ -272,6 +161,8 @@ export default function PurchaseReturnDetails() {
             </div>
           </CardContent>
         </Card>
+
+        <div className="text-[10px] text-muted-foreground font-mono">Return ID: {returnData._id}</div>
       </div>
     </DashboardLayout>
   );
