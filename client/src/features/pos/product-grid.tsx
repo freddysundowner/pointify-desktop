@@ -106,6 +106,13 @@ export default function ProductGrid({
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
   const [bankTransactionId, setBankTransactionId] = useState("");
   const [creditDueDate, setCreditDueDate] = useState("");
+  useEffect(() => {
+    if (selectedPaymentMethod === "credit" && !creditDueDate) {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      setCreditDueDate(d.toISOString().split("T")[0]);
+    }
+  }, [selectedPaymentMethod, creditDueDate]);
   const [cashReceived, setCashReceived] = useState<string>("");
   const [splitAmounts, setSplitAmounts] = useState({
     cash: 0,
