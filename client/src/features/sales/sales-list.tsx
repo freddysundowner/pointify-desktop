@@ -1195,72 +1195,51 @@ function SalesList() {
                   Clear All
                 </Button>
               </div>
-              <div className="space-y-3">
-                {/* Search */}
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search by receipt number..."
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-9 h-8 text-sm"
-                    />
-                  </div>
-                  {searchQuery && (
-                    <Button variant="outline" size="sm" onClick={() => handleSearchChange("")} className="h-8 px-2 text-xs">
-                      Clear
-                    </Button>
-                  )}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by receipt number..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-9 h-8 text-sm"
+                  />
                 </div>
-                {/* Attendant + Status */}
-                <div className="flex flex-wrap gap-2">
-                  {userType === "admin" && (
-                    <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
-                      <SelectTrigger className="h-8 text-xs w-44">
-                        <SelectValue placeholder="All Attendants" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Attendants</SelectItem>
-                        {uniqueAttendants.map((a: any) => (
-                          <SelectItem key={a._id} value={a._id}>{a.username}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                    <SelectTrigger className="h-8 text-xs w-44">
-                      <SelectValue placeholder="All Transactions" />
-                    </SelectTrigger>
+                {userType === "admin" && (
+                  <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
+                    <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All Attendants" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Transactions</SelectItem>
-                      <SelectItem value="hold">Hold</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="mpesa">M-Pesa</SelectItem>
-                      <SelectItem value="credit">Credit</SelectItem>
-                      <SelectItem value="wallet">Wallet</SelectItem>
-                      <SelectItem value="bank">Bank</SelectItem>
+                      <SelectItem value="all">All Attendants</SelectItem>
+                      {uniqueAttendants.map((a: any) => (
+                        <SelectItem key={a._id} value={a._id}>{a.username}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                )}
+                <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                  <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All Transactions" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Transactions</SelectItem>
+                    <SelectItem value="hold">Hold</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="mpesa">M-Pesa</SelectItem>
+                    <SelectItem value="credit">Credit</SelectItem>
+                    <SelectItem value="wallet">Wallet</SelectItem>
+                    <SelectItem value="bank">Bank</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-xs w-32" aria-label="From date" />
+                <span className="text-xs text-muted-foreground">→</span>
+                <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 text-xs w-32" aria-label="To date" />
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(7)} className="h-8 px-2 text-xs">7d</Button>
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(30)} className="h-8 px-2 text-xs">30d</Button>
+                  <Button variant="outline" size="sm" onClick={() => setDateRange(90)} className="h-8 px-2 text-xs">90d</Button>
                 </div>
-                {/* Date Range */}
-                <div className="flex flex-wrap gap-2 items-end">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">From</Label>
-                    <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-xs w-36" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">To</Label>
-                    <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-8 text-xs w-36" />
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(7)} className="h-8 text-xs">7d</Button>
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(30)} className="h-8 text-xs">30d</Button>
-                  <Button variant="outline" size="sm" onClick={() => setDateRange(90)} className="h-8 text-xs">90d</Button>
-                  {(startDate || endDate) && (
-                    <Button variant="outline" size="sm" onClick={clearDateFilters} className="h-8 text-xs">Clear dates</Button>
-                  )}
-                </div>
+                {(startDate || endDate) && (
+                  <Button variant="ghost" size="sm" onClick={clearDateFilters} className="h-8 px-2 text-xs text-muted-foreground">Clear dates</Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1392,41 +1371,36 @@ function SalesList() {
                   </Card>
                 </div>
 
-                {/* Payment breakdown — scrolling chips on mobile, 3-col grid on desktop */}
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide sm:hidden pb-0.5">
-                  {[
-                    { label: "Cash", value: salesReportData?.cashtransactions },
-                    { label: "M-Pesa", value: salesReportData?.mpesa },
-                    { label: "Credit", value: salesReportData?.credit },
-                    { label: "Wallet", value: salesReportData?.wallet },
-                    { label: "Hold", value: salesReportData?.hold },
-                    { label: "Bank", value: salesReportData?.bank },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex-shrink-0 bg-card border rounded-full px-3 py-1.5 shadow-sm">
-                      <p className="text-[9px] font-medium text-muted-foreground leading-tight whitespace-nowrap">{label}</p>
-                      <p className="text-xs font-bold leading-tight whitespace-nowrap">
-                        {primaryShopCurrency} {Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+                {/* Payment breakdown — only show methods with activity */}
+                {(() => {
+                  const allMethods = [
+                    { label: "Cash", value: Number(salesReportData?.cashtransactions || 0) },
+                    { label: "M-Pesa", value: Number(salesReportData?.mpesa || 0) },
+                    { label: "Credit", value: Number(salesReportData?.credit || 0) },
+                    { label: "Wallet", value: Number(salesReportData?.wallet || 0) },
+                    { label: "Hold", value: Number(salesReportData?.hold || 0) },
+                    { label: "Bank", value: Number(salesReportData?.bank || 0) },
+                  ];
+                  const active = allMethods.filter((m) => m.value > 0);
+                  const shown = active.length > 0 ? active : allMethods.slice(0, 2);
+                  return (
+                    <div className="flex flex-wrap gap-1.5">
+                      {shown.map(({ label, value }) => (
+                        <div key={label} className="flex items-baseline gap-1.5 bg-card border rounded-md px-2.5 py-1">
+                          <span className="text-[10px] font-medium text-muted-foreground">{label}</span>
+                          <span className="text-xs font-bold">
+                            {primaryShopCurrency} {value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      ))}
+                      {active.length > 0 && active.length < allMethods.length && (
+                        <span className="text-[10px] text-muted-foreground self-center">
+                          ({allMethods.length - active.length} other method{allMethods.length - active.length !== 1 ? "s" : ""} at 0)
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
-                <div className="hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
-                  {[
-                    { label: "Cash", value: salesReportData?.cashtransactions },
-                    { label: "M-Pesa", value: salesReportData?.mpesa },
-                    { label: "Credit", value: salesReportData?.credit },
-                    { label: "Wallet", value: salesReportData?.wallet },
-                    { label: "Hold", value: salesReportData?.hold },
-                    { label: "Bank", value: salesReportData?.bank },
-                  ].map(({ label, value }) => (
-                    <Card key={label} className="p-2">
-                      <p className="text-[10px] font-medium text-muted-foreground leading-tight">{label}</p>
-                      <p className="text-xs font-bold mt-0.5 leading-tight">
-                        {primaryShopCurrency} {Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </Card>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
             )}
           </div>
