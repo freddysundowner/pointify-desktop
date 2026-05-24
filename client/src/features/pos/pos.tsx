@@ -36,7 +36,7 @@ export default function POS() {
   const canSetSaleDate = attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("set_sale_date")) ?? false;
   const canSell = attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("can_sell")) ?? false;
   const canSellToDealer = admin ? true : (attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("can_sell_to_dealer_&_wholesaler")) ?? false);
-  const canDiscount = attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("discount")) ?? false;
+  const canDiscount = admin ? true : (attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("discount")) ?? false);
   const canEditPrice = admin ? true : (attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("edit_price")) ?? false);
 
   const {
