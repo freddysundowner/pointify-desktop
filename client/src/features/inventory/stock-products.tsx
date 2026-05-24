@@ -273,7 +273,7 @@ export default function StockProducts() {
         date: "",
         limit: itemsPerPage.toString(),
         name: searchQuery,
-        shopid: effectiveShopId || "",
+        shop: effectiveShopId || "",
         type: typeParam,
         stockMode: stockModeParam,
         sort: sortBy,
