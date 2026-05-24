@@ -60,17 +60,20 @@ export default function StockCount() {
           ? localStorage.getItem('attendantToken')
           : localStorage.getItem('authToken');
 
-        const response = await fetch(`/api/v2/products/list`, {
-          method: 'POST',
+        const params = new URLSearchParams({
+          name: searchQuery || "",
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+          shop: shopId,
+          shopid: shopId,
+        });
+
+        const response = await fetch(`/api/v2/products/list?${params.toString()}`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            name: searchQuery || "",
-            page: currentPage,
-            limit: itemsPerPage,
-          })
         });
 
         if (!response.ok) {

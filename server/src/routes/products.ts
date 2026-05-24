@@ -14,22 +14,20 @@ export function registerProductRoutes(app: Express) {
   // PRODUCT MANAGEMENT ROUTES
   // =============================================================================
 
-  // V2 products list — POST proxy that forwards { name, page, limit, ... } as JSON
-  app.post("/api/v2/products/list", async (req, res) => {
+  // V2 products list — GET proxy that forwards query params (name, page, limit, shop, ...)
+  app.get("/api/v2/products/list", async (req, res) => {
     try {
       const token = extractToken(req);
       if (!token) {
         return res.status(401).json({ error: "Authorization token required" });
       }
 
-      const data = await makePointifyRequest("/v2/products/list", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(req.body || {}),
-      } as any);
+      const queryParams = new URLSearchParams(req.query as any);
+      const endpoint = `/v2/products/list?${queryParams.toString()}`;
+
+      const data = await makePointifyRequest(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       res.json(data);
     } catch (error) {
       const status = (error as any).status || 500;
