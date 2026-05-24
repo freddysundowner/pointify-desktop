@@ -96,8 +96,8 @@ export default function StockProducts() {
   const [productType, setProductType] = useState("all");
   const [sortBy, setSortBy] = useState("name");
   const [stockFilter, setStockFilter] = useState<
-    "all" | "outofstock" | "lowstock"
-  >("all");
+    "all" | "instock" | "outofstock" | "lowstock"
+  >("instock");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const { currency, shop } = useShop();
   const { admin } = useAuth();
@@ -133,8 +133,8 @@ export default function StockProducts() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const filterParam = urlParams.get('filter');
-    if (filterParam === 'lowstock' || filterParam === 'outofstock') {
-      setStockFilter(filterParam);
+    if (filterParam === 'lowstock' || filterParam === 'outofstock' || filterParam === 'instock' || filterParam === 'all') {
+      setStockFilter(filterParam as any);
     }
   }, [location]);
 
@@ -265,6 +265,8 @@ export default function StockProducts() {
         typeParam = "outofstock";
       } else if (stockFilter === "lowstock") {
         typeParam = "runninglow";
+      } else if (stockFilter === "instock") {
+        typeParam = "instock";
       }
 
       const params = new URLSearchParams({
@@ -690,14 +692,15 @@ export default function StockProducts() {
                   className="pl-9 h-8 text-sm"
                 />
               </div>
-              <Select value={stockFilter} onValueChange={(value: "all" | "outofstock" | "lowstock") => setStockFilter(value)}>
+              <Select value={stockFilter} onValueChange={(value: "all" | "instock" | "outofstock" | "lowstock") => setStockFilter(value)}>
                 <SelectTrigger className="w-44 h-8 text-sm">
                   <SelectValue placeholder="Stock status" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="instock">In Stock</SelectItem>
                   <SelectItem value="all">All Products</SelectItem>
-                  <SelectItem value="outofstock">Out of Stock</SelectItem>
                   <SelectItem value="lowstock">Running Low</SelectItem>
+                  <SelectItem value="outofstock">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
               {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
@@ -1090,9 +1093,10 @@ export default function StockProducts() {
           </SheetHeader>
           <div className="py-2">
             {([
+              { value: "instock", label: "In Stock", icon: Package, color: "text-green-600" },
               { value: "all", label: "All Products", icon: Package, color: "text-gray-600" },
-              { value: "outofstock", label: "Out of Stock", icon: AlertTriangle, color: "text-red-600" },
               { value: "lowstock", label: "Running Low", icon: AlertTriangle, color: "text-orange-600" },
+              { value: "outofstock", label: "Out of Stock", icon: AlertTriangle, color: "text-red-600" },
             ] as const).map((opt) => (
               <button
                 key={opt.value}
