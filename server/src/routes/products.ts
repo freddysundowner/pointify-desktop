@@ -23,7 +23,7 @@ export function registerProductRoutes(app: Express) {
       }
 
       const queryParams = new URLSearchParams(req.query as any);
-      const endpoint = `/v2/products/list?${queryParams.toString()}`;
+      const endpoint = `/api/v2/products/list?${queryParams.toString()}`;
 
       const data = await makePointifyRequest(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
