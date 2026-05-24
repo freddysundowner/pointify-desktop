@@ -275,7 +275,7 @@ export default function StockProducts() {
         name: searchQuery,
         shopid: effectiveShopId || "",
         type: typeParam,
-        stockmode: stockModeParam,
+        stockMode: stockModeParam,
         sort: sortBy,
         productid: "",
         barcodeid: "",
