@@ -286,7 +286,7 @@ export default function StockProducts() {
         ...(isAttendant ? {} : { adminid: admin?._id || "" }),
       });
 
-      const url = `/api/v2/products/list?${params.toString()}`;
+      const url = `/api/product?${params.toString()}`;
       console.log("Making API call to:", url);
 
       const response = await apiCall(url, {

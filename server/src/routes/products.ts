@@ -14,37 +14,7 @@ export function registerProductRoutes(app: Express) {
   // PRODUCT MANAGEMENT ROUTES
   // =============================================================================
 
-  // V2 products list — GET proxy that forwards query params (name, page, limit, shop, ...)
-  app.get("/api/v2/products/list", async (req, res) => {
-    try {
-      const token = extractToken(req);
-      if (!token) {
-        return res.status(401).json({ error: "Authorization token required" });
-      }
-
-      const queryParams = new URLSearchParams(req.query as any);
-      const endpoint = `/v2/products/list?${queryParams.toString()}`;
-
-      const data = await makePointifyRequest(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      res.json(data);
-    } catch (error) {
-      const status = (error as any).status || 500;
-      const responseBody = (error as any).responseBody;
-      if (responseBody) {
-        try {
-          res.status(status).json(JSON.parse(responseBody));
-        } catch {
-          res.status(status).json({ error: "Failed to fetch products" });
-        }
-      } else {
-        res.status(500).json({ error: "Failed to fetch products" });
-      }
-    }
-  });
-
-  // Get products with filtering and search
+  // Get products with filtering and search (proxied to v2 products list)
   app.get("/api/product", async (req, res) => {
     try {
       const token = extractToken(req);
@@ -53,7 +23,7 @@ export function registerProductRoutes(app: Express) {
       }
 
       const queryParams = new URLSearchParams(req.query as any);
-      const endpoint = `/product?${queryParams.toString()}`;
+      const endpoint = `/v2/products/list?${queryParams.toString()}`;
 
       const data = await makePointifyRequest(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
