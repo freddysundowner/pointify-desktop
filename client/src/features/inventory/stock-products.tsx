@@ -259,15 +259,13 @@ export default function StockProducts() {
       stockFilter,
     ],
     queryFn: async ({ queryKey }) => {
-      // Determine type parameter based on stock filter
-      let typeParam = selectedCategory === "all" ? "" : selectedCategory;
-      if (stockFilter === "outofstock") {
-        typeParam = "outofstock";
-      } else if (stockFilter === "lowstock") {
-        typeParam = "runninglow";
-      } else if (stockFilter === "instock") {
-        typeParam = "instock";
-      }
+      // type param is for category; stockmode carries the stock filter
+      const typeParam = selectedCategory === "all" ? "" : selectedCategory;
+      const stockModeParam =
+        stockFilter === "outofstock" ? "outofstock"
+        : stockFilter === "lowstock" ? "runninglow"
+        : stockFilter === "instock" ? "instock"
+        : "";
 
       const params = new URLSearchParams({
         page: page.toString(),
@@ -277,6 +275,7 @@ export default function StockProducts() {
         name: searchQuery,
         shopid: effectiveShopId || "",
         type: typeParam,
+        stockmode: stockModeParam,
         sort: sortBy,
         productid: "",
         barcodeid: "",
