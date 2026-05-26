@@ -78,3 +78,9 @@ id = "FlbGaZY4jxx2RYjBoOj_4"
 uri = "file://attached_assets/products_handwritten_import_ready.xlsx"
 type = "table"
 title = "products_handwritten_import_ready.xlsx"
+
+[[outputs]]
+id = "Nwv6dUUjNh_ldH38O44pq"
+uri = "file://attached_assets/POS_Book1_formatted.xlsx"
+type = "table"
+title = "POS_Book1_formatted.xlsx (import-ready)"
