@@ -46,6 +46,8 @@ export default function DueSalesPage() {
   const { data: rawSales, isLoading, isError } = useQuery<any>({
     queryKey: [url],
     enabled: !!url,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const sales: DueSale[] = Array.isArray(rawSales) ? rawSales : (rawSales?.data ?? []);
