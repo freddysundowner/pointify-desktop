@@ -61,6 +61,8 @@ export default function Expenses() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const currency  = useCurrency();
   const [formData, setFormData] = useState({
     description: '',
@@ -173,6 +175,34 @@ export default function Expenses() {
     refetchOnMount: 'always',
     staleTime: 0,
     gcTime: 0
+  });
+
+  // Create expense category inline (from the Add Expense dialog)
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest('POST', '/api/expense-categories', {
+        name: name.trim(),
+        shopId: effectiveShopId,
+      });
+      return response.json();
+    },
+    onSuccess: (created: any) => {
+      queryClient.invalidateQueries({ queryKey: ['expense-categories'] });
+      const newId = created?._id || created?.id;
+      if (newId) {
+        setFormData((prev) => ({ ...prev, category: newId }));
+      }
+      setNewCategoryName('');
+      setIsAddingCategory(false);
+      toast({ title: 'Category added', description: created?.name || 'New category created' });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Could not add category',
+        description: err?.message || 'Try again',
+        variant: 'destructive',
+      });
+    },
   });
 
   // Create expense mutation
@@ -442,17 +472,67 @@ export default function Expenses() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category: ExpenseCategory) => (
-                          <SelectItem key={category._id} value={category._id}>{category.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label htmlFor="category">Category</Label>
+                      {!isAddingCategory && (
+                        <button
+                          type="button"
+                          className="text-xs text-purple-600 hover:text-purple-800 underline"
+                          onClick={() => setIsAddingCategory(true)}
+                          data-testid="button-add-new-category"
+                        >
+                          + New Category
+                        </button>
+                      )}
+                    </div>
+                    {isAddingCategory ? (
+                      <div className="flex gap-2">
+                        <Input
+                          autoFocus
+                          placeholder="New category name"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCategoryName.trim()) createCategoryMutation.mutate(newCategoryName);
+                            } else if (e.key === 'Escape') {
+                              setIsAddingCategory(false);
+                              setNewCategoryName('');
+                            }
+                          }}
+                          data-testid="input-new-category-name"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => createCategoryMutation.mutate(newCategoryName)}
+                          disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                          data-testid="button-save-new-category"
+                        >
+                          {createCategoryMutation.isPending ? 'Saving…' : 'Save'}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category: ExpenseCategory) => (
+                            <SelectItem key={category._id} value={category._id}>{category.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
