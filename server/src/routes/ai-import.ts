@@ -85,6 +85,72 @@ export function registerAiImportRoutes(app: Express) {
 
       const anthropic = new Anthropic({ apiKey });
 
+      // Run one Claude call and parse out the products array. Shared by the
+      // single-shot image/PDF path and the chunked text path below.
+      const runOne = async (
+        userContent: Anthropic.Messages.ContentBlockParam[],
+      ): Promise<{ products: any[]; model: string; usage: any }> => {
+        const stream = anthropic.messages.stream({
+          model: "claude-sonnet-4-5",
+          max_tokens: 64000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userContent }],
+        });
+        const completion = await stream.finalMessage();
+        if (completion.stop_reason === "max_tokens") {
+          console.warn("AI import: response hit max_tokens, JSON may be truncated.");
+        }
+        const textBlock = completion.content.find((b) => b.type === "text") as
+          | { type: "text"; text: string }
+          | undefined;
+        const raw = textBlock?.text || "";
+
+        let jsonText = raw.trim();
+        const fenced = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenced) jsonText = fenced[1].trim();
+        const firstBrace = jsonText.indexOf("{");
+        if (firstBrace >= 0) jsonText = jsonText.slice(firstBrace);
+        const lastBrace = jsonText.lastIndexOf("}");
+        if (lastBrace > 0) jsonText = jsonText.slice(0, lastBrace + 1);
+
+        const tryParse = (s: string): { products?: any[] } | null => {
+          try { return JSON.parse(s); } catch { return null; }
+        };
+
+        let parsed: { products?: any[] } | null = tryParse(jsonText);
+
+        if (!parsed) {
+          // Recovery: extract individual product objects from a possibly truncated array.
+          const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
+          const matches = jsonText.match(objRegex) || [];
+          const recovered: any[] = [];
+          for (const m of matches) {
+            const obj = tryParse(m);
+            if (obj && typeof (obj as any).name === "string") recovered.push(obj);
+          }
+          if (recovered.length > 0) {
+            console.warn(`AI import: recovered ${recovered.length} products from truncated JSON.`);
+            parsed = { products: recovered };
+          }
+        }
+
+        if (!parsed) {
+          console.error("Failed to parse Claude JSON. Length:", raw.length, "Tail:", raw.slice(-300));
+          throw Object.assign(
+            new Error(
+              "AI returned an unparseable response. Try splitting the file into fewer pages and uploading again.",
+            ),
+            { status: 502 },
+          );
+        }
+
+        return {
+          products: Array.isArray(parsed.products) ? parsed.products : [],
+          model: completion.model,
+          usage: completion.usage,
+        };
+      };
+
       const MAX_IMG_BYTES = 5 * 1024 * 1024;
       const content: Anthropic.Messages.ContentBlockParam[] = [];
       for (const dataUrl of hasImages ? images! : []) {
@@ -125,72 +191,63 @@ export function registerAiImportRoutes(app: Express) {
           });
         }
       }
+      // Split a large TSV blob into chunks small enough that each fits well
+      // under Claude's output cap (≈60k tokens of JSON ≈ ~500 product rows).
+      // We split on line boundaries so we never cut a row in half.
+      const CHUNK_CHARS = 50_000;
+      const splitTextOnLines = (s: string, max: number): string[] => {
+        if (s.length <= max) return [s];
+        const out: string[] = [];
+        let i = 0;
+        while (i < s.length) {
+          let end = Math.min(i + max, s.length);
+          if (end < s.length) {
+            const nl = s.lastIndexOf("\n", end);
+            if (nl > i + max / 2) end = nl;
+          }
+          out.push(s.slice(i, end));
+          i = end;
+        }
+        return out;
+      };
+
+      let allProducts: any[] = [];
+      let model = "claude-sonnet-4-5";
+      let usage: any = undefined;
+
       if (hasText) {
-        content.push({
-          type: "text",
-          text: `The following is the raw content of a messy spreadsheet (tab-separated, one row per line). Restructure it into the product JSON shape described in the system prompt. Ignore blank rows, header banners, totals, and section titles. Map columns intelligently even if header names differ.\n\n---\n${text}\n---`,
-        });
+        const chunks = splitTextOnLines(text!, CHUNK_CHARS);
+        for (let ci = 0; ci < chunks.length; ci++) {
+          const chunk = chunks[ci];
+          const chunkContent: Anthropic.Messages.ContentBlockParam[] = [
+            {
+              type: "text",
+              text:
+                `The following is part ${ci + 1} of ${chunks.length} of a messy spreadsheet (tab-separated, one row per line). ` +
+                `Restructure it into the product JSON shape described in the system prompt. ` +
+                `Ignore blank rows, header banners, totals, and section titles. ` +
+                `Map columns intelligently even if header names differ. ` +
+                `Common short headers: ITEM=name, QTY=quantity, B.P/BP=buyingPrice, S.P/SP=sellingPrice. ` +
+                `For quantity cells like "16pcs" or "12 pkts", put the number in "quantity" and the unit text in "unit".\n\n---\n${chunk}\n---`,
+            },
+          ];
+          const result = await runOne(chunkContent);
+          allProducts = allProducts.concat(result.products);
+          model = result.model;
+          usage = result.usage;
+        }
       } else {
         content.push({
           type: "text",
           text: "Extract every product row from the attached file(s) into the JSON shape described in the system prompt. Return ONLY the JSON object.",
         });
+        const result = await runOne(content);
+        allProducts = result.products;
+        model = result.model;
+        usage = result.usage;
       }
 
-      const stream = anthropic.messages.stream({
-        model: "claude-sonnet-4-5",
-        max_tokens: 32000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content }],
-      });
-      const completion = await stream.finalMessage();
-      if (completion.stop_reason === "max_tokens") {
-        console.warn("AI import: response hit max_tokens, JSON may be truncated.");
-      }
-
-      const textBlock = completion.content.find((b) => b.type === "text") as
-        | { type: "text"; text: string }
-        | undefined;
-      const raw = textBlock?.text || "";
-
-      let jsonText = raw.trim();
-      const fenced = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenced) jsonText = fenced[1].trim();
-      const firstBrace = jsonText.indexOf("{");
-      if (firstBrace >= 0) jsonText = jsonText.slice(firstBrace);
-      const lastBrace = jsonText.lastIndexOf("}");
-      if (lastBrace > 0) jsonText = jsonText.slice(0, lastBrace + 1);
-
-      const tryParse = (s: string): { products?: any[] } | null => {
-        try { return JSON.parse(s); } catch { return null; }
-      };
-
-      let parsed: { products?: any[] } | null = tryParse(jsonText);
-
-      if (!parsed) {
-        // Recovery: extract individual product objects from a possibly truncated array.
-        const objRegex = /\{[^{}]*"name"\s*:\s*"[^"]*"[^{}]*\}/g;
-        const matches = jsonText.match(objRegex) || [];
-        const recovered: any[] = [];
-        for (const m of matches) {
-          const obj = tryParse(m);
-          if (obj && typeof (obj as any).name === "string") recovered.push(obj);
-        }
-        if (recovered.length > 0) {
-          console.warn(`AI import: recovered ${recovered.length} products from truncated JSON.`);
-          parsed = { products: recovered };
-        }
-      }
-
-      if (!parsed) {
-        console.error("Failed to parse Claude JSON. Length:", raw.length, "Tail:", raw.slice(-300));
-        return res.status(502).json({
-          error:
-            "AI returned an unparseable response. Try splitting the PDF into fewer pages and uploading again.",
-        });
-      }
-
-      const products = Array.isArray(parsed.products) ? parsed.products : [];
+      const products = allProducts;
       const toNum = (v: any) => {
         if (typeof v === "number" && !isNaN(v)) return v;
         if (typeof v === "string") {
@@ -224,8 +281,8 @@ export function registerAiImportRoutes(app: Express) {
       res.json({
         products: cleaned,
         count: cleaned.length,
-        model: completion.model,
-        usage: completion.usage,
+        model,
+        usage,
       });
     } catch (error: any) {
       console.error("AI import error:", error);

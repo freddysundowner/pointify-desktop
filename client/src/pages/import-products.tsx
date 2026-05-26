@@ -69,11 +69,13 @@ const HEADER_ALIASES: Record<string, string> = {
   "purchase price": "buyingPrice", purchaseprice: "buyingPrice",
   "buy price": "buyingPrice", buyprice: "buyingPrice", "buying cost": "buyingPrice",
   buyingcost: "buyingPrice",
+  bp: "buyingPrice", "b p": "buyingPrice", buying: "buyingPrice",
   // sellingPrice
   sellingprice: "sellingPrice", "selling price": "sellingPrice", selling_price: "sellingPrice",
   price: "sellingPrice", "sale price": "sellingPrice", saleprice: "sellingPrice",
   "retail price": "sellingPrice", retailprice: "sellingPrice",
   "selling cost": "sellingPrice",
+  sp: "sellingPrice", "s p": "sellingPrice", selling: "sellingPrice",
   // wholesalePrice
   wholesaleprice: "wholesalePrice", "wholesale price": "wholesalePrice",
   wholesale_price: "wholesalePrice", wholesale: "wholesalePrice",
@@ -110,8 +112,42 @@ const HEADER_ALIASES: Record<string, string> = {
 };
 
 const normalizeHeader = (h: string): string => {
-  const key = h.toLowerCase().replace(/[_\-\/]+/g, " ").replace(/\s+/g, " ").trim();
+  const key = h.toLowerCase().replace(/[._\-\/]+/g, " ").replace(/\s+/g, " ").trim();
   return HEADER_ALIASES[key] || HEADER_ALIASES[key.replace(/\s/g, "")] || h;
+};
+
+// True if `h` (already normalized) is a canonical import key we recognize.
+const KNOWN_KEYS = new Set(COLUMNS.map((c) => c.key));
+const isRecognizedHeader = (h: string) => KNOWN_KEYS.has(h);
+
+// Split a free-form quantity cell like "16pcs", "12 pkts", "10pcs per piece 5"
+// into a numeric quantity and a unit label. Falls back to {qty:"", unit:""}.
+const splitQuantityCell = (raw: any): { qty: string; unit: string } => {
+  const s = String(raw ?? "").trim();
+  if (!s) return { qty: "", unit: "" };
+  const m = s.match(/^\s*([\d.,]+)\s*(.*)$/);
+  if (!m) return { qty: "", unit: s };
+  const qty = m[1].replace(/,/g, "");
+  let unit = (m[2] || "").trim();
+  // Drop trailing qualifiers like "per piece 5", "@ 100".
+  unit = unit.split(/\s*(?:per\s+\w+|@|\/=)/i)[0].trim();
+  return { qty, unit };
+};
+
+// Find a header row within the first ~5 rows of a sheet. We require at least
+// 2 recognized columns AND a "name"-like column (so we don't mistake a data
+// row for a header).
+const detectHeaderRow = (rows: any[][]): { index: number; headers: string[] } | null => {
+  const scan = Math.min(5, rows.length);
+  for (let i = 0; i < scan; i++) {
+    const row = rows[i] || [];
+    const normalized = row.map((c) => normalizeHeader(String(c ?? "").trim()));
+    const recognized = normalized.filter(isRecognizedHeader);
+    if (recognized.length >= 2 && normalized.includes("name")) {
+      return { index: i, headers: normalized };
+    }
+  }
+  return null;
 };
 
 export default function ImportProductsPage() {
@@ -195,23 +231,89 @@ export default function ImportProductsPage() {
     return { ...obj, _valid: errors.length === 0, _errors: errors };
   };
 
+  // Smart Excel parser: walks every sheet, auto-detects the header row, and
+  // re-uses the last-seen header layout for sheets that only contain data
+  // (common in workbooks where Sheet1 has headers and Sheet2..N continue the
+  // list without repeating them). Also splits combined quantity cells like
+  // "16pcs" into quantity=16 + unit="pcs", so the user rarely needs the AI
+  // fallback for ordinary spreadsheets.
   const parseExcelFile = async (f: File) => {
     const buf = await f.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const raw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-    if (raw.length < 2) {
-      toast({ title: "Empty file", description: "The file has no data rows.", variant: "destructive" });
-      return [] as PreviewRow[];
+
+    const out: PreviewRow[] = [];
+    let lastHeaders: string[] | null = null;
+    let lastCols = 0;
+
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) continue;
+      const raw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      if (!raw.length) continue;
+
+      const detected = detectHeaderRow(raw);
+      let headers: string[];
+      let startIdx: number;
+
+      if (detected) {
+        headers = detected.headers;
+        startIdx = detected.index + 1;
+        lastHeaders = headers;
+        lastCols = headers.length;
+      } else if (lastHeaders && (raw[0]?.length ?? 0) >= Math.max(2, lastCols - 1)) {
+        // No header on this sheet, but column count matches a previous sheet.
+        headers = lastHeaders;
+        startIdx = 0;
+      } else {
+        // Can't make sense of this sheet on its own — skip silently.
+        continue;
+      }
+
+      const hasQty = headers.includes("quantity");
+      const hasUnit = headers.includes("unit");
+
+      for (let i = startIdx; i < raw.length; i++) {
+        const row = raw[i] || [];
+        const obj: Record<string, string> = {};
+        headers.forEach((h, idx) => {
+          if (KNOWN_KEYS.has(h)) obj[h] = String(row[idx] ?? "").trim();
+        });
+
+        // Split combined quantity cells like "16pcs" → qty + unit (only when
+        // we won't trample an explicit unit column).
+        if (hasQty && obj.quantity) {
+          const { qty, unit } = splitQuantityCell(obj.quantity);
+          if (qty) obj.quantity = qty;
+          if (unit && (!hasUnit || !obj.unit)) obj.unit = unit;
+        }
+
+        // Skip rows that are entirely empty or look like a repeated header.
+        const hasAnyValue = Object.values(obj).some((v) => v !== "");
+        if (!hasAnyValue) continue;
+        if (
+          obj.name &&
+          (obj.name.toLowerCase() === "item" ||
+            obj.name.toLowerCase() === "name" ||
+            obj.name.toLowerCase() === "product")
+        ) {
+          continue;
+        }
+
+        const originalQty = obj.quantity ?? "";
+        if (resetQuantity) obj.quantity = "0";
+        out.push(validateRow({ ...obj, _originalQuantity: originalQty } as any));
+      }
     }
-    const headers: string[] = (raw[0] as string[]).map((h) => normalizeHeader(String(h).trim()));
-    return raw.slice(1).map((row) => {
-      const obj: Record<string, string> = {};
-      headers.forEach((h, i) => { obj[h] = String(row[i] ?? "").trim(); });
-      const originalQty = obj.quantity ?? "";
-      if (resetQuantity) obj.quantity = "0";
-      return validateRow({ ...obj, _originalQuantity: originalQty } as any);
-    }).filter((r) => r.name || Object.values(r).some((v) => v && v !== "true" && v !== "false"));
+
+    if (out.length === 0) {
+      toast({
+        title: "Couldn't read this spreadsheet",
+        description:
+          "No recognizable columns found. Try the \"Auto-format with AI\" button below to reshape it.",
+        variant: "destructive",
+      });
+    }
+    return out;
   };
 
   const fileToDataUrl = (f: File): Promise<string> => new Promise((resolve, reject) => {
@@ -365,7 +467,7 @@ export default function ImportProductsPage() {
         const tsv = XLSX.utils.sheet_to_csv(wb.Sheets[name], { FS: "\t" });
         text += `# Sheet: ${name}\n${tsv}\n\n`;
       }
-      if (text.length > 180_000) text = text.slice(0, 180_000);
+      if (text.length > 200_000) text = text.slice(0, 200_000);
       const parsed = await callAiParse({ text });
       setRows(parsed);
       setResults([]);
