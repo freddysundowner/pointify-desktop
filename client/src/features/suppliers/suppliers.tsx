@@ -104,6 +104,9 @@ export default function SuppliersPage() {
       return json || { data: [], pagination: { total: 0, page: 1, limit, totalPages: 1 } };
     },
     enabled: !!shopId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
   const suppliers: Supplier[] = pageData?.data || [];
   const pagination = pageData?.pagination || { total: 0, page: 1, limit, totalPages: 1 };
