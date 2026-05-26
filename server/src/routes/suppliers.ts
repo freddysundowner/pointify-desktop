@@ -129,13 +129,16 @@ export function registerSupplierRoutes(app: Express) {
   // Bulk delete suppliers - POST /api/suppliers/bulk-delete
   app.post("/api/suppliers/bulk-delete", async (req, res) => {
     try {
-      const { supplierIds } = req.body || {};
+      const { supplierIds, shopId } = req.body || {};
       if (!Array.isArray(supplierIds) || supplierIds.length === 0) {
         return res.status(400).json({ error: "supplierIds (non-empty array) is required" });
       }
+      if (!shopId) {
+        return res.status(400).json({ error: "shopId is required" });
+      }
       const response = await makePointifyRequest(`/suppliers/bulk/delete/suppliers`, {
         method: 'POST',
-        body: JSON.stringify({ supplierIds }),
+        body: JSON.stringify({ supplierIds, shopId }),
         headers: { 'Content-Type': 'application/json' }
       });
       res.json(response);

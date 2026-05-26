@@ -193,7 +193,7 @@ export default function SuppliersPage() {
   // Bulk delete suppliers mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const response = await apiRequest('POST', '/api/suppliers/bulk-delete', { supplierIds: ids });
+      const response = await apiRequest('POST', '/api/suppliers/bulk-delete', { supplierIds: ids, shopId });
       return await response.json();
     },
     onSuccess: (_data, ids) => {
