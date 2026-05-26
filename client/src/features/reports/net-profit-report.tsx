@@ -95,7 +95,7 @@ export default function NetProfitReport() {
     { label: 'Total Taxes',       value: taxes,       color: 'text-gray-600',                                        tag: 'cost',     href: null              },
     { label: 'Total Expenses',    value: expenses,    color: 'text-orange-600',                                      tag: 'cost',     href: '/expense-report' },
     { label: 'Bad Stock',         value: badStock,    color: 'text-red-500',                                         tag: 'cost',     href: null              },
-  ].filter(r => r.label === 'Bad Stock' || r.value !== 0);
+  ];
 
   const summaryCards = [
     { label: 'Gross Profit', value: heroValue,   color: heroValue   >= 0 ? 'text-green-700' : 'text-red-600', bg: 'bg-green-50'  },
