@@ -34,6 +34,16 @@ interface NetProfitResponse {
   [k: string]: any;
 }
 
+const pickNum = (obj: any, ...keys: string[]): number => {
+  if (!obj) return 0;
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === 'number' && !isNaN(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) return Number(v);
+  }
+  return 0;
+};
+
 // Pretty-print a camelCase / snake_case key as a human label.
 const humanizeKey = (k: string): string => {
   const s = k
@@ -49,6 +59,75 @@ const isPlainObject = (v: any) => v !== null && typeof v === 'object' && !Array.
 // Renders whatever the /analysis/netprofit endpoint returns, as-is. Numbers
 // are formatted with the shop currency; nested objects/arrays render as
 // indented sub-sections; everything else is shown as a string.
+// Mobile-style "Analysis" layout: a big Gross Profit pill at the top with an
+// "After taxes" subnote, then a list of label / subtitle / amount rows that
+// mirrors the iOS app screen.
+function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
+  const grossProfit    = pickNum(data, 'grossProfit', 'gross', 'grossprofit');
+  const netProfit      = pickNum(data, 'netProfit', 'net', 'netprofit', 'profit');
+  const totalSalesPaid = pickNum(data, 'totalSalesPaid', 'totalsalespaid', 'totalSales', 'sales', 'totalsales');
+  const debtCollected  = pickNum(data, 'debtCollected', 'debtcollected', 'debtpaid', 'debt');
+  const totalTaxes     = pickNum(data, 'totalTaxes', 'totaltaxes', 'taxes', 'tax');
+  const totalExpenses  = pickNum(data, 'totalExpenses', 'totalexpenses', 'expenses');
+  const badStock       = pickNum(data, 'badStock', 'badstock', 'bad_stock');
+  const afterTaxes     = pickNum(data, 'afterTaxes', 'aftertaxes', 'afterTax', 'aftertax');
+
+  const headerAmount = grossProfit || totalSalesPaid;
+  const afterTaxAmount = afterTaxes || grossProfit;
+
+  const fmt0 = (n: number) =>
+    new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
+  const fmt1 = (n: number) =>
+    new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n || 0);
+
+  const rows = [
+    { key: 'totalSalesPaid', label: 'Total Sales Paid', sub: 'Click To View Sales Report', value: totalSalesPaid, fmt: fmt0 },
+    { key: 'debtCollected',  label: 'Debt Collected',   sub: 'Click To View Sales Report', value: debtCollected,  fmt: fmt0 },
+    { key: 'grossProfit',    label: 'Gross Profit',     sub: 'Profit on sales',              value: grossProfit,    fmt: fmt0 },
+    { key: 'netProfit',      label: 'Net Profit',       sub: 'Click to view more on Gross Profit – All deductions, taxes & Expenses', value: netProfit, fmt: fmt1 },
+    { key: 'totalTaxes',     label: 'Total Taxes',      sub: '',                              value: totalTaxes,     fmt: fmt1 },
+    { key: 'totalExpenses',  label: 'Total Expenses',   sub: 'All Expenses',                  value: totalExpenses,  fmt: fmt0 },
+    { key: 'badStock',       label: 'Bad stock',        sub: 'Click to view bad stock',       value: badStock,       fmt: fmt0 },
+  ];
+
+  return (
+    <div className="space-y-3" data-testid="netprofit-mobile">
+      {/* Gross Profit pill */}
+      <div className="flex flex-col items-center text-center">
+        <div className="text-sm text-gray-700 mb-2">Gross Profit</div>
+        <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-purple-300 bg-white">
+          <CreditCard className="h-4 w-4 text-purple-600" />
+          <span className="text-xl font-bold text-purple-700" data-testid="text-gross-profit-header">
+            {currency} {fmt0(headerAmount)}
+          </span>
+        </div>
+        <div className="text-xs text-red-500 mt-1.5" data-testid="text-after-taxes">
+          After taxes {currency} {fmt1(afterTaxAmount)}
+        </div>
+      </div>
+
+      {/* List rows */}
+      <div className="rounded-xl bg-gray-50 border border-gray-100 divide-y divide-gray-200">
+        {rows.map((r) => (
+          <div
+            key={r.key}
+            className="flex items-start justify-between gap-3 px-4 py-3"
+            data-testid={`row-np-${r.key}`}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-900">{r.label}</div>
+              {r.sub && <div className="text-[11px] text-gray-400 mt-0.5 leading-snug">{r.sub}</div>}
+            </div>
+            <div className="text-sm font-bold text-gray-900 whitespace-nowrap pt-0.5">
+              {currency} {r.fmt(r.value)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NetProfitRaw({ data, currency }: { data: any; currency: string }) {
   if (data == null) return null;
 
@@ -259,7 +338,7 @@ export default function IncomeReports() {
                   ))}
                 </div>
               ) : netData ? (
-                <NetProfitRaw data={netData} currency={currency} />
+                <NetProfitMobile data={netData} currency={currency} />
               ) : null}
             </div>
 
