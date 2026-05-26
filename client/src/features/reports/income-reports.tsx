@@ -34,14 +34,77 @@ interface NetProfitResponse {
   [k: string]: any;
 }
 
-const pickNum = (obj: any, ...keys: string[]): number => {
-  for (const k of keys) {
-    const v = obj?.[k];
-    if (typeof v === 'number' && !isNaN(v)) return v;
-    if (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) return Number(v);
-  }
-  return 0;
+// Pretty-print a camelCase / snake_case key as a human label.
+const humanizeKey = (k: string): string => {
+  const s = k
+    .replace(/[_\-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
 };
+
+const isPlainObject = (v: any) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+// Renders whatever the /analysis/netprofit endpoint returns, as-is. Numbers
+// are formatted with the shop currency; nested objects/arrays render as
+// indented sub-sections; everything else is shown as a string.
+function NetProfitRaw({ data, currency }: { data: any; currency: string }) {
+  if (data == null) return null;
+
+  const renderValue = (val: any): React.ReactNode => {
+    if (val == null || val === '') return <span className="text-gray-300">—</span>;
+    if (typeof val === 'number') return <span>{currency} {fmtAmt(val)}</span>;
+    if (typeof val === 'boolean') return <span>{val ? 'Yes' : 'No'}</span>;
+    if (Array.isArray(val)) {
+      if (val.length === 0) return <span className="text-gray-300">[]</span>;
+      return (
+        <div className="space-y-1">
+          {val.map((item, i) => (
+            <div key={i} className="rounded border border-gray-100 bg-gray-50 p-2">
+              {isPlainObject(item) ? <NetProfitRaw data={item} currency={currency} /> : renderValue(item)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (isPlainObject(val)) {
+      return <NetProfitRaw data={val} currency={currency} />;
+    }
+    return <span className="break-words">{String(val)}</span>;
+  };
+
+  const entries = Object.entries(data);
+  if (entries.length === 0) {
+    return <div className="text-xs text-gray-400">Empty response.</div>;
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white divide-y divide-gray-100" data-testid="netprofit-raw">
+      {entries.map(([k, v]) => {
+        const nested = isPlainObject(v) || Array.isArray(v);
+        return (
+          <div
+            key={k}
+            className={
+              nested
+                ? 'p-2.5'
+                : 'flex items-center justify-between gap-3 p-2.5 text-xs'
+            }
+            data-testid={`netprofit-row-${k}`}
+          >
+            <div className={nested ? 'text-xs font-semibold text-gray-600 mb-1.5' : 'text-gray-500 truncate'}>
+              {humanizeKey(k)}
+            </div>
+            <div className={nested ? '' : 'font-semibold text-gray-800 text-right'}>
+              {renderValue(v)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const today = () => new Date().toISOString().split('T')[0];
 const daysAgo = (n: number) => {
@@ -196,63 +259,7 @@ export default function IncomeReports() {
                   ))}
                 </div>
               ) : netData ? (
-                (() => {
-                  const grossSales = pickNum(netData, 'totalSales', 'sales', 'grossSales');
-                  const purchases  = pickNum(netData, 'totalPurchases', 'purchases', 'cogs');
-                  const expenses   = pickNum(netData, 'totalExpenses', 'expenses');
-                  const returnsAmt = pickNum(netData, 'totalReturns', 'returns');
-                  const grossProfit= pickNum(netData, 'grossProfit', 'gross');
-                  const netProfit  = pickNum(netData, 'netProfit', 'net', 'profit');
-                  const dueSales   = pickNum(netData, 'duesales', 'debt');
-                  const discount   = pickNum(netData, 'discount');
-                  const tax        = pickNum(netData, 'tax');
-
-                  const profitColor = netProfit >= 0 ? 'from-emerald-600 to-emerald-500' : 'from-rose-600 to-rose-500';
-
-                  const npTiles = [
-                    { label: 'Gross Sales',   value: grossSales, icon: DollarSign,  color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-200' },
-                    { label: 'Purchases/COGS', value: purchases,  icon: Receipt,    color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200' },
-                    { label: 'Expenses',      value: expenses,   icon: TrendingDown, color: 'text-rose-600',  bg: 'bg-rose-50',   border: 'border-rose-200' },
-                    { label: 'Returns',       value: returnsAmt, icon: RotateCcw,   color: 'text-red-600',    bg: 'bg-red-50',    border: 'border-red-200' },
-                    { label: 'Gross Profit',  value: grossProfit, icon: TrendingUp, color: 'text-teal-600',   bg: 'bg-teal-50',   border: 'border-teal-200' },
-                    { label: 'Due Sales',     value: dueSales,   icon: Clock,       color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-200' },
-                    ...(discount > 0 ? [{ label: 'Discount', value: discount, icon: TrendingDown, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200' }] : []),
-                    ...(tax > 0 ? [{ label: 'Tax', value: tax, icon: Receipt, color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' }] : []),
-                  ];
-
-                  return (
-                    <div className="space-y-2">
-                      <div className={`rounded-xl bg-gradient-to-r ${profitColor} p-4 text-white`} data-testid="card-net-profit">
-                        <div className="flex items-center gap-2 mb-1">
-                          <PiggyBank className="h-4 w-4 opacity-80" />
-                          <div className="text-xs opacity-80">Net Profit ({fromDate} – {toDate})</div>
-                        </div>
-                        <div className="text-2xl font-bold" data-testid="text-net-profit-value">
-                          {currency} {fmtAmt(netProfit)}
-                        </div>
-                        <div className="text-xs opacity-70 mt-1">
-                          Gross Profit {currency} {fmtAmt(grossProfit)} − Expenses {currency} {fmtAmt(expenses)}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {npTiles.map((t) => (
-                          <Card key={t.label} className={`border ${t.border}`} data-testid={`card-np-${t.label.toLowerCase().replace(/\W+/g, '-')}`}>
-                            <CardContent className="p-3">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <div className={`w-7 h-7 rounded-lg ${t.bg} flex items-center justify-center flex-shrink-0`}>
-                                  <t.icon className={`h-3.5 w-3.5 ${t.color}`} />
-                                </div>
-                                <span className="text-[11px] text-gray-500 leading-tight">{t.label}</span>
-                              </div>
-                              <div className={`text-base font-bold ${t.color}`}>{currency} {fmtAmt(t.value)}</div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()
+                <NetProfitRaw data={netData} currency={currency} />
               ) : null}
             </div>
 
