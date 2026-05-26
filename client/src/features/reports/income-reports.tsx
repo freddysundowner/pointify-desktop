@@ -63,6 +63,7 @@ const isPlainObject = (v: any) => v !== null && typeof v === 'object' && !Array.
 // "After taxes" subnote, then a list of label / subtitle / amount rows that
 // mirrors the iOS app screen.
 function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
+  const [showAll, setShowAll] = useState(false);
   // The upstream response is nested:
   //   { creditTotals, debtPaid,
   //     totalProfitAndSalesValue: { totalProfit, totalCashSales, totalSales, totalPurchases, totalTaxes },
@@ -141,6 +142,23 @@ function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
           </div>
         ))}
       </div>
+
+      {/* Show all raw fields toggle */}
+      <div className="flex justify-center pt-1">
+        <button
+          type="button"
+          onClick={() => setShowAll((s) => !s)}
+          className="text-xs text-purple-600 hover:text-purple-800 underline"
+          data-testid="button-toggle-show-all"
+        >
+          {showAll ? 'Hide all fields' : 'Show all fields'}
+        </button>
+      </div>
+      {showAll && (
+        <div className="rounded-xl bg-white border border-gray-200 p-3" data-testid="netprofit-raw">
+          <NetProfitRaw data={data} currency={currency} />
+        </div>
+      )}
     </div>
   );
 }
