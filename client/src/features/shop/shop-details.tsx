@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ChevronRight, ChevronDown, Trash2, Download, Settings, Shield, FileText, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ChevronRight, ChevronDown, Trash2, Download, Settings, Shield, FileText, AlertTriangle, Smartphone } from "lucide-react";
 import { useAuth } from "@/features/auth/useAuth";
 import { apiCall } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
@@ -382,6 +382,38 @@ export default function ShopDetails() {
         {/* Content — single column, stacked sections */}
         <div className="px-3 py-3 space-y-3 max-w-3xl mx-auto">
 
+          {/* M-Pesa setup prompt — only when settlement target is missing */}
+          {!formData.paybill_till && (
+            <Card className="shadow-sm border-emerald-200 bg-emerald-50">
+              <CardContent className="px-4 py-3 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <Smartphone className="w-4 h-4 text-emerald-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-emerald-900">M-Pesa is ready — finish setup</p>
+                  <p className="text-xs text-emerald-800/90 mt-0.5">
+                    Add the Paybill or Till number you'd like us to settle M-Pesa
+                    collections to. Until this is set, customer M-Pesa payments
+                    can't be routed to your account.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
+                  onClick={() => {
+                    setExpandedSections((p) => ({ ...p, mpesa: true }));
+                    setTimeout(() => {
+                      document.getElementById("mpesa-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 50);
+                  }}
+                  data-testid="button-mpesa-setup"
+                >
+                  Set up
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Basic Info */}
           <Card className="shadow-sm">
             <CardHeader className="pb-2 pt-3 px-4">
@@ -462,6 +494,62 @@ export default function ShopDetails() {
             </CardContent>
           </Card>
 
+          {/* M-Pesa Settlement */}
+          <Card className="shadow-sm" id="mpesa-section">
+            <button
+              className="w-full text-left"
+              onClick={() => toggleSection("mpesa")}
+              data-testid="button-toggle-mpesa-section"
+            >
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">M-Pesa Settlement</span>
+                  {formData.paybill_till ? (
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">Configured</span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Not set</span>
+                  )}
+                </div>
+                {expandedSections.mpesa ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              </div>
+            </button>
+            {expandedSections.mpesa && (
+              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
+                <p className="text-xs text-gray-600 pt-3">
+                  Tell us where to settle the M-Pesa payments your customers
+                  make. We'll route collections to this Paybill or Till on your
+                  behalf.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Paybill or Till Number <span className="text-red-500">*</span></Label>
+                    <Input
+                      value={formData.paybill_till}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))}
+                      placeholder="e.g. 247247 or 5076543"
+                      inputMode="numeric"
+                      className="h-9 text-sm"
+                      data-testid="input-paybill-till"
+                    />
+                    <p className="text-[11px] text-gray-500">Your Safaricom Paybill or Buy Goods Till.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-gray-600">Account Number</Label>
+                    <Input
+                      value={formData.paybill_account}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))}
+                      placeholder="Required for Paybill only"
+                      className="h-9 text-sm"
+                      data-testid="input-paybill-account"
+                    />
+                    <p className="text-[11px] text-gray-500">Leave blank if you're using a Till number.</p>
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Operational Toggles */}
           <Card className="shadow-sm">
             <CardHeader className="pb-2 pt-3 px-4">
@@ -516,14 +604,6 @@ export default function ShopDetails() {
                   <div className="space-y-1">
                     <Label className="text-xs font-medium text-gray-600">Contact</Label>
                     <Input value={formData.contact} onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))} placeholder="Contact info" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">M-Pesa Paybill/Till</Label>
-                    <Input value={formData.paybill_till} onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))} placeholder="Paybill or Till number" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Paybill Account</Label>
-                    <Input value={formData.paybill_account} onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))} placeholder="Account number" className="h-9 text-sm" />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
                     <Label className="text-xs font-medium text-gray-600">Receipt Address</Label>
