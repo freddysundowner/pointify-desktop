@@ -186,27 +186,31 @@ export default function CreatePurchase() {
   };
   const isAttendant = location.startsWith("/attendant/");
 
+  const currencyLabel = (currency || '').toString().trim();
+  const fmt = (n: number) => `${currencyLabel ? currencyLabel + ' ' : ''}${n.toFixed(2)}`;
+
   return (
     <DashboardLayout title="Create Purchase Order">
-      <div className="space-y-6">
+      <div className="space-y-3">
         <PageHeader
           title="Create Purchase Order"
           onBack={() => window.history.back()}
         />
+
         {/* Basic Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
+          <CardHeader className="py-2.5 px-4">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Package className="h-4 w-4" />
               Purchase Order Details
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="supplier">Supplier</Label>
+          <CardContent className="px-4 pb-3 pt-0">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="supplier" className="text-xs">Supplier</Label>
                 <Select value={supplierName} onValueChange={setSupplierName}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm" data-testid="select-supplier">
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,78 +229,78 @@ export default function CreatePurchase() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="invoiceNumber">Invoice Number</Label>
+              <div className="space-y-1">
+                <Label htmlFor="invoiceNumber" className="text-xs">Invoice Number</Label>
                 <Input
                   id="invoiceNumber"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  placeholder="Enter invoice number"
+                  placeholder="Invoice #"
+                  className="h-8 text-sm"
+                  data-testid="input-invoice-number"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="orderDate">Order Date *</Label>
+              <div className="space-y-1">
+                <Label htmlFor="orderDate" className="text-xs">Order Date *</Label>
                 <Input
                   id="orderDate"
                   type="date"
                   value={orderDate}
                   onChange={(e) => setOrderDate(e.target.value)}
+                  className="h-8 text-sm"
+                  data-testid="input-order-date"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="expectedDate">Expected Delivery Date</Label>
+              <div className="space-y-1">
+                <Label htmlFor="expectedDate" className="text-xs">Expected Delivery</Label>
                 <Input
                   id="expectedDate"
                   type="date"
                   value={expectedDate}
                   onChange={(e) => setExpectedDate(e.target.value)}
+                  className="h-8 text-sm"
+                  data-testid="input-expected-date"
                 />
               </div>
             </div>
-            
-            {/* Batch Tracking Option */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="trackBatches" 
-                  checked={trackBatches}
-                  onCheckedChange={(checked) => setTrackBatches(checked === true)}
-                />
-                <Label 
-                  htmlFor="trackBatches" 
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Enable batch tracking for this purchase
-                </Label>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 ml-6">
-                Track individual product batches for better inventory management and expiration control
-              </p>
+
+            <div className="mt-3 pt-2 border-t flex items-center gap-2">
+              <Checkbox
+                id="trackBatches"
+                checked={trackBatches}
+                onCheckedChange={(checked) => setTrackBatches(checked === true)}
+                data-testid="checkbox-track-batches"
+              />
+              <Label htmlFor="trackBatches" className="text-xs font-medium leading-none cursor-pointer">
+                Enable batch tracking
+              </Label>
+              <span className="text-[11px] text-muted-foreground">— track batches for expiry &amp; inventory control</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Items */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 mb-4">
-              <Package className="h-5 w-5" />
-              Purchase Order Items
-            </CardTitle>
-            <div className="space-y-3">
+          <CardHeader className="py-2.5 px-4">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Order Items {items.length > 0 && <span className="text-xs font-normal text-muted-foreground">({items.length})</span>}
+              </CardTitle>
               <Dialog open={productSearchOpen} onOpenChange={setProductSearchOpen}>
                 <DialogTrigger asChild>
-                  <div className="relative cursor-pointer">
+                  <div className="relative cursor-pointer flex-1 max-w-md">
                     <Input
-                      placeholder="Search products to add to purchase order..."
+                      placeholder="Search products to add..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 cursor-pointer"
+                      className="pl-8 h-8 text-sm cursor-pointer"
                       readOnly
+                      data-testid="input-search-products"
                     />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
@@ -315,25 +319,25 @@ export default function CreatePurchase() {
                       </CommandEmpty>
                       <CommandGroup>
                         {products
-                          .filter((product: any) => 
-                            !searchTerm || 
+                          .filter((product: any) =>
+                            !searchTerm ||
                             (product.name || product.title || '').toLowerCase().includes(searchTerm.toLowerCase())
                           )
                           .map((product: any) => (
-                          <CommandItem
-                            key={product._id}
-                            onSelect={() => addProductToOrder(product)}
-                            className="cursor-pointer"
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            <div className="flex flex-col">
-                              <span className="font-medium">{product.name || product.title}</span>
-                              <span className="text-sm text-muted-foreground">
-                                {product.shopId?.currency || 'KES'} {(product.buyingPrice || 0).toFixed(2)} per unit
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
+                            <CommandItem
+                              key={product._id}
+                              onSelect={() => addProductToOrder(product)}
+                              className="cursor-pointer"
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{product.name || product.title}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {product.shopId?.currency || 'KES'} {(product.buyingPrice || 0).toFixed(2)} per unit
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
                       </CommandGroup>
                     </CommandList>
                   </Command>
@@ -341,91 +345,95 @@ export default function CreatePurchase() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pb-3 pt-0">
             {items.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No products added yet. Use the search above to add products to your purchase order.</p>
+              <div className="text-center py-6 text-muted-foreground">
+                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-xs">No products added yet. Search above to add items.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {items.map((item, index) => (
-                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">{item.productName}</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div>
-                            <Label className="text-xs">Quantity</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="h-8"
-                              placeholder="Enter quantity"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Buying Price</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unitCost}
-                              onChange={(e) => updateItem(index, 'unitCost', parseFloat(e.target.value) || 0)}
-                              className="h-8"
-                              placeholder="Enter price"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Selling Price</Label>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={(item as any).sellingPrice || 0}
-                              onChange={(e) => updateItem(index, 'sellingPrice' as keyof PurchaseItem, parseFloat(e.target.value) || 0)}
-                              className="h-8"
-                              placeholder="Enter selling price"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Total Cost</Label>
-                            <Input
-                              value={`${currency} ${item.totalCost.toFixed(2)}`}
-                              readOnly
-                              className="h-8 bg-gray-50 dark:bg-gray-800"
-                            />
-                          </div>
+              <div className="overflow-x-auto -mx-1">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[11px] text-muted-foreground uppercase border-b">
+                      <th className="text-left font-medium py-1.5 px-2">Product</th>
+                      <th className="text-left font-medium py-1.5 px-2 w-20">Qty</th>
+                      <th className="text-left font-medium py-1.5 px-2 w-28">Buying</th>
+                      <th className="text-left font-medium py-1.5 px-2 w-28">Selling</th>
+                      <th className="text-right font-medium py-1.5 px-2 w-28">Total</th>
+                      <th className="w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => (
+                      <tr key={index} className="border-b last:border-0">
+                        <td className="py-1.5 px-2 font-medium truncate max-w-[200px]" title={item.productName} data-testid={`text-product-${index}`}>
+                          {item.productName}
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                            className="h-7 text-sm px-2"
+                            data-testid={`input-qty-${index}`}
+                          />
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.unitCost}
+                            onChange={(e) => updateItem(index, 'unitCost', parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm px-2"
+                            data-testid={`input-buying-${index}`}
+                          />
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={(item as any).sellingPrice || 0}
+                            onChange={(e) => updateItem(index, 'sellingPrice' as keyof PurchaseItem, parseFloat(e.target.value) || 0)}
+                            className="h-7 text-sm px-2"
+                            data-testid={`input-selling-${index}`}
+                          />
+                        </td>
+                        <td className="py-1.5 px-2 text-right font-medium tabular-nums" data-testid={`text-total-${index}`}>
+                          {fmt(item.totalCost)}
+                        </td>
+                        <td className="py-1.5 px-1 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeItem(index)}
+                            className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            data-testid={`button-remove-${index}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2">
+                      <td colSpan={4} className="py-2 px-2 text-xs text-muted-foreground">
+                        Total Items: <span className="font-medium text-foreground">{items.reduce((sum, item) => sum + item.quantity, 0)} units</span>
+                      </td>
+                      <td className="py-2 px-2 text-right">
+                        <div className="text-[11px] text-muted-foreground uppercase">Total</div>
+                        <div className="text-base font-bold text-blue-600 dark:text-blue-400 tabular-nums" data-testid="text-grand-total">
+                          {fmt(calculateTotal())}
                         </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(index)}
-                        className="ml-4 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                
-                <div className="border-t-2 border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      Total Amount:
-                    </span>
-                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {currency} {calculateTotal().toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span>Total Items:</span>
-                    <span>{items.reduce((sum, item) => sum + item.quantity, 0)} units</span>
-                  </div>
-                </div>
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
           </CardContent>
@@ -433,14 +441,23 @@ export default function CreatePurchase() {
 
         {/* Action Buttons */}
         <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={() => setLocation("/purchases")}>           
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation(isAttendant ? "/attendant/purchases" : "/purchases")}
+            data-testid="button-cancel"
+          >
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Cancel
           </Button>
-          <Button 
-            onClick={handleSave} 
+          <Button
+            size="sm"
+            onClick={handleSave}
             disabled={isSubmitting || items.length === 0}
             className="bg-blue-600 hover:bg-blue-700"
+            data-testid="button-create-purchase"
           >
-            <Save className="mr-2 h-4 w-4" />
+            <Save className="mr-1.5 h-3.5 w-3.5" />
             {isSubmitting ? "Creating..." : "Create Purchase Order"}
           </Button>
         </div>
