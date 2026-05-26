@@ -74,7 +74,6 @@ export default function NetProfitReport() {
   const { data, isLoading, isError } = useQuery<NetProfitData>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const cashSales   = data?.totalProfitAndSalesValue?.totalCashSales ?? 0;

@@ -48,7 +48,6 @@ export default function StockReport() {
   const { data: rawData, isLoading, isError } = useQuery<any>({
     queryKey: [stockUrl],
     enabled: !!stockUrl,
-    staleTime: 60_000,
   });
 
   const items: StockItem[] = Array.isArray(rawData) ? rawData : (Array.isArray(rawData?.data) ? rawData.data : []);

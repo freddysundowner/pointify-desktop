@@ -102,7 +102,6 @@ export default function ProfitAnalysis() {
   const { data: mainData, isLoading: mainLoading } = useQuery<NetProfitData>({
     queryKey: [buildNetProfitUrl(from, to)],
     enabled: !!effectiveShopId,
-    staleTime: 60_000,
   });
 
   // Product profit query
@@ -118,7 +117,6 @@ export default function ProfitAnalysis() {
       return res.json();
     },
     enabled: !!effectiveShopId,
-    staleTime: 60_000,
   });
 
   // Periods queries — 4 fixed named hooks (no hooks in loops)
@@ -128,10 +126,10 @@ export default function ProfitAnalysis() {
     { label: 'Last 7 Days',  from: daysAgo(6),  to: today()     },
     { label: 'Last 30 Days', from: daysAgo(29), to: today()     },
   ];
-  const pq0 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[0].from, periodDefs[0].to), 'p0'], enabled: !!effectiveShopId, staleTime: 300_000 });
-  const pq1 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[1].from, periodDefs[1].to), 'p1'], enabled: !!effectiveShopId, staleTime: 300_000 });
-  const pq2 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[2].from, periodDefs[2].to), 'p2'], enabled: !!effectiveShopId, staleTime: 300_000 });
-  const pq3 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[3].from, periodDefs[3].to), 'p3'], enabled: !!effectiveShopId, staleTime: 300_000 });
+  const pq0 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[0].from, periodDefs[0].to), 'p0'], enabled: !!effectiveShopId });
+  const pq1 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[1].from, periodDefs[1].to), 'p1'], enabled: !!effectiveShopId });
+  const pq2 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[2].from, periodDefs[2].to), 'p2'], enabled: !!effectiveShopId });
+  const pq3 = useQuery<NetProfitData>({ queryKey: [buildNetProfitUrl(periodDefs[3].from, periodDefs[3].to), 'p3'], enabled: !!effectiveShopId });
   const periodQueries = [pq0, pq1, pq2, pq3];
 
   const formatCurrency = (n: number | undefined | null) => {

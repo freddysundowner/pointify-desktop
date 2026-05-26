@@ -68,7 +68,6 @@ export default function DiscountReports() {
   const { data: rawData, isLoading, isError } = useQuery<any>({
     queryKey: [discountUrl],
     enabled: !!discountUrl,
-    staleTime: 60_000,
   });
 
   const items: any[] = Array.isArray(rawData) ? rawData

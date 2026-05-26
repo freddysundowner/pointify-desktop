@@ -73,7 +73,6 @@ export default function PurchasesReportPage() {
   const { data: rawPurchases, isLoading, isError } = useQuery<any>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const all: Purchase[] = Array.isArray(rawPurchases) ? rawPurchases : (rawPurchases?.purchases ?? rawPurchases?.data ?? []);

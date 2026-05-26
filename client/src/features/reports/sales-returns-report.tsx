@@ -70,7 +70,6 @@ export default function SalesReturnsReport() {
   const { data: rawData, isLoading, isError } = useQuery<any>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const items: any[] = Array.isArray(rawData) ? rawData

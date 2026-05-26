@@ -263,7 +263,6 @@ export default function IncomeReports() {
   const { data, isLoading, isError } = useQuery<SalesSummary>({
     queryKey: [summaryUrl],
     enabled: !!summaryUrl,
-    staleTime: 60_000,
   });
 
   const attendantId = attendant ? (typeof (attendant as any)._id === 'string' ? (attendant as any)._id : '') : '';
@@ -274,7 +273,6 @@ export default function IncomeReports() {
   const { data: netData, isLoading: netLoading, isError: netError } = useQuery<NetProfitResponse>({
     queryKey: [netProfitUrl],
     enabled: !!netProfitUrl,
-    staleTime: 60_000,
   });
 
   const currency = useSelector((state: RootState) => state.currency) || 'KES';

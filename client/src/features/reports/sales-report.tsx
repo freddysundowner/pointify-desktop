@@ -108,7 +108,6 @@ export default function SalesReportPage() {
   const { data, isLoading, isError } = useQuery<SalesReportData>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const total = (data?.cash ?? 0) + (data?.credit ?? 0) + (data?.debtpaid ?? 0) + (data?.wallet ?? 0);

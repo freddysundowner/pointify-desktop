@@ -55,7 +55,6 @@ export default function PurchasesSummary() {
   const { data: rawData, isLoading, isError } = useQuery<any>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const summary = Array.isArray(rawData) ? null : rawData;

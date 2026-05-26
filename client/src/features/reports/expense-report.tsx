@@ -70,7 +70,6 @@ export default function ExpenseReportPage() {
   const { data: rawExpenses, isLoading, isError } = useQuery<any>({
     queryKey: [url],
     enabled: !!url,
-    staleTime: 60_000,
   });
 
   const expenses: Expense[] = Array.isArray(rawExpenses) ? rawExpenses : (rawExpenses?.data ?? []);
