@@ -956,78 +956,50 @@ export default function PurchasesList() {
                           </td>
                         </tr>
                         {expandedRows.has(purchase.id) && (
-                          <tr className="bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-500">
-                            <td colSpan={8} className="py-4 px-6">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                    Order Details
-                                  </h4>
+                          <tr className="bg-muted/30 border-l-2 border-blue-500" data-testid={`row-expanded-${purchase.id}`}>
+                            <td colSpan={8} className="py-2 px-4">
+                              <div className="space-y-2">
+                                <div className="overflow-x-auto rounded border border-border bg-background">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-muted/50">
+                                      <tr className="text-muted-foreground">
+                                        <th className="text-left px-2 py-1.5 font-medium">Product</th>
+                                        <th className="text-right px-2 py-1.5 font-medium w-16">Qty</th>
+                                        <th className="text-right px-2 py-1.5 font-medium w-16">Recv</th>
+                                        <th className="text-right px-2 py-1.5 font-medium w-24">Unit</th>
+                                        <th className="text-right px-2 py-1.5 font-medium w-24">Total</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {purchase.items.map((item, index) => (
+                                        <tr key={index} className="border-t border-border" data-testid={`row-item-${purchase.id}-${index}`}>
+                                          <td className="px-2 py-1.5">{item.productName}</td>
+                                          <td className="px-2 py-1.5 text-right tabular-nums">{item.quantity}</td>
+                                          <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
+                                            {item.received !== undefined ? item.received : "—"}
+                                          </td>
+                                          <td className="px-2 py-1.5 text-right tabular-nums">
+                                            {purchase.currency} {item.unitCost.toFixed(2)}
+                                          </td>
+                                          <td className="px-2 py-1.5 text-right tabular-nums font-medium">
+                                            {purchase.currency} {item.totalCost.toFixed(2)}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                    <tfoot className="bg-muted/30">
+                                      <tr className="border-t border-border">
+                                        <td colSpan={4} className="px-2 py-1.5 text-right font-medium">Total</td>
+                                        <td className="px-2 py-1.5 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400" data-testid={`text-total-${purchase.id}`}>
+                                          {purchase.currency} {purchase.totalAmount.toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    </tfoot>
+                                  </table>
                                 </div>
-                                <div className="grid gap-2">
-                                  {purchase.items.map((item, index) => (
-                                    <div
-                                      key={index}
-                                      className="flex justify-between items-center text-sm bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700"
-                                    >
-                                      <div className="flex flex-col">
-                                        <span className="font-medium">
-                                          {item.productName}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                          {purchase.currency}{" "}
-                                          {item.unitCost.toFixed(2)} per unit
-                                          {item.received !== undefined && (
-                                            <span className="ml-2">
-                                              • Received: {item.received}/
-                                              {item.quantity}
-                                            </span>
-                                          )}
-                                        </span>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-medium">
-                                          {purchase.currency}{" "}
-                                          {item.totalCost.toFixed(2)}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Qty: {item.quantity}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 pt-2 border-t-2 border-gray-200 dark:border-gray-700 text-sm">
-                                  <div>
-                                    <span className="font-medium">
-                                      Expected:{" "}
-                                    </span>
-                                    <span>
-                                      {purchase.expectedDate
-                                        ? new Date(
-                                            purchase.expectedDate,
-                                          ).toLocaleDateString()
-                                        : "TBD"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">
-                                      Invoice:{" "}
-                                    </span>
-                                    <span>
-                                      {purchase.invoiceNumber || "Pending"}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                    Order Total:
-                                  </span>
-                                  <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
-                                    {purchase.currency}{" "}
-                                    {purchase.totalAmount.toFixed(2)}
-                                  </span>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground px-1">
+                                  <span><span className="font-medium text-foreground">Expected:</span> {purchase.expectedDate ? new Date(purchase.expectedDate).toLocaleDateString() : "TBD"}</span>
+                                  <span><span className="font-medium text-foreground">Invoice:</span> {purchase.invoiceNumber || "Pending"}</span>
                                 </div>
                               </div>
                             </td>
