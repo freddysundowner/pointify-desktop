@@ -793,24 +793,52 @@ export default function PurchasesList() {
           </Card>
         )}
 
-        {/* Summary Stats — matches Flutter Purchases Report (Total / Credit / Returns + payment context) */}
-        {!isLoading && !error && analyticsData && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-            {[
-              { label: "Total Purchases", value: Number(analyticsData.totalpurchases) || 0, color: "text-blue-600" },
-              { label: "Cash Purchases",  value: Number(analyticsData.cash) || 0,           color: "text-green-600" },
-              { label: "Credit Purchases", value: Number(analyticsData.credit) || 0,        color: "text-orange-500" },
-              { label: "Returns",         value: Number(analyticsData.returns) || 0,        color: "text-red-500" },
-            ].map(({ label, value, color }) => (
-              <Card key={label} className="p-3">
-                <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
-                <p className={`text-base font-bold ${color}`}>
-                  {currency} {value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+        {/* Summary Stats — period totals from analytics endpoint */}
+        {!isLoading && !error && analyticsData && (() => {
+          const cash    = Number(analyticsData.cash) || 0;
+          const credit  = Number(analyticsData.credit) || 0;
+          const returns = Number(analyticsData.returns) || 0;
+          const total   = Number(analyticsData.totalpurchases) || 0;
+          const cards = [
+            { key: "all",    label: "Total Purchases",  value: total,   color: "text-blue-600" },
+            { key: "paid",   label: "Cash Purchases",   value: cash,    color: "text-green-600" },
+            { key: "unpaid", label: "Credit Purchases", value: credit,  color: "text-orange-500" },
+            { key: "returns",label: "Returns",          value: returns, color: "text-red-500" },
+          ];
+          return (
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[11px] text-muted-foreground">
+                  Period totals{statusFilter !== "all" && <> · table is filtered to <span className="font-medium capitalize">{statusFilter === "paid" ? "cash" : "credit"}</span> only</>}
                 </p>
-              </Card>
-            ))}
-          </div>
-        )}
+                {statusFilter !== "all" && (
+                  <Button variant="link" size="sm" className="h-auto p-0 text-[11px]" onClick={() => handleStatusFilter("all")}>
+                    Show all
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {cards.map(({ key, label, value, color }) => {
+                  const active = statusFilter === key || (statusFilter === "all" && key === "all");
+                  const clickable = key === "all" || key === "paid" || key === "unpaid";
+                  return (
+                    <Card
+                      key={label}
+                      onClick={clickable ? () => handleStatusFilter(key) : undefined}
+                      className={`p-3 transition-all ${clickable ? "cursor-pointer hover:border-primary/40" : ""} ${active ? "ring-2 ring-primary/60 border-primary/40" : ""}`}
+                      data-testid={`card-stat-${key}`}
+                    >
+                      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+                      <p className={`text-base font-bold ${color}`}>
+                        {currency} {value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      </p>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Purchases Table */}
         {!isLoading && !error && (
