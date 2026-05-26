@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, DollarSign, History, ArrowLeft, CreditCard, MoreHorizontal } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,8 @@ export default function SuppliersPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
   const { toast } = useToast();
 
   // Authentication hooks
@@ -180,6 +183,23 @@ export default function SuppliersPage() {
         description: error.message || "Failed to delete supplier",
         variant: "destructive"
       });
+    }
+  });
+
+  // Bulk delete suppliers mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const response = await apiRequest('POST', '/api/suppliers/bulk-delete', { supplierIds: ids });
+      return await response.json();
+    },
+    onSuccess: (_data, ids) => {
+      toast({ title: 'Deleted', description: `${ids.length} supplier(s) removed` });
+      queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+      setSelectedIds(new Set());
+      setIsBulkDeleteOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: 'Bulk delete failed', description: error.message || 'Could not delete suppliers', variant: 'destructive' });
     }
   });
 
@@ -342,8 +362,8 @@ export default function SuppliersPage() {
           }
         />
 
-        {/* Search */}
-        <div className="flex items-center space-x-2">
+        {/* Search + bulk actions */}
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -351,8 +371,21 @@ export default function SuppliersPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8 h-8 text-sm"
+              data-testid="input-search-suppliers"
             />
           </div>
+          {selectedIds.size > 0 && (
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 text-xs"
+              onClick={() => setIsBulkDeleteOpen(true)}
+              data-testid="button-bulk-delete-suppliers"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              Delete {selectedIds.size} selected
+            </Button>
+          )}
         </div>
 
         {/* Suppliers Table */}
@@ -386,6 +419,18 @@ export default function SuppliersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
+                      <TableHead className="text-xs py-2 w-8">
+                        <Checkbox
+                          checked={filteredSuppliers.length > 0 && filteredSuppliers.every((s: Supplier) => selectedIds.has(s._id))}
+                          onCheckedChange={(v) => {
+                            const next = new Set(selectedIds);
+                            if (v) filteredSuppliers.forEach((s: Supplier) => next.add(s._id));
+                            else filteredSuppliers.forEach((s: Supplier) => next.delete(s._id));
+                            setSelectedIds(next);
+                          }}
+                          data-testid="checkbox-select-all-suppliers"
+                        />
+                      </TableHead>
                       <TableHead className="text-xs py-2">Company</TableHead>
                       <TableHead className="text-xs py-2 hidden sm:table-cell">Phone / Email</TableHead>
                       <TableHead className="text-xs py-2 hidden md:table-cell">Credit Limit</TableHead>
@@ -395,7 +440,18 @@ export default function SuppliersPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredSuppliers.map((supplier: Supplier) => (
-                      <TableRow key={supplier._id}>
+                      <TableRow key={supplier._id} data-testid={`row-supplier-${supplier._id}`}>
+                        <TableCell className="py-2 px-2 sm:px-4 w-8">
+                          <Checkbox
+                            checked={selectedIds.has(supplier._id)}
+                            onCheckedChange={(v) => {
+                              const next = new Set(selectedIds);
+                              if (v) next.add(supplier._id); else next.delete(supplier._id);
+                              setSelectedIds(next);
+                            }}
+                            data-testid={`checkbox-supplier-${supplier._id}`}
+                          />
+                        </TableCell>
                         <TableCell className="py-2 px-2 sm:px-4">
                           <p className="font-medium text-xs sm:text-sm">{supplier.name}</p>
                           {supplier.address && <p className="text-[10px] text-muted-foreground hidden sm:block">{supplier.address}</p>}
@@ -533,6 +589,17 @@ export default function SuppliersPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Delete Confirmation */}
+        <AlertModal
+          isOpen={isBulkDeleteOpen}
+          onClose={() => setIsBulkDeleteOpen(false)}
+          onConfirm={() => bulkDeleteMutation.mutate(Array.from(selectedIds))}
+          title="Delete Suppliers"
+          description={`Are you sure you want to delete ${selectedIds.size} supplier(s)? This action cannot be undone.`}
+          type="danger"
+          confirmText={bulkDeleteMutation.isPending ? 'Deleting...' : `Delete ${selectedIds.size}`}
+        />
 
         {/* Delete Confirmation */}
         <AlertModal

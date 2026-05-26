@@ -102,6 +102,28 @@ export function registerSupplierRoutes(app: Express) {
     }
   });
 
+  // Bulk delete suppliers - POST /api/suppliers/bulk-delete
+  app.post("/api/suppliers/bulk-delete", async (req, res) => {
+    try {
+      const { supplierIds } = req.body || {};
+      if (!Array.isArray(supplierIds) || supplierIds.length === 0) {
+        return res.status(400).json({ error: "supplierIds (non-empty array) is required" });
+      }
+      const response = await makePointifyRequest(`/bulk/delete/suppliers`, {
+        method: 'POST',
+        body: JSON.stringify({ supplierIds }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      res.json(response);
+    } catch (error: any) {
+      console.error("Pointify bulk-delete suppliers error:", error.status, error.responseBody || error.message);
+      res.status(error.status || 500).json({
+        error: "Failed to bulk delete suppliers",
+        details: error.responseBody || error.message
+      });
+    }
+  });
+
   // Delete supplier
   app.delete("/api/suppliers/:id", async (req, res) => {
     try {
