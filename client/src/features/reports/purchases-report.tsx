@@ -1,239 +1,203 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
+import { useLocation } from "wouter";
 import { RootState } from "@/store";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, Search, X } from "lucide-react";
+import { CreditCard, Loader2, ShoppingCart, RotateCcw, ChevronRight } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 
-const fmt = (val: number) =>
-  new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val ?? 0);
+const fmt = (val: any) =>
+  new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(val) || 0);
 
-type DateRange = { label: string; days: number };
-const DATE_RANGES: DateRange[] = [
-  { label: "Today", days: 0 },
-  { label: "Yesterday", days: 1 },
-  { label: "7 Days", days: 7 },
-  { label: "30 Days", days: 30 },
+const toYMD = (d: Date) => d.toISOString().split("T")[0];
+const today = () => toYMD(new Date());
+const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return toYMD(d); };
+
+const PERIODS = [
+  { key: "today",     label: "Today",      from: () => today(),     to: () => today() },
+  { key: "yesterday", label: "Yesterday",  from: () => daysAgo(1),  to: () => daysAgo(1) },
+  { key: "7days",     label: "This Week",  from: () => daysAgo(6),  to: () => today() },
+  { key: "30days",    label: "This Month", from: () => daysAgo(29), to: () => today() },
 ];
 
-function toYMD(d: Date) { return d.toISOString().split("T")[0]; }
-function getRange(days: number): { from: string; to: string } {
-  const now = new Date();
-  if (days === 0) return { from: toYMD(now), to: toYMD(now) };
-  if (days === 1) { const y = new Date(now); y.setDate(y.getDate() - 1); return { from: toYMD(y), to: toYMD(y) }; }
-  const from = new Date(now); from.setDate(from.getDate() - days);
-  return { from: toYMD(from), to: toYMD(now) };
+interface SummaryData {
+  cash?: number;
+  credit?: number;
+  returns?: number;
+  paid?: number;
+  totalpurchases?: number;
 }
-
-interface Purchase {
-  _id: string;
-  purchaseNo?: string | number; invoiceNo?: string | number;
-  totalAmount?: number; amount?: number; total?: number;
-  createdAt?: string; paymentType?: string;
-  supplier?: { name?: string } | null;
-  items?: { product?: { name?: string }; quantity?: number; buyingPrice?: number }[];
-}
-
-function fmtDate(d?: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" });
-}
-function purchaseAmount(p: Purchase) { return p.totalAmount ?? p.amount ?? p.total ?? 0; }
-function supplierName(p: Purchase) { return (p.supplier as any)?.name ?? null; }
-
-const PAYMENT_TYPES = ["all", "cash", "credit"];
-const LIMIT = 20;
 
 export default function PurchasesReportPage() {
-  const currency = useSelector((state: RootState) => state.currency);
-  const { shopId: effectiveShopId } = usePrimaryShop();
+  const currency = useSelector((s: RootState) => s.currency) || "KES";
+  const { shopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
+  const purchasesRoute = useNavigationRoute("purchases");
+  const [, setLocation] = useLocation();
 
-  const [rangeIdx, setRangeIdx] = useState(2);
+  const [period, setPeriod] = useState("today");
+  const [showCustom, setShowCustom] = useState(false);
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
-  const [paymentType, setPaymentType] = useState("all");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
 
-  const { from: autoFrom, to: autoTo } = getRange(DATE_RANGES[rangeIdx]?.days ?? 7);
-  const fromDate = showCustom ? customFrom : autoFrom;
-  const toDate   = showCustom ? customTo   : autoTo;
+  const opt = PERIODS.find(p => p.key === period);
+  const fromDate = showCustom && customFrom ? customFrom : (opt?.from() ?? today());
+  const toDate   = showCustom && customTo   ? customTo   : (opt?.to()   ?? today());
 
-  const params = new URLSearchParams({ shopId: effectiveShopId, start: fromDate, end: toDate, page: String(page), limit: String(LIMIT) });
-  if (paymentType !== "all") params.set("paymentType", paymentType);
-  const url = effectiveShopId ? `/api/purchases?${params.toString()}` : null;
+  const url = shopId
+    ? `/api/analysis/report/purchases?shopid=${shopId}&fromDate=${fromDate}&toDate=${toDate}`
+    : null;
 
-  const { data: rawPurchases, isLoading, isError } = useQuery<any>({
+  const { data, isLoading, isError } = useQuery<SummaryData>({
     queryKey: [url],
     enabled: !!url,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
-  const all: Purchase[] = Array.isArray(rawPurchases) ? rawPurchases : (rawPurchases?.purchases ?? rawPurchases?.data ?? []);
-  const filtered = search.trim()
-    ? all.filter(p =>
-        String(p.purchaseNo ?? p.invoiceNo ?? "").toLowerCase().includes(search.toLowerCase()) ||
-        p.items?.some(it => it.product?.name?.toLowerCase().includes(search.toLowerCase())))
-    : all;
+  const totalPurchases = Number(data?.totalpurchases ?? 0);
+  const creditPurchases = Number(data?.credit ?? 0);
+  const returns = Number(data?.returns ?? 0);
 
-  const cashTotal   = filtered.filter(p => p.paymentType === "cash").reduce((s, p) => s + purchaseAmount(p), 0);
-  const creditTotal = filtered.filter(p => p.paymentType === "credit").reduce((s, p) => s + purchaseAmount(p), 0);
-  const totalAmt    = filtered.reduce((s, p) => s + purchaseAmount(p), 0);
+  const rows = [
+    {
+      key: "total",
+      title: "Total Purchases",
+      description: "Click to view more details",
+      amount: totalPurchases,
+      icon: ShoppingCart,
+      onClick: () => setLocation(purchasesRoute || "/purchases"),
+    },
+    {
+      key: "credit",
+      title: "Credit Purchases",
+      description: "Purchases made on credit",
+      amount: creditPurchases,
+      icon: CreditCard,
+      onClick: () => setLocation(purchasesRoute || "/purchases"),
+    },
+    {
+      key: "returns",
+      title: "Returns",
+      description: "Purchases returned to suppliers",
+      amount: returns,
+      icon: RotateCcw,
+      onClick: undefined,
+    },
+  ];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-4 pb-24 lg:pb-8 w-full">
-        <PageHeader title="Purchases Report" subtitle="Purchase invoices and records" backHref={reportsRoute} />
+    <DashboardLayout title="Purchases Report">
+      <div className="space-y-4 pb-24 lg:pb-8 max-w-3xl mx-auto w-full">
+        <PageHeader title="Purchases Report" backHref={reportsRoute} />
 
-        {/* Filters */}
+        {/* Period chips */}
         <div className="flex flex-wrap gap-1.5 items-center">
-          {DATE_RANGES.map((r, i) => (
-            <Button key={r.label} size="sm"
-              variant={!showCustom && rangeIdx === i ? "default" : "outline"}
-              className="h-7 text-xs px-2.5"
-              onClick={() => { setRangeIdx(i); setShowCustom(false); setPage(1); }}>
-              {r.label}
+          {PERIODS.map(p => (
+            <Button
+              key={p.key}
+              size="sm"
+              variant={!showCustom && period === p.key ? "default" : "outline"}
+              className="h-7 text-xs px-3 rounded-full"
+              onClick={() => { setPeriod(p.key); setShowCustom(false); }}
+              data-testid={`button-period-${p.key}`}
+            >
+              {p.label}
             </Button>
           ))}
-          <Button size="sm" variant={showCustom ? "default" : "outline"} className="h-7 text-xs px-2.5"
-            onClick={() => setShowCustom(true)}>Custom</Button>
+          <Button
+            size="sm"
+            variant={showCustom ? "default" : "outline"}
+            className="h-7 text-xs px-3 rounded-full"
+            onClick={() => setShowCustom(v => !v)}
+            data-testid="button-period-custom"
+          >
+            Custom
+          </Button>
           {showCustom && (
-            <div className="flex gap-2 items-center ml-1 flex-wrap">
-              <input type="date" value={customFrom} onChange={e => { setCustomFrom(e.target.value); setPage(1); }} className="h-7 text-xs border rounded px-2 bg-white" />
-              <span className="text-xs text-gray-500">to</span>
-              <input type="date" value={customTo} onChange={e => { setCustomTo(e.target.value); setPage(1); }} className="h-7 text-xs border rounded px-2 bg-white" />
+            <div className="flex gap-1.5 items-center ml-1 flex-wrap">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="h-7 text-xs border rounded px-2 bg-background"
+                data-testid="input-custom-from"
+              />
+              <span className="text-xs text-muted-foreground">to</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="h-7 text-xs border rounded px-2 bg-background"
+                data-testid="input-custom-to"
+              />
             </div>
           )}
         </div>
 
-        {/* Desktop: 3 stat tiles */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground mb-1">Total Purchases</p>
-              {isLoading ? <div className="h-6 w-24 bg-muted animate-pulse rounded" /> : <p className="text-xl font-bold">{currency} {fmt(totalAmt)}</p>}
-              <p className="text-xs text-muted-foreground mt-0.5">{filtered.length} invoice{filtered.length !== 1 ? "s" : ""}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground mb-1">Cash Purchases</p>
-              {isLoading ? <div className="h-6 w-24 bg-muted animate-pulse rounded" /> : <p className="text-xl font-bold text-green-700">{currency} {fmt(cashTotal)}</p>}
-              <p className="text-xs text-muted-foreground mt-0.5">{filtered.filter(p => p.paymentType === "cash").length} invoices</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground mb-1">Credit Purchases</p>
-              {isLoading ? <div className="h-6 w-24 bg-muted animate-pulse rounded" /> : <p className="text-xl font-bold text-orange-600">{currency} {fmt(creditTotal)}</p>}
-              <p className="text-xs text-muted-foreground mt-0.5">{filtered.filter(p => p.paymentType === "credit").length} invoices</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search + payment type filter */}
-        <div className="flex gap-2 items-center flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <input type="text" placeholder="Search by invoice or product..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full h-8 border rounded-lg pl-8 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>}
-          </div>
-          <div className="flex gap-1">
-            {PAYMENT_TYPES.map(pt => (
-              <Button key={pt} size="sm" variant={paymentType === pt ? "default" : "outline"} className="h-8 text-xs capitalize"
-                onClick={() => { setPaymentType(pt); setPage(1); }}>
-                {pt === "all" ? "All" : pt.charAt(0).toUpperCase() + pt.slice(1)}
-              </Button>
-            ))}
+        {/* Total pill */}
+        <div className="flex justify-center pt-1">
+          <div className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-full px-4 py-1.5 shadow-sm">
+            <CreditCard className="h-4 w-4" />
+            <span className="text-sm font-semibold tabular-nums" data-testid="text-total-pill">
+              {currency} {fmt(totalPurchases)}
+            </span>
           </div>
         </div>
 
-        {isLoading && <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>}
-        {isError && <Card><CardContent className="p-6 text-center text-red-500">Failed to load purchases.</CardContent></Card>}
-        {!isLoading && !isError && filtered.length === 0 && (
-          <Card><CardContent className="p-10 text-center text-muted-foreground">No purchases found for this period.</CardContent></Card>
-        )}
-
-        {!isLoading && !isError && filtered.length > 0 && (
-          <>
-            {/* Mobile: card list */}
-            <Card className="lg:hidden">
-              <CardContent className="p-0 divide-y">
-                {filtered.map((p) => (
-                  <div key={p._id} className="flex items-start justify-between px-4 py-3 gap-3 hover:bg-muted/30">
-                    <div className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0 mt-0.5">
-                      <ShoppingBag className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-sm">#{p.purchaseNo ?? p.invoiceNo ?? p._id.slice(-6)}</p>
-                        {p.paymentType && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${p.paymentType === "credit" ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>{p.paymentType}</span>
-                        )}
+        {/* Summary card */}
+        <Card className="shadow-sm">
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : isError ? (
+              <div className="text-center py-10 text-sm text-red-500" data-testid="text-error">
+                Failed to load purchases report.
+              </div>
+            ) : (
+              <div className="divide-y">
+                {rows.map(({ key, title, description, amount, icon: Icon, onClick }) => {
+                  const clickable = !!onClick;
+                  return (
+                    <div
+                      key={key}
+                      className={`flex items-center justify-between gap-3 px-4 py-4 ${clickable ? "cursor-pointer hover:bg-muted/40 transition-colors" : ""}`}
+                      onClick={onClick}
+                      data-testid={`row-${key}`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold" data-testid={`text-title-${key}`}>{title}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+                        </div>
                       </div>
-                      {supplierName(p) && <p className="text-xs text-muted-foreground">{supplierName(p)}</p>}
-                      <p className="text-xs text-muted-foreground">{fmtDate(p.createdAt)}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <div className="text-sm font-bold tabular-nums" data-testid={`text-amount-${key}`}>
+                          {currency} {fmt(amount)}
+                        </div>
+                        {clickable && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                      </div>
                     </div>
-                    <p className="font-bold text-sm shrink-0">{currency} {fmt(purchaseAmount(p))}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Desktop: table */}
-            <Card className="hidden lg:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-5 py-3 font-medium text-muted-foreground text-xs">#</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Invoice</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Supplier</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Payment</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Date</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs">Items</th>
-                    <th className="text-right px-5 py-3 font-medium text-muted-foreground text-xs">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filtered.map((p, i) => (
-                    <tr key={p._id} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-5 py-3.5 text-muted-foreground text-xs">{(page - 1) * LIMIT + i + 1}</td>
-                      <td className="px-4 py-3.5 font-semibold">#{p.purchaseNo ?? p.invoiceNo ?? p._id.slice(-6)}</td>
-                      <td className="px-4 py-3.5">{supplierName(p) ?? <span className="text-muted-foreground">—</span>}</td>
-                      <td className="px-4 py-3.5">
-                        {p.paymentType
-                          ? <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${p.paymentType === "credit" ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}`}>{p.paymentType}</span>
-                          : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      <td className="px-4 py-3.5 text-muted-foreground text-xs">{fmtDate(p.createdAt)}</td>
-                      <td className="px-4 py-3.5 text-muted-foreground text-xs">{p.items?.length ?? 0} item{(p.items?.length ?? 0) !== 1 ? "s" : ""}</td>
-                      <td className="px-5 py-3.5 text-right font-bold">{currency} {fmt(purchaseAmount(p))}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t bg-muted/20 font-bold">
-                    <td className="px-5 py-3 text-xs text-muted-foreground" colSpan={6}>Total · {filtered.length} invoices</td>
-                    <td className="px-5 py-3 text-right">{currency} {fmt(totalAmt)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </Card>
-
-            <div className="flex items-center justify-between">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
-              <span className="text-sm text-muted-foreground">Page {page}</span>
-              <Button variant="outline" size="sm" disabled={filtered.length < LIMIT} onClick={() => setPage(p => p + 1)}>Next</Button>
-            </div>
-          </>
-        )}
+        <p className="text-[11px] text-muted-foreground text-center">
+          {fromDate} → {toDate}
+        </p>
       </div>
     </DashboardLayout>
   );
