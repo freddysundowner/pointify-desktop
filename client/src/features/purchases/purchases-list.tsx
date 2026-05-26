@@ -90,11 +90,14 @@ export default function PurchasesList() {
   const canViewPurchases =
     isAdmin || hasAttendantPermission("stocks", "view_purchases");
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const _initialParams = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string>(_initialParams.get("status") || "all");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [attendantFilter, setAttendantFilter] = useState<string>("all");
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>(_initialParams.get("from") || "");
+  const [endDate, setEndDate] = useState<string>(_initialParams.get("to") || "");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [searchQuery, setSearchQuery] = useState<string>("");

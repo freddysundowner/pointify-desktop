@@ -38,7 +38,19 @@ export default function PurchasesReportPage() {
   const { shopId } = usePrimaryShop();
   const reportsRoute = useNavigationRoute("reports");
   const purchasesRoute = useNavigationRoute("purchases");
+  const purchaseReturnsRoute = useNavigationRoute("purchaseReturns");
   const [, setLocation] = useLocation();
+
+  const goToPurchases = (status: "all" | "credit") => {
+    const base = purchasesRoute || "/purchases";
+    const qs = new URLSearchParams({ from: fromDate, to: toDate, status }).toString();
+    setLocation(`${base}?${qs}`);
+  };
+  const goToReturns = () => {
+    const base = purchaseReturnsRoute || "/purchase-returns";
+    const qs = new URLSearchParams({ from: fromDate, to: toDate }).toString();
+    setLocation(`${base}?${qs}`);
+  };
 
   const [period, setPeriod] = useState("today");
   const [showCustom, setShowCustom] = useState(false);
@@ -71,7 +83,7 @@ export default function PurchasesReportPage() {
       description: "Click to view more details",
       amount: totalPurchases,
       icon: ShoppingCart,
-      onClick: () => setLocation(purchasesRoute || "/purchases"),
+      onClick: () => goToPurchases("all"),
     },
     {
       key: "credit",
@@ -79,7 +91,7 @@ export default function PurchasesReportPage() {
       description: "Purchases made on credit",
       amount: creditPurchases,
       icon: CreditCard,
-      onClick: () => setLocation(purchasesRoute || "/purchases"),
+      onClick: () => goToPurchases("credit"),
     },
     {
       key: "returns",
@@ -87,7 +99,7 @@ export default function PurchasesReportPage() {
       description: "Purchases returned to suppliers",
       amount: returns,
       icon: RotateCcw,
-      onClick: undefined,
+      onClick: () => goToReturns(),
     },
   ];
 
