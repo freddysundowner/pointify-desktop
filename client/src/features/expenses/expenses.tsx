@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, Filter, Download, Calendar, Clock, RefreshCw, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { Link } from 'wouter';
@@ -707,6 +708,7 @@ export default function Expenses() {
                 className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 h-7"
               />
             </div>
+            <ShopFilter />
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="h-7 text-xs w-36">
                 <SelectValue placeholder="All Categories" />

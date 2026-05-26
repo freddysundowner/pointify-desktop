@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import { Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Building2, DollarSign, History, ArrowLeft, CreditCard, MoreHorizontal } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -381,6 +382,7 @@ export default function SuppliersPage() {
               data-testid="input-search-suppliers"
             />
           </div>
+          <ShopFilter />
           {selectedIds.size > 0 && (
             <Button
               size="sm"

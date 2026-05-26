@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -691,6 +692,7 @@ export default function StockProducts() {
                   className="pl-9 h-8 text-sm"
                 />
               </div>
+              <ShopFilter />
               <Select value={stockFilter} onValueChange={(value: "all" | "instock" | "outofstock" | "lowstock") => setStockFilter(value)}>
                 <SelectTrigger className="w-44 h-8 text-sm">
                   <SelectValue placeholder="Stock status" />

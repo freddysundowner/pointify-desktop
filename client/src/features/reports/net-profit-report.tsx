@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { TrendingUp, Loader2, ChevronRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/dashboard-layout';
@@ -106,7 +107,7 @@ export default function NetProfitReport() {
   return (
     <DashboardLayout title="Income Report">
       <div className="space-y-4 pb-24 lg:pb-8 w-full">
-        <PageHeader title="Income Report" backHref={reportsRoute} />
+        <PageHeader title="Income Report" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Period filter */}
         <div className="flex flex-wrap gap-1.5 items-center">

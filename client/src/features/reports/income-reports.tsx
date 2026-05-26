@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import { DollarSign, TrendingUp, RotateCcw, Wallet, CreditCard, Clock, Loader2, TrendingDown, Receipt, PiggyBank } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/dashboard-layout';
@@ -291,7 +292,7 @@ export default function IncomeReports() {
   return (
     <DashboardLayout title="Sales Summary">
       <div className="space-y-3 pb-24 lg:pb-6">
-        <PageHeader title="Sales Summary" backHref={reportsRoute} />
+        <PageHeader title="Sales Summary" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Period Filter */}
         <div className="flex flex-wrap gap-1.5">

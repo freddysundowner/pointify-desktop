@@ -71,6 +71,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/features/auth/useAuth";
@@ -1206,6 +1207,7 @@ function SalesList() {
                     className="pl-9 h-8 text-sm"
                   />
                 </div>
+                <ShopFilter />
                 {userType === "admin" && (
                   <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
                     <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="All Attendants" /></SelectTrigger>

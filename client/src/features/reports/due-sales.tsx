@@ -5,6 +5,7 @@ import { RootState } from "@/store";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, Receipt } from "lucide-react";
@@ -56,7 +57,7 @@ export default function DueSalesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-4 pb-24 lg:pb-8 w-full">
-        <PageHeader title="Due Sales" subtitle="Credit sales due to be collected" backHref={reportsRoute} />
+        <PageHeader title="Due Sales" subtitle="Credit sales due to be collected" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Filter row */}
         <div className="flex flex-wrap gap-3 items-end">

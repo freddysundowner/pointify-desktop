@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import { Download, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -194,7 +195,7 @@ export default function ProfitAnalysis() {
   return (
     <DashboardLayout title="Profit Analysis">
       <div className="space-y-3 pb-24 lg:pb-6">
-        <PageHeader title="Profit Analysis" backHref={reportsRoute} />
+        <PageHeader title="Profit Analysis" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Period selector */}
         <div className="flex gap-1.5 overflow-x-auto pb-0.5">

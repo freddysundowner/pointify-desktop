@@ -70,6 +70,7 @@ import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCurrency } from "@/utils";
+import { ShopFilter } from "@/components/filters/shop-filter";
 
 // Purchases data now comes from API
 
@@ -692,6 +693,8 @@ export default function PurchasesList() {
                   className="pl-9 h-9 text-sm"
                 />
               </div>
+
+              <ShopFilter />
 
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
                 <SelectTrigger className="h-9 w-[120px] text-sm">

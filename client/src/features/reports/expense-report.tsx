@@ -5,6 +5,7 @@ import { RootState } from "@/store";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Wallet } from "lucide-react";
@@ -86,7 +87,7 @@ export default function ExpenseReportPage() {
   return (
     <DashboardLayout>
       <div className="space-y-4 pb-24 lg:pb-8 w-full">
-        <PageHeader title="Expenses Report" subtitle="Track your expenditures over time" backHref={reportsRoute} />
+        <PageHeader title="Expenses Report" subtitle="Track your expenditures over time" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Filters row */}
         <div className="flex flex-wrap gap-1.5 items-center">

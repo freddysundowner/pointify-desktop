@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import { Package, Loader2, Download, Search } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,9 +74,12 @@ export default function StockReport() {
       <div className="space-y-3 pb-24 lg:pb-6">
         <PageHeader title="Stock Report" backHref={reportsRoute}
           actions={
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportCSV}>
-              <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <ShopFilter />
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportCSV}>
+                <Download className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">CSV</span>
+              </Button>
+            </div>
           }
         />
 

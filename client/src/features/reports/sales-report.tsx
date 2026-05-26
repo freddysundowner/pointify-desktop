@@ -5,6 +5,7 @@ import { RootState } from "@/store";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CreditCard, ChevronRight } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
@@ -115,7 +116,7 @@ export default function SalesReportPage() {
   return (
     <DashboardLayout>
       <div className="space-y-5 pb-24 lg:pb-8 w-full max-w-2xl mx-auto lg:max-w-none">
-        <PageHeader title="Sales Report" backHref={reportsRoute} />
+        <PageHeader title="Sales Report" backHref={reportsRoute} actions={<ShopFilter />} />
 
         {/* Date filter tabs — horizontal scroll like Flutter */}
         <div className="overflow-x-auto scrollbar-hide">

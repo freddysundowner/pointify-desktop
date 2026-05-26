@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { ShopFilter } from "@/components/filters/shop-filter";
 import { PermissionGuard } from "@/components/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/features/auth/useAuth";
@@ -301,6 +302,7 @@ function ReturnsList() {
                 <span className="text-sm font-medium">Filters</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <ShopFilter />
                 <Select value={attendantFilter} onValueChange={handleAttendantFilter}>
                   <SelectTrigger className="h-8 text-xs w-44"><SelectValue placeholder="All Attendants" /></SelectTrigger>
                   <SelectContent>

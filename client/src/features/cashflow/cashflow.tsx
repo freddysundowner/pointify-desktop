@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Plus, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, Filter, ChevronRight, ArrowLeft } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShopFilter } from '@/components/filters/shop-filter';
 import { Link, useLocation } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -679,6 +680,7 @@ export default function CashFlow() {
           title="Cash Flow"
           subtitle={shopName}
           onBack={() => window.history.back()}
+          actions={<ShopFilter />}
         />
 
         {/* Cash at Hand - moved to top */}
