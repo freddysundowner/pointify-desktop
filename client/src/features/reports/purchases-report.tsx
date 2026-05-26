@@ -93,7 +93,7 @@ export default function PurchasesReportPage() {
 
   return (
     <DashboardLayout title="Purchases Report">
-      <div className="space-y-4 pb-24 lg:pb-8 max-w-3xl mx-auto w-full">
+      <div className="space-y-4 pb-24 lg:pb-8 w-full">
         <PageHeader title="Purchases Report" backHref={reportsRoute} />
 
         {/* Period chips */}
