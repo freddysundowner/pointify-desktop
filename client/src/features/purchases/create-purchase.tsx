@@ -39,7 +39,9 @@ export default function CreatePurchase() {
   // Use existing ProductsContext with cached data
   const { products: contextProducts, isLoading: productsLoading, error: productsError, refreshProducts } = useProducts();
 
-  const suppliers = (suppliersResponse as any)?.data || [];
+  const suppliers = Array.isArray(suppliersResponse)
+    ? suppliersResponse
+    : ((suppliersResponse as any)?.data || []);
   const products = contextProducts || [];
 
   // Generate auto invoice number

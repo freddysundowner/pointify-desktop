@@ -53,6 +53,8 @@ export default function SuppliersPage() {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const { toast } = useToast();
 
   // Authentication hooks
@@ -92,17 +94,19 @@ export default function SuppliersPage() {
     }
   });
 
-  // Fetch suppliers
-  const { data: suppliers = [], isLoading, error } = useQuery({
-    queryKey: ['/api/suppliers', shopId],
+  // Fetch suppliers (server-paginated)
+  const { data: pageData, isLoading, error } = useQuery<{ data: Supplier[]; pagination: { total: number; page: number; limit: number; totalPages: number } }>({
+    queryKey: ['/api/suppliers', shopId, page, limit],
     queryFn: async () => {
-      if (!shopId) return [];
-      const response = await apiRequest('GET', `/api/suppliers?shopId=${shopId}`);
-      const data = await response.json();
-      return data || [];
+      if (!shopId) return { data: [], pagination: { total: 0, page: 1, limit, totalPages: 1 } };
+      const response = await apiRequest('GET', `/api/suppliers?shopId=${shopId}&page=${page}&limit=${limit}`);
+      const json = await response.json();
+      return json || { data: [], pagination: { total: 0, page: 1, limit, totalPages: 1 } };
     },
-    enabled: !!shopId
+    enabled: !!shopId,
   });
+  const suppliers: Supplier[] = pageData?.data || [];
+  const pagination = pageData?.pagination || { total: 0, page: 1, limit, totalPages: 1 };
 
 
 
@@ -369,7 +373,7 @@ export default function SuppliersPage() {
             <Input
               placeholder="Search suppliers..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               className="pl-8 h-8 text-sm"
               data-testid="input-search-suppliers"
             />
@@ -393,7 +397,7 @@ export default function SuppliersPage() {
           <CardHeader className="py-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Suppliers ({filteredSuppliers.length})
+              Suppliers ({pagination.total})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -509,6 +513,48 @@ export default function SuppliersPage() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+
+            {pagination.total > 0 && (
+              <div className="flex items-center justify-between gap-3 pt-3 mt-3 border-t text-xs">
+                <div className="text-muted-foreground" data-testid="text-pagination-summary">
+                  Page {pagination.page} of {pagination.totalPages} · {pagination.total} total
+                  {searchTerm && <span className="ml-1 italic">(search filters current page)</span>}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    disabled={pagination.page <= 1 || isLoading}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    data-testid="button-prev-page"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    disabled={pagination.page >= pagination.totalPages || isLoading}
+                    onClick={() => setPage((p) => p + 1)}
+                    data-testid="button-next-page"
+                  >
+                    Next
+                  </Button>
+                  <select
+                    className="h-7 text-xs border rounded px-1 bg-background ml-1"
+                    value={limit}
+                    onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                    data-testid="select-page-size"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
               </div>
             )}
           </CardContent>

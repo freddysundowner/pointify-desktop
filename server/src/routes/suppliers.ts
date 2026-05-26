@@ -5,24 +5,41 @@ export function registerSupplierRoutes(app: Express) {
   // Get suppliers for a shop
   app.get("/api/suppliers", async (req, res) => {
     try {
-      const { shopId } = req.query;
-      
+      const { shopId, page, limit } = req.query;
+
       if (!shopId) {
         return res.status(400).json({ error: "shopId is required" });
       }
 
-      const response: any = await makePointifyRequest(`/suppliers?shopId=${shopId}`, {
+      const params = new URLSearchParams({ shopId: String(shopId) });
+      if (page) params.append('page', String(page));
+      if (limit) params.append('limit', String(limit));
+
+      const response: any = await makePointifyRequest(`/suppliers?${params.toString()}`, {
         method: 'GET'
       });
 
-      // Upstream shape changed: now returns { suppliers: [...] } instead of a bare array.
-      // Normalize to a flat array for all clients.
+      // Upstream may return either a bare array (legacy) or { suppliers, pagination }.
       const suppliers = Array.isArray(response)
         ? response
         : (Array.isArray(response?.suppliers) ? response.suppliers
           : (Array.isArray(response?.data) ? response.data : []));
 
-      res.json(suppliers);
+      // Backward-compat: only return the paginated envelope when caller asked for it.
+      if (!page && !limit) {
+        return res.json(suppliers);
+      }
+
+      const up = response?.pagination || {};
+      const total = Number(up.total ?? suppliers.length) || 0;
+      const curPage = Number(up.page ?? page ?? 1) || 1;
+      const curLimit = Number(up.limit ?? limit ?? suppliers.length) || suppliers.length || 0;
+      const totalPages = curLimit > 0 ? Math.max(1, Math.ceil(total / curLimit)) : 1;
+
+      res.json({
+        data: suppliers,
+        pagination: { total, page: curPage, limit: curLimit, totalPages }
+      });
     } catch (error: any) {
       console.error("Pointify API Error:", error.status, error.responseBody || error.message);
       res.status(error.status || 500).json({ 
