@@ -11,11 +11,18 @@ export function registerSupplierRoutes(app: Express) {
         return res.status(400).json({ error: "shopId is required" });
       }
 
-      const response = await makePointifyRequest(`/suppliers?shopId=${shopId}`, {
+      const response: any = await makePointifyRequest(`/suppliers?shopId=${shopId}`, {
         method: 'GET'
       });
 
-      res.json(response);
+      // Upstream shape changed: now returns { suppliers: [...] } instead of a bare array.
+      // Normalize to a flat array for all clients.
+      const suppliers = Array.isArray(response)
+        ? response
+        : (Array.isArray(response?.suppliers) ? response.suppliers
+          : (Array.isArray(response?.data) ? response.data : []));
+
+      res.json(suppliers);
     } catch (error: any) {
       console.error("Pointify API Error:", error.status, error.responseBody || error.message);
       res.status(error.status || 500).json({ 
