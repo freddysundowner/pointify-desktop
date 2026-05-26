@@ -63,8 +63,8 @@ export default function ExpenseReportPage() {
   const fromDate = showCustom ? customFrom : autoFrom;
   const toDate   = showCustom ? customTo   : autoTo;
 
-  const url = effectiveShopId
-    ? `/api/expenses?shop=${effectiveShopId}&start=${fromDate}&end=${toDate}`
+  const url = effectiveShopId && fromDate && toDate
+    ? `/api/expenses?shop=${effectiveShopId}&startDate=${fromDate}&endDate=${toDate}`
     : null;
 
   const { data: rawExpenses, isLoading, isError } = useQuery<any>({
