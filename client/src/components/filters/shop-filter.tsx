@@ -73,13 +73,11 @@ export function ShopFilter({ className, size = "sm" }: ShopFilterProps) {
   return (
     <Select value={selectedShopId ?? undefined} onValueChange={onChange}>
       <SelectTrigger
-        className={`${h} w-[160px] text-sm ${className ?? ""}`}
+        className={`${h} w-auto min-w-[140px] max-w-[260px] text-sm gap-1.5 ${className ?? ""}`}
         data-testid="select-shop-filter"
       >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Store className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-          <SelectValue placeholder="Select shop" />
-        </div>
+        <Store className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+        <SelectValue placeholder="Select shop" className="truncate whitespace-nowrap" />
       </SelectTrigger>
       <SelectContent>
         {shops.map((shop) => (
