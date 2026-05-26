@@ -793,20 +793,19 @@ export default function PurchasesList() {
           </Card>
         )}
 
-        {/* Summary Stats */}
+        {/* Summary Stats — matches Flutter Purchases Report (Total / Credit / Returns + payment context) */}
         {!isLoading && !error && analyticsData && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
             {[
-              { label: "Total", value: analyticsData.totalpurchases || 0, color: "text-blue-600" },
-              { label: "Cash", value: analyticsData.cash || 0, color: "text-green-600" },
-              { label: "Unpaid", value: analyticsData.credit || 0, color: "text-orange-500" },
-              { label: "Paid", value: analyticsData.paid || 0, color: "text-purple-600" },
-              { label: "Returns", value: analyticsData.returns || 0, color: "text-red-500" },
+              { label: "Total Purchases", value: Number(analyticsData.totalpurchases) || 0, color: "text-blue-600" },
+              { label: "Cash Purchases",  value: Number(analyticsData.cash) || 0,           color: "text-green-600" },
+              { label: "Credit Purchases", value: Number(analyticsData.credit) || 0,        color: "text-orange-500" },
+              { label: "Returns",         value: Number(analyticsData.returns) || 0,        color: "text-red-500" },
             ].map(({ label, value, color }) => (
               <Card key={label} className="p-3">
                 <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
                 <p className={`text-base font-bold ${color}`}>
-                  {currency} {(value).toFixed(2)}
+                  {currency} {value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                 </p>
               </Card>
             ))}
