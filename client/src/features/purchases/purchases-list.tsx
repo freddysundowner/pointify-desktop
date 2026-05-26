@@ -793,8 +793,8 @@ export default function PurchasesList() {
           </Card>
         )}
 
-        {/* Summary Stats — period totals from analytics endpoint */}
-        {!isLoading && !error && analyticsData && (() => {
+        {/* Summary Stats — period totals from analytics endpoint. Hidden when a status filter is active (table speaks for itself). */}
+        {!isLoading && !error && analyticsData && statusFilter === "all" && (() => {
           const cash    = Number(analyticsData.cash) || 0;
           const credit  = Number(analyticsData.credit) || 0;
           const returns = Number(analyticsData.returns) || 0;
