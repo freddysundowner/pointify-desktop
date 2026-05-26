@@ -63,14 +63,29 @@ const isPlainObject = (v: any) => v !== null && typeof v === 'object' && !Array.
 // "After taxes" subnote, then a list of label / subtitle / amount rows that
 // mirrors the iOS app screen.
 function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
-  const grossProfit    = pickNum(data, 'grossProfit', 'gross', 'grossprofit');
-  const netProfit      = pickNum(data, 'netProfit', 'net', 'netprofit', 'profit');
-  const totalSalesPaid = pickNum(data, 'totalSalesPaid', 'totalsalespaid', 'totalSales', 'sales', 'totalsales');
-  const debtCollected  = pickNum(data, 'debtCollected', 'debtcollected', 'debtpaid', 'debt');
-  const totalTaxes     = pickNum(data, 'totalTaxes', 'totaltaxes', 'taxes', 'tax');
-  const totalExpenses  = pickNum(data, 'totalExpenses', 'totalexpenses', 'expenses');
-  const badStock       = pickNum(data, 'badStock', 'badstock', 'bad_stock');
-  const afterTaxes     = pickNum(data, 'afterTaxes', 'aftertaxes', 'afterTax', 'aftertax');
+  // The upstream response is nested:
+  //   { creditTotals, debtPaid,
+  //     totalProfitAndSalesValue: { totalProfit, totalCashSales, totalSales, totalPurchases, totalTaxes },
+  //     badStockValue: { badStockValue },
+  //     totalExpenses: { totalExpenses },
+  //     totalTaxes, gross, net }
+  // We accept both nested and flat shapes so this stays resilient.
+  const psv = data?.totalProfitAndSalesValue ?? {};
+  const expensesNode = data?.totalExpenses;
+  const badStockNode = data?.badStockValue;
+
+  const grossProfit    = pickNum(data, 'grossProfit', 'gross') || pickNum(psv, 'totalProfit', 'gross');
+  const netProfit      = pickNum(data, 'netProfit', 'net', 'profit');
+  const totalSalesPaid = pickNum(psv, 'totalSales', 'totalCashSales') || pickNum(data, 'totalSalesPaid', 'totalSales', 'sales');
+  const debtCollected  = pickNum(data, 'debtPaid', 'debtCollected', 'debtpaid', 'debt');
+  const totalTaxes     = pickNum(data, 'totalTaxes', 'taxes', 'tax') || pickNum(psv, 'totalTaxes');
+  const totalExpenses  = typeof expensesNode === 'object' && expensesNode !== null
+    ? pickNum(expensesNode, 'totalExpenses', 'expenses', 'amount', 'total')
+    : pickNum(data, 'totalExpenses', 'expenses');
+  const badStock       = typeof badStockNode === 'object' && badStockNode !== null
+    ? pickNum(badStockNode, 'badStockValue', 'value', 'amount', 'total')
+    : pickNum(data, 'badStock', 'bad_stock');
+  const afterTaxes     = pickNum(data, 'afterTaxes', 'afterTax') || (grossProfit - totalTaxes);
 
   const headerAmount = grossProfit || totalSalesPaid;
   const afterTaxAmount = afterTaxes || grossProfit;
