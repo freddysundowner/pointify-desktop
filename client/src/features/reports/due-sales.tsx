@@ -40,7 +40,7 @@ export default function DueSalesPage() {
 
   const [dueDate, setDueDate] = useState(toYMD(new Date()));
   const url = effectiveShopId && dueDate
-    ? `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&duedate=${dueDate}&start=${dueDate}&end=${dueDate}&paginated=false`
+    ? `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&start=${dueDate}&end=${dueDate}&paginated=false`
     : null;
 
   const { data: rawSales, isLoading, isError } = useQuery<any>({
