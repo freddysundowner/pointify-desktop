@@ -39,8 +39,8 @@ export default function DueSalesPage() {
   const reportsRoute = useNavigationRoute("reports");
 
   const [dueDate, setDueDate] = useState(toYMD(new Date()));
-  const url = effectiveShopId
-    ? `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&dueDate=${dueDate}&fromDate=${dueDate}&toDate=${dueDate}&paginated=false`
+  const url = effectiveShopId && dueDate
+    ? `/api/sales/filter?shopId=${effectiveShopId}&paymentType=credit&duedate=${dueDate}&start=${dueDate}&end=${dueDate}&paginated=false`
     : null;
 
   const { data: rawSales, isLoading, isError } = useQuery<any>({
