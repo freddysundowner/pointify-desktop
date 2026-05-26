@@ -74,10 +74,10 @@ function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
   const expensesNode = data?.totalExpenses;
   const badStockNode = data?.badStockValue;
 
-  const grossProfit    = pickNum(data, 'grossProfit', 'gross') || pickNum(psv, 'totalProfit', 'gross');
-  const netProfit      = pickNum(data, 'netProfit', 'net', 'profit');
-  const totalSalesPaid = pickNum(psv, 'totalSales', 'totalCashSales') || pickNum(data, 'totalSalesPaid', 'totalSales', 'sales');
-  const debtCollected  = pickNum(data, 'debtPaid', 'debtCollected', 'debtpaid', 'debt');
+  const totalCashSales = pickNum(psv, 'totalCashSales', 'totalSales') || pickNum(data, 'totalCashSales', 'totalSales');
+  const debtPaid       = pickNum(data, 'debtPaid', 'debtCollected', 'debt');
+  const grossRow       = pickNum(data, 'gross', 'grossProfit') || pickNum(psv, 'totalProfit');
+  const netProfit      = pickNum(data, 'net', 'netProfit', 'profit');
   const totalTaxes     = pickNum(data, 'totalTaxes', 'taxes', 'tax') || pickNum(psv, 'totalTaxes');
   const totalExpenses  = typeof expensesNode === 'object' && expensesNode !== null
     ? pickNum(expensesNode, 'totalExpenses', 'expenses', 'amount', 'total')
@@ -85,10 +85,12 @@ function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
   const badStock       = typeof badStockNode === 'object' && badStockNode !== null
     ? pickNum(badStockNode, 'badStockValue', 'value', 'amount', 'total')
     : pickNum(data, 'badStock', 'bad_stock');
-  const afterTaxes     = pickNum(data, 'afterTaxes', 'afterTax') || (grossProfit - totalTaxes);
 
-  const headerAmount = grossProfit || totalSalesPaid;
-  const afterTaxAmount = afterTaxes || grossProfit;
+  // Mobile-app formulas (from NetProfitReport.dart):
+  //   header  = (totalCashSales + debtPaid) - totalExpenses
+  //   after   = header - totalTaxes
+  const headerAmount   = (totalCashSales + debtPaid) - totalExpenses;
+  const afterTaxAmount = headerAmount - totalTaxes;
 
   const fmt0 = (n: number) =>
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
@@ -96,9 +98,9 @@ function NetProfitMobile({ data, currency }: { data: any; currency: string }) {
     new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n || 0);
 
   const rows = [
-    { key: 'totalSalesPaid', label: 'Total Sales Paid', sub: 'Click To View Sales Report', value: totalSalesPaid, fmt: fmt0 },
-    { key: 'debtCollected',  label: 'Debt Collected',   sub: 'Click To View Sales Report', value: debtCollected,  fmt: fmt0 },
-    { key: 'grossProfit',    label: 'Gross Profit',     sub: 'Profit on sales',              value: grossProfit,    fmt: fmt0 },
+    { key: 'totalSalesPaid', label: 'Total Sales Paid', sub: 'Click To View Sales Report', value: totalCashSales, fmt: fmt0 },
+    { key: 'debtCollected',  label: 'Debt Collected',   sub: 'Click To View Sales Report', value: debtPaid,       fmt: fmt0 },
+    { key: 'grossProfit',    label: 'Gross Profit',     sub: 'Profit on sales',              value: grossRow,       fmt: fmt0 },
     { key: 'netProfit',      label: 'Net Profit',       sub: 'Click to view more on Gross Profit – All deductions, taxes & Expenses', value: netProfit, fmt: fmt1 },
     { key: 'totalTaxes',     label: 'Total Taxes',      sub: '',                              value: totalTaxes,     fmt: fmt1 },
     { key: 'totalExpenses',  label: 'Total Expenses',   sub: 'All Expenses',                  value: totalExpenses,  fmt: fmt0 },
