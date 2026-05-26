@@ -133,7 +133,7 @@ export function registerSupplierRoutes(app: Express) {
       if (!Array.isArray(supplierIds) || supplierIds.length === 0) {
         return res.status(400).json({ error: "supplierIds (non-empty array) is required" });
       }
-      const response = await makePointifyRequest(`/bulk/delete/suppliers`, {
+      const response = await makePointifyRequest(`/suppliers/bulk/delete/suppliers`, {
         method: 'POST',
         body: JSON.stringify({ supplierIds }),
         headers: { 'Content-Type': 'application/json' }
