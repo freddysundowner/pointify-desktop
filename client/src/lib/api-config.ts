@@ -76,6 +76,14 @@ export const API_ENDPOINTS = {
     sync: (id: string) => `/api/sync/${id}`,
   },
 
+  // M-Pesa endpoints (proxied to SunPay via Pointify API)
+  mpesa: {
+    stkPush: "/api/mpesa/stk-push",
+    expect: "/api/mpesa/expect",
+    status: (transactionId: string) => `/api/mpesa/status/${transactionId}`,
+    lookup: "/api/mpesa/lookup",
+  },
+
   // Analytics endpoints - all go through /api/ proxy
   analytics: {
     stockAnalysis: "/api/analysis/stockanalysis",

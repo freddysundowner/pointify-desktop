@@ -1,0 +1,1 @@
+- [Cancellable async UI flows](async-flow-guards.md) — polling + mutation onSuccess must be guarded by a per-flow id ref or stale results resurrect cancelled state.
