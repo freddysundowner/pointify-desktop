@@ -14,9 +14,10 @@ import { formatDate, formatTime } from "@/utils";
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title?: string;
+  isDashboard?: boolean;
 }
 
-export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, isDashboard = false }: DashboardLayoutProps) {
   const [location, setLocation] = useLocation();
   const { admin, logout } = useAuth();
   const { toast } = useToast();
@@ -438,7 +439,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
 
         {/* Desktop Header — only shown on dashboard, so non-dashboard pages don't get two headers */}
-        {!isAttendantRoute && (location === "/" || location === dashboardRoute) && (
+        {!isAttendantRoute && (isDashboard || location === "/" || location === dashboardRoute) && (
           <div className="hidden lg:block sticky top-0 z-20 bg-white shadow-sm border-b">
             <div className="flex items-center justify-between px-4 h-16">
               <div className="flex items-center gap-3">

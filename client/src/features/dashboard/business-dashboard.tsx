@@ -389,7 +389,7 @@ export default function BusinessDashboard() {
 
 
   return (
-    <DashboardLayout title="Business Dashboard">
+    <DashboardLayout title="Business Dashboard" isDashboard>
       <div className="space-y-3 md:space-y-6 w-full mt-2 md:mt-6">
         
         {/* Subscription Expiration Alert */}
