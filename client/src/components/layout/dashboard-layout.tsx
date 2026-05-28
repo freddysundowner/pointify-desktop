@@ -438,7 +438,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       <div className={`w-full ${!isAttendantRoute ? 'lg:pl-72' : ''}`}>
 
         {/* Desktop Header — only shown on dashboard, so non-dashboard pages don't get two headers */}
-        {!isAttendantRoute && (location === "/" || location === "/dashboard") && (
+        {!isAttendantRoute && (location === "/" || location === dashboardRoute) && (
           <div className="hidden lg:block sticky top-0 z-20 bg-white shadow-sm border-b">
             <div className="flex items-center justify-between px-4 h-16">
               <div className="flex items-center gap-3">
