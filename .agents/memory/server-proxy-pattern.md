@@ -23,3 +23,21 @@ upstream Pointify proxy must actually implement it.
 
 **How to apply:** When adding a feature that calls a new `/api/...` path, mirror an
 existing route module (sms.ts is the simplest template) and forward via makePointifyRequest.
+
+# makePointifyRequest masks upstream HTTP status (graceful fallback)
+
+`makePointifyRequest` does NOT propagate upstream error status reliably. On a non-OK
+online response it returns `{ success:false, httpStatus, ... }` (no throw), and the
+online/hybrid branches treat `success===false` as a trigger to retry the LOCAL API and
+then fall through to `gracefulFallback()`. Net effect: a meaningful upstream status like
+**409 Conflict gets swallowed** before the client ever sees it.
+
+**Why:** This makes it impossible to implement client-enforced semantics that depend on
+distinguishing conflict (409) vs not-implemented (404) vs success — e.g. atomic
+"allocate/consume this M-Pesa ref, reject if already used" double-spend prevention.
+
+**How to apply:** Any logic that must act on a specific upstream status (conflict,
+payment already allocated, idempotency rejection) has to be enforced UPSTREAM (the
+Pointify/SunPay proxy at commit time), not in the client or this thin proxy layer.
+Don't build client allocate-then-check flows through makePointifyRequest — they become
+security theater.
