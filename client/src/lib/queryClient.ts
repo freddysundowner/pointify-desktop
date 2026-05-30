@@ -1,9 +1,31 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Turn a raw error response body into a human-friendly message.
+// The proxy/backend returns errors as JSON like
+// {"error":"Selling price must be greater than buying price","success":false,"httpStatus":400}
+// so we extract the human message instead of dumping the raw JSON into a toast.
+export function parseApiError(status: number, rawBody: string): string {
+  const body = (rawBody || "").trim();
+  if (body) {
+    try {
+      const parsed = JSON.parse(body);
+      const msg = parsed?.error || parsed?.message;
+      if (typeof msg === "string" && msg.trim()) return msg;
+    } catch {
+      // Not JSON — if it's plain text (not a JSON blob), show it as-is.
+      if (!body.startsWith("{") && !body.startsWith("[")) return body;
+    }
+  }
+  if (status === 401 || status === 403) return "You are not authorized to do that.";
+  if (status === 404) return "Not found.";
+  if (status >= 500) return "Something went wrong on the server. Please try again.";
+  return `Request failed (${status}).`;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    const text = await res.text();
+    throw new Error(parseApiError(res.status, text || res.statusText));
   }
 }
 

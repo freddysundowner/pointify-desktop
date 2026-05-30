@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Package } from "lucide-react";
 import { offlineStorage } from "@/lib/offline-storage";
+import { parseApiError } from "@/lib/queryClient";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -424,7 +425,7 @@ export default function ProductForm() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorData}`);
+        throw new Error(parseApiError(response.status, errorData));
       }
 
       return response.json();
@@ -487,7 +488,7 @@ export default function ProductForm() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorData}`);
+        throw new Error(parseApiError(response.status, errorData));
       }
 
       return response.json();
