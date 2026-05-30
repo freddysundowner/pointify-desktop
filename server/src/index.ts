@@ -31,8 +31,22 @@ app.use((req, res, next) => {
   let capturedJsonResponse: Record<string, any> | undefined;
 
   const originalJson = res.json;
-  res.json = function (bodyJson, ...args) {
+  res.json = function (bodyJson: any, ...args: any[]) {
     capturedJsonResponse = bodyJson;
+    // Promote a surfaced upstream write error to its real HTTP status.
+    // makePointifyRequest now returns { success:false, httpStatus } for definitive
+    // upstream write failures instead of masking them; without this the route's
+    // res.json(data) would still send 200 and swallow the error from the client.
+    if (
+      res.statusCode === 200 &&
+      bodyJson &&
+      typeof bodyJson === "object" &&
+      !Array.isArray(bodyJson) &&
+      bodyJson.success === false &&
+      typeof bodyJson.httpStatus === "number"
+    ) {
+      res.status(bodyJson.httpStatus);
+    }
     return originalJson.apply(res, [bodyJson, ...args]);
   };
 
