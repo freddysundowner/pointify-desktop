@@ -808,6 +808,8 @@ export default function ProductGrid({
   };
 
   const grandTotal = totals.total + extraChargeAmount;
+  // STK push is only possible once the shop is linked to a SunPay merchant.
+  const mpesaLinked = Boolean(shopData?.sunpay_merchant_ref);
 
   const processTransaction = async (isHold = false) => {
     // For hold transactions, skip payment method validations
@@ -2476,7 +2478,7 @@ export default function ProductGrid({
                     </div>
 
                     {/* STK push: send a prompt to the customer's phone */}
-                    {mpesaStkStatus !== "success" && (
+                    {mpesaLinked && mpesaStkStatus !== "success" && (
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-purple-700">Send STK Push</label>
                         <div className="flex gap-2">
@@ -2545,9 +2547,13 @@ export default function ProductGrid({
                     )}
 
                     {/* Manual entry fallback */}
-                    <div className="space-y-1 pt-1 border-t border-purple-100">
+                    <div className={`space-y-1 ${mpesaLinked ? "pt-1 border-t border-purple-100" : ""}`}>
                       <label className="text-xs font-medium text-purple-700">
-                        Or enter M-Pesa code manually <span className="text-gray-400 font-normal">(optional)</span>
+                        {mpesaLinked ? (
+                          <>Or enter M-Pesa code manually <span className="text-gray-400 font-normal">(optional)</span></>
+                        ) : (
+                          <>Enter M-Pesa code <span className="text-gray-400 font-normal">(optional)</span></>
+                        )}
                       </label>
                       <Input
                         type="text"
