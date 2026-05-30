@@ -20,6 +20,7 @@ import { registerPrinterRoutes } from "./printer.js";
 import { registerSettingsRoutes } from "./settings.js";
 import { registerInitsRoutes } from "./init.js";
 import { registerSmsRoutes } from "./sms.js";
+import { registerMpesaRoutes } from "./mpesa.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
 import { registerAiImportRoutes } from "./ai-import.js";
@@ -53,6 +54,7 @@ export function registerAllRoutes(app: Express) {
   registerPrinterRoutes(app);
   registerSettingsRoutes(app);
   registerSmsRoutes(app);
+  registerMpesaRoutes(app);
   registerPaymentRoutes(app);
   registerSyncRoutes(app);
   registerAiImportRoutes(app);
