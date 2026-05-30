@@ -45,6 +45,10 @@ export type PointifyResponse =
   | { success: boolean; offline?: boolean; message?: string }
   | null | [];
 // Normalize headers helper
+const isWriteMethod = (options: PointifyRequestOptions = {}): boolean => {
+  const method = String(options.method || 'GET').toUpperCase();
+  return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+};
 const normalizeHeaders = (headers: Record<string, string> = {}): Record<string, string> => {
   return Object.keys(headers).reduce((acc, key) => {
     acc[key.toLowerCase()] = headers[key];
@@ -97,6 +101,9 @@ export async function makeOnlinePointifyRequest(
       const body = await response.json();
       errorData = { ...body, success: false, offline: false, httpStatus: response.status };
     } catch { /* keep default */ }
+    // Surface the real upstream rejection — otherwise it gets masked by the
+    // graceful-fallback path and the caller can't tell why a write failed.
+    console.log(`🛑 Upstream ${options.method || 'GET'} ${url} -> ${response.status}:`, JSON.stringify(errorData));
     return errorData;
   }
 
@@ -165,6 +172,12 @@ export async function makePointifyRequest(
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
         console.log(`🌐 Online API response for ${endpoint}:`);
         if (response.success === false) {
+          // A definitive upstream HTTP error (4xx/5xx) on a write must NOT be
+          // masked as a fake-success []. Surface it so the route can return the
+          // real status/message and the cashier knows the sale didn't save.
+          if (isWriteMethod(options) && response.httpStatus) {
+            return response;
+          }
           try {
             let localresponse = await makeLocalPointifyRequest(endpoint, options);
             return localresponse;
@@ -198,6 +211,10 @@ export async function makePointifyRequest(
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
         console.log(`🌐 Online API response for ${endpoint}:`);
         if (response.success === false) {
+          // Don't mask a definitive upstream write error as fake-success [].
+          if (isWriteMethod(options) && response.httpStatus) {
+            return response;
+          }
           try {
             let localresponse = await makeLocalPointifyRequest(endpoint, options);
             return localresponse;

@@ -343,12 +343,24 @@ export function registerSalesRoutes(app: Express) {
 
       console.log("Sales transaction data:", JSON.stringify(req.body, null, 2));
 
-      const data = await makePointifyRequest("/sales", {
+      const data: any = await makePointifyRequest("/sales", {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(req.body)
       });
-      
+
+      // A write must never silently report success when upstream rejected it.
+      // makePointifyRequest now surfaces definitive upstream errors as
+      // { success:false, httpStatus, ... } instead of masking them as [].
+      if (data && data.success === false) {
+        const statusCode = data.httpStatus || 502;
+        console.error("Sales transaction rejected by upstream:", JSON.stringify(data));
+        return res.status(statusCode).json({
+          error: data.error || data.message || "Failed to create sales transaction",
+          details: data,
+        });
+      }
+
       res.json(data);
     } catch (error: any) {
       console.error("Sales transaction error:", error);

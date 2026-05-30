@@ -41,3 +41,21 @@ payment already allocated, idempotency rejection) has to be enforced UPSTREAM (t
 Pointify/SunPay proxy at commit time), not in the client or this thin proxy layer.
 Don't build client allocate-then-check flows through makePointifyRequest — they become
 security theater.
+
+# Writes must surface upstream failure (not fake-success [])
+
+The original masking (above) caused a real bug: a rejected sale (`POST /sales` upstream
+4xx) was turned into `200 []`, so the cashier saw success while nothing saved. Fix in
+config.ts: a `isWriteMethod()` helper; in BOTH the `online` and `hybrid` cases, when
+`response.success===false && isWriteMethod && response.httpStatus`, return the error
+object instead of retrying local / gracefulFallback. `makeOnlinePointifyRequest` logs the
+upstream status+body (`🛑 Upstream ...`). Routes must then check `data?.success===false`
+and `res.status(data.httpStatus||502)` — only `POST /api/sales` does this so far.
+
+**Why:** GET masking is fine (empty list degrades gracefully); WRITE masking is dangerous
+(silent data loss, double-charge confusion). Reads still fall back to [].
+
+**How to apply:** Any write route that does `res.json(data)` after makePointifyRequest can
+now return `200 {success:false,...}` — sweep them to forward `data.httpStatus` as the
+HTTP status if you need true non-2xx everywhere. To see why a write actually failed, grep
+the Server log for `🛑 Upstream` after reproducing.
