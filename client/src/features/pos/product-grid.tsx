@@ -121,8 +121,8 @@ export default function ProductGrid({
   const [mpesaVerifyStatus, setMpesaVerifyStatus] = useState<"idle" | "checking" | "verified" | "notfound">("idle");
   const [mpesaVerifyAmount, setMpesaVerifyAmount] = useState<number | null>(null);
   const [mpesaVerifyMsg, setMpesaVerifyMsg] = useState<string | null>(null);
-  // M-Pesa panel sub-flow: "stk" = charge now, "manual" = customer already paid (Till).
-  const [mpesaMode, setMpesaMode] = useState<"stk" | "manual">("stk");
+  // Flow B "already paid" search lives in its own dialog, toggled by this flag.
+  const [mpesaLookupOpen, setMpesaLookupOpen] = useState(false);
   // Flow B search: look up an already-made payment by its code or the payer's phone.
   const [mpesaLookupBy, setMpesaLookupBy] = useState<"code" | "phone">("code");
   const [mpesaLookupPhone, setMpesaLookupPhone] = useState("");
@@ -267,17 +267,18 @@ export default function ProductGrid({
     showPaymentDialog,
     selectedPaymentMethod,
     totals,
+    mpesaLookupOpen,
   });
 
   // Keep shortcut state ref current every render (no extra effect needed)
-  shortcutStateRef.current = { cartItems, showPaymentDialog, selectedPaymentMethod, totals };
+  shortcutStateRef.current = { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen };
 
   // ── Keyboard shortcuts (registered once, reads state via refs) ────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-      const { cartItems, showPaymentDialog, selectedPaymentMethod, totals } = shortcutStateRef.current;
+      const { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen } = shortcutStateRef.current;
       const meta = e.metaKey || e.ctrlKey;
 
       // F2 or Cmd/Ctrl+P → open payment dialog
@@ -302,14 +303,16 @@ export default function ProductGrid({
         return;
       }
 
-      // Escape → close payment dialog
+      // Escape → close payment dialog (but not when the M-Pesa lookup dialog is
+      // open on top — let Radix close that one first without tearing down the sale)
       if (e.key === "Escape" && showPaymentDialog) {
+        if (mpesaLookupOpen) return;
         resetPaymentDialogRef.current?.();
         return;
       }
 
-      // When payment dialog is open:
-      if (showPaymentDialog) {
+      // When payment dialog is open (and the lookup dialog isn't capturing input):
+      if (showPaymentDialog && !mpesaLookupOpen) {
         // Enter → complete payment
         if (e.key === "Enter" && !inInput) {
           e.preventDefault();
@@ -836,7 +839,6 @@ export default function ProductGrid({
   const mpesaValidationEnforced = mpesaLinked && mpesaRequireValidation;
   // Flow B: a verified Till payment below the sale total must not be accepted as paid.
   const mpesaUnderpaid =
-    mpesaMode === "manual" &&
     mpesaVerifyStatus === "verified" &&
     mpesaVerifyAmount != null &&
     mpesaVerifyAmount < grandTotal - 0.01;
@@ -852,7 +854,7 @@ export default function ProductGrid({
       // or a manually entered code. Enforced here so the Enter-key shortcut and
       // auto-finalize path can't bypass the disabled-button gate.
       if (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced &&
-          mpesaStkStatus !== "success" && !(mpesaMode === "manual" && mpesaVerifyStatus === "verified")) {
+          mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified") {
         toast({
           title: "Payment Not Confirmed",
           description: "Wait for the STK payment to confirm, or verify the M-Pesa code the customer already paid.",
@@ -1145,7 +1147,7 @@ export default function ProductGrid({
     setMpesaVerifyStatus("idle");
     setMpesaVerifyAmount(null);
     setMpesaVerifyMsg(null);
-    setMpesaMode(mpesaLinked ? "stk" : "manual");
+    setMpesaLookupOpen(false);
     setMpesaLookupBy("code");
     setMpesaLookupPhone("");
     setMpesaResults([]);
@@ -1201,6 +1203,27 @@ export default function ProductGrid({
     setMpesaVerifyAmount(typeof c.amount === "number" ? c.amount : null);
     setMpesaVerifyStatus("verified");
     setMpesaVerifyMsg(null);
+    setMpesaResults([]);
+    setMpesaLookupOpen(false); // selecting confirms — close the search dialog
+  };
+
+  // Open the "already paid" search dialog, prefilling the customer's phone (the
+  // field the cashier is most likely to search by). Any prior verified match is
+  // preserved — "Change" keeps the existing selection until a new one is picked
+  // (or a fresh search is run) so dismissing the dialog can't lose it.
+  const openMpesaLookup = () => {
+    mpesaFlowIdRef.current += 1; // invalidate any stale in-flight lookup
+    setMpesaResults([]);
+    setMpesaVerifyMsg(null);
+    setMpesaLookupBy("phone");
+    setMpesaLookupPhone(selectedCustomer?.phonenumber || selectedCustomer?.phone || "");
+    setMpesaLookupOpen(true);
+  };
+
+  // Close the dialog; if nothing was confirmed, discard the in-flight search.
+  const closeMpesaLookup = () => {
+    setMpesaLookupOpen(false);
+    if (mpesaVerifyStatus !== "verified") cancelMpesaLookup();
   };
 
   // Invalidate any in-flight lookup and clear Flow B verification state. Called on every
@@ -1260,12 +1283,8 @@ export default function ProductGrid({
         setMpesaVerifyMsg("That payment has already been used for another sale.");
         return;
       }
-      if (usable.length === 1) {
-        selectMpesaPayment(usable[0]); // unambiguous — auto-select
-      } else {
-        setMpesaResults(usable); // let the cashier pick the right one
-        setMpesaVerifyStatus("idle");
-      }
+      setMpesaResults(usable); // always list matches in the dialog; cashier taps one
+      setMpesaVerifyStatus("idle");
     } catch (err: any) {
       if (mpesaFlowIdRef.current !== flowId) return;
       setMpesaVerifyStatus("notfound");
@@ -2679,30 +2698,8 @@ export default function ProductGrid({
                       <span className="text-sm font-bold text-purple-700">Ksh {grandTotal.toFixed(2)}</span>
                     </div>
 
-                    {/* Flow toggle (linked shops only): charge now vs. already paid */}
-                    {mpesaLinked && mpesaStkStatus !== "success" && (
-                      <div className="grid grid-cols-2 gap-1 p-1 bg-purple-100 rounded-lg">
-                        {([["stk", "Charge (STK)"], ["manual", "Already paid"]] as const).map(([m, label]) => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => {
-                              cancelMpesaLookup();
-                              setMpesaMode(m);
-                            }}
-                            className={`py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                              mpesaMode === m ? "bg-white text-purple-700 shadow-sm" : "text-purple-600 hover:text-purple-800"
-                            }`}
-                            data-testid={`tab-mpesa-${m}`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
                     {/* Flow A — STK push to the customer's phone */}
-                    {mpesaLinked && mpesaMode === "stk" && mpesaStkStatus !== "success" && (
+                    {mpesaLinked && mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified" && (
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-purple-700">Customer's phone</label>
                         <div className="flex gap-2">
@@ -2743,7 +2740,7 @@ export default function ProductGrid({
                         )}
                         {mpesaStkStatus === "timeout" && (
                           <p className="text-xs text-orange-600" data-testid="status-mpesa-timeout">
-                            Timed out waiting for payment. Try again or switch to “Already paid”.
+                            Timed out waiting for payment. Try again, or use “Customer already paid”.
                           </p>
                         )}
                         {mpesaStkStatus === "failed" && mpesaStkError && (
@@ -2752,7 +2749,21 @@ export default function ProductGrid({
                       </div>
                     )}
 
-                    {/* Success (either flow) */}
+                    {/* "Already paid" entry point — opens the search dialog */}
+                    {mpesaLinked && mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openMpesaLookup}
+                        className="w-full h-9 text-sm border-purple-300 text-purple-700 bg-white hover:bg-purple-100"
+                        data-testid="button-open-mpesa-lookup"
+                      >
+                        <Search className="h-4 w-4 mr-1.5" />
+                        Customer already paid? Find payment
+                      </Button>
+                    )}
+
+                    {/* Success (STK push) */}
                     {mpesaStkStatus === "success" && (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1" data-testid="status-mpesa-success">
                         <div className="flex items-center gap-2 text-sm font-medium text-green-700">
@@ -2768,176 +2779,198 @@ export default function ProductGrid({
                       </div>
                     )}
 
-                    {/* Flow B — customer already paid the Till (no STK): search & confirm */}
-                    {(!mpesaLinked || mpesaMode === "manual") && mpesaStkStatus !== "success" && (
-                      <div className="space-y-2">
-                        {!mpesaLinked ? (
-                          /* Unlinked shop: no verification available, just an optional note */
-                          <>
-                            <label className="text-xs font-medium text-purple-700">
-                              Enter M-Pesa code <span className="text-gray-400 font-normal">(optional)</span>
-                            </label>
-                            <Input
-                              type="text"
-                              placeholder="e.g. RI704H61SX"
-                              value={mpesaTransactionId}
-                              onChange={(e) => setMpesaTransactionId(e.target.value)}
-                              className="h-9 text-sm bg-white"
-                              data-testid="input-mpesa-code"
-                            />
-                          </>
-                        ) : mpesaVerifyStatus === "verified" ? null : (
-                          <>
-                            {/* Search-by toggle: code or phone */}
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-purple-700">Find the payment by</span>
-                              <div className="flex gap-0.5 p-0.5 bg-purple-100 rounded-md">
-                                {([["code", "Code"], ["phone", "Phone"]] as const).map(([b, label]) => (
-                                  <button
-                                    key={b}
-                                    type="button"
-                                    onClick={() => {
-                                      cancelMpesaLookup();
-                                      setMpesaLookupBy(b);
-                                    }}
-                                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
-                                      mpesaLookupBy === b ? "bg-white text-purple-700 shadow-sm" : "text-purple-600"
-                                    }`}
-                                    data-testid={`tab-mpesa-lookup-${b}`}
-                                  >
-                                    {label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Search input + button */}
-                            <div className="flex gap-2">
-                              {mpesaLookupBy === "code" ? (
-                                <Input
-                                  type="text"
-                                  placeholder="e.g. RI704H61SX"
-                                  value={mpesaTransactionId}
-                                  onChange={(e) => {
-                                    setMpesaTransactionId(e.target.value);
-                                    cancelMpesaLookup();
-                                  }}
-                                  disabled={mpesaVerifyStatus === "checking"}
-                                  className="h-9 text-sm bg-white flex-1"
-                                  data-testid="input-mpesa-code"
-                                />
-                              ) : (
-                                <Input
-                                  type="tel"
-                                  inputMode="numeric"
-                                  placeholder="e.g. 0712345678"
-                                  value={mpesaLookupPhone}
-                                  onChange={(e) => {
-                                    setMpesaLookupPhone(e.target.value);
-                                    cancelMpesaLookup();
-                                  }}
-                                  disabled={mpesaVerifyStatus === "checking"}
-                                  className="h-9 text-sm bg-white flex-1"
-                                  data-testid="input-mpesa-lookup-phone"
-                                />
-                              )}
-                              <Button
-                                type="button"
-                                onClick={searchMpesaPayments}
-                                disabled={
-                                  mpesaVerifyStatus === "checking" ||
-                                  (mpesaLookupBy === "code"
-                                    ? !mpesaTransactionId.trim()
-                                    : normalizeKePhone(mpesaLookupPhone).length < 12)
-                                }
-                                className="h-9 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm whitespace-nowrap"
-                                data-testid="button-search-mpesa"
-                              >
-                                {mpesaVerifyStatus === "checking" ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Search className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-
-                            {/* Multiple matches — cashier picks the right one */}
-                            {mpesaResults.length > 1 && (
-                              <div className="space-y-1.5" data-testid="list-mpesa-results">
-                                <p className="text-xs text-purple-700">
-                                  {mpesaResults.length} payments found — tap the customer's:
-                                </p>
-                                {mpesaResults.map((c) => (
-                                  <button
-                                    key={c.mpesaRef}
-                                    type="button"
-                                    onClick={() => selectMpesaPayment(c)}
-                                    className="w-full text-left bg-white border border-purple-200 rounded-lg p-2 hover:border-purple-400 transition-colors"
-                                    data-testid={`result-mpesa-${c.mpesaRef}`}
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-xs font-semibold text-gray-800">{c.payerName || "Unknown"}</span>
-                                      {c.amount != null && (
-                                        <span className="text-xs font-bold text-purple-700">Ksh {c.amount.toFixed(2)}</span>
-                                      )}
-                                    </div>
-                                    <div className="flex justify-between items-center mt-0.5">
-                                      <span className="text-[11px] font-mono text-gray-500">{c.mpesaRef}</span>
-                                      {c.time && <span className="text-[11px] text-gray-400">{formatMpesaTime(c.time)}</span>}
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {mpesaVerifyStatus === "notfound" && mpesaVerifyMsg && (
-                              <p className="text-xs text-red-600" data-testid="status-mpesa-verify-failed">{mpesaVerifyMsg}</p>
-                            )}
-                          </>
-                        )}
-
-                        {/* Confirmed payment card (shared by code & phone search) */}
-                        {mpesaLinked && mpesaVerifyStatus === "verified" && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1" data-testid="status-mpesa-verified">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-sm font-medium text-green-700">
-                                <CheckCircle2 className="h-4 w-4" />
-                                Payment found
-                              </div>
-                              <button
-                                type="button"
-                                onClick={cancelMpesaLookup}
-                                className="text-xs text-purple-600 hover:underline"
-                                data-testid="button-mpesa-search-again"
-                              >
-                                Change
-                              </button>
-                            </div>
-                            {mpesaPayerName && (
-                              <p className="text-xs text-green-700">From: {mpesaPayerName}</p>
-                            )}
-                            {mpesaTransactionId && (
-                              <p className="text-xs text-green-700 font-mono">Ref: {mpesaTransactionId}</p>
-                            )}
-                            {mpesaVerifyAmount != null && (
-                              <p className="text-xs text-green-700">Paid: Ksh {mpesaVerifyAmount.toFixed(2)}</p>
-                            )}
-                            {mpesaVerifyAmount != null && mpesaVerifyAmount < grandTotal - 0.01 && (
-                              <p className="text-xs text-red-600 font-medium" data-testid="text-mpesa-underpaid">
-                                Underpaid: Ksh {mpesaVerifyAmount.toFixed(2)} received, but this sale totals Ksh {grandTotal.toFixed(2)}. Cannot complete.
-                              </p>
-                            )}
-                            {mpesaVerifyAmount != null && mpesaVerifyAmount > grandTotal + 0.01 && (
-                              <p className="text-xs text-orange-600 font-medium" data-testid="text-mpesa-overpaid">
-                                Overpaid: Ksh {mpesaVerifyAmount.toFixed(2)} received, sale totals Ksh {grandTotal.toFixed(2)}.
-                              </p>
-                            )}
+                    {/* Confirmed Till payment card (from the search dialog) */}
+                    {mpesaLinked && mpesaVerifyStatus === "verified" && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1" data-testid="status-mpesa-verified">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm font-medium text-green-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Payment found
                           </div>
+                          <button
+                            type="button"
+                            onClick={openMpesaLookup}
+                            className="text-xs text-purple-600 hover:underline"
+                            data-testid="button-mpesa-search-again"
+                          >
+                            Change
+                          </button>
+                        </div>
+                        {mpesaPayerName && (
+                          <p className="text-xs text-green-700">From: {mpesaPayerName}</p>
                         )}
+                        {mpesaTransactionId && (
+                          <p className="text-xs text-green-700 font-mono">Ref: {mpesaTransactionId}</p>
+                        )}
+                        {mpesaVerifyAmount != null && (
+                          <p className="text-xs text-green-700">Paid: Ksh {mpesaVerifyAmount.toFixed(2)}</p>
+                        )}
+                        {mpesaVerifyAmount != null && mpesaVerifyAmount < grandTotal - 0.01 && (
+                          <p className="text-xs text-red-600 font-medium" data-testid="text-mpesa-underpaid">
+                            Underpaid: Ksh {mpesaVerifyAmount.toFixed(2)} received, but this sale totals Ksh {grandTotal.toFixed(2)}. Cannot complete.
+                          </p>
+                        )}
+                        {mpesaVerifyAmount != null && mpesaVerifyAmount > grandTotal + 0.01 && (
+                          <p className="text-xs text-orange-600 font-medium" data-testid="text-mpesa-overpaid">
+                            Overpaid: Ksh {mpesaVerifyAmount.toFixed(2)} received, sale totals Ksh {grandTotal.toFixed(2)}.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Unlinked shop: no verification available, just an optional note */}
+                    {!mpesaLinked && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-purple-700">
+                          Enter M-Pesa code <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. RI704H61SX"
+                          value={mpesaTransactionId}
+                          onChange={(e) => setMpesaTransactionId(e.target.value)}
+                          className="h-9 text-sm bg-white"
+                          data-testid="input-mpesa-code"
+                        />
                       </div>
                     )}
                   </div>
                 )}
+
+                {/* M-Pesa "Customer already paid" search dialog */}
+                <Dialog open={mpesaLookupOpen} onOpenChange={(o) => (o ? setMpesaLookupOpen(true) : closeMpesaLookup())}>
+                  <DialogContent className="sm:max-w-md" data-testid="dialog-mpesa-lookup">
+                    <DialogHeader>
+                      <DialogTitle>Find M-Pesa payment</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {/* Search-by toggle: phone or code */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-600">Search by</span>
+                        <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-md">
+                          {([["phone", "Phone"], ["code", "Code"]] as const).map(([b, label]) => (
+                            <button
+                              key={b}
+                              type="button"
+                              onClick={() => {
+                                cancelMpesaLookup();
+                                setMpesaLookupBy(b);
+                              }}
+                              className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+                                mpesaLookupBy === b ? "bg-white text-purple-700 shadow-sm" : "text-gray-500"
+                              }`}
+                              data-testid={`tab-mpesa-lookup-${b}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Search input + button */}
+                      <div className="flex gap-2">
+                        {mpesaLookupBy === "code" ? (
+                          <Input
+                            type="text"
+                            placeholder="e.g. RI704H61SX"
+                            value={mpesaTransactionId}
+                            onChange={(e) => {
+                              setMpesaTransactionId(e.target.value);
+                              cancelMpesaLookup();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && mpesaTransactionId.trim()) searchMpesaPayments();
+                            }}
+                            disabled={mpesaVerifyStatus === "checking"}
+                            autoFocus
+                            className="h-10 text-sm flex-1"
+                            data-testid="input-mpesa-code"
+                          />
+                        ) : (
+                          <Input
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="e.g. 0712345678"
+                            value={mpesaLookupPhone}
+                            onChange={(e) => {
+                              setMpesaLookupPhone(e.target.value);
+                              cancelMpesaLookup();
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && normalizeKePhone(mpesaLookupPhone).length >= 12) searchMpesaPayments();
+                            }}
+                            disabled={mpesaVerifyStatus === "checking"}
+                            autoFocus
+                            className="h-10 text-sm flex-1"
+                            data-testid="input-mpesa-lookup-phone"
+                          />
+                        )}
+                        <Button
+                          type="button"
+                          onClick={searchMpesaPayments}
+                          disabled={
+                            mpesaVerifyStatus === "checking" ||
+                            (mpesaLookupBy === "code"
+                              ? !mpesaTransactionId.trim()
+                              : normalizeKePhone(mpesaLookupPhone).length < 12)
+                          }
+                          className="h-10 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm whitespace-nowrap"
+                          data-testid="button-search-mpesa"
+                        >
+                          {mpesaVerifyStatus === "checking" ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Search className="h-4 w-4 mr-1.5" />
+                              Search
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Results — cashier taps the customer's payment */}
+                      {mpesaResults.length > 0 && (
+                        <div className="space-y-1.5 max-h-72 overflow-y-auto" data-testid="list-mpesa-results">
+                          <p className="text-xs text-gray-500">
+                            {mpesaResults.length} payment{mpesaResults.length > 1 ? "s" : ""} found — tap to use:
+                          </p>
+                          {mpesaResults.map((c) => (
+                            <button
+                              key={c.mpesaRef}
+                              type="button"
+                              onClick={() => selectMpesaPayment(c)}
+                              className="w-full text-left bg-white border border-gray-200 rounded-lg p-2.5 hover:border-purple-400 hover:bg-purple-50 transition-colors"
+                              data-testid={`result-mpesa-${c.mpesaRef}`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-gray-800">{c.payerName || "Unknown"}</span>
+                                {c.amount != null && (
+                                  <span className="text-sm font-bold text-purple-700">Ksh {c.amount.toFixed(2)}</span>
+                                )}
+                              </div>
+                              <div className="flex justify-between items-center mt-0.5">
+                                <span className="text-[11px] font-mono text-gray-500">{c.mpesaRef}</span>
+                                {c.time && <span className="text-[11px] text-gray-400">{formatMpesaTime(c.time)}</span>}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {mpesaVerifyStatus === "notfound" && mpesaVerifyMsg && (
+                        <p className="text-xs text-red-600" data-testid="status-mpesa-verify-failed">{mpesaVerifyMsg}</p>
+                      )}
+
+                      {mpesaResults.length === 0 && mpesaVerifyStatus !== "notfound" && (
+                        <p className="text-xs text-gray-400">
+                          {mpesaLookupBy === "phone"
+                            ? "Enter the number the customer paid from, then Search."
+                            : "Enter the M-Pesa confirmation code, then Search."}
+                        </p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Bank panel */}
                 {selectedPaymentMethod === "bank" && (
@@ -3083,7 +3116,7 @@ export default function ProductGrid({
                     onClick={handleCompletePayment}
                     disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
                       (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate)) ||
-                      (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaStkStatus !== "success" && !(mpesaMode === "manual" && mpesaVerifyStatus === "verified")) ||
+                      (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified") ||
                       (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaUnderpaid)}
                     className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                   >
