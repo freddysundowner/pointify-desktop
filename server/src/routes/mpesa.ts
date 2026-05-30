@@ -61,13 +61,17 @@ export function registerMpesaRoutes(app: Express) {
     }
   });
 
-  // Lookup: manual fallback — find a payment by its M-Pesa code
+  // Lookup: manual fallback (Flow B) — find an already-made payment by its M-Pesa
+  // code OR the payer's phone. The phone query may return several recent payments.
   app.get("/api/mpesa/lookup", async (req, res) => {
     try {
       const token = req.headers.authorization;
       const code = (req.query.code as string) ?? "";
+      const phone = (req.query.phone as string) ?? "";
       const shopId = (req.query.shopId as string) ?? "";
-      const params = new URLSearchParams({ code, shopId });
+      const params = new URLSearchParams({ shopId });
+      if (code) params.set("code", code);
+      if (phone) params.set("phone", phone);
       const response = await makePointifyRequest(`/api/v2/mpesa/lookup?${params.toString()}`, {
         method: "GET",
         headers: {
