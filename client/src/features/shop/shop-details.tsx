@@ -126,6 +126,16 @@ export default function ShopDetails() {
       return shop;
     },
     enabled: !!id,
+    // Seed instantly from the already-loaded shops list so the form populates
+    // immediately instead of showing a blank loading page. The full record
+    // still refetches in the background to fill any extra fields.
+    initialData: () => {
+      const cached = queryClient.getQueryData<any[]>(["shops", admin?._id]);
+      if (Array.isArray(cached)) {
+        return cached.find((s) => s?._id === id);
+      }
+      return undefined;
+    },
   });
 
   // Update form data when shop loads. Only populate from a valid shop record
