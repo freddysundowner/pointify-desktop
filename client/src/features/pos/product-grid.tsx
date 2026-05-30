@@ -170,14 +170,15 @@ export default function ProductGrid({
         page: "1",
         limit: "100",
         name: query,
-        shopid: shopId || "",
+        shop: shopId || "",
         adminid: adminId || "",
         useWarehouse: "true",
         warehouse: "false",
-        type: "all"
+        type: "",
+        stockMode: ""
       });
 
-      const response = await apiCall(`/api/product?${params.toString()}`, {
+      const response = await apiCall(`/api/v2/products/list?${params.toString()}`, {
         method: 'GET'
       });
 

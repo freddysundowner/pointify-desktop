@@ -90,8 +90,9 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
         date: '',
         limit: '50',
         name: '',
-        shopid: shopId,
-        type: 'all',
+        shop: shopId,
+        type: '',
+        stockMode: '',
         sort: '',
         productid: '',
         barcodeid: '',
@@ -103,7 +104,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
       if (currentAttendant) queryParams.append('attendantId', (currentAttendant as any)._id);
       else if (currentAdmin) queryParams.append('adminid', (currentAdmin as any)._id || (currentAdmin as any).id);
 
-      const response = await apiCall(`/api/product?${queryParams.toString()}`, {
+      const response = await apiCall(`/api/v2/products/list?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
