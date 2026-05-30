@@ -155,7 +155,7 @@ export default function ProductGrid({
 
   // Local search function
   const searchLocally = (query: string) => {
-    const searchTerm = query.toLowerCase();
+    const searchTerm = query.trim().toLowerCase();
     return allProducts.filter(product =>
       product.name?.toLowerCase().includes(searchTerm) ||
       product.title?.toLowerCase().includes(searchTerm) ||
@@ -169,7 +169,7 @@ export default function ProductGrid({
       const params = new URLSearchParams({
         page: "1",
         limit: "100",
-        name: query,
+        name: query.trim(),
         shop: shopId || "",
         adminid: adminId || "",
         useWarehouse: "true",
