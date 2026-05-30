@@ -15,3 +15,4 @@ Any multi-step async UI flow (polling + mutations) where the user can cancel, sw
 - Every poll tick: same guard at the top and after every `await`.
 - Also reset when the parent state that owns the flow changes (e.g. switching payment method away from `mpesa` must call `resetMpesa()`).
 - Always validate the success-response shape (e.g. `transactionId` present) before transitioning to "waiting" — otherwise you poll `/status/undefined` and silently degrade to timeout.
+- Poll with a self-scheduling `setTimeout` loop (schedule the next tick only after the current `await` resolves), NOT `setInterval`. `setInterval` fires every N ms regardless of whether the previous status request finished, so slow responses stack up overlapping requests and can apply out-of-order status transitions.

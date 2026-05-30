@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -104,6 +104,16 @@ export default function ProductGrid({
  
   // Payment-specific input states
   const [mpesaTransactionId, setMpesaTransactionId] = useState("");
+  // M-Pesa STK push (SunPay) flow
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [mpesaStkStatus, setMpesaStkStatus] = useState<"idle" | "sending" | "waiting" | "success" | "failed" | "timeout">("idle");
+  const [mpesaStkError, setMpesaStkError] = useState<string | null>(null);
+  const [mpesaPayerName, setMpesaPayerName] = useState<string | null>(null);
+  const mpesaPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mpesaPollStopAtRef = useRef<number>(0);
+  // Increments on every reset/close so in-flight async callbacks bail instead of
+  // resurrecting a cancelled flow.
+  const mpesaFlowIdRef = useRef<number>(0);
   const [bankTransactionId, setBankTransactionId] = useState("");
   const [creditDueDate, setCreditDueDate] = useState("");
   useEffect(() => {
@@ -1042,6 +1052,127 @@ export default function ProductGrid({
     setShowHoldCustomerDialog(false);
   };
 
+  // ---------- M-Pesa STK push (SunPay) helpers ----------
+  const normalizeKePhone = (raw: string) => {
+    const d = (raw || "").replace(/\D/g, "");
+    if (d.startsWith("254")) return d;
+    if (d.startsWith("0")) return "254" + d.slice(1);
+    if (d.startsWith("7") || d.startsWith("1")) return "254" + d;
+    return d;
+  };
+
+  const stopMpesaPolling = () => {
+    if (mpesaPollRef.current) {
+      clearInterval(mpesaPollRef.current);
+      mpesaPollRef.current = null;
+    }
+  };
+
+  const resetMpesaStk = () => {
+    stopMpesaPolling();
+    mpesaFlowIdRef.current += 1; // invalidate any in-flight async callbacks
+    setMpesaPhone("");
+    setMpesaStkStatus("idle");
+    setMpesaStkError(null);
+    setMpesaPayerName(null);
+  };
+
+  // Serialized polling: each tick is scheduled only after the previous one
+  // resolves, so overlapping /mpesa/status requests can never stack up.
+  const startMpesaPolling = (txnId: string, timeoutMs: number, flowId: number) => {
+    stopMpesaPolling();
+    mpesaPollStopAtRef.current = Date.now() + timeoutMs;
+    const tick = async () => {
+      if (mpesaFlowIdRef.current !== flowId) return;
+      if (Date.now() > mpesaPollStopAtRef.current) {
+        if (mpesaFlowIdRef.current === flowId) setMpesaStkStatus("timeout");
+        return;
+      }
+      try {
+        const res = await apiCall(API_ENDPOINTS.mpesa.status(txnId));
+        const data = await res.json();
+        if (mpesaFlowIdRef.current !== flowId) return; // flow was reset/cancelled
+        if (data.status === "paid" || data.status === "completed" || data.status === "success") {
+          setMpesaTransactionId(data.mpesaRef || data.settlementRef || txnId);
+          setMpesaPayerName(data.payerName || null);
+          setMpesaStkStatus("success");
+          return;
+        }
+        if (data.status === "failed" || data.status === "cancelled") {
+          setMpesaStkError(data.resultDesc || "Payment was cancelled or failed");
+          setMpesaStkStatus("failed");
+          return;
+        }
+      } catch (err: any) {
+        // transient errors during polling — keep trying until timeout
+        console.warn("M-Pesa poll error:", err?.message);
+      }
+      if (mpesaFlowIdRef.current !== flowId) return;
+      mpesaPollRef.current = setTimeout(tick, 3000);
+    };
+    mpesaPollRef.current = setTimeout(tick, 3000);
+  };
+
+  const stkPushMutation = useMutation({
+    mutationFn: async (flowId: number) => {
+      const phone = normalizeKePhone(mpesaPhone);
+      if (!phone || phone.length < 12) throw new Error("Enter a valid phone number");
+      const res = await apiCall(API_ENDPOINTS.mpesa.stkPush, {
+        method: "POST",
+        body: JSON.stringify({
+          shopId: shopId || "",
+          phone,
+          amount: grandTotal,
+          saleRef: `sale-${Date.now()}`,
+        }),
+      });
+      const data = await res.json();
+      return { data, flowId };
+    },
+    onSuccess: ({ data, flowId }) => {
+      if (mpesaFlowIdRef.current !== flowId) return;
+      if (!data?.transactionId) {
+        setMpesaStkStatus("failed");
+        setMpesaStkError(data?.message || "Proxy returned no transaction id");
+        return;
+      }
+      setMpesaStkStatus("waiting");
+      startMpesaPolling(data.transactionId, 90_000, flowId);
+    },
+    onError: (err: any, flowId: number) => {
+      if (mpesaFlowIdRef.current !== flowId) return; // flow was reset/cancelled
+      setMpesaStkStatus("failed");
+      setMpesaStkError(err?.message || "Could not send STK push");
+    },
+  });
+
+  // Start a fresh, cancellable STK flow: invalidate any prior flow, then fire.
+  const sendStkPush = () => {
+    stopMpesaPolling();
+    mpesaFlowIdRef.current += 1;
+    const flowId = mpesaFlowIdRef.current;
+    setMpesaStkError(null);
+    setMpesaPayerName(null);
+    setMpesaStkStatus("sending");
+    stkPushMutation.mutate(flowId);
+  };
+
+  // Prefill phone from selected customer when M-Pesa is chosen; tear down the
+  // STK flow (and any polling) whenever the method moves away from M-Pesa.
+  useEffect(() => {
+    if (selectedPaymentMethod === "mpesa") {
+      if (selectedCustomer && !mpesaPhone) {
+        const p = selectedCustomer.phonenumber || selectedCustomer.phone;
+        if (p) setMpesaPhone(p);
+      }
+    } else {
+      resetMpesaStk();
+    }
+  }, [selectedPaymentMethod, selectedCustomer]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Stop polling on unmount
+  useEffect(() => () => stopMpesaPolling(), []);
+
   const openPaymentDialog = () => {
     onCategoryChange("all");
     setShowPaymentDialog(true);
@@ -1053,6 +1184,7 @@ export default function ProductGrid({
     setShowCardInterface(false);
     setIsProcessingCard(false);
     setMpesaTransactionId("");
+    resetMpesaStk();
     setBankTransactionId("");
     setCreditDueDate("");
     setSplitAmounts({ cash: 0, mpesa: 0, bank: 0 });
@@ -2360,18 +2492,95 @@ export default function ProductGrid({
 
                 {/* M-Pesa panel */}
                 {selectedPaymentMethod === "mpesa" && (
-                  <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-2">
+                  <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-3">
                     <div className="flex items-center gap-2">
                       <Smartphone className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-800">M-Pesa Transaction ID <span className="text-gray-400 font-normal">(optional)</span></span>
+                      <span className="text-sm font-medium text-purple-800">M-Pesa Payment</span>
                     </div>
-                    <Input
-                      type="text"
-                      placeholder="e.g. RI704H61SX"
-                      value={mpesaTransactionId}
-                      onChange={(e) => setMpesaTransactionId(e.target.value)}
-                      className="h-9 text-sm bg-white"
-                    />
+
+                    {/* STK push: send a prompt to the customer's phone */}
+                    {mpesaStkStatus !== "success" && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-purple-700">Send STK Push</label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="tel"
+                            inputMode="numeric"
+                            placeholder="e.g. 0712345678"
+                            value={mpesaPhone}
+                            onChange={(e) => setMpesaPhone(e.target.value)}
+                            disabled={mpesaStkStatus === "sending" || mpesaStkStatus === "waiting"}
+                            className="h-9 text-sm bg-white flex-1"
+                            data-testid="input-mpesa-phone"
+                          />
+                          <Button
+                            type="button"
+                            onClick={sendStkPush}
+                            disabled={
+                              normalizeKePhone(mpesaPhone).length < 12 ||
+                              mpesaStkStatus === "sending" ||
+                              mpesaStkStatus === "waiting"
+                            }
+                            className="h-9 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm whitespace-nowrap"
+                            data-testid="button-send-stk-push"
+                          >
+                            {mpesaStkStatus === "sending" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : mpesaStkStatus === "waiting" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Send STK"
+                            )}
+                          </Button>
+                        </div>
+
+                        {mpesaStkStatus === "waiting" && (
+                          <div className="flex items-center gap-2 text-xs text-purple-700" data-testid="status-mpesa-waiting">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Waiting for customer to enter M-Pesa PIN…
+                          </div>
+                        )}
+                        {mpesaStkStatus === "timeout" && (
+                          <p className="text-xs text-orange-600" data-testid="status-mpesa-timeout">
+                            Timed out waiting for payment. Try again or enter the code manually.
+                          </p>
+                        )}
+                        {mpesaStkStatus === "failed" && mpesaStkError && (
+                          <p className="text-xs text-red-600" data-testid="status-mpesa-failed">{mpesaStkError}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Success state */}
+                    {mpesaStkStatus === "success" && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 space-y-1" data-testid="status-mpesa-success">
+                        <div className="flex items-center gap-2 text-sm font-medium text-green-700">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Payment received
+                        </div>
+                        {mpesaPayerName && (
+                          <p className="text-xs text-green-700">From: {mpesaPayerName}</p>
+                        )}
+                        {mpesaTransactionId && (
+                          <p className="text-xs text-green-700 font-mono">Ref: {mpesaTransactionId}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Manual entry fallback */}
+                    <div className="space-y-1 pt-1 border-t border-purple-100">
+                      <label className="text-xs font-medium text-purple-700">
+                        Or enter M-Pesa code manually <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="e.g. RI704H61SX"
+                        value={mpesaTransactionId}
+                        onChange={(e) => setMpesaTransactionId(e.target.value)}
+                        className="h-9 text-sm bg-white"
+                        data-testid="input-mpesa-code"
+                      />
+                    </div>
                   </div>
                 )}
 
