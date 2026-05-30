@@ -243,6 +243,7 @@ export default function ProductGrid({
   // because handleCompletePayment / resetPaymentDialog are defined later in the file)
   const handleCompletePaymentRef = useRef<(() => void) | null>(null);
   const resetPaymentDialogRef    = useRef<(() => void) | null>(null);
+  const isFinalizingRef          = useRef(false);
   const shortcutStateRef = useRef({
     cartItems,
     showPaymentDialog,
@@ -810,10 +811,25 @@ export default function ProductGrid({
   const mpesaLinked = Boolean(shopData?.sunpay_merchant_ref);
 
   const processTransaction = async (isHold = false) => {
+    // Re-entrancy guard: auto-finalize (poll) + manual click/Enter must not double-submit
+    if (isFinalizingRef.current) return;
     // For hold transactions, skip payment method validations
     if (!isHold) {
       if (!selectedPaymentMethod) return;
-      
+
+      // M-Pesa (linked shop): never save an unpaid sale. Require STK confirmation
+      // or a manually entered code. Enforced here so the Enter-key shortcut and
+      // auto-finalize path can't bypass the disabled-button gate.
+      if (selectedPaymentMethod === "mpesa" && mpesaLinked &&
+          mpesaStkStatus !== "success" && !mpesaTransactionId.trim()) {
+        toast({
+          title: "Payment Not Confirmed",
+          description: "Wait for the M-Pesa payment to confirm, or enter the code manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Validate payment-specific requirements
       
       if (selectedPaymentMethod === "bank" && !bankTransactionId.trim()) {
@@ -957,6 +973,7 @@ export default function ProductGrid({
     };
 
     try {
+      isFinalizingRef.current = true;
       await createTransactionMutation.mutateAsync(transactionData);
       if (isHold) {
         setShowHoldSuccessDialog(true);
@@ -974,6 +991,8 @@ export default function ProductGrid({
         description: error.message || `Failed to ${isHold ? 'hold' : 'process'} transaction`,
         variant: "destructive",
       });
+    } finally {
+      isFinalizingRef.current = false;
     }
   };
 
@@ -1096,6 +1115,10 @@ export default function ProductGrid({
           setMpesaTransactionId(data.mpesaRef || data.settlementRef || txnId);
           setMpesaPayerName(data.payerName || null);
           setMpesaStkStatus("success");
+          // Payment confirmed — auto-finalize the sale and show the receipt.
+          setTimeout(() => {
+            if (mpesaFlowIdRef.current === flowId) handleCompletePaymentRef.current?.();
+          }, 700);
           return;
         }
         if (data.status === "failed" || data.status === "cancelled") {
@@ -2708,7 +2731,8 @@ export default function ProductGrid({
                   <Button
                     onClick={handleCompletePayment}
                     disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
-                      (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate))}
+                      (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate)) ||
+                      (selectedPaymentMethod === "mpesa" && mpesaLinked && mpesaStkStatus !== "success" && !mpesaTransactionId.trim())}
                     className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                   >
                     {createTransactionMutation.isPending ? "Processing…" :
