@@ -210,21 +210,16 @@ export default function ProductGrid({
     }
 
     setIsSearching(true);
-    
-    // First, search locally
-    const localResults = searchLocally(query);
-    
-    if (localResults.length > 0) {
-      // Found results locally, use them
-      setSearchResults(localResults);
-      setIsSearching(false);
-      return;
-    }
 
-    // No local results, search server
+    // Always query the server so results stay fresh on every search
     const serverResults = await searchServer(query);
-    
-    setSearchResults(serverResults);
+
+    if (serverResults.length > 0) {
+      setSearchResults(serverResults);
+    } else {
+      // Fall back to locally-loaded products if the server returns nothing
+      setSearchResults(searchLocally(query));
+    }
     setIsSearching(false);
   };
 
