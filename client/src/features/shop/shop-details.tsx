@@ -122,6 +122,11 @@ export default function ShopDetails() {
       const response = await apiCall(`/api/shop/${id}`, {
         method: "GET",
       });
+      if (!response.ok) {
+        // Upstream/proxy failure — throw so React Query keeps the last good
+        // data and retries instead of blanking the form with an error body.
+        throw new Error(`Failed to load shop (${response.status})`);
+      }
       const shop = await response.json();
       console.log('Shop data loaded:', shop);
       return shop;
@@ -129,9 +134,11 @@ export default function ShopDetails() {
     enabled: !!id,
   });
 
-  // Update form data when shop loads
+  // Update form data when shop loads. Only populate from a valid shop record
+  // (a single object with an _id) — never from [] or an error payload, which
+  // would wipe the form fields (name, category, etc.).
   useEffect(() => {
-    if (shop) {
+    if (shop && !Array.isArray(shop) && shop._id) {
       console.log('Shop data loaded:', shop);
       console.log('Shop category:', shop.shopCategoryId?.name);
       setFormData({
@@ -194,6 +201,18 @@ export default function ShopDetails() {
   });
 
   const handleSaveSettings = () => {
+    // Guard against saving before a valid shop has loaded. Without this, an
+    // intermittent failed fetch could leave the form blank and saving would
+    // overwrite the real shop name/category with empty values.
+    if (!shop || Array.isArray(shop) || !shop._id || !formData.name.trim()) {
+      toast({
+        title: "Shop not loaded",
+        description: "Shop details are still loading. Please wait a moment and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updateData = {
       name: formData.name,
       receiptemail: formData.receiptemail,

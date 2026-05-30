@@ -148,7 +148,25 @@ export function registerShopRoutes(app: Express) {
       const response = await makePointifyRequest(`/shop/${id}`, {
         method: "GET",
       });
-      
+
+      // A valid shop is a single object with an _id. If the upstream failed and
+      // the graceful fallback returned [] (or any non-shop value), do NOT return
+      // 200 with empty data — that would make the client blank out the form.
+      // Return an error instead so the client keeps the last good data and retries.
+      const isValidShop =
+        response &&
+        typeof response === "object" &&
+        !Array.isArray(response) &&
+        (response as any)._id;
+
+      if (!isValidShop) {
+        console.warn(`Shop ${id} fetch returned no valid record (upstream failure).`);
+        return res.status(502).json({
+          error: "Failed to fetch shop details",
+          message: "Upstream did not return a valid shop record",
+        });
+      }
+
       console.log(`Shop details response:`, response);
       res.json(response);
     } catch (error) {
