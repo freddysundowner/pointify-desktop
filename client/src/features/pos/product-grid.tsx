@@ -573,6 +573,8 @@ export default function ProductGrid({
       
       setShowPaymentDialog(false);
       setSelectedPaymentMethod("");
+      setMpesaTransactionId("");
+      setBankTransactionId("");
       setExtraChargeAmount(0);
       setExtraChargeInputValue("");
       setShowExtraChargeInput(false);
