@@ -1,2 +1,3 @@
 - [Cancellable async UI flows](async-flow-guards.md) — polling + mutation onSuccess must be guarded by a per-flow id ref or stale results resurrect cancelled state.
 - [Server proxy to Pointify backend](server-proxy-pattern.md) — server/ is a thin proxy; new /api/* client calls need a matching makePointifyRequest forward route or they 404.
+- [M-Pesa per-shop validation setting](mpesa-validation-setting.md) — shop toggle (default ON) for validate-vs-reference-only; client flag is a hint, enforce upstream from persisted shop.

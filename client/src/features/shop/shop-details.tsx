@@ -92,6 +92,7 @@ export default function ShopDetails() {
     contact: "",
     paybill_till: "",
     paybill_account: "",
+    mpesa_require_validation: true,
     address_receipt: "",
   });
 
@@ -166,6 +167,7 @@ export default function ShopDetails() {
         contact: shop.contact || "",
         paybill_till: shop.paybill_till || "",
         paybill_account: shop.paybill_account || "",
+        mpesa_require_validation: shop.mpesa_require_validation !== false,
         address_receipt: shop.address_receipt || "",
       });
     }
@@ -238,6 +240,7 @@ export default function ShopDetails() {
       contact: formData.contact,
       paybill_till: formData.paybill_till,
       paybill_account: formData.paybill_account,
+      mpesa_require_validation: formData.mpesa_require_validation,
       address_receipt: formData.address_receipt,
     };
     
@@ -580,6 +583,21 @@ export default function ShopDetails() {
                       />
                       <p className="text-[11px] text-gray-500">Leave blank if you're using a Till number.</p>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="pr-3">
+                      <p className="text-sm font-medium text-gray-800">Validate M-Pesa payments</p>
+                      <p className="text-[11px] text-gray-500">
+                        On: every M-Pesa code must be confirmed (STK) or verified before a
+                        sale can complete. Off: codes are saved as a reference only and not
+                        checked against received payments.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.mpesa_require_validation}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, mpesa_require_validation: checked }))}
+                      data-testid="switch-mpesa-validation"
+                    />
                   </div>
                 </CardContent>
               </Card>

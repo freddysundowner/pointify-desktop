@@ -813,6 +813,13 @@ export default function ProductGrid({
   const grandTotal = totals.total + extraChargeAmount;
   // STK push is only possible once the shop is linked to a SunPay merchant.
   const mpesaLinked = Boolean(shopData?.sunpay_merchant_ref);
+  // Shop-level setting: when true (default), every M-Pesa code must be validated
+  // (STK confirmed or verified) before a sale can complete. When the shop turns it
+  // off, codes are treated as reference-only — saved on the sale but not validated
+  // or consumed from the payment pool. Defaults to true unless explicitly false.
+  const mpesaRequireValidation = shopData?.mpesa_require_validation !== false;
+  // Validation gating only applies to linked shops that require validation.
+  const mpesaValidationEnforced = mpesaLinked && mpesaRequireValidation;
   // Flow B: a verified Till payment below the sale total must not be accepted as paid.
   const mpesaUnderpaid =
     mpesaVerifyStatus === "verified" &&
@@ -829,7 +836,7 @@ export default function ProductGrid({
       // M-Pesa (linked shop): never save an unpaid sale. Require STK confirmation
       // or a manually entered code. Enforced here so the Enter-key shortcut and
       // auto-finalize path can't bypass the disabled-button gate.
-      if (selectedPaymentMethod === "mpesa" && mpesaLinked &&
+      if (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced &&
           mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified") {
         toast({
           title: "Payment Not Confirmed",
@@ -840,7 +847,7 @@ export default function ProductGrid({
       }
 
       // M-Pesa (linked shop): block an underpaid Till payment from finalizing.
-      if (selectedPaymentMethod === "mpesa" && mpesaLinked && mpesaUnderpaid) {
+      if (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaUnderpaid) {
         toast({
           title: "Payment Too Low",
           description: `Verified payment (Ksh ${mpesaVerifyAmount!.toFixed(2)}) is less than the sale total (Ksh ${grandTotal.toFixed(2)}).`,
@@ -972,6 +979,13 @@ export default function ProductGrid({
       allownegativeselling: false,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
                    !isHold && selectedPaymentMethod === "split" && splitAmounts.mpesa > 0 ? `SPLIT_${Date.now()}` : "",
+      // Shop-level intent flag, always sent: tells the upstream sale-commit whether
+      // to validate/consume the M-Pesa code (true) or store it as a reference (false).
+      // True only when the shop is SunPay-linked AND the setting is on — an unlinked
+      // shop has no payment pool to validate against, so it sends false (reference).
+      // NOTE: this is only a hint. The upstream createSale must re-derive this from
+      // the persisted shop record (it must NOT trust this client field).
+      mpesaValidate: mpesaValidationEnforced,
       mpesaTotal: !isHold && selectedPaymentMethod === "mpesa" ? parseFloat(grandTotal.toString()) :
                  !isHold && selectedPaymentMethod === "split" ? splitAmounts.mpesa : 0.0,
       bankTotal: !isHold && selectedPaymentMethod === "bank" ? parseFloat(grandTotal.toString()) :
@@ -2853,8 +2867,8 @@ export default function ProductGrid({
                     onClick={handleCompletePayment}
                     disabled={!selectedPaymentMethod || createTransactionMutation.isPending ||
                       (selectedPaymentMethod === "credit" && (!selectedCustomerId || !creditDueDate)) ||
-                      (selectedPaymentMethod === "mpesa" && mpesaLinked && mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified") ||
-                      (selectedPaymentMethod === "mpesa" && mpesaLinked && mpesaUnderpaid)}
+                      (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaStkStatus !== "success" && mpesaVerifyStatus !== "verified") ||
+                      (selectedPaymentMethod === "mpesa" && mpesaValidationEnforced && mpesaUnderpaid)}
                     className="flex-1 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                   >
                     {createTransactionMutation.isPending ? "Processing…" :
