@@ -6,7 +6,7 @@ export function registerMpesaRoutes(app: Express) {
   app.post("/api/mpesa/stk-push", async (req, res) => {
     try {
       const token = req.headers.authorization;
-      const response = await makePointifyRequest("/mpesa/stk-push", {
+      const response = await makePointifyRequest("/api/v2/mpesa/stk-push", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -25,7 +25,7 @@ export function registerMpesaRoutes(app: Express) {
   app.post("/api/mpesa/expect", async (req, res) => {
     try {
       const token = req.headers.authorization;
-      const response = await makePointifyRequest("/mpesa/expect", {
+      const response = await makePointifyRequest("/api/v2/mpesa/expect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +46,7 @@ export function registerMpesaRoutes(app: Express) {
       const token = req.headers.authorization;
       const { transactionId } = req.params;
       const response = await makePointifyRequest(
-        `/mpesa/status/${encodeURIComponent(transactionId)}`,
+        `/api/v2/mpesa/status/${encodeURIComponent(transactionId)}`,
         {
           method: "GET",
           headers: {
@@ -68,7 +68,7 @@ export function registerMpesaRoutes(app: Express) {
       const code = (req.query.code as string) ?? "";
       const shopId = (req.query.shopId as string) ?? "";
       const params = new URLSearchParams({ code, shopId });
-      const response = await makePointifyRequest(`/mpesa/lookup?${params.toString()}`, {
+      const response = await makePointifyRequest(`/api/v2/mpesa/lookup?${params.toString()}`, {
         method: "GET",
         headers: {
           ...(token ? { Authorization: token } : {}),
