@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ChevronRight, ChevronDown, Trash2, Download, Settings, Shield, FileText, AlertTriangle, Smartphone } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, Trash2, Download, Settings, Shield, FileText, AlertTriangle, Smartphone } from "lucide-react";
 import { useAuth } from "@/features/auth/useAuth";
 import { apiCall } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +49,7 @@ export default function ShopDetails() {
   }, [admin, id]);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState("general");
   
   // Alert modal state
   const [alertModal, setAlertModal] = useState<{
@@ -106,13 +107,6 @@ export default function ShopDetails() {
       return data;
     },
   });
-
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
   // Fetch shop details from /shop/:id
   const { data: shop, isLoading } = useQuery({
@@ -398,7 +392,7 @@ export default function ShopDetails() {
           </div>
         </div>
 
-        {/* Content — single column, stacked sections */}
+        {/* Content — tabbed sections */}
         <div className="px-3 py-3 space-y-3 w-full">
 
           {/* M-Pesa setup prompt — only when settlement target is missing */}
@@ -419,12 +413,7 @@ export default function ShopDetails() {
                 <Button
                   size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700 flex-shrink-0"
-                  onClick={() => {
-                    setExpandedSections((p) => ({ ...p, mpesa: true }));
-                    setTimeout(() => {
-                      document.getElementById("mpesa-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 50);
-                  }}
+                  onClick={() => setActiveTab("mpesa")}
                   data-testid="button-mpesa-setup"
                 >
                   Set up
@@ -433,12 +422,35 @@ export default function ShopDetails() {
             </Card>
           )}
 
-          {/* Basic Info */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2 pt-3 px-4">
-              <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Basic Info</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto h-auto p-1">
+              <TabsTrigger value="general" className="gap-1.5" data-testid="tab-general">
+                <Settings className="w-3.5 h-3.5" /> General
+              </TabsTrigger>
+              <TabsTrigger value="mpesa" className="gap-1.5" data-testid="tab-mpesa">
+                <Smartphone className="w-3.5 h-3.5" /> M-Pesa
+              </TabsTrigger>
+              <TabsTrigger value="operations" className="gap-1.5" data-testid="tab-operations">
+                <Shield className="w-3.5 h-3.5" /> Operations
+              </TabsTrigger>
+              <TabsTrigger value="receipt" className="gap-1.5" data-testid="tab-receipt">
+                <FileText className="w-3.5 h-3.5" /> Receipt
+              </TabsTrigger>
+              <TabsTrigger value="backup" className="gap-1.5" data-testid="tab-backup">
+                <Download className="w-3.5 h-3.5" /> Backup
+              </TabsTrigger>
+              <TabsTrigger value="danger" className="gap-1.5 data-[state=active]:text-red-700" data-testid="tab-danger">
+                <AlertTriangle className="w-3.5 h-3.5" /> Danger
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Basic Info */}
+            <TabsContent value="general">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Basic Info</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor="shopName" className="text-xs font-medium text-gray-600">Shop Name</Label>
@@ -510,146 +522,129 @@ export default function ShopDetails() {
                       />
                     </div>
                   </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* M-Pesa Settlement */}
-          <Card className="shadow-sm" id="mpesa-section">
-            <button
-              className="w-full text-left"
-              onClick={() => toggleSection("mpesa")}
-              data-testid="button-toggle-mpesa-section"
-            >
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">M-Pesa Settlement</span>
-                  {formData.paybill_till ? (
-                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">Configured</span>
-                  ) : (
-                    <span className="text-[10px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Not set</span>
-                  )}
-                </div>
-                {expandedSections.mpesa ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-              </div>
-            </button>
-            {expandedSections.mpesa && (
-              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
-                <p className="text-xs text-gray-600 pt-3">
-                  Tell us where to settle the M-Pesa payments your customers
-                  make. We'll route collections to this Paybill or Till on your
-                  behalf.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Paybill or Till Number <span className="text-red-500">*</span></Label>
-                    <Input
-                      value={formData.paybill_till}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))}
-                      placeholder="e.g. 247247 or 5076543"
-                      inputMode="numeric"
-                      className="h-9 text-sm"
-                      data-testid="input-paybill-till"
-                    />
-                    <p className="text-[11px] text-gray-500">Your Safaricom Paybill or Buy Goods Till.</p>
+            {/* M-Pesa Settlement */}
+            <TabsContent value="mpesa">
+              <Card className="shadow-sm" id="mpesa-section">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-600" />
+                    <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">M-Pesa Settlement</CardTitle>
+                    {formData.paybill_till ? (
+                      <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 rounded-full px-2 py-0.5">Configured</span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">Not set</span>
+                    )}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Account Number</Label>
-                    <Input
-                      value={formData.paybill_account}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))}
-                      placeholder="Required for Paybill only"
-                      className="h-9 text-sm"
-                      data-testid="input-paybill-account"
-                    />
-                    <p className="text-[11px] text-gray-500">Leave blank if you're using a Till number.</p>
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Operational Toggles */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2 pt-3 px-4">
-              <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Operational Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-3">
-              <div className="divide-y divide-gray-100">
-                {[
-                  { key: "allownegativeselling", label: "Negative Selling", desc: "Allow out-of-stock sales" },
-                  { key: "trackbatches",         label: "Batch Tracking",   desc: "Track product batches" },
-                  { key: "useWarehouse",          label: "Warehouse Mode",   desc: "Use warehouse system" },
-                  { key: "allowOnlineSelling",    label: "Online Selling",   desc: "Enable e-commerce" },
-                  { key: "showstockonline",       label: "Show Stock Online", desc: "Display stock levels online" },
-                  { key: "showpriceonline",       label: "Show Prices Online", desc: "Display prices on online store" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="flex items-center justify-between py-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{label}</p>
-                      <p className="text-xs text-gray-500">{desc}</p>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
+                  <p className="text-xs text-gray-600">
+                    Tell us where to settle the M-Pesa payments your customers
+                    make. We'll route collections to this Paybill or Till on your
+                    behalf.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Paybill or Till Number <span className="text-red-500">*</span></Label>
+                      <Input
+                        value={formData.paybill_till}
+                        onChange={(e) => setFormData(prev => ({ ...prev, paybill_till: e.target.value }))}
+                        placeholder="e.g. 247247 or 5076543"
+                        inputMode="numeric"
+                        className="h-9 text-sm"
+                        data-testid="input-paybill-till"
+                      />
+                      <p className="text-[11px] text-gray-500">Your Safaricom Paybill or Buy Goods Till.</p>
                     </div>
-                    <Switch
-                      checked={!!(formData as any)[key]}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [key]: checked }))}
-                    />
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Account Number</Label>
+                      <Input
+                        value={formData.paybill_account}
+                        onChange={(e) => setFormData(prev => ({ ...prev, paybill_account: e.target.value }))}
+                        placeholder="Required for Paybill only"
+                        className="h-9 text-sm"
+                        data-testid="input-paybill-account"
+                      />
+                      <p className="text-[11px] text-gray-500">Leave blank if you're using a Till number.</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Receipt Settings */}
-          <Card className="shadow-sm">
-            <button
-              className="w-full text-left"
-              onClick={() => toggleSection("receipt")}
-            >
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Receipt Settings</span>
-                </div>
-                {expandedSections.receipt ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-              </div>
-            </button>
-            {expandedSections.receipt && (
-              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Receipt Email</Label>
-                    <Input value={formData.receiptemail} onChange={(e) => setFormData(prev => ({ ...prev, receiptemail: e.target.value }))} placeholder="email@company.com" type="email" className="h-9 text-sm" />
+            {/* Operational Toggles */}
+            <TabsContent value="operations">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Operational Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-3">
+                  <div className="divide-y divide-gray-100">
+                    {[
+                      { key: "allownegativeselling", label: "Negative Selling", desc: "Allow out-of-stock sales" },
+                      { key: "trackbatches",         label: "Batch Tracking",   desc: "Track product batches" },
+                      { key: "useWarehouse",          label: "Warehouse Mode",   desc: "Use warehouse system" },
+                      { key: "allowOnlineSelling",    label: "Online Selling",   desc: "Enable e-commerce" },
+                      { key: "showstockonline",       label: "Show Stock Online", desc: "Display stock levels online" },
+                      { key: "showpriceonline",       label: "Show Prices Online", desc: "Display prices on online store" },
+                    ].map(({ key, label, desc }) => (
+                      <div key={key} className="flex items-center justify-between py-2.5">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{label}</p>
+                          <p className="text-xs text-gray-500">{desc}</p>
+                        </div>
+                        <Switch
+                          checked={!!(formData as any)[key]}
+                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [key]: checked }))}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-gray-600">Contact</Label>
-                    <Input value={formData.contact} onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))} placeholder="Contact info" className="h-9 text-sm" />
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs font-medium text-gray-600">Receipt Address</Label>
-                    <Input value={formData.address_receipt} onChange={(e) => setFormData(prev => ({ ...prev, address_receipt: e.target.value }))} placeholder="Address shown on receipts" className="h-9 text-sm" />
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Backup Settings */}
-          <Card className="shadow-sm">
-            <button
-              className="w-full text-left"
-              onClick={() => toggleSection("backup")}
-            >
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Backup Settings</span>
-                </div>
-                {expandedSections.backup ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-              </div>
-            </button>
-            {expandedSections.backup && (
-              <CardContent className="px-4 pb-4 pt-0 space-y-3 border-t">
-                <div className="pt-3 space-y-3">
+            {/* Receipt Settings */}
+            <TabsContent value="receipt">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-500" />
+                    <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Receipt Settings</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Receipt Email</Label>
+                      <Input value={formData.receiptemail} onChange={(e) => setFormData(prev => ({ ...prev, receiptemail: e.target.value }))} placeholder="email@company.com" type="email" className="h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Contact</Label>
+                      <Input value={formData.contact} onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))} placeholder="Contact info" className="h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs font-medium text-gray-600">Receipt Address</Label>
+                      <Input value={formData.address_receipt} onChange={(e) => setFormData(prev => ({ ...prev, address_receipt: e.target.value }))} placeholder="Address shown on receipts" className="h-9 text-sm" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Backup Settings */}
+            <TabsContent value="backup">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-gray-500" />
+                    <CardTitle className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Backup Settings</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-800">Auto Backup</p>
@@ -674,42 +669,45 @@ export default function ShopDetails() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Danger Zone */}
-          <Card className="shadow-sm border-red-200">
-            <CardHeader className="pb-2 pt-3 px-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-                <CardTitle className="text-sm font-semibold text-red-700 uppercase tracking-wide">Danger Zone</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2">
-              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-red-800">Delete Shop Data</p>
-                  <p className="text-xs text-red-600">Remove all products, sales &amp; transactions</p>
-                </div>
-                <Button variant="outline" size="sm" className="ml-3 flex-shrink-0 border-red-300 text-red-700 hover:bg-red-100" onClick={handleDeleteShopData}>
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />
-                  Delete Data
-                </Button>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-red-100 rounded-lg border border-red-300">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-red-900">Delete Entire Shop</p>
-                  <p className="text-xs text-red-700">Permanently remove this shop</p>
-                </div>
-                <Button variant="destructive" size="sm" className="ml-3 flex-shrink-0" onClick={handleDeleteShop}>
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />
-                  Delete Shop
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Danger Zone */}
+            <TabsContent value="danger">
+              <Card className="shadow-sm border-red-200">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                    <CardTitle className="text-sm font-semibold text-red-700 uppercase tracking-wide">Danger Zone</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-2">
+                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-red-800">Delete Shop Data</p>
+                      <p className="text-xs text-red-600">Remove all products, sales &amp; transactions</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="ml-3 flex-shrink-0 border-red-300 text-red-700 hover:bg-red-100" onClick={handleDeleteShopData}>
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete Data
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-red-100 rounded-lg border border-red-300">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-red-900">Delete Entire Shop</p>
+                      <p className="text-xs text-red-700">Permanently remove this shop</p>
+                    </div>
+                    <Button variant="destructive" size="sm" className="ml-3 flex-shrink-0" onClick={handleDeleteShop}>
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete Shop
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+          </Tabs>
 
         </div>
       </div>
