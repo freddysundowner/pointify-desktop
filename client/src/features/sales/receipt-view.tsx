@@ -172,6 +172,7 @@ export default function ReceiptView() {
         ? { cash: saleData.amountPaid, mpesa: saleData.mpesaTotal, bank: saleData.bankTotal }
         : "",
     extraCharge,
+    mpesaRef: saleData.paymentTag === "mpesa" ? (saleData.mpesaTransId || "") : "",
   });
 
   const getReceiptHtml = () => `<!DOCTYPE html><html><head><title>Receipt #${saleData.receiptNo}</title>
@@ -234,6 +235,7 @@ ${saleData.amountPaid > 0 ? `<div class="row" style="padding-left:8px"><span>Cas
 ${saleData.mpesaTotal > 0 ? `<div class="row" style="padding-left:8px"><span>M-Pesa:</span><span>${fmt(saleData.mpesaTotal)}</span></div>` : ""}
 ${saleData.bankTotal > 0 ? `<div class="row" style="padding-left:8px"><span>Bank:</span><span>${fmt(saleData.bankTotal)}</span></div>` : ""}
 ` : ""}
+${saleData.paymentTag === "mpesa" && saleData.mpesaTransId ? `<div class="row"><span>M-Pesa Ref:</span><span>${saleData.mpesaTransId}</span></div>` : ""}
 ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETED" ? `<div class="row" style="font-weight:bold;color:#c00"><span>Balance Due:</span><span>${fmt(saleData.outstandingBalance)}</span></div>` : ""}
 <div class="row"><span>Status:</span><span>${saleData.status}</span></div>
 <hr class="divider">

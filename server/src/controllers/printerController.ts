@@ -225,7 +225,7 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     const {
       shopName, shopAddress, receiptNumber, date, items,
       subtotal, tax, total, paymentMethod, customerName,
-      attendant, splitPayment, currency, extraCharge,
+      attendant, splitPayment, currency, extraCharge, mpesaRef,
     } = req.body;
 
     const w = currentPrinterConfig.width || 32;
@@ -288,6 +288,7 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     } else {
       txt += `\nPayment: ${paymentMethod}\n`;
     }
+    if (mpesaRef) txt += `M-Pesa Ref: ${mpesaRef}\n`;
 
     txt += '\n';
     txt += center('Thank you for your business!');

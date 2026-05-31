@@ -593,6 +593,8 @@ export default function ProductGrid({
           adminId: adminId || "",
           ...(variables.extraCharges ? { extraCharges: variables.extraCharges } : {}),
           ...(variables.salesnote ? { salesnote: variables.salesnote } : {}),
+          ...(variables.mpesaTransId ? { mpesaTransId: variables.mpesaTransId } : {}),
+          ...(variables.mpesaTotal ? { mpesaTotal: variables.mpesaTotal } : {}),
         };
         
         onCheckout(realTransaction);

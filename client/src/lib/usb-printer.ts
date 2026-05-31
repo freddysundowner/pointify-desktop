@@ -24,6 +24,7 @@ export interface ReceiptPrintData {
   attendant?: string;
   splitPayment?: { cash?: number; mpesa?: number; bank?: number };
   extraCharge?: { label: string; amount: number };
+  mpesaRef?: string;
 }
 
 function pad(left: string, right: string, w = WIDTH): string {
@@ -236,6 +237,7 @@ class USBThermalPrinter {
     } else {
       txt(pad('Payment:', data.paymentMethod)); nl();
     }
+    if (data.mpesaRef) { txt(pad('M-Pesa Ref:', data.mpesaRef)); nl(); }
 
     divider();
 

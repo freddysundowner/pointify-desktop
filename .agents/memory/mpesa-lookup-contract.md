@@ -15,6 +15,9 @@ The cashier does NOT search by phone or code. C2B payments arrive with `phoneNum
 
 **How to apply:** the separate SunPay proxy repo (NOT this repo) owns `/api/v2/mpesa/lookup` and must: accept `recent=1`, return the recent UNALLOCATED payments for that shop as a list, include `allocated` so used codes are excluded, and include `amount`/`payerName`/`time`/`mpesaRef`. Final allocation/consumption is still enforced upstream at sale creation, not at lookup.
 
+## Showing the M-Pesa ref on receipts/sales — split-placeholder trap
+The sale stores the M-Pesa code in `mpesaTransId`. When surfacing it (POS receipt modal, printed/PDF/thermal receipts, ReceiptView, sales list) ALWAYS gate on `paymentMethod === "mpesa"` (POS) / `paymentTag === "mpesa"` (sales). **Why:** for SPLIT sales the checkout writes a synthetic placeholder into `mpesaTransId` (`SPLIT_<ts>`, and `bankTransId` gets `BANK_<ts>`) — printing it unguarded shows a fake "M-Pesa code". The printer payload field is `mpesaRef`; client+server printer templates render it after the non-split Payment line.
+
 ## SunPay `MpesaPayment` schema → client field mapping
 Upstream Mongo model fields → JSON the client expects: `mpesa_ref`→`mpesaRef`, `payer_name`→`payerName`, `paid_amount ?? amount`→`amount`, `paid_at`→`time`, `allocated`→`allocated`. Recent query = `{ shopId, status:"paid", allocated:{$ne:true} }` sorted `paid_at:-1`, limited. The existing `lookupCode` returns `400 "code is required"` when no code — add a `recent && !code` branch BEFORE that guard.
 

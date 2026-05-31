@@ -70,6 +70,7 @@ export default function ReceiptModal({
       bank: (transaction as any).bankTotal || 0,
     } : undefined,
     extraCharge: extraCharge || undefined,
+    mpesaRef: transaction?.paymentMethod === 'mpesa' ? ((transaction as any)?.mpesaTransId || '') : '',
   });
 
   const browserPrint = () => {
@@ -102,6 +103,7 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
 ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} ${extraCharge.amount.toFixed(2)}</span></div>` : ''}
 <div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction?.total).toFixed(2)}</span></div>
 <div class="row"><span>Payment</span><span>${transaction?.paymentMethod}</span></div>
+${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ? `<div class="row"><span>M-Pesa Ref</span><span>${(transaction as any).mpesaTransId}</span></div>` : ''}
 <hr/>
 <div class="center">Thank you for your business!</div>
 </body></html>`;
@@ -136,7 +138,7 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
             subtotal: data.subtotal, tax: data.tax, total: data.total,
             paymentMethod: data.paymentMethod, customerName: data.customerName,
             attendant: data.attendant, splitPayment: data.splitPayment,
-            extraCharge: data.extraCharge,
+            extraCharge: data.extraCharge, mpesaRef: data.mpesaRef,
           });
           toast({ title: "Receipt Printed", description: "Sent to USB printer" });
         } catch (usbErr: any) {
@@ -219,6 +221,10 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
       yPos += 15;
       doc.setFont('helvetica', 'normal');
       doc.text(`Payment Method: ${transaction?.paymentMethod}`, 20, yPos);
+      if (transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId) {
+        yPos += 6;
+        doc.text(`M-Pesa Ref: ${(transaction as any).mpesaTransId}`, 20, yPos);
+      }
     }
     yPos += 20;
     doc.setFontSize(10);
@@ -383,6 +389,13 @@ ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} 
                       <span>{currency} {Number((transaction as any).bankTotal).toFixed(2)}</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {transaction.paymentMethod === 'mpesa' && (transaction as any).mpesaTransId && (
+                <div className="flex justify-between text-gray-500 text-[11px] pt-0.5">
+                  <span>M-Pesa Ref</span>
+                  <span className="font-mono font-medium">{(transaction as any).mpesaTransId}</span>
                 </div>
               )}
             </div>

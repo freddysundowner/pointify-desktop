@@ -357,6 +357,7 @@ function SalesList() {
     attendantName: sale.attendantId?.username || "Unknown",
     attendantId: sale.attendantId?._id || sale.attendantId,
     shopId: sale.shopId, // Preserve original shopId object
+    mpesaTransId: sale.mpesaTransId || "",
   }));
 
   // Fetch attendants from API - only for admin users
@@ -1472,6 +1473,11 @@ function SalesList() {
                                 <span className="text-[11px] text-gray-400 capitalize">
                                   {sale.paymentTag}
                                 </span>
+                                {sale.paymentTag === "mpesa" && sale.mpesaTransId && (
+                                  <span className="text-[11px] font-mono text-gray-400">
+                                    {sale.mpesaTransId}
+                                  </span>
+                                )}
                                 {sale.customerName && sale.customerName !== "Walk-in" && (
                                   <span className="text-[11px] text-gray-500 truncate max-w-[120px]">
                                     {sale.customerName}
@@ -1577,7 +1583,12 @@ function SalesList() {
                               {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
                             </td>
                             <td className="py-2 px-3 text-sm">{new Date(sale.saleDate).toLocaleDateString()}</td>
-                            <td className="py-2 px-3 text-sm capitalize">{sale.paymentTag}</td>
+                            <td className="py-2 px-3 text-sm capitalize">
+                              {sale.paymentTag}
+                              {sale.paymentTag === "mpesa" && sale.mpesaTransId && (
+                                <span className="block text-[11px] font-mono text-gray-400 normal-case">{sale.mpesaTransId}</span>
+                              )}
+                            </td>
                             <td className="py-2 px-3">
                               <Badge variant={getStatusBadgeVariant(sale.status)} className="text-xs">
                                 {sale.status}
