@@ -14,3 +14,8 @@ The cashier does NOT search by phone or code. C2B payments arrive with `phoneNum
 **Why:** with phone unusable for C2B, browsing recent unallocated Till payments and picking by name/amount/time is the only reliable cashier flow. The list must therefore carry enough to recognise the customer's payment at a glance.
 
 **How to apply:** the separate SunPay proxy repo (NOT this repo) owns `/api/v2/mpesa/lookup` and must: accept `recent=1`, return the recent UNALLOCATED payments for that shop as a list, include `allocated` so used codes are excluded, and include `amount`/`payerName`/`time`/`mpesaRef`. Final allocation/consumption is still enforced upstream at sale creation, not at lookup.
+
+## SunPay `MpesaPayment` schema → client field mapping
+Upstream Mongo model fields → JSON the client expects: `mpesa_ref`→`mpesaRef`, `payer_name`→`payerName`, `paid_amount ?? amount`→`amount`, `paid_at`→`time`, `allocated`→`allocated`. Recent query = `{ shopId, status:"paid", allocated:{$ne:true} }` sorted `paid_at:-1`, limited. The existing `lookupCode` returns `400 "code is required"` when no code — add a `recent && !code` branch BEFORE that guard.
+
+**CRITICAL C2B gap:** the webhook upserts C2B payments (those with no prior `/expect`) with `shopId: data.shopId || null` — but C2B `payment.completed` payloads carry NO `shopId` (phoneNumber is a hash, no shop field), so those records get `shopId:null` and a shopId-filtered `recent` query returns NOTHING — exactly the payments Flow B needs. Fix upstream: in the webhook, resolve the Shop from the settlement shortcode / merchant-ref the webhook carries and stamp `shopId` (and `settle_to_shortcode`) on the C2B record. Until that's done, browse will be empty for pure C2B.
