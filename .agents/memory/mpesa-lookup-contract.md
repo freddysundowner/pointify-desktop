@@ -18,6 +18,9 @@ The cashier does NOT search by phone or code. C2B payments arrive with `phoneNum
 ## Showing the M-Pesa ref on receipts/sales — split-placeholder trap
 The sale stores the M-Pesa code in `mpesaTransId`. When surfacing it (POS receipt modal, printed/PDF/thermal receipts, ReceiptView, sales list) ALWAYS gate on `paymentMethod === "mpesa"` (POS) / `paymentTag === "mpesa"` (sales). **Why:** for SPLIT sales the checkout writes a synthetic placeholder into `mpesaTransId` (`SPLIT_<ts>`, and `bankTransId` gets `BANK_<ts>`) — printing it unguarded shows a fake "M-Pesa code". The printer payload field is `mpesaRef`; client+server printer templates render it after the non-split Payment line.
 
+## Flutter client parity
+The Flutter app (separate repo) calls the backend DIRECTLY via `DbBase().databaseRequest(url, getRequestType)` with paths from `EndPoints` — there is NO Node middleman, so it hits `/api/v2/mpesa/lookup?shopId=…&recent=1` directly (the web client's `/api/mpesa/lookup` is just this repo's Express wrapper). Save path is unchanged: `_buildSalePayload` already sends `mpesaTransId`/`mpesaTotal`, so Flow B just populates the `mpesaTransId` + `amountPaid` controllers from the picked payment. Payment UI lives in the checkout screen (`sale_preview.dart`), not the cart line-item `sales_container.dart`.
+
 ## SunPay `MpesaPayment` schema → client field mapping
 Upstream Mongo model fields → JSON the client expects: `mpesa_ref`→`mpesaRef`, `payer_name`→`payerName`, `paid_amount ?? amount`→`amount`, `paid_at`→`time`, `allocated`→`allocated`. Recent query = `{ shopId, status:"paid", allocated:{$ne:true} }` sorted `paid_at:-1`, limited. The existing `lookupCode` returns `400 "code is required"` when no code — add a `recent && !code` branch BEFORE that guard.
 
