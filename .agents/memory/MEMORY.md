@@ -3,3 +3,4 @@
 - [M-Pesa per-shop validation setting](mpesa-validation-setting.md) — shop toggle (default ON) for validate-vs-reference-only; client flag is a hint, enforce upstream from persisted shop.
 - [M-Pesa Flow B lookup contract](mpesa-lookup-contract.md) — already-paid lookup by code OR phone; upstream (separate proxy) must return unallocated payment list w/ allocated/amount/payer.
 - [Nested dialogs vs global key handlers](nested-dialog-global-keys.md) — a window keydown that closes a parent dialog must no-op while a nested dialog is open, or Esc tears down the parent.
+- [Checkout shared payment state](checkout-shared-payment-state.md) — checkout-modal reuses one cashReceived for cash + split; clear it on method switch and bound-check split in canComplete, or stale cash completes a sale.
