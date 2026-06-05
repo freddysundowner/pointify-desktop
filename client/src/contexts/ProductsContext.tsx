@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { apiCall } from '@/lib/api-config';
@@ -42,27 +42,38 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const getPrimaryShopId = () => {
-    if (!admin?.primaryShop) return null;
-    if (typeof admin.primaryShop === 'string') return admin.primaryShop;
-    if (typeof admin.primaryShop === 'object' && admin.primaryShop !== null) {
-      return (admin.primaryShop as any)._id || (admin.primaryShop as any).id;
+  const adminId = (admin as any)?._id || (admin as any)?.id || null;
+  const attendantId = (attendant as any)?._id || null;
+
+  const adminRef = useRef(admin);
+  const attendantRef = useRef(attendant);
+  useEffect(() => { adminRef.current = admin; }, [admin]);
+  useEffect(() => { attendantRef.current = attendant; }, [attendant]);
+
+  const getPrimaryShopId = useCallback(() => {
+    const a = adminRef.current;
+    if (!a?.primaryShop) return null;
+    if (typeof a.primaryShop === 'string') return a.primaryShop;
+    if (typeof a.primaryShop === 'object' && a.primaryShop !== null) {
+      return (a.primaryShop as any)._id || (a.primaryShop as any).id;
     }
     return null;
-  };
+  }, []);
 
   const fetchProducts = useCallback(async (pageNumber = 1, append = false) => {
     const isAuthenticatedUser = isAuthenticated || isAttendantAuthenticated;
     const authToken = token || attendantToken;
-    const user = admin || attendant;
+    const currentAdmin = adminRef.current;
+    const currentAttendant = attendantRef.current;
+    const user = currentAdmin || currentAttendant;
 
     if (!isAuthenticatedUser || !user || !authToken) return;
 
     let shopId = selectedShopId || getPrimaryShopId();
-    if (attendant && !shopId) {
-      shopId = typeof attendant.shopId === 'string'
-        ? attendant.shopId
-        : (attendant.shopId as any)?._id;
+    if (currentAttendant && !shopId) {
+      shopId = typeof currentAttendant.shopId === 'string'
+        ? currentAttendant.shopId
+        : (currentAttendant.shopId as any)?._id;
     }
     if (!shopId) {
       setError('No shop found');
@@ -89,8 +100,8 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
         warehouse: 'false',
       });
 
-      if (attendant) queryParams.append('attendantId', (attendant as any)._id);
-      else if (admin) queryParams.append('adminid', (admin as any)._id || (admin as any).id);
+      if (currentAttendant) queryParams.append('attendantId', (currentAttendant as any)._id);
+      else if (currentAdmin) queryParams.append('adminid', (currentAdmin as any)._id || (currentAdmin as any).id);
 
       const response = await apiCall(`/api/product?${queryParams.toString()}`, {
         method: 'GET',
@@ -153,30 +164,29 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
     } finally {
       if (!append) setIsLoading(false);
     }
-  }, [isAuthenticated, isAttendantAuthenticated, token, attendantToken, admin, attendant, selectedShopId]);
+  }, [isAuthenticated, isAttendantAuthenticated, token, attendantToken, adminId, attendantId, selectedShopId, getPrimaryShopId]);
 
   const fetchMoreProducts = useCallback(async () => {
     if (!hasMore || isLoading) return;
     await fetchProducts(page + 1, true);
   }, [hasMore, isLoading, page, fetchProducts]);
 
-  const refreshProducts = async () => {
-    localStorage.removeItem('cachedProducts');
-    localStorage.removeItem('productsLastFetch');
+  const refreshProducts = useCallback(async () => {
     setProducts([]);
     setPage(1);
     await fetchProducts(1, false);
-  };
+  }, [fetchProducts]);
 
   useEffect(() => {
     const isAuthenticatedUser = isAuthenticated || isAttendantAuthenticated;
     const authToken = token || attendantToken;
-    const user = admin || attendant;
 
-    if (isAuthenticatedUser && user && authToken && products.length === 0) {
+    if (isAuthenticatedUser && authToken && (adminId || attendantId)) {
+      setProducts([]);
+      setPage(1);
       fetchProducts(1, false);
     }
-  }, [isAuthenticated, isAttendantAuthenticated, token, attendantToken, selectedShopId, fetchProducts]);
+  }, [isAuthenticated, isAttendantAuthenticated, token, attendantToken, adminId, attendantId, selectedShopId]);
 
   const value: ProductsContextType = {
     products,
