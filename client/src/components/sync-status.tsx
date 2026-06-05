@@ -36,13 +36,11 @@ export function SyncStatus() {
       const adminId = admin?._id || admin?.id;
       const primaryShopId = admin?.primaryShop;
 
-      return await apiRequest('/api/sync/initial', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          adminId, 
-          shopId: primaryShopId 
-        })
+      const res = await apiRequest('POST', '/api/sync/initial', {
+        adminId,
+        shopId: primaryShopId,
       });
+      return res.json() as Promise<any>;
     },
     onMutate: () => {
       setIsManualSyncing(true);

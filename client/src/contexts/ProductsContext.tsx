@@ -3,12 +3,11 @@ import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { apiCall } from '@/lib/api-config';
 import { offlineStorage } from '@/lib/offline-storage';
-import type { Product } from '@shared/schema';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
 
 interface ProductsContextType {
-  products: Product[];
+  products: any[];
   isLoading: boolean;
   error: string | null;
   isOffline: boolean;
@@ -36,7 +35,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
   const { attendant, token: attendantToken, isAuthenticated: isAttendantAuthenticated } = useAttendantAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
@@ -47,7 +46,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
     if (!admin?.primaryShop) return null;
     if (typeof admin.primaryShop === 'string') return admin.primaryShop;
     if (typeof admin.primaryShop === 'object' && admin.primaryShop !== null) {
-      return admin.primaryShop._id || admin.primaryShop.id;
+      return (admin.primaryShop as any)._id || (admin.primaryShop as any).id;
     }
     return null;
   };
@@ -61,7 +60,9 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
 
     let shopId = selectedShopId || getPrimaryShopId();
     if (attendant && !shopId) {
-      shopId = typeof attendant.shopId === 'string' ? attendant.shopId : attendant.shopId?._id;
+      shopId = typeof attendant.shopId === 'string'
+        ? attendant.shopId
+        : (attendant.shopId as any)?._id;
     }
     if (!shopId) {
       setError('No shop found');
@@ -85,31 +86,31 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
         barcodeid: '',
         productType: '',
         useWarehouse: 'true',
-        warehouse: 'false'
+        warehouse: 'false',
       });
 
-      if (attendant) queryParams.append('attendantId', attendant._id);
-      else if (admin) queryParams.append('adminid', admin._id || admin.id);
+      if (attendant) queryParams.append('attendantId', (attendant as any)._id);
+      else if (admin) queryParams.append('adminid', (admin as any)._id || (admin as any).id);
 
       const response = await apiCall(`/api/product?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       });
 
       const data = await response.json();
 
-      const productList = Array.isArray(data)
+      const productList: any[] = Array.isArray(data)
         ? data
         : data.data || data.products || [];
 
       setProducts(prev => {
         if (append && prev.length > 0) {
-          const ids = new Set(prev.map(p => p._id || p.id));
-          const newItems = productList.filter(p => !ids.has(p._id || p.id));
+          const ids = new Set(prev.map((p: any) => p._id || p.id));
+          const newItems = productList.filter((p: any) => !ids.has(p._id || p.id));
           return [...prev, ...newItems];
         }
         return productList;
@@ -119,7 +120,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
         (data.totalPages && data.currentPage < data.totalPages) ||
         productList.length === 50;
 
-      setHasMore(moreAvailable);
+      setHasMore(Boolean(moreAvailable));
       setPage(pageNumber);
       setIsOffline(false);
 
@@ -132,18 +133,21 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
       try {
         const cachedProducts = await offlineStorage.getProducts();
         if (cachedProducts.length > 0) {
-          setProducts(append ? prev => {
-            const ids = new Set(prev.map(p => p._id || p.id));
-            const newItems = cachedProducts.filter(p => !ids.has(p._id || p.id));
-            return append ? [...prev, ...newItems] : cachedProducts;
-          } : cachedProducts);
+          setProducts(append
+            ? (prev: any[]) => {
+                const ids = new Set(prev.map((p: any) => p._id || p.id));
+                const newItems = cachedProducts.filter((p: any) => !ids.has(p._id || p.id));
+                return [...prev, ...newItems];
+              }
+            : cachedProducts
+          );
           setIsOffline(true);
           setHasMore(false);
           setError(null);
         } else {
           setError(err instanceof Error ? err.message : 'Failed to fetch products');
         }
-      } catch (idbErr) {
+      } catch {
         setError(err instanceof Error ? err.message : 'Failed to fetch products');
       }
     } finally {
@@ -169,12 +173,10 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
     const authToken = token || attendantToken;
     const user = admin || attendant;
 
-    if (isAuthenticatedUser && user && authToken) {
-      if (products.length === 0) {
-        fetchProducts(1, false);
-      }
+    if (isAuthenticatedUser && user && authToken && products.length === 0) {
+      fetchProducts(1, false);
     }
-  }, [isAuthenticated, isAttendantAuthenticated, admin?._id, attendant?._id, token, attendantToken, selectedShopId, fetchProducts, products.length]);
+  }, [isAuthenticated, isAttendantAuthenticated, token, attendantToken, selectedShopId, fetchProducts]);
 
   const value: ProductsContextType = {
     products,

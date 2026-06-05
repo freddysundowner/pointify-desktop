@@ -34,13 +34,13 @@ export function InitialSync({ adminId, shopId, onComplete }: InitialSyncProps) {
   const [syncResult, setSyncResult] = useState<InitialSyncResult | null>(null);
 
   // Check if sync is needed
-  const { data: syncStatus, refetch: refetchStatus } = useQuery({
+  const { data: syncStatus, refetch: refetchStatus } = useQuery<{ needsSync: boolean; progress: SyncProgress[] }>({
     queryKey: ['/api/sync/status'],
     enabled: !issyncing
   });
 
   // Get sync progress
-  const { data: progress = [], refetch: refetchProgress } = useQuery({
+  const { data: progress = [] as SyncProgress[], refetch: refetchProgress } = useQuery<SyncProgress[]>({
     queryKey: ['/api/sync/progress'],
     enabled: issyncing,
     refetchInterval: 1000 // Refresh every second during sync
@@ -49,12 +49,10 @@ export function InitialSync({ adminId, shopId, onComplete }: InitialSyncProps) {
   // Initial sync mutation
   const initialSyncMutation = useMutation({
     mutationFn: async (data: { adminId?: string; shopId?: string }) => {
-      return await apiRequest('/api/sync/initial', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const res = await apiRequest('POST', '/api/sync/initial', data);
+      return res.json() as Promise<any>;
     },
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       const syncData = result?.result?.data || result?.data;
       if (syncData?.products?.length > 0) {
         offlineStorage.saveProducts(syncData.products).catch(console.error);
@@ -75,12 +73,10 @@ export function InitialSync({ adminId, shopId, onComplete }: InitialSyncProps) {
   // Shop-specific sync mutation
   const shopSyncMutation = useMutation({
     mutationFn: async (data: { adminId: string; shopId: string }) => {
-      return await apiRequest('/api/sync/shop', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
+      const res = await apiRequest('POST', '/api/sync/shop', data);
+      return res.json() as Promise<any>;
     },
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       const syncData = result?.result?.data || result?.data;
       if (syncData?.products?.length > 0) {
         offlineStorage.saveProducts(syncData.products).catch(console.error);
