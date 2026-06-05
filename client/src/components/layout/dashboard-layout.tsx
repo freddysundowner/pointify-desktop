@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { NetworkStatusBar } from "@/components/network-status-bar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -517,6 +518,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             </div>
           </div>
         )}
+
+        {/* Network / offline status banner */}
+        <NetworkStatusBar />
 
         {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
         <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${isTopLevelRoute ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>

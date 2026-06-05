@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, Clock, Download } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { offlineStorage } from '@/lib/offline-storage';
 
 interface SyncProgress {
   entity: string;
@@ -54,7 +55,14 @@ export function InitialSync({ adminId, shopId, onComplete }: InitialSyncProps) {
       });
     },
     onSuccess: (result) => {
-      setSyncResult(result.result);
+      const syncData = result?.result?.data || result?.data;
+      if (syncData?.products?.length > 0) {
+        offlineStorage.saveProducts(syncData.products).catch(console.error);
+      }
+      if (syncData?.customers?.length > 0) {
+        offlineStorage.saveCustomers(syncData.customers).catch(console.error);
+      }
+      setSyncResult(result.result || result);
       setIsSyncing(false);
       onComplete?.();
     },
@@ -73,7 +81,14 @@ export function InitialSync({ adminId, shopId, onComplete }: InitialSyncProps) {
       });
     },
     onSuccess: (result) => {
-      setSyncResult(result.result);
+      const syncData = result?.result?.data || result?.data;
+      if (syncData?.products?.length > 0) {
+        offlineStorage.saveProducts(syncData.products).catch(console.error);
+      }
+      if (syncData?.customers?.length > 0) {
+        offlineStorage.saveCustomers(syncData.customers).catch(console.error);
+      }
+      setSyncResult(result.result || result);
       setIsSyncing(false);
       onComplete?.();
     },

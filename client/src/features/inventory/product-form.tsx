@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Package } from "lucide-react";
+import { offlineStorage } from "@/lib/offline-storage";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -442,7 +443,24 @@ export default function ProductForm() {
         refreshProducts();
       navigate(productsRoute);
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables: any) => {
+      const isNetworkError =
+        error?.message?.includes('Unable to connect') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('NetworkError') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('network');
+
+      if (isNetworkError && !isEditMode) {
+        offlineStorage.addToSyncQueue('product_update', variables).catch(console.error);
+        toast({
+          title: "Product Queued Offline",
+          description: "No internet connection. This product is saved and will sync when you're back online.",
+        });
+        navigate(productsRoute);
+        return;
+      }
+
       toast({
         title: "Error",
         description:

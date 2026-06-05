@@ -21,6 +21,7 @@ import { registerSettingsRoutes } from "./settings.js";
 import { registerInitsRoutes } from "./init.js";
 import { registerSmsRoutes } from "./sms.js";
 import { registerPaymentRoutes } from "./payments.js";
+import { registerSyncRoutes } from "./sync.js";
 
 import { isElectron } from "../config.js";
 
@@ -52,4 +53,5 @@ export function registerAllRoutes(app: Express) {
   registerSettingsRoutes(app);
   registerSmsRoutes(app);
   registerPaymentRoutes(app);
+  registerSyncRoutes(app);
 }

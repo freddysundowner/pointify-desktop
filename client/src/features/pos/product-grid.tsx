@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiCall } from "@/lib/api-config";
+import { offlineStorage } from "@/lib/offline-storage";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProducts } from "@/contexts/ProductsContext";
@@ -564,8 +565,41 @@ export default function ProductGrid({
       setShowExtraChargeInput(false);
       onClearCart();
     },
-    onError: (error: any) => {
+    onError: (error: any, variables: any) => {
       console.error("Transaction error:", error);
+
+      const isNetworkError =
+        error?.message?.includes('Unable to connect') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('NetworkError') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('network') ||
+        error?.name === 'AbortError';
+
+      if (isNetworkError) {
+        offlineStorage.saveTransaction({
+          ...variables,
+          items: cartItems,
+          total: grandTotal,
+          paymentMethod: selectedPaymentMethod,
+          shopId,
+          adminId,
+          savedOfflineAt: new Date().toISOString(),
+        }).catch(console.error);
+
+        toast({
+          title: "Sale Saved Offline",
+          description: "No internet connection. This sale is queued and will sync automatically when you're back online.",
+        });
+
+        setShowPaymentDialog(false);
+        setSelectedPaymentMethod("");
+        setExtraChargeAmount(0);
+        setExtraChargeInputValue("");
+        setShowExtraChargeInput(false);
+        onClearCart();
+        return;
+      }
       
       // Extract meaningful error message from API error response
       let errorMessage = "Failed to process payment. Please try again.";

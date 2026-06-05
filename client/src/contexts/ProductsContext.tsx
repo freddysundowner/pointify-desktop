@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { apiCall } from '@/lib/api-config';
+import { offlineStorage } from '@/lib/offline-storage';
 import type { Product } from '@shared/schema';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
@@ -10,9 +11,10 @@ interface ProductsContextType {
   products: Product[];
   isLoading: boolean;
   error: string | null;
+  isOffline: boolean;
   refreshProducts: () => Promise<void>;
   fetchMoreProducts: () => Promise<void>;
-  hasMore: boolean; 
+  hasMore: boolean;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -37,6 +39,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -118,8 +121,31 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
 
       setHasMore(moreAvailable);
       setPage(pageNumber);
+      setIsOffline(false);
+
+      if (productList.length > 0 && !append) {
+        offlineStorage.saveProducts(productList).catch(console.error);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch products');
+      console.warn('API fetch failed, trying offline cache:', err);
+
+      try {
+        const cachedProducts = await offlineStorage.getProducts();
+        if (cachedProducts.length > 0) {
+          setProducts(append ? prev => {
+            const ids = new Set(prev.map(p => p._id || p.id));
+            const newItems = cachedProducts.filter(p => !ids.has(p._id || p.id));
+            return append ? [...prev, ...newItems] : cachedProducts;
+          } : cachedProducts);
+          setIsOffline(true);
+          setHasMore(false);
+          setError(null);
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to fetch products');
+        }
+      } catch (idbErr) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch products');
+      }
     } finally {
       if (!append) setIsLoading(false);
     }
@@ -154,6 +180,7 @@ export const ProductsProvider = ({ children }: ProductsProviderProps) => {
     products,
     isLoading,
     error,
+    isOffline,
     refreshProducts,
     fetchMoreProducts,
     hasMore,
