@@ -18,8 +18,6 @@ import {
   X,
   AlertCircle,
   Loader2,
-  Image as ImageIcon,
-  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
@@ -50,64 +48,48 @@ const COLUMNS = [
 type PreviewRow = Record<string, any> & { _valid: boolean; _errors: string[]; _originalQuantity?: string };
 type ResultRow = { name: string; success: boolean; error?: string };
 
-// Maps any reasonable header variation to the canonical key
 const HEADER_ALIASES: Record<string, string> = {
-  // name
   name: "name", "product name": "name", product_name: "name", "item name": "name",
   item_name: "name", product: "name", item: "name", title: "name", "product title": "name",
   productname: "name", itemname: "name",
-  // category
   category: "category", cat: "category", "product category": "category",
   "category name": "category", categoryname: "category", "item category": "category",
   type: "category",
-  // supplier
   supplier: "supplier", vendor: "supplier", "supplier name": "supplier",
   suppliername: "supplier", brand: "supplier",
-  // buyingPrice
   buyingprice: "buyingPrice", "buying price": "buyingPrice", buying_price: "buyingPrice",
   cost: "buyingPrice", "cost price": "buyingPrice", costprice: "buyingPrice",
   "purchase price": "buyingPrice", purchaseprice: "buyingPrice",
   "buy price": "buyingPrice", buyprice: "buyingPrice", "buying cost": "buyingPrice",
   buyingcost: "buyingPrice",
   bp: "buyingPrice", "b p": "buyingPrice", buying: "buyingPrice",
-  // sellingPrice
   sellingprice: "sellingPrice", "selling price": "sellingPrice", selling_price: "sellingPrice",
   price: "sellingPrice", "sale price": "sellingPrice", saleprice: "sellingPrice",
   "retail price": "sellingPrice", retailprice: "sellingPrice",
   "selling cost": "sellingPrice",
   sp: "sellingPrice", "s p": "sellingPrice", selling: "sellingPrice",
-  // wholesalePrice
   wholesaleprice: "wholesalePrice", "wholesale price": "wholesalePrice",
   wholesale_price: "wholesalePrice", wholesale: "wholesalePrice",
   "whole sale price": "wholesalePrice", "whole sale": "wholesalePrice",
-  // dealerPrice
   dealerprice: "dealerPrice", "dealer price": "dealerPrice", dealer_price: "dealerPrice",
   dealer: "dealerPrice",
-  // quantity
   quantity: "quantity", qty: "quantity", stock: "quantity", "stock quantity": "quantity",
   stockquantity: "quantity", units: "quantity", "current stock": "quantity",
   currentstock: "quantity", "opening stock": "quantity", openingstock: "quantity",
   "opening qty": "quantity", openingqty: "quantity",
-  // sku
   sku: "sku", barcode: "sku", code: "sku", "product code": "sku", productcode: "sku",
   "item code": "sku", itemcode: "sku", "bar code": "sku",
-  // description
   description: "description", desc: "description", details: "description",
   notes: "description", note: "description", "product description": "description",
-  // lowStockThreshold
   lowstockthreshold: "lowStockThreshold", "low stock threshold": "lowStockThreshold",
   "low stock": "lowStockThreshold", "min stock": "lowStockThreshold",
   "minimum stock": "lowStockThreshold", lowstock: "lowStockThreshold",
   "alert level": "lowStockThreshold",
-  // reorderLevel
   reorderlevel: "reorderLevel", "reorder level": "reorderLevel", reorder: "reorderLevel",
   "reorder point": "reorderLevel", reorderpoint: "reorderLevel",
-  // unit
   unit: "unit", "unit of measure": "unit", uom: "unit",
-  // manufacturer
   manufacturer: "manufacturer", make: "manufacturer", "brand name": "manufacturer",
   brandname: "manufacturer",
-  // measure
   measure: "measure",
 };
 
@@ -116,12 +98,9 @@ const normalizeHeader = (h: string): string => {
   return HEADER_ALIASES[key] || HEADER_ALIASES[key.replace(/\s/g, "")] || h;
 };
 
-// True if `h` (already normalized) is a canonical import key we recognize.
 const KNOWN_KEYS = new Set(COLUMNS.map((c) => c.key));
 const isRecognizedHeader = (h: string) => KNOWN_KEYS.has(h);
 
-// Split a free-form quantity cell like "16pcs", "12 pkts", "10pcs per piece 5"
-// into a numeric quantity and a unit label. Falls back to {qty:"", unit:""}.
 const splitQuantityCell = (raw: any): { qty: string; unit: string } => {
   const s = String(raw ?? "").trim();
   if (!s) return { qty: "", unit: "" };
@@ -129,14 +108,10 @@ const splitQuantityCell = (raw: any): { qty: string; unit: string } => {
   if (!m) return { qty: "", unit: s };
   const qty = m[1].replace(/,/g, "");
   let unit = (m[2] || "").trim();
-  // Drop trailing qualifiers like "per piece 5", "@ 100".
   unit = unit.split(/\s*(?:per\s+\w+|@|\/=)/i)[0].trim();
   return { qty, unit };
 };
 
-// Find a header row within the first ~5 rows of a sheet. We require at least
-// 2 recognized columns AND a "name"-like column (so we don't mistake a data
-// row for a header).
 const detectHeaderRow = (rows: any[][]): { index: number; headers: string[] } | null => {
   const scan = Math.min(5, rows.length);
   for (let i = 0; i < scan; i++) {
@@ -166,7 +141,6 @@ export default function ImportProductsPage() {
   const [isDone, setIsDone] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [resetQuantity, setResetQuantity] = useState(false);
-  const [aiStatus, setAiStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const EXCEL_TYPES = [
@@ -175,12 +149,6 @@ export default function ImportProductsPage() {
   ];
   const isExcelFile = (f: File) =>
     EXCEL_TYPES.includes(f.type) || /\.(xlsx|xls)$/i.test(f.name);
-  const isImageFile = (f: File) =>
-    (f.type || "").startsWith("image/") || /\.(png|jpe?g|webp|heic|heif|gif|bmp)$/i.test(f.name);
-  const isPdfFile = (f: File) =>
-    f.type === "application/pdf" || /\.pdf$/i.test(f.name);
-  const isAiFile = (f: File) => isImageFile(f) || isPdfFile(f);
-  const isValidFile = (f: File) => isExcelFile(f) || isAiFile(f);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -201,8 +169,8 @@ export default function ImportProductsPage() {
     if (isImporting) return;
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
-    if (!isValidFile(dropped)) {
-      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx, .xls), an image (.png, .jpg, .webp), or a PDF.", variant: "destructive" });
+    if (!isExcelFile(dropped)) {
+      toast({ title: "Invalid file type", description: "Please drop an Excel file (.xlsx, .xls).", variant: "destructive" });
       return;
     }
     handleFileChange(dropped);
@@ -231,12 +199,6 @@ export default function ImportProductsPage() {
     return { ...obj, _valid: errors.length === 0, _errors: errors };
   };
 
-  // Smart Excel parser: walks every sheet, auto-detects the header row, and
-  // re-uses the last-seen header layout for sheets that only contain data
-  // (common in workbooks where Sheet1 has headers and Sheet2..N continue the
-  // list without repeating them). Also splits combined quantity cells like
-  // "16pcs" into quantity=16 + unit="pcs", so the user rarely needs the AI
-  // fallback for ordinary spreadsheets.
   const parseExcelFile = async (f: File) => {
     const buf = await f.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
@@ -261,11 +223,9 @@ export default function ImportProductsPage() {
         lastHeaders = headers;
         lastCols = headers.length;
       } else if (lastHeaders && (raw[0]?.length ?? 0) >= Math.max(2, lastCols - 1)) {
-        // No header on this sheet, but column count matches a previous sheet.
         headers = lastHeaders;
         startIdx = 0;
       } else {
-        // Can't make sense of this sheet on its own — skip silently.
         continue;
       }
 
@@ -279,15 +239,12 @@ export default function ImportProductsPage() {
           if (KNOWN_KEYS.has(h)) obj[h] = String(row[idx] ?? "").trim();
         });
 
-        // Split combined quantity cells like "16pcs" → qty + unit (only when
-        // we won't trample an explicit unit column).
         if (hasQty && obj.quantity) {
           const { qty, unit } = splitQuantityCell(obj.quantity);
           if (qty) obj.quantity = qty;
           if (unit && (!hasUnit || !obj.unit)) obj.unit = unit;
         }
 
-        // Skip rows that are entirely empty or look like a repeated header.
         const hasAnyValue = Object.values(obj).some((v) => v !== "");
         if (!hasAnyValue) continue;
         if (
@@ -308,188 +265,11 @@ export default function ImportProductsPage() {
     if (out.length === 0) {
       toast({
         title: "Couldn't read this spreadsheet",
-        description:
-          "No recognizable columns found. Try the \"Auto-format with AI\" button below to reshape it.",
+        description: "No recognizable columns found. Make sure the file has column headers like Name, Buying Price, Selling Price, Quantity etc.",
         variant: "destructive",
       });
     }
     return out;
-  };
-
-  const fileToDataUrl = (f: File): Promise<string> => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(f);
-  });
-
-  const MAX_BYTES = 4_500_000;
-  const MAX_DIM = 2400;
-
-  const canvasToCompressedDataUrl = (canvas: HTMLCanvasElement): string => {
-    let quality = 0.9;
-    let dataUrl = canvas.toDataURL("image/jpeg", quality);
-    while (dataUrl.length * 0.75 > MAX_BYTES && quality > 0.4) {
-      quality -= 0.1;
-      dataUrl = canvas.toDataURL("image/jpeg", quality);
-    }
-    return dataUrl;
-  };
-
-  const renderImageAtScale = (img: HTMLImageElement, maxDim: number): HTMLCanvasElement => {
-    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-    const w = Math.max(1, Math.round(img.width * scale));
-    const h = Math.max(1, Math.round(img.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
-    return canvas;
-  };
-
-  const compressImageFile = async (f: File): Promise<string> => {
-    const dataUrl = await fileToDataUrl(f);
-    if (dataUrl.length * 0.75 <= MAX_BYTES && /image\/(png|jpeg|webp|gif)/.test(f.type || "")) {
-      return dataUrl;
-    }
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Could not load image"));
-      img.src = dataUrl;
-    });
-    let dim = MAX_DIM;
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const canvas = renderImageAtScale(img, dim);
-      const out = canvasToCompressedDataUrl(canvas);
-      if (out.length * 0.75 <= MAX_BYTES) return out;
-      dim = Math.round(dim * 0.75);
-    }
-    throw new Error("Could not compress image under 5MB. Please use a smaller or clearer photo.");
-  };
-
-  const pdfToImageDataUrls = async (f: File): Promise<string[]> => {
-    const pdfjs: any = await import("pdfjs-dist");
-    const workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url" as any)).default;
-    pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-    const buf = await f.arrayBuffer();
-    const doc = await pdfjs.getDocument({ data: buf }).promise;
-    const pages: string[] = [];
-    const total = doc.numPages;
-    for (let i = 1; i <= total; i++) {
-      setAiStatus(`Rendering PDF page ${i} of ${total}…`);
-      const page = await doc.getPage(i);
-      const baseViewport = page.getViewport({ scale: 1 });
-      let targetDim = MAX_DIM;
-      let out = "";
-      for (let attempt = 0; attempt < 6; attempt++) {
-        const scale = Math.min(2, targetDim / Math.max(baseViewport.width, baseViewport.height));
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.ceil(viewport.width);
-        canvas.height = Math.ceil(viewport.height);
-        const ctx = canvas.getContext("2d")!;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        out = canvasToCompressedDataUrl(canvas);
-        if (out.length * 0.75 <= MAX_BYTES) break;
-        targetDim = Math.round(targetDim * 0.75);
-      }
-      if (!out) throw new Error(`Could not compress PDF page ${i} under 5MB.`);
-      pages.push(out);
-    }
-    return pages;
-  };
-
-  const callAiParse = async (payload: { images?: string[]; text?: string }) => {
-    const adminToken = localStorage.getItem("authToken");
-    const attendantToken = localStorage.getItem("attendantToken");
-    const token = adminToken || attendantToken;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000);
-    let resp: Response;
-    try {
-      resp = await fetch("/api/import/parse-image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ ...payload, resetQuantity }),
-        signal: controller.signal,
-        credentials: "include",
-      });
-    } catch (err: any) {
-      if (err?.name === "AbortError") throw new Error("AI request timed out after 5 minutes. Try a smaller file.");
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-    const products: any[] = Array.isArray(data?.products) ? data.products : [];
-    return products.map((p) => {
-      const obj: Record<string, string> = {
-        name: String(p.name ?? "").trim(),
-        category: String(p.category ?? "").trim(),
-        supplier: String(p.supplier ?? "").trim(),
-        buyingPrice: p.buyingPrice != null ? String(p.buyingPrice) : "",
-        sellingPrice: p.sellingPrice != null ? String(p.sellingPrice) : "",
-        wholesalePrice: p.wholesalePrice != null ? String(p.wholesalePrice) : "",
-        dealerPrice: p.dealerPrice != null ? String(p.dealerPrice) : "",
-        quantity: resetQuantity ? "0" : (p.quantity != null ? String(p.quantity) : ""),
-        sku: String(p.sku ?? "").trim(),
-        description: String(p.description ?? "").trim(),
-        lowStockThreshold: p.lowStockThreshold != null ? String(p.lowStockThreshold) : "",
-        reorderLevel: p.reorderLevel != null ? String(p.reorderLevel) : "",
-        unit: String(p.unit ?? "").trim(),
-        manufacturer: String(p.manufacturer ?? "").trim(),
-        measure: String(p.measure ?? "").trim(),
-      };
-      const originalQty = p.quantity != null ? String(p.quantity) : "";
-      return validateRow({ ...obj, _originalQuantity: originalQty } as any);
-    });
-  };
-
-  const reformatExcelWithAi = async () => {
-    if (!file) return;
-    setIsParsing(true);
-    setAiStatus("Reading spreadsheet with AI…");
-    try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      let text = "";
-      for (const name of wb.SheetNames) {
-        const tsv = XLSX.utils.sheet_to_csv(wb.Sheets[name], { FS: "\t" });
-        text += `# Sheet: ${name}\n${tsv}\n\n`;
-      }
-      if (text.length > 200_000) text = text.slice(0, 200_000);
-      const parsed = await callAiParse({ text });
-      setRows(parsed);
-      setResults([]);
-      setIsDone(false);
-      toast({
-        title: "Spreadsheet reformatted",
-        description: `Extracted ${parsed.length} product${parsed.length !== 1 ? "s" : ""}. Review before importing.`,
-      });
-    } catch (e: any) {
-      toast({ title: "AI reformat failed", description: e.message, variant: "destructive" });
-    }
-    setAiStatus("");
-    setIsParsing(false);
-  };
-
-  const parseImageFile = async (f: File) => {
-    setAiStatus(isPdfFile(f) ? "Preparing PDF…" : "Preparing image…");
-    const dataUrls: string[] = isPdfFile(f)
-      ? await pdfToImageDataUrls(f)
-      : [await compressImageFile(f)];
-    setAiStatus(isPdfFile(f) ? `Reading ${dataUrls.length} page${dataUrls.length !== 1 ? "s" : ""} with AI…` : "Reading image with AI…");
-    return await callAiParse({ images: dataUrls });
   };
 
   const parseFile = async (f: File) => {
@@ -497,20 +277,12 @@ export default function ImportProductsPage() {
     setRows([]);
     setResults([]);
     setIsDone(false);
-    setAiStatus("");
     try {
-      const parsed = isAiFile(f) ? await parseImageFile(f) : await parseExcelFile(f);
+      const parsed = await parseExcelFile(f);
       setRows(parsed);
-      if (isAiFile(f)) {
-        toast({
-          title: isPdfFile(f) ? "PDF processed" : "Image processed",
-          description: `Extracted ${parsed.length} product${parsed.length !== 1 ? "s" : ""}. Review the preview before importing.`,
-        });
-      }
     } catch (e: any) {
       toast({ title: "Failed to read file", description: e.message, variant: "destructive" });
     }
-    setAiStatus("");
     setIsParsing(false);
   };
 
@@ -572,14 +344,12 @@ export default function ImportProductsPage() {
         throw new Error(data?.error || `HTTP ${resp.status}`);
       }
 
-      // Parse "Imported X products, Y failed." message from server
       const msg: string = data?.message || "";
       const successMatch = msg.match(/Imported (\d+)/);
       const failMatch = msg.match(/(\d+) failed/);
       const successCount = successMatch ? parseInt(successMatch[1]) : products.length;
       const failCount = failMatch ? parseInt(failMatch[1]) : 0;
 
-      // Show per-product results from the names we submitted
       const successResults = validRows.slice(0, successCount).map((r) => ({ name: r.name, success: true }));
       const failResults = validRows.slice(successCount).map((r) => ({ name: r.name, success: false, error: "Import failed" }));
       setResults([...successResults, ...failResults]);
@@ -620,7 +390,6 @@ export default function ImportProductsPage() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Left column: upload steps */}
           <div className="space-y-4">
             {/* Step 1 */}
             <Card>
@@ -651,7 +420,7 @@ export default function ImportProductsPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xlsx,.xls,.png,.jpg,.jpeg,.webp,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,image/png,image/jpeg,image/webp,application/pdf"
+                  accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                   className="hidden"
                   onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                   data-testid="input-import-file"
@@ -670,11 +439,7 @@ export default function ImportProductsPage() {
                 >
                   {file ? (
                     <div className="text-center">
-                      {isAiFile(file) ? (
-                        <ImageIcon className="h-8 w-8 text-purple-600 mx-auto mb-1" />
-                      ) : (
-                        <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto mb-1" />
-                      )}
+                      <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto mb-1" />
                       <p className="text-sm font-medium text-gray-700 break-all">{file.name}</p>
                       <button
                         className="mt-1 text-xs text-red-400 hover:text-red-600 flex items-center gap-1 mx-auto"
@@ -694,17 +459,10 @@ export default function ImportProductsPage() {
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-500 text-center">
                         Drag & drop or click to select<br />
-                        <span className="text-xs">Excel (.xlsx, .xls), Image (.png, .jpg, .webp), or PDF</span>
+                        <span className="text-xs">Excel (.xlsx, .xls)</span>
                       </p>
                     </>
                   )}
-                </div>
-
-                <div className="rounded-md border border-purple-100 bg-purple-50 p-2.5 flex items-start gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 shrink-0" />
-                  <div className="text-xs text-purple-900 leading-snug">
-                    <span className="font-medium">AI auto-format:</span> Upload a photo or PDF of a handwritten or printed list and AI will extract products into the template.
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-1">
@@ -733,29 +491,10 @@ export default function ImportProductsPage() {
                     data-testid="switch-reset-quantity"
                   />
                 </div>
-
-                {file && !isAiFile(file) && rows.length > 0 && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
-                      onClick={reformatExcelWithAi}
-                      disabled={isParsing}
-                      data-testid="button-reformat-excel-ai"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      {isParsing ? "Reformatting…" : "Auto-format with AI"}
-                    </Button>
-                    <p className="text-[10px] text-gray-400 mt-1.5 leading-snug">
-                      Use this if columns aren't mapping correctly or the layout is messy. AI will reshape the spreadsheet.
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
-            {/* Step 3 – import */}
+            {/* Step 3 */}
             {rows.length > 0 && !isDone && (
               <Card>
                 <CardHeader className="pb-2 pt-4 px-4">
@@ -835,8 +574,7 @@ export default function ImportProductsPage() {
               <Card className="h-64 flex items-center justify-center">
                 <div className="text-center text-gray-500">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-purple-500" />
-                  <p className="text-sm">{aiStatus || "Reading file…"}</p>
-                  {aiStatus && <p className="text-xs text-gray-400 mt-1">This may take 1-3 minutes for large PDFs or handwritten lists.</p>}
+                  <p className="text-sm">Reading file…</p>
                 </div>
               </Card>
             )}

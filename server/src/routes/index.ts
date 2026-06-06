@@ -23,7 +23,6 @@ import { registerSmsRoutes } from "./sms.js";
 import { registerMpesaRoutes } from "./mpesa.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
-import { registerAiImportRoutes } from "./ai-import.js";
 
 import { isElectron } from "../config.js";
 
@@ -57,6 +56,5 @@ export function registerAllRoutes(app: Express) {
   registerMpesaRoutes(app);
   registerPaymentRoutes(app);
   registerSyncRoutes(app);
-  registerAiImportRoutes(app);
 
 }
