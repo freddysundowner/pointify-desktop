@@ -5,8 +5,8 @@
     "scripts": {
         "tsc": "tsc -p tsconfig.base.json",
         "build:tsc": "tsc -p tsconfig.json",
-        "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs",
-        "build:watch": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs --watch",
+        "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs --external:@anthropic-ai/sdk",
+        "build:watch": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs --watch --external:@anthropic-ai/sdk",
         "dev": "tsx watch src/index.ts",
         "clean": "rm -rf dist && mkdir -p dist"
     },
