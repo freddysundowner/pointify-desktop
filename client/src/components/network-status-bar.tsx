@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { WifiOff, Wifi, RefreshCw, CloudOff } from 'lucide-react';
+import { WifiOff, Wifi, RefreshCw, CloudOff, ListChecks, AlertTriangle } from 'lucide-react';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { offlineStorage } from '@/lib/offline-storage';
+import { SyncReviewPanel } from '@/components/sync-review-panel';
 
 function useLiveNetworkStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -33,8 +34,10 @@ function formatAge(ms: number): string {
 
 export function NetworkStatusBar() {
   const isOnline = useLiveNetworkStatus();
-  const { pendingCount, isSyncing, syncNow } = useOfflineSync();
+  const { pendingCount, failedCount, queuedItems, isSyncing, syncNow, retryItem, discardItem } =
+    useOfflineSync();
   const [lastSync, setLastSync] = useState<number | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   // Refresh the "last synced" age while offline so the staleness note stays current.
   useEffect(() => {
@@ -53,45 +56,81 @@ export function NetworkStatusBar() {
     };
   }, [isOnline]);
 
-  if (isOnline && pendingCount === 0) return null;
+  // Show the bar whenever there is something to surface: offline, items waiting,
+  // or items that got stuck (failed) and need the cashier's attention.
+  if (isOnline && pendingCount === 0 && failedCount === 0) return null;
 
   const staleness = !isOnline && lastSync ? formatAge(Date.now() - lastSync) : null;
+  // A failed item while online makes this an alert, not just an info notice.
+  const hasFailed = failedCount > 0;
+  const alertTone = hasFailed && isOnline;
 
   return (
-    <div
-      className={`flex items-center justify-between px-4 py-2 text-sm font-medium transition-all ${
-        isOnline
-          ? 'bg-amber-50 text-amber-800 border-b border-amber-200'
-          : 'bg-red-50 text-red-800 border-b border-red-200'
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        {isOnline ? (
-          <Wifi className="h-4 w-4 shrink-0" />
-        ) : (
-          <WifiOff className="h-4 w-4 shrink-0" />
-        )}
-        <span>
-          {isOnline
-            ? `Back online · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} waiting to sync`
-            : `Offline mode${pendingCount > 0 ? ` · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} queued` : ' · changes will sync when connected'}${staleness ? ` · data from ${staleness}` : ''}`}
-        </span>
+    <>
+      <div
+        className={`flex items-center justify-between px-4 py-2 text-sm font-medium transition-all ${
+          isOnline && !alertTone
+            ? 'bg-amber-50 text-amber-800 border-b border-amber-200'
+            : 'bg-red-50 text-red-800 border-b border-red-200'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {alertTone ? (
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+          ) : isOnline ? (
+            <Wifi className="h-4 w-4 shrink-0" />
+          ) : (
+            <WifiOff className="h-4 w-4 shrink-0" />
+          )}
+          <span data-testid="text-network-status">
+            {isOnline
+              ? `${pendingCount > 0 ? `Back online · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} waiting to sync` : 'Online'}${
+                  hasFailed
+                    ? `${pendingCount > 0 ? ' · ' : ''}${failedCount} sale${failedCount !== 1 ? 's' : ''} failed to sync`
+                    : ''
+                }`
+              : `Offline mode${pendingCount > 0 ? ` · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} queued` : ' · changes will sync when connected'}${hasFailed ? ` · ${failedCount} failed` : ''}${staleness ? ` · data from ${staleness}` : ''}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPanelOpen(true)}
+            data-testid="button-review-sync"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+              alertTone || !isOnline
+                ? 'bg-red-200 hover:bg-red-300 text-red-900'
+                : 'bg-amber-200 hover:bg-amber-300'
+            }`}
+          >
+            <ListChecks className="h-3 w-3" />
+            Review
+          </button>
+
+          {isOnline && pendingCount > 0 && (
+            <button
+              onClick={syncNow}
+              disabled={isSyncing}
+              data-testid="button-sync-now"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-200 hover:bg-amber-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing…' : 'Sync Now'}
+            </button>
+          )}
+
+          {!isOnline && <CloudOff className="h-4 w-4 text-red-500 shrink-0" />}
+        </div>
       </div>
 
-      {isOnline && pendingCount > 0 && (
-        <button
-          onClick={syncNow}
-          disabled={isSyncing}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-200 hover:bg-amber-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-          {isSyncing ? 'Syncing…' : 'Sync Now'}
-        </button>
-      )}
-
-      {!isOnline && (
-        <CloudOff className="h-4 w-4 text-red-500 shrink-0" />
-      )}
-    </div>
+      <SyncReviewPanel
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+        items={queuedItems}
+        isSyncing={isSyncing}
+        onRetry={retryItem}
+        onDiscard={discardItem}
+      />
+    </>
   );
 }

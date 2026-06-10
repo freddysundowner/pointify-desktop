@@ -283,6 +283,42 @@ class OfflineStorage {
     return await this.db.getAllFromIndex('sync_queue', 'by-status', 'pending');
   }
 
+  // Items parked as 'failed' after exhausting their retries. These are no longer
+  // picked up by the automatic flush, so the review panel surfaces them for a
+  // manual retry or discard.
+  async getFailedSyncItems(): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+    return await this.db.getAllFromIndex('sync_queue', 'by-status', 'failed');
+  }
+
+  // Everything still in the queue (pending, mid-flight, or failed) so the review
+  // panel can show the cashier exactly what is waiting and what got stuck.
+  async getQueuedItems(): Promise<any[]> {
+    if (!this.db) throw new Error('Database not initialized');
+    const all = await this.db.getAll('sync_queue');
+    return all
+      .filter((item: any) => ['pending', 'syncing', 'failed'].includes(item.status))
+      .sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
+  }
+
+  // Re-arm a parked 'failed' item for the next flush by resetting its attempt
+  // counter and status back to 'pending'.
+  async retrySyncItem(syncId: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    const item = await this.db.get('sync_queue', syncId);
+    if (item) {
+      item.status = 'pending';
+      item.retries = 0;
+      await this.db.put('sync_queue', item);
+    }
+  }
+
+  // Permanently drop a queued item the cashier decides not to recover.
+  async discardSyncItem(syncId: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    await this.db.delete('sync_queue', syncId);
+  }
+
   async markSyncComplete(syncId: string): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     

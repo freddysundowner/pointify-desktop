@@ -41,3 +41,14 @@ items stop being retried. The periodic 30s flush only runs `syncNow` when there
 are pending items; if `syncNow` ever logs "Sync queue flush failed", it means
 `getSyncQueue()` itself threw (almost always the IndexedDB wasn't initialised
 yet), not a per-item POST failure — those are caught per item.
+
+A manual "retry" of a parked item (review panel) re-arms it by setting
+`status:'pending'` AND `retries:0`, so it re-enters the normal 5-attempt
+auto-retry cycle rather than failing again on the next tick.
+
+**Queued-sale payload has NO single total field.** To display a sale's amount
+you must reconstruct it from the payment breakdown: `split` payments =
+`amountPaid + mpesaTotal + bankTotal` (amountPaid is only the cash slice);
+everything else (cash/mpesa/bank/credit/hold) = `amountPaid + outstandingBalance`.
+Do NOT add mpesaTotal/bankTotal for non-split — for a single-method sale
+`amountPaid` already equals the grand total and those fields would double-count.

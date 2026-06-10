@@ -9,16 +9,33 @@ const ENDPOINTS: Record<string, string> = {
   customer: '/api/customers',
 };
 
+export interface QueuedSyncItem {
+  id: string;
+  type: string;
+  data: any;
+  timestamp: number;
+  retries: number;
+  status: 'pending' | 'syncing' | 'synced' | 'failed';
+}
+
 export function useOfflineSync() {
   const [pendingCount, setPendingCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
+  const [queuedItems, setQueuedItems] = useState<QueuedSyncItem[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const syncInProgress = useRef(false);
 
+  // Loads the whole reviewable queue (pending + in-flight + failed) and keeps the
+  // count badges in sync. Returns the pending count so the flush logic can bail
+  // early when there is nothing to push.
   const checkPending = useCallback(async () => {
     try {
-      const queue = await offlineStorage.getSyncQueue();
-      setPendingCount(queue.length);
-      return queue.length;
+      const items = (await offlineStorage.getQueuedItems()) as QueuedSyncItem[];
+      setQueuedItems(items);
+      const pending = items.filter((i) => i.status === 'pending' || i.status === 'syncing').length;
+      setPendingCount(pending);
+      setFailedCount(items.filter((i) => i.status === 'failed').length);
+      return pending;
     } catch {
       return 0;
     }
@@ -87,6 +104,29 @@ export function useOfflineSync() {
     }
   }, [checkPending]);
 
+  // Cashier-initiated recovery: re-arm a parked 'failed' item and immediately
+  // attempt a flush so they get instant feedback.
+  const retryItem = useCallback(async (id: string) => {
+    try {
+      await offlineStorage.retrySyncItem(id);
+    } catch (err: any) {
+      console.warn('Could not re-arm sync item:', id, err?.message || err);
+    }
+    await checkPending();
+    await syncNow();
+  }, [checkPending, syncNow]);
+
+  // Cashier-initiated discard: permanently drop a queued item they don't want to
+  // recover (e.g. a duplicate or a mistaken sale).
+  const discardItem = useCallback(async (id: string) => {
+    try {
+      await offlineStorage.discardSyncItem(id);
+    } catch (err: any) {
+      console.warn('Could not discard sync item:', id, err?.message || err);
+    }
+    await checkPending();
+  }, [checkPending]);
+
   useEffect(() => {
     checkPending();
 
@@ -110,5 +150,14 @@ export function useOfflineSync() {
     };
   }, [checkPending, syncNow]);
 
-  return { pendingCount, isSyncing, syncNow, checkPending };
+  return {
+    pendingCount,
+    failedCount,
+    queuedItems,
+    isSyncing,
+    syncNow,
+    checkPending,
+    retryItem,
+    discardItem,
+  };
 }
