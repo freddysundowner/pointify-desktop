@@ -78,3 +78,7 @@ POINTIFY_API_URL = "https://sandbox.pointifypos.com"
 PORT = "1999"
 DEV = "false"
 NODE_ENV = "development"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
