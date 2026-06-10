@@ -21,6 +21,18 @@ prevention requires the SEPARATE upstream Pointify backend
 original sale on a repeat. If you touch sale-commit or sync code, keep
 `clientRef` stable across retries and do NOT regenerate it on replay.
 
+**Confirmed (do not re-investigate):** the upstream is NOT in this repo and
+cannot be changed from here — `server/` is only a thin proxy that forwards the
+sale body (incl. `clientRef`) verbatim. The whole client side is verified
+correct end-to-end: `clientRef` generated once in `product-grid.tsx`
+`transactionData`, preserved on the network-error→queue path (`...variables`),
+deduped in `addToSyncQueue`, replayed unchanged by `useOfflineSync`. The
+remaining residual-risk gap (upstream enforcing `clientRef`) is documented for
+shop owners in `replit.md` ("Offline Sync & Duplicate-Sale Safety"). Closing it
+needs the upstream Pointify backend team + a live offline-reconnect test (no
+creds available here to run it). Don't add a proxy-level in-memory dedupe —
+autoscale is multi-instance + restarts, so it'd be unreliable security theater.
+
 # Sync queue retry semantics
 
 `markSyncFailed` keeps an item `status:'pending'` (retryable) until `retries >= 5`,

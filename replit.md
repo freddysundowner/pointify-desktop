@@ -72,3 +72,44 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
 - Staff/attendant management with permissions
 - Reports and analytics
 - Online/offline synchronization
+
+## Offline Sync & Duplicate-Sale Safety
+
+Sales made while offline are stored on the device and automatically sent to the
+server when the connection comes back. To stop the same sale from being counted
+twice during this catch-up, every sale carries a stable idempotency key
+(`clientRef`):
+
+- It is generated **once** when the sale is rung up and never changes, even if
+  the sale has to be retried several times.
+- The device's sync queue refuses to queue the same `clientRef` twice.
+- The `clientRef` is sent to the main Pointify server with the sale.
+
+### Known residual risk (action needed on the main server)
+
+This repository contains only the **POS app** (the React client) and a **thin
+proxy** (`server/`) that forwards requests to the separate main Pointify backend
+at `sandbox.pointifypos.com`. That main backend's source code is **not** part of
+this project and cannot be changed from here.
+
+Full protection against duplicate sales requires the main server's create-sale
+endpoint to **remember the `clientRef` and reject (or return the original of) a
+repeat**. Until it does, one rare edge case can still double-count a sale:
+
+> A queued offline sale is replayed on reconnect. It reaches the server and the
+> sale + stock movement are saved, but the server's reply is lost on the way
+> back. The device thinks it failed, so it sends the same sale again — and the
+> server, not recognising the `clientRef`, saves it a second time.
+
+**What this means for shop owners:** in this specific "lost reply" situation a
+sale and its stock reduction may appear twice. It is uncommon (needs a network
+drop at the exact moment the server is replying), but it is possible. Watch for
+two identical receipts created seconds apart after a device reconnects, and
+reconcile stock if you see one.
+
+**To fully close this gap,** the main Pointify backend team must make the
+create-sale endpoint store and check `clientRef` (treat it as a unique key) and,
+on a repeat, return the original sale instead of creating a new one. The POS app
+already sends everything needed for this. Once that change is live, an
+offline-then-reconnect test should confirm exactly one sale and one stock
+movement per `clientRef`.
