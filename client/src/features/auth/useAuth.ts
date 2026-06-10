@@ -9,6 +9,7 @@ import { clearPermissions } from "@/store/slices/permissionsSlice";
 import { queryClient } from "@/lib/queryClient";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrency } from "@/store/slices/defaultCurrencySlicce";
+import { saveOfflineCredential, verifyOfflineCredential, isNetworkError } from "@/lib/offline-auth";
 
 interface Admin {
   _id: string;
@@ -234,7 +235,20 @@ export const useAuthProvider = (): AuthContextType => {
         // Force invalidation of shop-related queries after login
         queryClient.invalidateQueries({ queryKey: ["shops"] });
         queryClient.invalidateQueries({ queryKey: ["admin"] });
-        
+
+        // Persist a salted verifier so this owner can log in again while offline.
+        await saveOfflineCredential({
+          role: 'admin',
+          identifier: email,
+          password,
+          token: data.token,
+          profile: JSON.parse(localStorage.getItem("adminData") || "null") || data.userdata,
+          extra: {
+            selectedShopId: localStorage.getItem("selectedShopId") || null,
+            defaultCurrency: localStorage.getItem("defaultCurrency") || null,
+          },
+        });
+
         // Check if automatic sync is needed after login
         // await checkAndTriggerAutoSync();
         
@@ -244,6 +258,27 @@ export const useAuthProvider = (): AuthContextType => {
         throw new Error(message);
       }
     } catch (error) {
+      // Offline fallback: if the server is unreachable, allow a previously
+      // online-authenticated owner to log in against the cached verifier.
+      if (isNetworkError(error)) {
+        const credential = await verifyOfflineCredential('admin', email, password);
+        if (credential) {
+          setToken(credential.token);
+          localStorage.setItem("authToken", credential.token);
+          setAdmin(credential.profile);
+          localStorage.setItem("adminData", JSON.stringify(credential.profile));
+          if (credential.extra?.selectedShopId) {
+            localStorage.setItem("selectedShopId", credential.extra.selectedShopId);
+          }
+          if (credential.extra?.defaultCurrency) {
+            localStorage.setItem("defaultCurrency", credential.extra.defaultCurrency);
+            dispatch(setCurrency(credential.extra.defaultCurrency));
+          }
+          setServerError(null);
+          return;
+        }
+        throw new Error("You're offline and we couldn't verify these details. Connect to the internet to sign in for the first time on this device.");
+      }
       if (error instanceof Error && (error.message.includes('502') || error.message.includes('unavailable'))) {
         setServerError(error);
       }

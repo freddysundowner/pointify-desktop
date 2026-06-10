@@ -48,12 +48,40 @@ interface POSDatabase extends DBSchema {
       'by-status': string;
     };
   };
+  auth: {
+    key: string;
+    value: {
+      id: string;
+      role: 'admin' | 'attendant';
+      identifier: string;
+      salt: string;
+      verifier: string;
+      token: string;
+      profile: any;
+      shopData?: any;
+      extra?: any;
+      updatedAt: number;
+    };
+  };
+}
+
+export interface OfflineCredential {
+  id: string;
+  role: 'admin' | 'attendant';
+  identifier: string;
+  salt: string;
+  verifier: string;
+  token: string;
+  profile: any;
+  shopData?: any;
+  extra?: any;
+  updatedAt: number;
 }
 
 class OfflineStorage {
   private db: IDBPDatabase<POSDatabase> | null = null;
   private dbName = 'pos-offline-db';
-  private version = 1;
+  private version = 2;
 
   async init(): Promise<void> {
     try {
@@ -93,6 +121,11 @@ class OfflineStorage {
             syncStore.createIndex('by-type', 'type');
             syncStore.createIndex('by-status', 'status');
           }
+
+          // Offline auth credential vault (v2)
+          if (!db.objectStoreNames.contains('auth')) {
+            db.createObjectStore('auth', { keyPath: 'id' });
+          }
         },
       });
       console.log('Offline database initialized successfully');
@@ -118,6 +151,7 @@ class OfflineStorage {
     }
     
     await tx.done;
+    await this.touchLastSync();
     console.log(`Saved ${products.length} products to offline storage`);
   }
 
@@ -162,6 +196,7 @@ class OfflineStorage {
     }
     
     await tx.done;
+    await this.touchLastSync();
     console.log(`Saved ${customers.length} customers to offline storage`);
   }
 
@@ -218,7 +253,18 @@ class OfflineStorage {
   // Sync queue operations
   async addToSyncQueue(type: 'transaction' | 'customer' | 'product_update', data: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
+
+    // Dedupe by the sale's stable client idempotency key so the same transaction
+    // can't be queued twice (e.g. a double-tap or a retry that re-enters here).
+    const clientRef = data?.clientRef;
+    if (clientRef) {
+      const existing = await this.db.getAll('sync_queue');
+      if (existing.some((q: any) => q?.data?.clientRef === clientRef && q.status !== 'completed')) {
+        console.log('Skipping duplicate sync item for clientRef:', clientRef);
+        return;
+      }
+    }
+
     const syncItem = {
       id: `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
@@ -247,15 +293,45 @@ class OfflineStorage {
     }
   }
 
-  async markSyncFailed(syncId: string): Promise<void> {
+  // Mark a sync item failed. It stays 'pending' (retryable on the next flush)
+  // until it exhausts maxRetries, after which it parks as 'failed' so a single
+  // poison item can't block the queue forever.
+  async markSyncFailed(syncId: string, maxRetries = 5): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
+
     const item = await this.db.get('sync_queue', syncId);
     if (item) {
-      item.status = 'failed';
       item.retries += 1;
+      item.status = item.retries >= maxRetries ? 'failed' : 'pending';
       await this.db.put('sync_queue', item);
     }
+  }
+
+  // Offline auth credential vault operations
+  private async ensureDb(): Promise<IDBPDatabase<POSDatabase>> {
+    if (!this.db) {
+      await this.init();
+    }
+    if (!this.db) throw new Error('Database not initialized');
+    return this.db;
+  }
+
+  async saveCredential(credential: OfflineCredential): Promise<void> {
+    const db = await this.ensureDb();
+    await db.put('auth', credential);
+    console.log('Saved offline credential for', credential.role, credential.identifier);
+  }
+
+  async getCredential(role: 'admin' | 'attendant', identifier: string): Promise<OfflineCredential | null> {
+    const db = await this.ensureDb();
+    const id = `${role}:${identifier.trim().toLowerCase()}`;
+    const record = await db.get('auth', id);
+    return (record as OfflineCredential) || null;
+  }
+
+  async getAllCredentials(): Promise<OfflineCredential[]> {
+    const db = await this.ensureDb();
+    return (await db.getAll('auth')) as OfflineCredential[];
   }
 
   // Settings operations
@@ -268,6 +344,27 @@ class OfflineStorage {
     if (!this.db) throw new Error('Database not initialized');
     const setting = await this.db.get('settings', key);
     return setting?.value;
+  }
+
+  // Records the moment fresh data was last pulled from the server, so the UI can
+  // warn the cashier when cached data is getting stale.
+  async touchLastSync(): Promise<void> {
+    try {
+      const db = await this.ensureDb();
+      await db.put('settings', { key: 'lastDataSync', value: Date.now(), lastUpdated: Date.now() });
+    } catch (err) {
+      console.warn('Failed to record last sync time:', err);
+    }
+  }
+
+  async getLastSync(): Promise<number | null> {
+    try {
+      const db = await this.ensureDb();
+      const setting = await db.get('settings', 'lastDataSync');
+      return (setting?.value as number) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   // Utility methods

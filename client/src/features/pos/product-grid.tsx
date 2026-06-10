@@ -159,6 +159,29 @@ export default function ProductGrid({
   const { toast } = useToast();
   const { hasAttendantPermission } = usePermissions();
   const queryClient = useQueryClient();
+
+  // Live connectivity flag — M-Pesa requires the server to confirm payment, so
+  // it must be disabled while offline.
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const up = () => setIsOnline(true);
+    const down = () => setIsOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', down);
+    return () => {
+      window.removeEventListener('online', up);
+      window.removeEventListener('offline', down);
+    };
+  }, []);
+
+  // If connectivity drops while M-Pesa is the chosen method, clear the selection
+  // so the cashier is forced to pick an offline-capable method.
+  useEffect(() => {
+    if (!isOnline && selectedPaymentMethod === "mpesa") {
+      setSelectedPaymentMethod("");
+    }
+  }, [isOnline, selectedPaymentMethod]);
+
   const { products: allProducts, isLoading, refreshProducts,hasMore,fetchMoreProducts } = useProducts();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -334,6 +357,8 @@ export default function ProductGrid({
           const method = methodMap[e.key.toLowerCase()];
           if (method && !meta) {
             e.preventDefault();
+            // M-Pesa requires connectivity — ignore the shortcut while offline.
+            if (method === "mpesa" && !navigator.onLine) return;
             setSelectedPaymentMethod(method);
             return;
           }
@@ -489,15 +514,29 @@ export default function ProductGrid({
   const { data: customersResponse, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", adminId, shopId],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        adminid: adminId || "",
-        shopId: shopId || ""
-      });
-      const response = await apiCall(`/api/customers?${params.toString()}`, {
-        method: "GET",
-      });
-      const data = await response.json();
-      return data;
+      try {
+        const params = new URLSearchParams({
+          adminid: adminId || "",
+          shopId: shopId || ""
+        });
+        const response = await apiCall(`/api/customers?${params.toString()}`, {
+          method: "GET",
+        });
+        const data = await response.json();
+
+        // Cache customers (with balances) for offline use.
+        const list: any[] = Array.isArray(data) ? data : data?.customers || data?.data || [];
+        if (list.length > 0) {
+          offlineStorage.saveCustomers(list).catch(console.error);
+        }
+        return data;
+      } catch (err) {
+        // Offline fallback: serve the last-cached customer list + balances.
+        console.warn('Customer fetch failed, using offline cache:', err);
+        const cached = await offlineStorage.getCustomers().catch(() => []);
+        if (cached.length > 0) return cached;
+        throw err;
+      }
     },
     enabled: !!adminId && !!shopId, // Load customers when POS loads
     staleTime: 0, // No caching - always fetch fresh data
@@ -868,6 +907,17 @@ export default function ProductGrid({
     if (!isHold) {
       if (!selectedPaymentMethod) return;
 
+      // Hard offline block: M-Pesa needs the server to confirm payment, so it can
+      // never be finalized offline — even if it was selected while still online.
+      if (selectedPaymentMethod === "mpesa" && !navigator.onLine) {
+        toast({
+          title: "M-Pesa Unavailable Offline",
+          description: "You're offline. Choose Cash, Wallet, Credit or Bank to complete this sale — it will sync when you reconnect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // M-Pesa (linked shop): never save an unpaid sale. Require STK confirmation
       // or a manually entered code. Enforced here so the Enter-key shortcut and
       // auto-finalize path can't bypass the disabled-button gate.
@@ -1004,6 +1054,15 @@ export default function ProductGrid({
       shopId: shopId || "",
       attendantId: attendantId,
       saleType: saleType,
+      // Stable client-generated idempotency key. The same payload is what gets
+      // POSTed online and, on a network failure, queued and replayed by the sync
+      // engine — so this key stays constant across retries. If the upstream
+      // honours it, a sale committed before the response was lost won't be
+      // duplicated when the queued copy is replayed.
+      clientRef:
+        (typeof crypto !== "undefined" && "randomUUID" in crypto)
+          ? crypto.randomUUID()
+          : `${shopId || "shop"}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
       createdAt: (!isHold && isCustomDateTime && customDateTime) ? customDateTime : new Date().toISOString(),
       status: isHold ? "hold" : "cashed",
       totaltax: parseFloat(totals.tax.toString()),
@@ -2597,13 +2656,20 @@ export default function ProductGrid({
                       { id: "credit", label: "Credit", shortcut: "R", icon: <UserCheck className="h-4 w-4" />, accent: true },
                     ].map(({ id, label, shortcut, icon, accent }) => {
                       const selected = selectedPaymentMethod === id;
+                      // M-Pesa needs the server to confirm payment — block it offline.
+                      const disabledOffline = id === "mpesa" && !isOnline;
                       return (
                         <button
                           key={id}
                           type="button"
-                          onClick={() => handlePaymentMethodSelect(id)}
+                          onClick={() => !disabledOffline && handlePaymentMethodSelect(id)}
+                          disabled={disabledOffline}
+                          title={disabledOffline ? "M-Pesa is unavailable while offline" : undefined}
+                          data-testid={`button-payment-${id}`}
                           className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all ${
-                            selected
+                            disabledOffline
+                              ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                              : selected
                               ? accent ? "bg-orange-500 border-orange-500 text-white" : "bg-purple-600 border-purple-600 text-white"
                               : "bg-white border-gray-300 text-gray-600 hover:border-gray-400"
                           }`}
@@ -2613,6 +2679,11 @@ export default function ProductGrid({
                       );
                     })}
                   </div>
+                  {!isOnline && (
+                    <p className="text-xs text-amber-600" data-testid="text-offline-payment-note">
+                      You're offline — M-Pesa is unavailable. Cash, wallet, credit and bank sales will sync when you reconnect.
+                    </p>
+                  )}
                 </div>
 
                 {/* Cash panel */}

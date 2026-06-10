@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { saveOfflineCredential, verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
 
 interface AttendantLoginForm {
   uniqueDigits: string;
@@ -25,16 +26,38 @@ function AttendantLoginContent() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: AttendantLoginForm) => {
-      const response = await fetch('/api/auth/attendant/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Login failed');
+      try {
+        const response = await fetch('/api/auth/attendant/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Login failed');
+        }
+        const result = await response.json();
+        // Persist a salted verifier so this attendant can log in again offline.
+        await saveOfflineCredential({
+          role: 'attendant',
+          identifier: data.uniqueDigits,
+          password: data.password,
+          token: result.token,
+          profile: result.attendant,
+          shopData: result?.shopData || {},
+        });
+        return result;
+      } catch (err) {
+        // Offline fallback: verify the PIN/password against the cached verifier.
+        if (isNetworkError(err)) {
+          const credential = await verifyOfflineCredential('attendant', data.uniqueDigits, data.password);
+          if (credential) {
+            return { attendant: credential.profile, token: credential.token, shopData: credential.shopData || {} };
+          }
+          throw new Error("You're offline and we couldn't verify your PIN. Connect to the internet to sign in for the first time on this device.");
+        }
+        throw err;
       }
-      return response.json();
     },
     onSuccess: (data) => {
       login(data.attendant, data.token, data?.shopData || {});
