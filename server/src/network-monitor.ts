@@ -78,7 +78,7 @@ class NetworkMonitor extends EventEmitter {
         'google.com',
         'cloudflare.com',
         '8.8.8.8',
-        'api.pointifypos.com'
+        'sandbox.pointifypos.com'
       ];
 
       const promises = hosts.map(host => 
