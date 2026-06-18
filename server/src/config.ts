@@ -1,11 +1,17 @@
 // src/api/pointify.ts
+// Ignore TLS/SSL certificate validation for upstream Pointify requests.
+// (api.pointifypos.com presents a certificate that does not match its
+// hostname; this disables Node's verification so requests don't fail.)
+// WARNING: this turns off HTTPS certificate checking process-wide.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 import FormData from 'form-data';
 import fs from 'fs';
 import fetchh from 'node-fetch';
 
 // Constants
-export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL;
-export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'https://sandbox.pointifypos.com';
+export const POINTIFY_API_BASE: string = process.env.POINTIFY_OFFLINE_API_URL || 'https://api.pointifypos.com';
+export const POINTIFY_ONLINE_API_BASE = process.env.POINTIFY_API_URL || 'https://api.pointifypos.com';
 
 // Global API mode setting
 let globalApiMode: 'online' | 'offline' | 'hybrid' = 'online';
