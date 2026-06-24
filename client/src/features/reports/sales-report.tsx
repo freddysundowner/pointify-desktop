@@ -6,6 +6,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { ShopFilter } from "@/components/filters/shop-filter";
+import { AttendantFilter } from "@/components/filters/attendant-filter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CreditCard, ChevronRight } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
@@ -96,6 +97,7 @@ export default function SalesReportPage() {
   const [activeKey, setActiveKey] = useState<DateRangeKey>("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [attendantId, setAttendantId] = useState("");
 
   const isCustom = activeKey === "custom";
   const { from: autoFrom, to: autoTo } = getRange(activeKey);
@@ -103,7 +105,7 @@ export default function SalesReportPage() {
   const toDate   = isCustom ? customTo   : autoTo;
 
   const url = effectiveShopId && (!isCustom || (customFrom && customTo))
-    ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}`
+    ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&attendant=${attendantId}`
     : null;
 
   const { data, isLoading, isError } = useQuery<SalesReportData>({
@@ -116,7 +118,16 @@ export default function SalesReportPage() {
   return (
     <DashboardLayout>
       <div className="space-y-5 pb-24 lg:pb-8 w-full max-w-2xl mx-auto lg:max-w-none">
-        <PageHeader title="Sales Report" backHref={reportsRoute} actions={<ShopFilter />} />
+        <PageHeader
+          title="Sales Report"
+          backHref={reportsRoute}
+          actions={
+            <div className="flex items-center gap-2">
+              <ShopFilter />
+              <AttendantFilter value={attendantId} onChange={setAttendantId} />
+            </div>
+          }
+        />
 
         {/* Date filter tabs — horizontal scroll like Flutter */}
         <div className="overflow-x-auto scrollbar-hide">
