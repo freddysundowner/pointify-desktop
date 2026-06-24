@@ -7,8 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/features/auth/useAuth";
 import { apiCall } from "@/lib/api-config";
+import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 
 interface Attendant {
   _id: string;
@@ -34,18 +34,22 @@ interface AttendantFilterProps {
 }
 
 export function AttendantFilter({ value, onChange, className, size = "sm" }: AttendantFilterProps) {
-  const { admin } = useAuth();
+  const { shopId } = usePrimaryShop();
 
+  // Only attendants belonging to the currently selected shop — mirrors the
+  // Attendants page, which is shop-scoped (not admin-wide).
   const { data: attendants = [] } = useQuery<Attendant[]>({
-    queryKey: ["/api/attendants/all", admin?._id],
+    queryKey: ["/api/attendants/shop/filter", shopId],
     queryFn: async () => {
-      const adminId = admin?._id || (admin as any)?.id;
-      if (!adminId) return [];
-      const res = await apiCall(`/api/attendants/all/${adminId}`, { method: "GET" });
+      if (!shopId) return [];
+      const res = await apiCall(
+        `/api/attendants/shop/filter?shopId=${shopId}`,
+        { method: "GET" },
+      );
       const data = await res.json();
       return Array.isArray(data) ? data : (data?.data ?? []);
     },
-    enabled: !!(admin?._id || (admin as any)?.id),
+    enabled: !!shopId,
     staleTime: 5 * 60_000,
   });
 
