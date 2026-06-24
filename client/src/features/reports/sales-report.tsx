@@ -110,7 +110,28 @@ export default function SalesReportPage() {
 
   const { data, isLoading, isError } = useQuery<SalesReportData>({
     queryKey: [url],
+    queryFn: async () => {
+      // Fetch fresh every time. The upstream report endpoint supports HTTP
+      // conditional caching (returns 304), which can otherwise make the browser
+      // reuse a previously-selected attendant's numbers when you switch back.
+      // `cache: "no-store"` + staleTime 0 guarantees the filter re-runs.
+      const token =
+        localStorage.getItem("attendantToken") || localStorage.getItem("authToken");
+      const res = await fetch(url as string, {
+        credentials: "include",
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status}).`);
+      return res.json();
+    },
     enabled: !!url,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
   });
 
   const total = (data?.cash ?? 0) + (data?.credit ?? 0) + (data?.debtpaid ?? 0) + (data?.wallet ?? 0);

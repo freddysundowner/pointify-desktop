@@ -5,3 +5,4 @@
 - [Nested dialogs vs global key handlers](nested-dialog-global-keys.md) — a window keydown that closes a parent dialog must no-op while a nested dialog is open, or Esc tears down the parent.
 - [Offline sync idempotency](offline-sync-idempotency.md) — offline sales replay with a stable clientRef; full dup-prevention needs the separate upstream to honour it. Queue retries park as 'failed' after 5.
 - [Checkout shared payment state](checkout-shared-payment-state.md) — checkout-modal reuses one cashReceived for cash + split; clear it on method switch and bound-check split in canComplete, or stale cash completes a sale.
+- [Sales report HTTP caching](sales-report-http-caching.md) — report endpoint returns 304; default fetcher serves stale per-filter data. Use a no-store queryFn + staleTime 0 for filter-sensitive queries.
