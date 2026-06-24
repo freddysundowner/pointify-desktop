@@ -105,7 +105,7 @@ export default function SalesReportPage() {
   const toDate   = isCustom ? customTo   : autoTo;
 
   const url = effectiveShopId && (!isCustom || (customFrom && customTo))
-    ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&attendant=${attendantId}`
+    ? `/api/analysis/sales/report?shopid=${effectiveShopId}&fromDate=${fromDate}&toDate=${toDate}&attendantId=${attendantId}`
     : null;
 
   const { data, isLoading, isError } = useQuery<SalesReportData>({
