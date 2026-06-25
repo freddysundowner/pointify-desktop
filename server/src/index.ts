@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
-import { getGlobalApiMode, isElectron } from "./config.js";
-import { dumpRetryMonitor } from "./dump-retry-monitor.js";
+import { getGlobalApiMode } from "./config.js";
 import "./network-status-handler.js";
 import dotenv from 'dotenv';
 dotenv.config();
@@ -93,7 +92,7 @@ app.use((req, res, next) => {
 
 
   // Use STATIC_DIR env var, then cwd-relative path (reliable with PM2 cwd setting),
-  // then fall back to __dirname-relative path for dev/electron environments
+  // then fall back to __dirname-relative path for dev environments
   let staticPath =
     process.env.STATIC_DIR ||
     path.resolve(process.cwd(), "client/dist");
@@ -121,9 +120,6 @@ app.use((req, res, next) => {
 
   const port = parseInt(process.env.PORT || '3000', 10);
   app.listen(port, '0.0.0.0', () => {
-    console.log(`✅ Pointify server running on http://localhost:${port} ${isElectron()}`);
-    if (isElectron()) {
-      dumpRetryMonitor.startMonitoring();
-    }
+    console.log(`✅ Pointify server running on http://localhost:${port}`);
   });
 })();

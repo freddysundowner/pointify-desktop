@@ -18,21 +18,14 @@ import { registerPackageRoutes } from "./packages.js";
 import { registerSubscriptionRoutes } from "./subscriptions.js";
 import { registerPrinterRoutes } from "./printer.js";
 import { registerSettingsRoutes } from "./settings.js";
-import { registerInitsRoutes } from "./init.js";
 import { registerSmsRoutes } from "./sms.js";
 import { registerMpesaRoutes } from "./mpesa.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
 
-import { isElectron } from "../config.js";
-
-
 
 export function registerAllRoutes(app: Express) {
   // Register all route modules
-  if (isElectron()) {
-    registerInitsRoutes(app);
-  }
   registerAuthRoutes(app);
   registerProductRoutes(app);
   registerAnalyticsRoutes(app);

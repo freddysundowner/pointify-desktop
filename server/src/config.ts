@@ -32,10 +32,6 @@ export function setGlobalApiMode(mode: 'online' | 'offline' | 'hybrid') {
   }
   globalApiMode = mode;
 }
-export function isElectron() {
-  return !!(process.versions && process.versions.electron);
-}
-
 export function getGlobalApiMode(): 'online' | 'offline' | 'hybrid' {
   return globalApiMode;
 }

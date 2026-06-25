@@ -1,7 +1,7 @@
 # Pointify Desktop - POS Application
 
 ## Overview
-A full-featured Point of Sale (POS) web application built with React + Vite (frontend) and Express (backend). Originally designed as an Electron desktop app, configured here to run as a web app in Replit.
+A full-featured Point of Sale (POS) web application built with React + Vite (frontend) and Express (backend). Runs as a web app in Replit. (All Electron desktop-app code has been removed; offline support for the web app is provided by the browser's IndexedDB, not a local desktop database.)
 
 ## Architecture
 

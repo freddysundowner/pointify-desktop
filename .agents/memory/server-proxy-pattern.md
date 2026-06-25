@@ -59,3 +59,21 @@ and `res.status(data.httpStatus||502)` — only `POST /api/sales` does this so f
 now return `200 {success:false,...}` — sweep them to forward `data.httpStatus` as the
 HTTP status if you need true non-2xx everywhere. To see why a write actually failed, grep
 the Server log for `🛑 Upstream` after reproducing.
+
+# This repo is web-only — Electron is fully removed
+
+Pointify was once an Electron desktop app; all Electron code (the `electron/` shell,
+packaging, `isElectron()`, local-MongoDB seeding/sync) has been deleted. Do NOT
+reintroduce it or assume a local desktop DB exists.
+
+- `performDataSync` in `network-status-handler.ts` is an INTENTIONAL no-op stub. It is
+  still called from auth login, the write interceptor in `index.ts`, and the online
+  reconnect listener, but the body (Electron local-DB <-> cloud sync) was removed. Do
+  not "fix" it — there is no local DB to sync on web.
+- **Web offline support is browser-side only** (IndexedDB via client offline-storage.ts /
+  offline-auth.ts), unrelated to the old Electron offline.
+- The online/offline/hybrid proxy mode system + `makeLocalPointifyRequest` are proxy
+  infrastructure, NOT Electron — they stayed.
+
+**Why:** A future agent seeing a no-op `performDataSync` or the offline-mode plumbing might
+think sync is broken and try to restore the Electron sync machinery. It was removed on purpose.
