@@ -47,6 +47,24 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        // Group heavy, optional libraries into their own cacheable chunks so
+        // they stay out of the initial bundle and are only fetched by the
+        // (lazy-loaded) routes that actually use them.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('/jspdf') || id.includes('/html2canvas') || id.includes('/dompurify') || id.includes('/canvg')) return 'pdf-vendor';
+          if (id.includes('/xlsx')) return 'xlsx-vendor';
+          if (id.includes('/pdfjs-dist')) return 'pdfjs-vendor';
+          if (id.includes('/react-dom/') || id.includes('/scheduler/')) return 'react-vendor';
+          if (id.includes('/@radix-ui/')) return 'radix-vendor';
+        },
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5000,

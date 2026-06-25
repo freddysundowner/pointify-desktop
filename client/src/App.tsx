@@ -1,4 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
+import { Component, lazy, Suspense, useEffect, type ReactNode } from "react";
 
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -10,94 +11,150 @@ import { ProductsProvider } from "@/contexts/ProductsContext";
 import { AttendantAuthProvider } from "@/contexts/AttendantAuthContext";
 import { AttendantSessionChecker } from "@/components/AttendantSessionChecker";
 import { useAuth } from "@/features/auth/useAuth";
-import { useEffect } from "react";
-import POS from "@/features/pos/pos";
-import BusinessDashboard from "@/features/dashboard/business-dashboard";
-import Login from "@/features/auth/login";
-import BusinessLogin from "@/features/auth/business-login";
-import Signup from "@/features/auth/signup";
-import ForgotPassword from "@/features/auth/forgot-password";
-import ResetPassword from "@/features/auth/reset-password";
-import ShopSetup from "@/features/shop/shop-setup";
-import ShopOnboarding from "@/features/shop/shop-onboarding";
-import Shops from "@/features/shop/shops";
-import ShopDetails from "@/features/shop/shop-details";
-import StockProducts from "@/features/inventory/stock-products";
-import StockCount from "@/features/shop/stock-count";
-import StockCountHistoryPage from "@/pages/stock-count-history";
-import StockSummary from "@/pages/stock-summary";
-import StockBadStock from "@/features/inventory/stock-bad-stock";
-import StockTransfer from "@/features/shop/stock-transfer";
-import ProductForm from "@/features/inventory/product-form";
-import ProductHistory from "@/features/inventory/product-history";
-import AdjustmentHistoryPage from "@/pages/adjustment-history";
 
-import SalesList from "@/features/sales/sales-list";
-import ReturnsList from "@/features/sales/returns-list";
-import ReceiptView from "@/features/sales/receipt-view";
-import EditSale from "@/features/sales/edit-sale";
-import ReturnSale from "@/features/sales/return-sale";
-import DeleteSale from "@/features/sales/delete-sale";
-import PurchasesList from "@/features/purchases/purchases-list";
-import PurchaseOrderPage from "@/pages/purchase-order";
-import ReturnPurchase from "@/pages/return-purchase";
-import PurchaseReturns from "@/pages/purchase-returns";
-import PurchaseReturnDetails from "@/pages/purchase-return-details";
-
-import ReceivePurchase from "@/features/purchases/receive-purchase";
-import CancelPurchase from "@/features/purchases/cancel-purchase";
-import CreatePurchase from "@/features/purchases/create-purchase";
-import Suppliers from "@/features/suppliers/suppliers";
-import SupplierOverview from "@/features/suppliers/supplier-overview";
-import Customers from "@/features/customers/customers";
-import CustomerOverview from "@/features/customers/customer-overview";
-import Expenses from "@/features/expenses/expenses";
-import StaffPermissions from "@/features/attendants/staff-permissions";
+// Eagerly-loaded helpers — tiny and needed for routing/guards on first paint.
 import PermissionsInit from "@/components/PermissionsInit";
-import CashFlow from "@/features/cashflow/cashflow";
-import ReportsHub from "@/features/shop/reports";
-import IncomeReports from "@/features/reports/income-reports";
-import NetProfitReport from "@/features/reports/net-profit-report";
-import SalesReportPage from "@/features/reports/sales-report";
-import ExpenseReportPage from "@/features/reports/expense-report";
-import DueSalesPage from "@/features/reports/due-sales";
-import PurchasesReportPage from "@/features/reports/purchases-report";
-import AnalysisReportPage from "@/features/reports/analysis-report";
-import ProfitAnalysis from "@/features/reports/profit-analysis";
-import DiscountReports from "@/features/reports/discount-reports";
-import StockReport from "@/features/reports/stock-report";
-import ProductMovements from "@/features/reports/product-movements";
-import ProductSalesReport from "@/features/reports/product-sales-report";
-import SalesReturnsReport from "@/features/reports/sales-returns-report";
-import PurchasesSummary from "@/features/reports/purchases-summary";
-import SubscriptionPage from "@/pages/subscription";
-import PaymentWaiting from "@/pages/payment-waiting"; 
-import EditProfilePage from "@/pages/edit-profile";
-import ExpenseCategories from "@/pages/expense-categories";
-import CashflowCategories from "@/pages/cashflow-categories";
-import ProfitLossPage from "@/pages/profit-loss";
-import DebtorsPage from "@/pages/debtors";
-import DebtPaymentsPage from "@/pages/debt-payments";
-import PrinterConfigPage from "@/pages/printer-config";
-import SettingsPage from "@/pages/settings";
-import SmsSettingsPage from "@/pages/sms-settings";
-
-import AttendantsPage from "@/features/attendants/attendants";
-
-import OrdersPage from "@/pages/orders";
-import PurchasePaymentPage from "@/pages/purchase-payment";
-import PurchaseViewPage from "@/pages/purchase-view";
-import PurchaseEditPage from "@/pages/purchase-edit";
-import SupplierHistoryPage from "@/pages/supplier-history";
-import BulkCreateProducts from "@/pages/bulk-create-products";
-import ImportProductsPage from "@/pages/import-products";
-import NotFound from "@/pages/not-found";
-import AttendantLogin from "@/pages/attendant-login";
-import AttendantDashboard from "@/pages/attendant-dashboard";
 import { AttendantRoute } from "@/components/AttendantRoute";
-import UserSwitchPage from "@/components/UserSwitchPage";
 import AdminRouteHandler from "@/components/AdminRouteHandler";
-import ServerUnavailable from "@/components/ui/server-unavailable";
+import NotFound from "@/pages/not-found";
+
+// Route components are lazy-loaded so the initial bundle stays small. Each
+// import() becomes its own chunk, fetched only when its route is first visited.
+const POS = lazy(() => import("@/features/pos/pos"));
+const BusinessDashboard = lazy(() => import("@/features/dashboard/business-dashboard"));
+const Login = lazy(() => import("@/features/auth/login"));
+const BusinessLogin = lazy(() => import("@/features/auth/business-login"));
+const Signup = lazy(() => import("@/features/auth/signup"));
+const ForgotPassword = lazy(() => import("@/features/auth/forgot-password"));
+const ResetPassword = lazy(() => import("@/features/auth/reset-password"));
+const ShopSetup = lazy(() => import("@/features/shop/shop-setup"));
+const ShopOnboarding = lazy(() => import("@/features/shop/shop-onboarding"));
+const Shops = lazy(() => import("@/features/shop/shops"));
+const ShopDetails = lazy(() => import("@/features/shop/shop-details"));
+const StockProducts = lazy(() => import("@/features/inventory/stock-products"));
+const StockCount = lazy(() => import("@/features/shop/stock-count"));
+const StockCountHistoryPage = lazy(() => import("@/pages/stock-count-history"));
+const StockSummary = lazy(() => import("@/pages/stock-summary"));
+const StockBadStock = lazy(() => import("@/features/inventory/stock-bad-stock"));
+const StockTransfer = lazy(() => import("@/features/shop/stock-transfer"));
+const ProductForm = lazy(() => import("@/features/inventory/product-form"));
+const ProductHistory = lazy(() => import("@/features/inventory/product-history"));
+const AdjustmentHistoryPage = lazy(() => import("@/pages/adjustment-history"));
+const SalesList = lazy(() => import("@/features/sales/sales-list"));
+const ReturnsList = lazy(() => import("@/features/sales/returns-list"));
+const ReceiptView = lazy(() => import("@/features/sales/receipt-view"));
+const EditSale = lazy(() => import("@/features/sales/edit-sale"));
+const ReturnSale = lazy(() => import("@/features/sales/return-sale"));
+const DeleteSale = lazy(() => import("@/features/sales/delete-sale"));
+const PurchasesList = lazy(() => import("@/features/purchases/purchases-list"));
+const PurchaseOrderPage = lazy(() => import("@/pages/purchase-order"));
+const ReturnPurchase = lazy(() => import("@/pages/return-purchase"));
+const PurchaseReturns = lazy(() => import("@/pages/purchase-returns"));
+const PurchaseReturnDetails = lazy(() => import("@/pages/purchase-return-details"));
+const ReceivePurchase = lazy(() => import("@/features/purchases/receive-purchase"));
+const CancelPurchase = lazy(() => import("@/features/purchases/cancel-purchase"));
+const CreatePurchase = lazy(() => import("@/features/purchases/create-purchase"));
+const Suppliers = lazy(() => import("@/features/suppliers/suppliers"));
+const SupplierOverview = lazy(() => import("@/features/suppliers/supplier-overview"));
+const Customers = lazy(() => import("@/features/customers/customers"));
+const CustomerOverview = lazy(() => import("@/features/customers/customer-overview"));
+const Expenses = lazy(() => import("@/features/expenses/expenses"));
+const StaffPermissions = lazy(() => import("@/features/attendants/staff-permissions"));
+const CashFlow = lazy(() => import("@/features/cashflow/cashflow"));
+const ReportsHub = lazy(() => import("@/features/shop/reports"));
+const IncomeReports = lazy(() => import("@/features/reports/income-reports"));
+const NetProfitReport = lazy(() => import("@/features/reports/net-profit-report"));
+const SalesReportPage = lazy(() => import("@/features/reports/sales-report"));
+const ExpenseReportPage = lazy(() => import("@/features/reports/expense-report"));
+const DueSalesPage = lazy(() => import("@/features/reports/due-sales"));
+const PurchasesReportPage = lazy(() => import("@/features/reports/purchases-report"));
+const AnalysisReportPage = lazy(() => import("@/features/reports/analysis-report"));
+const ProfitAnalysis = lazy(() => import("@/features/reports/profit-analysis"));
+const DiscountReports = lazy(() => import("@/features/reports/discount-reports"));
+const StockReport = lazy(() => import("@/features/reports/stock-report"));
+const ProductMovements = lazy(() => import("@/features/reports/product-movements"));
+const ProductSalesReport = lazy(() => import("@/features/reports/product-sales-report"));
+const SalesReturnsReport = lazy(() => import("@/features/reports/sales-returns-report"));
+const PurchasesSummary = lazy(() => import("@/features/reports/purchases-summary"));
+const SubscriptionPage = lazy(() => import("@/pages/subscription"));
+const PaymentWaiting = lazy(() => import("@/pages/payment-waiting"));
+const EditProfilePage = lazy(() => import("@/pages/edit-profile"));
+const ExpenseCategories = lazy(() => import("@/pages/expense-categories"));
+const CashflowCategories = lazy(() => import("@/pages/cashflow-categories"));
+const ProfitLossPage = lazy(() => import("@/pages/profit-loss"));
+const DebtorsPage = lazy(() => import("@/pages/debtors"));
+const DebtPaymentsPage = lazy(() => import("@/pages/debt-payments"));
+const PrinterConfigPage = lazy(() => import("@/pages/printer-config"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const SmsSettingsPage = lazy(() => import("@/pages/sms-settings"));
+const AttendantsPage = lazy(() => import("@/features/attendants/attendants"));
+const OrdersPage = lazy(() => import("@/pages/orders"));
+const PurchasePaymentPage = lazy(() => import("@/pages/purchase-payment"));
+const PurchaseViewPage = lazy(() => import("@/pages/purchase-view"));
+const PurchaseEditPage = lazy(() => import("@/pages/purchase-edit"));
+const SupplierHistoryPage = lazy(() => import("@/pages/supplier-history"));
+const BulkCreateProducts = lazy(() => import("@/pages/bulk-create-products"));
+const ImportProductsPage = lazy(() => import("@/pages/import-products"));
+const AttendantLogin = lazy(() => import("@/pages/attendant-login"));
+const AttendantDashboard = lazy(() => import("@/pages/attendant-dashboard"));
+
+// Recovers from transient "Failed to fetch dynamically imported module" errors
+// that can happen when a lazy chunk is missing (network blip or a stale service
+// worker pointing at an old build). It reloads once to fetch the fresh chunks;
+// a sessionStorage guard prevents an infinite reload loop.
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { failed: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isChunkError = /dynamically imported module|Importing a module script failed|ChunkLoadError|Failed to fetch/i.test(message);
+    if (isChunkError && !sessionStorage.getItem("__chunk_reloaded__")) {
+      sessionStorage.setItem("__chunk_reloaded__", "1");
+      window.location.reload();
+    }
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center p-6">
+          <div className="text-center max-w-sm">
+            <p className="text-gray-700 mb-4">Couldn't finish loading. Please refresh.</p>
+            <button
+              type="button"
+              onClick={() => { sessionStorage.removeItem("__chunk_reloaded__"); window.location.reload(); }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg"
+              data-testid="button-reload-app"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function FullScreenSpinner({ label }: { label?: string }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        {label ? <p className="text-gray-600">{label}</p> : null}
+      </div>
+    </div>
+  );
+}
 
 function RedirectToStockProducts() {
   const [, navigate] = useLocation();
@@ -180,19 +237,12 @@ function AppContent() {
   // Removed server error page - let app load normally even if API is down
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <p className="text-gray-600">Loading Pointify...</p>
-        </div>
-      </div>
-    );
+    return <FullScreenSpinner label="Loading Pointify..." />;
   }
 
   return (
+    <ChunkErrorBoundary>
+    <Suspense fallback={<FullScreenSpinner />}>
     <Switch>
       {/* Attendant routes - always check first before admin auth */}
       <Route path="/attendant/login" component={AttendantLogin} />
@@ -620,6 +670,8 @@ function AppContent() {
       )}
       <Route component={NotFound} />
     </Switch>
+    </Suspense>
+    </ChunkErrorBoundary>
   );
 }
 
