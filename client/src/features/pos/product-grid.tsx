@@ -205,7 +205,9 @@ export default function ProductGrid({
     return allProducts.filter(product =>
       product.name?.toLowerCase().includes(searchTerm) ||
       product.title?.toLowerCase().includes(searchTerm) ||
-      product.description?.toLowerCase().includes(searchTerm)
+      product.description?.toLowerCase().includes(searchTerm) ||
+      String(product.barcode || "").toLowerCase() === searchTerm ||
+      String(product.barcode || "").toLowerCase().includes(searchTerm)
     );
   };
 
@@ -393,7 +395,81 @@ export default function ProductGrid({
     return isService || (item.quantity ?? 0) > 0;
   };
 
+  // Add an item to the cart, respecting stock/service rules, then clear the box.
+  const addScannedItem = (item: any) => {
+    const isService = item?.productType === 'service' || item?.virtual === true;
+    const isOutOfStock = !isService && (item.quantity ?? 0) === 0;
+    if (isOutOfStock) {
+      toast({
+        title: "Out of stock",
+        description: `${item?.name || 'This item'} is out of stock`,
+        variant: "destructive",
+      });
+      return;
+    }
+    onAddToCart(item);
+    onSearchChange('');
+    setDropdownHighlight(-1);
+  };
+
+  // Handle the Enter a USB barcode scanner sends after "typing" the code.
+  // A scanner does not move the dropdown highlight, so resolve the product by
+  // its exact barcode (then fall back to a single search result).
+  const handleScanEnter = async (rawQuery: string, dropdownItems: any[]) => {
+    const code = (rawQuery || "").trim();
+    if (!code) return;
+
+    const matchesBarcode = (p: any) => String(p?.barcode || "").trim() === code;
+
+    // 1) Exact barcode match in the current search results
+    let match = dropdownItems.find(matchesBarcode);
+    // 2) Exact barcode match anywhere in the loaded catalogue
+    if (!match) match = allProducts.find(matchesBarcode);
+    // 3) Offline barcode index (covers items not currently loaded / offline use)
+    if (!match) {
+      try { match = await offlineStorage.getProductByBarcode(code); } catch { /* ignore */ }
+    }
+    // 4) No barcode match, but a single search result -> use it (typed-name
+    //    convenience only). Never do this for barcode-like input: a scanned
+    //    code that didn't match exactly must NOT silently add an unrelated item.
+    const isBarcodeLike = /^\d{6,}$/.test(code);
+    if (!match && !isBarcodeLike && dropdownItems.length === 1) match = dropdownItems[0];
+
+    if (!match) {
+      toast({
+        title: "No match found",
+        description: `No product found for "${code}"`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addScannedItem(match);
+  };
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, dropdownItems: any[]) => {
+    // Enter is handled first (before the empty-list guard) because a scanner's
+    // Enter can arrive before async search results have loaded.
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (dropdownHighlight >= 0) {
+        const item = dropdownItems[dropdownHighlight];
+        if (item) addScannedItem(item);
+        return;
+      }
+      // Read the live input value (not the propagated state, which can lag
+      // behind a fast scanner's key stream) as the source of truth.
+      const liveValue = e.currentTarget.value;
+      void handleScanEnter(liveValue, dropdownItems);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      onSearchChange('');
+      setDropdownHighlight(-1);
+      return;
+    }
+
     if (!dropdownItems.length) return;
 
     const findNext = (from: number, dir: 1 | -1) => {
@@ -419,21 +495,6 @@ export default function ProductGrid({
         if (next >= 0) dropdownItemRefs.current[next]?.scrollIntoView({ block: "nearest" });
         return next;
       });
-    } else if (e.key === "Enter" && dropdownHighlight >= 0) {
-      e.preventDefault();
-      const item = dropdownItems[dropdownHighlight];
-      if (item) {
-        const isService = item?.productType === 'service' || item?.virtual === true;
-        const isOutOfStock = !isService && (item.quantity ?? 0) === 0;
-        if (!isOutOfStock) {
-          onAddToCart(item);
-          onSearchChange('');
-          setDropdownHighlight(-1);
-        }
-      }
-    } else if (e.key === "Escape") {
-      onSearchChange('');
-      setDropdownHighlight(-1);
     }
   };
 

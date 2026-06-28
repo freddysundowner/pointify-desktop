@@ -58,6 +58,7 @@ const productSchema = z.object({
   productType: z.enum(["product", "service"]).default("product"),
   manufacturer: z.string().optional().or(z.literal("")),
   serialnumber: z.string().optional().or(z.literal("")),
+  barcode: z.string().optional().or(z.literal("")),
   wholesalePrice: z.preprocess(
     (val) => (val === "" || val === null ? undefined : val),
     z.number().min(0).optional(),
@@ -213,6 +214,7 @@ export default function ProductForm() {
       manageInventory: false,
       manageByPrice: false,
       productType: "product",
+      barcode: "",
       maxDiscount: 0,
     },
   });
@@ -273,6 +275,7 @@ export default function ProductForm() {
           | "service",
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
+        barcode: productData.barcode || "",
         wholesalePrice: Number(productData.wholesalePrice) || 0,
         dealerPrice: Number(productData.dealerPrice) || 0,
         productCategoryId: productData.productCategoryId?._id || productData.productCategoryId || productData.category || "",
@@ -332,6 +335,7 @@ export default function ProductForm() {
           | "service",
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
+        barcode: productData.barcode || "",
         wholesalePrice: Number(productData.wholesalePrice) || 0,
         dealerPrice: Number(productData.dealerPrice) || 0,
         productCategoryId: productData.productCategoryId?._id || productData.productCategoryId || productData.category || "",
@@ -387,6 +391,7 @@ export default function ProductForm() {
         manageByPrice: formData.manageByPrice,
         manufacturer: formData.manufacturer || "",
         serialnumber: formData.serialnumber || "",
+        barcode: formData.barcode || "",
         wholesalePrice: formData.wholesalePrice || 0,
         dealerPrice: formData.dealerPrice || 0,
         productCategoryId:
@@ -635,6 +640,34 @@ export default function ProductForm() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Barcode - only for products (manufacturer UPC/EAN) */}
+                    {form.watch("productType") === "product" && (
+                      <FormField
+                        control={form.control}
+                        name="barcode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Barcode</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Scan or type the product's barcode"
+                                inputMode="numeric"
+                                autoComplete="off"
+                                {...field}
+                                value={field.value || ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Click here and scan the manufacturer barcode on the
+                              packaging, or type it. This lets the cashier scan
+                              the item at the till.
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     {/* Unit of Measure - only for products */}
                     {form.watch("productType") === "product" && (
