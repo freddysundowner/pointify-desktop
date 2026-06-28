@@ -218,6 +218,7 @@ export default function ProductGrid({
         page: "1",
         limit: "100",
         name: query.trim(),
+        barcodeid: query.trim(),
         shop: shopId || "",
         adminid: adminId || "",
         useWarehouse: "true",
