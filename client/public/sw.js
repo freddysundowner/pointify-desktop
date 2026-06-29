@@ -1,4 +1,4 @@
-const CACHE = 'pointify-shell-v2';
+const CACHE = 'pointify-shell-v3';
 const SHELL = ['/', '/index.html'];
 
 // Install: cache the app shell immediately
@@ -9,15 +9,19 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: remove old caches, take control immediately
+// Activate: remove old caches, take control, and reload open tabs so nobody is
+// left running a stale/broken session served by the previous worker.
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+    const clients = await self.clients.matchAll({ type: 'window' });
+    for (const client of clients) {
+      // Force the page to reload onto the fresh worker + purged cache.
+      if ('navigate' in client) client.navigate(client.url);
+    }
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
