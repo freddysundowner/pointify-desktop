@@ -195,6 +195,11 @@ export const useAuthProvider = (): AuthContextType => {
   };
 
   const login = async (email: string, password: string) => {
+    // Tracks whether we actually received a parsed response from the server.
+    // Offline fallback must ONLY happen on a genuine transport failure — never
+    // after the server responded (e.g. a wrong-password rejection), otherwise a
+    // changed/disabled password could still be accepted from the cached verifier.
+    let serverResponded = false;
     try {
       console.log("Login attempt:", { email, password: password.length + " chars" });
       
@@ -210,6 +215,7 @@ export const useAuthProvider = (): AuthContextType => {
       });
       
       const data = await response.json();
+      serverResponded = true;
       console.log("Login response:", data);
 
       if (data && data.token && data.userdata) {
@@ -260,7 +266,8 @@ export const useAuthProvider = (): AuthContextType => {
     } catch (error) {
       // Offline fallback: if the server is unreachable, allow a previously
       // online-authenticated owner to log in against the cached verifier.
-      if (isNetworkError(error)) {
+      // Skip entirely if the server already responded (its verdict is final).
+      if (!serverResponded && isNetworkError(error)) {
         const credential = await verifyOfflineCredential('admin', email, password);
         if (credential) {
           setToken(credential.token);

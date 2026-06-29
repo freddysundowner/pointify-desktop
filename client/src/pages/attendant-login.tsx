@@ -26,29 +26,17 @@ function AttendantLoginContent() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: AttendantLoginForm) => {
+      let response: Response;
       try {
-        const response = await fetch('/api/auth/attendant/login', {
+        response = await fetch('/api/auth/attendant/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Login failed');
-        }
-        const result = await response.json();
-        // Persist a salted verifier so this attendant can log in again offline.
-        await saveOfflineCredential({
-          role: 'attendant',
-          identifier: data.uniqueDigits,
-          password: data.password,
-          token: result.token,
-          profile: result.attendant,
-          shopData: result?.shopData || {},
-        });
-        return result;
       } catch (err) {
-        // Offline fallback: verify the PIN/password against the cached verifier.
+        // Transport failure (server unreachable): fall back to verifying the
+        // PIN/password against the cached verifier. This branch is ONLY reached
+        // when no HTTP response came back — never on a server rejection below.
         if (isNetworkError(err)) {
           const credential = await verifyOfflineCredential('attendant', data.uniqueDigits, data.password);
           if (credential) {
@@ -58,6 +46,24 @@ function AttendantLoginContent() {
         }
         throw err;
       }
+
+      // The server responded — its verdict is final, so a rejection here must
+      // never fall through to offline verification.
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Login failed');
+      }
+      const result = await response.json();
+      // Persist a salted verifier so this attendant can log in again offline.
+      await saveOfflineCredential({
+        role: 'attendant',
+        identifier: data.uniqueDigits,
+        password: data.password,
+        token: result.token,
+        profile: result.attendant,
+        shopData: result?.shopData || {},
+      });
+      return result;
     },
     onSuccess: (data) => {
       login(data.attendant, data.token, data?.shopData || {});

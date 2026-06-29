@@ -58,11 +58,13 @@ export function useOfflineSync() {
       for (const item of queue) {
         const endpoint = ENDPOINTS[item.type];
         if (!endpoint) {
-          // Unknown type — drop it so it can't wedge the queue.
+          // Unknown type — quarantine it (park as 'failed' + visible in the
+          // review panel) rather than silently dropping, so a malformed or
+          // future queue entry is never lost without the cashier seeing it.
           try {
-            await offlineStorage.markSyncComplete(item.id);
+            await offlineStorage.markSyncFailed(item.id);
           } catch (err: any) {
-            console.warn('Could not drop unknown sync item:', item.id, err?.message || err);
+            console.warn('Could not quarantine unknown sync item:', item.id, err?.message || err);
           }
           continue;
         }

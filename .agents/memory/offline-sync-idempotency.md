@@ -21,6 +21,19 @@ prevention requires the SEPARATE upstream Pointify backend
 original sale on a repeat. If you touch sale-commit or sync code, keep
 `clientRef` stable across retries and do NOT regenerate it on replay.
 
+**Backend fix authored (June 2026):** the user shared their upstream backend
+source (Express+Mongoose, an attached zip — not in this repo, deployed on their
+own server). The `clientRef` idempotency was implemented in their `createSale`
+(controllers/sales.js) + Sale model: a `clientRef` String field with a
+unique+sparse index, an early `findOne({clientRef})` guard that returns the
+original sale before any stock/wallet mutation, plus an E11000 catch on
+`Sale.create` (gated on `err.keyPattern?.clientRef`) for the race. Delivered as a
+zip for them to deploy; cannot be deployed/tested from here. **Residual:**
+wallet/credit mutations still run BEFORE `Sale.create`, so a truly simultaneous
+duplicate replay could double-charge the wallet (single sale record, double
+ledger) — fully closing it needs the wallet logic moved after the create or a
+Mongo transaction. Real-world sequential "lost-response retry" is fully covered.
+
 **Confirmed (do not re-investigate):** the upstream is NOT in this repo and
 cannot be changed from here — `server/` is only a thin proxy that forwards the
 sale body (incl. `clientRef`) verbatim. The whole client side is verified

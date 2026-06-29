@@ -5,6 +5,7 @@
 - [Nested dialogs vs global key handlers](nested-dialog-global-keys.md) — a window keydown that closes a parent dialog must no-op while a nested dialog is open, or Esc tears down the parent.
 - [Offline sync idempotency](offline-sync-idempotency.md) — offline sales replay with a stable clientRef; full dup-prevention needs the separate upstream to honour it. Queue retries park as 'failed' after 5.
 - [Checkout shared payment state](checkout-shared-payment-state.md) — checkout-modal reuses one cashReceived for cash + split; clear it on method switch and bound-check split in canComplete, or stale cash completes a sale.
+- [Offline login fallback gating](offline-login-fallback.md) — offline credential fallback must fire ONLY on transport failure, never after the server returned an HTTP response, or a changed password still logs in.
 - [Barcode scanning](barcode-scanning.md) — scanner = keyboard+Enter; handle Enter before empty-results guard, match exact barcode, no single-result fallback for numeric codes; persistence needs upstream to store/return `barcode`.
 - [Sales report HTTP caching](sales-report-http-caching.md) — report endpoint returns 304; default fetcher serves stale per-filter data. Use a no-store queryFn + staleTime 0 for filter-sensitive queries.
 - [Route code-splitting](route-code-splitting.md) — App.tsx routes MUST be React.lazy() inside Suspense; a static page import re-inflates the entry bundle. Keep ChunkErrorBoundary for stale-SW chunk failures.
