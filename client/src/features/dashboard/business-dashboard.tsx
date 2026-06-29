@@ -12,12 +12,16 @@ import { apiCall } from "@/lib/api-config";
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.extend(relativeTime);
 
 
 const timeAgo = (date) => {
-  return dayjs.utc(date).format("DD/MM/YYYY hh:mm:ss A");
+  // Show the sale time in Kenyan time (EAT, UTC+3) so it matches the receipt and
+  // the rest of the app, instead of raw UTC.
+  return dayjs.utc(date).tz('Africa/Nairobi').format("DD/MM/YYYY hh:mm:ss A");
 };
 
 import { 
