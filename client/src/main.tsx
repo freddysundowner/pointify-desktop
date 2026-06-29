@@ -8,7 +8,23 @@ import { CartProvider } from "./contexts/CartContext";
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      // Reload once when a new worker takes control so users never stay stuck
+      // on a stale/buggy worker after a deploy.
+      let reloadedForNewSW = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloadedForNewSW) return;
+        reloadedForNewSW = true;
+        location.reload();
+      });
+      // updateViaCache: 'none' => the sw.js script is never served from the HTTP
+      // cache, so the browser always sees a changed worker and updates it.
+      navigator.serviceWorker
+        .register('/sw.js', { updateViaCache: 'none' })
+        .then((reg) => {
+          // Force an immediate update check on every load.
+          reg.update().catch(() => {});
+        })
+        .catch(() => {});
     });
   } else {
     // In dev, ensure any previously-installed SW is removed and its caches cleared
