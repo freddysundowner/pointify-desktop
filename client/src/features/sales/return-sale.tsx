@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { DateTime } from "@/components/date-time";
 import { AlertCircle, ArrowLeft, RotateCcw, Loader2, CheckCircle, Minus, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -243,7 +244,7 @@ export default function ReturnSale() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Date</p>
-                <p className="font-medium">{new Date(originalSale.saleDate).toLocaleDateString()}</p>
+                <p className="font-medium"><DateTime value={originalSale.saleDate} /></p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total</p>

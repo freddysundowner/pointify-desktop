@@ -19,6 +19,7 @@ import { RootState } from '@/store/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
+import { DateTime } from "@/components/date-time";
 
 interface CashflowCategory {
   _id: string;
@@ -374,7 +375,7 @@ export default function CashflowCategories() {
                       </TableCell>
                       <TableCell className="font-medium">{currency} {category.amount?.toLocaleString() || '0'}</TableCell>
                       <TableCell>
-                        {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : '-'}
+                        {category.createdAt ? <DateTime value={category.createdAt} /> : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">

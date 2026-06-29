@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTime } from "@/components/date-time";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, DollarSign, ShoppingCart, Users, Filter, Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Edit, Trash2, RefreshCw, Eye, MoreHorizontal, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -495,7 +496,7 @@ function ReturnsList() {
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs text-muted-foreground">
-                          <div>{new Date(returnItem.returnDate).toLocaleDateString()}</div>
+                          <div><DateTime value={returnItem.returnDate} inline /></div>
                           <div>{returnItem.attendantName}</div>
                         </div>
                         <div className="mt-3 flex justify-end">

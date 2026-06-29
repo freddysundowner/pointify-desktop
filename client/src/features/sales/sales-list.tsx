@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTime } from "@/components/date-time";
 import {
   Select,
   SelectContent,
@@ -1468,7 +1469,7 @@ function SalesList() {
                               </p>
                               <div className="flex flex-wrap items-center gap-x-2 mt-0.5">
                                 <span className="text-[11px] text-gray-500">
-                                  {new Date(sale.saleDate).toLocaleDateString()}
+                                  <DateTime value={sale.saleDate} inline />
                                 </span>
                                 <span className="text-[11px] text-gray-400 capitalize">
                                   {sale.paymentTag}
@@ -1582,7 +1583,7 @@ function SalesList() {
                             <td className="py-2 px-3 text-sm font-medium">
                               {getSaleCurrency(sale)} {sale.totalAmount.toFixed(2)}
                             </td>
-                            <td className="py-2 px-3 text-sm">{new Date(sale.saleDate).toLocaleDateString()}</td>
+                            <td className="py-2 px-3 text-sm"><DateTime value={sale.saleDate} /></td>
                             <td className="py-2 px-3 text-sm capitalize">
                               {sale.paymentTag}
                               {sale.paymentTag === "mpesa" && sale.mpesaTransId && (

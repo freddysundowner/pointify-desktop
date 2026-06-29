@@ -17,6 +17,7 @@ import { RootState } from '@/store/store';
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { apiRequest } from "@/lib/queryClient";
+import { DateTime } from "@/components/date-time";
 
 interface ExpenseCategory {
   _id: string;
@@ -296,11 +297,11 @@ export default function ExpenseCategories() {
                           <span className="font-medium text-xs sm:text-sm">{category.name}</span>
                         </div>
                         <div className="sm:hidden text-[10px] text-gray-400 mt-0.5 pl-5">
-                          {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : '—'}
+                          {category.createdAt ? <DateTime value={category.createdAt} /> : '—'}
                         </div>
                       </TableCell>
                       <TableCell className="py-2 text-xs hidden sm:table-cell">
-                        {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : '—'}
+                        {category.createdAt ? <DateTime value={category.createdAt} /> : '—'}
                       </TableCell>
                       <TableCell className="py-2 px-2 sm:px-4 text-right">
                         <div className="flex items-center justify-end gap-1">

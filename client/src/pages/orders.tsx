@@ -15,6 +15,7 @@ import { apiCall } from "@/lib/api-config";
 import { useCart } from "@/hooks/useCart";
 import { useProducts } from "@/contexts/ProductsContext";
 import { navigate } from "wouter/use-browser-location";
+import { DateTime } from "@/components/date-time";
 const statusColors:any = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
   confirmed: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -186,7 +187,8 @@ export default function OrdersPage() {
                       )}
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        <span>{formatDate(order.createdAt)}</span>
+                        <DateTime value={order.createdAt} inline />
+
                       </div>
                     </div>
 

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Wallet } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
+import { DateTime } from "@/components/date-time";
 
 const fmt = (val: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val ?? 0);
@@ -168,7 +169,7 @@ export default function ExpenseReportPage() {
                         <p className="font-medium text-sm truncate">{expenseName(e)}</p>
                         <div className="flex items-center gap-2 flex-wrap">
                           {categoryName(e) && <span className="text-xs px-2 py-0.5 bg-muted rounded-full">{categoryName(e)}</span>}
-                          <span className="text-xs text-muted-foreground">{fmtDate(e.createdAt)}</span>
+                          <DateTime value={e.createdAt} className="text-xs text-muted-foreground" dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} />
                         </div>
                       </div>
                       <p className="font-bold text-red-600 text-sm shrink-0">{currency} {fmt(e.amount)}</p>
@@ -199,7 +200,7 @@ export default function ExpenseReportPage() {
                             ? <span className="text-xs px-2 py-0.5 bg-muted rounded-full">{categoryName(e)}</span>
                             : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground text-xs">{fmtDate(e.createdAt)}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs"><DateTime value={e.createdAt} dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} /></td>
                         <td className="px-5 py-3 text-right font-bold text-red-600">{currency} {fmt(e.amount)}</td>
                       </tr>
                     ))}

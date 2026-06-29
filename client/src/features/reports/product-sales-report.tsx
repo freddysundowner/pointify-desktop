@@ -13,6 +13,7 @@ import { RootState } from '@/store';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { usePrimaryShop } from '@/hooks/usePrimaryShop';
 import { useNavigationRoute } from '@/lib/navigation-utils';
+import { DateTime } from '@/components/date-time';
 
 const today = () => new Date().toISOString().split('T')[0];
 const daysAgo = (n: number) => {
@@ -32,11 +33,6 @@ const SALE_TYPES = ['All', 'Wholesale', 'Retail', 'Dealer', 'Receipt'];
 const fmtAmt = (n: any) => {
   const v = Number(n) || 0;
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
-};
-
-const fmtDate = (d: string) => {
-  try { return new Date(d).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: '2-digit' }); }
-  catch { return d; }
 };
 
 const saleTypeBadge: Record<string, string> = {
@@ -213,7 +209,7 @@ export default function ProductSalesReport() {
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-gray-400">
                         <span>{item.attendant?.name ?? item.attendantName ?? '—'}</span>
-                        <span>{fmtDate(item.createdAt ?? item.date ?? '')}</span>
+                        <DateTime value={item.createdAt ?? item.date} dateOptions={{ day: '2-digit', month: 'short', year: '2-digit' }} />
                       </div>
                     </div>
                   ))}
@@ -238,7 +234,7 @@ export default function ProductSalesReport() {
                             <Badge className={`text-[10px] ${saleTypeBadge[item.saleType] ?? 'bg-gray-100 text-gray-700'}`}>{item.saleType ?? '—'}</Badge>
                           </td>
                           <td className="px-3 py-2 text-xs">{item.attendant?.name ?? item.attendantName ?? '—'}</td>
-                          <td className="px-3 py-2 text-xs">{fmtDate(item.createdAt ?? item.date ?? '')}</td>
+                          <td className="px-3 py-2 text-xs"><DateTime value={item.createdAt ?? item.date} dateOptions={{ day: '2-digit', month: 'short', year: '2-digit' }} /></td>
                           <td className="px-3 py-2 text-xs font-mono">{item.receiptNo ?? item.saleId ?? '—'}</td>
                         </tr>
                       ))}

@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
+import { DateTime } from "@/components/date-time";
 import type { Purchase } from "@shared/schema";
 
 // Mock purchase data
@@ -146,7 +147,7 @@ export default function CancelPurchase() {
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Order Date</h4>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {new Date(purchase.orderDate).toLocaleDateString()}
+                  <DateTime value={purchase.orderDate} />
                 </p>
               </div>
               <div>

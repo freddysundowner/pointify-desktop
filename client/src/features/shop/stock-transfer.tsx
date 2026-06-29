@@ -16,6 +16,7 @@ import { useProducts } from '@/contexts/ProductsContext';
 import { usePrimaryShop } from '@/hooks/usePrimaryShop';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { useLocation } from 'wouter';
+import { DateTime } from '@/components/date-time';
 import type { Product as SharedProduct } from '@shared/schema';
 
 interface StockTransfer {
@@ -824,7 +825,7 @@ export default function StockTransfer() {
                               </div>
                             </td>
                             <td className="p-4">{transfer.attendantId?.username || 'Unknown'}</td>
-                            <td className="p-4">{new Date(transfer.createdAt).toLocaleDateString()}</td>
+                            <td className="p-4"><DateTime value={transfer.createdAt} /></td>
                             <td className="p-4">
                               <div className="flex items-center space-x-2">
                                 <Button variant="ghost" size="sm">

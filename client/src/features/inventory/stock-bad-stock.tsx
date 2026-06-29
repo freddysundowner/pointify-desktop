@@ -19,6 +19,7 @@ import { useNavigationRoute } from "@/lib/navigation-utils";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useLocation } from "wouter";
+import { DateTime } from "@/components/date-time";
 
 interface BadStockItem {
   _id: string;
@@ -418,7 +419,7 @@ export default function StockBadStock() {
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell className="capitalize">{item.reason}</TableCell>
                         <TableCell>{item.reportedBy || (typeof item.attendantId === 'object' ? item.attendantId?.username || item.attendantId?._id : item.attendantId) || 'Unknown'}</TableCell>
-                        <TableCell>{new Date(item.reportedAt || item.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell><DateTime value={item.reportedAt || item.createdAt} /></TableCell>
                         <TableCell>{currency} {((item.quantity || 0) * (item.unitPrice || 0)).toLocaleString()}</TableCell>
                         <TableCell>
                           <Button

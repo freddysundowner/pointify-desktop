@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, Receipt } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
+import { DateTime } from "@/components/date-time";
 
 const fmt = (val: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val ?? 0);
@@ -108,7 +109,7 @@ export default function DueSalesPage() {
                         <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">Credit</span>
                       </div>
                       {customerName(s) && <p className="text-xs text-muted-foreground truncate">{customerName(s)}{customerPhone(s) ? ` · ${customerPhone(s)}` : ""}</p>}
-                      <p className="text-xs text-muted-foreground">{fmtDate(s.createdAt)}</p>
+                      <DateTime value={s.createdAt} className="text-xs text-muted-foreground" dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} />
                     </div>
                     <p className="font-bold text-amber-700 text-sm shrink-0">{currency} {fmt(saleAmount(s))}</p>
                   </div>
@@ -137,7 +138,7 @@ export default function DueSalesPage() {
                       <td className="px-4 py-3.5 font-semibold">#{s.receiptNo ?? s._id.slice(-6)}</td>
                       <td className="px-4 py-3.5">{customerName(s) ?? <span className="text-muted-foreground">—</span>}</td>
                       <td className="px-4 py-3.5 text-muted-foreground">{customerPhone(s) ?? "—"}</td>
-                      <td className="px-4 py-3.5 text-muted-foreground text-xs">{fmtDate(s.createdAt)}</td>
+                      <td className="px-4 py-3.5 text-muted-foreground text-xs"><DateTime value={s.createdAt} dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} /></td>
                       <td className="px-4 py-3.5 text-muted-foreground text-xs">{s.items?.length ?? 0} item{(s.items?.length ?? 0) !== 1 ? "s" : ""}</td>
                       <td className="px-5 py-3.5 text-right font-bold text-amber-700">{currency} {fmt(saleAmount(s))}</td>
                     </tr>

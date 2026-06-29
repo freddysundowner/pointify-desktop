@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { ArrowLeft } from "lucide-react";
 import { useCurrency } from '@/utils';
+import { DateTime } from "@/components/date-time";
 
 interface Expense {
   _id: string;
@@ -781,7 +782,7 @@ export default function Expenses() {
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
                             {typeof expense.category === 'string' ? getCategoryName(expense.category) : expense.category?.name || 'Unknown'}
                           </span>
-                          {expense.createAt && <span className="block">{format(new Date(expense.createAt), 'MMM dd, yyyy')}</span>}
+                          {expense.createAt && <DateTime value={expense.createAt} dateOptions={{ month: 'short', day: '2-digit', year: 'numeric' }} className="block" />}
                         </div>
                       </TableCell>
                       <TableCell className="py-2 hidden sm:table-cell">
@@ -790,7 +791,7 @@ export default function Expenses() {
                         </span>
                       </TableCell>
                       <TableCell className="py-2 text-xs hidden sm:table-cell">
-                        {expense.createAt ? format(new Date(expense.createAt), 'MMM dd, yyyy') : '-'}
+                        {expense.createAt ? <DateTime value={expense.createAt} dateOptions={{ month: 'short', day: '2-digit', year: 'numeric' }} /> : '-'}
                       </TableCell>
                       <TableCell className="py-2 hidden md:table-cell">
                         {expense.frequency ? (

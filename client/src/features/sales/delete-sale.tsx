@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { DateTime } from "@/components/date-time";
 import { AlertTriangle, ArrowLeft, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import DashboardLayout from "@/components/layout/dashboard-layout";
@@ -114,7 +115,7 @@ export default function DeleteSale() {
                 </div>
                 <div>
                   <p className="font-medium">Sale Date:</p>
-                  <p>{new Date(sale.saleDate).toLocaleDateString()}</p>
+                  <p><DateTime value={sale.saleDate} /></p>
                 </div>
                 <div>
                   <p className="font-medium">Total Amount:</p>

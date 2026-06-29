@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Package, User, Calendar, DollarSign, FileText, Building2, CreditCard } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
+import { DateTime } from "@/components/date-time";
 import { useCurrency } from "@/utils";
 
 export default function PurchaseViewPage() {
@@ -66,15 +67,13 @@ export default function PurchaseViewPage() {
                 <p className="text-sm text-muted-foreground">Purchase Receipt</p>
                 <div className="mt-4 pt-4 border-t border-dashed border-gray-300">
                   <p className="text-lg font-bold">PURCHASE ORDER #{purchase.purchaseNo}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {purchase.createdAt ? new Date(purchase.createdAt).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'Unknown Date'}
-                  </p>
+                  <DateTime
+                    value={purchase.createdAt}
+                    className="text-sm text-muted-foreground"
+                    dateOptions={{ year: 'numeric', month: 'short', day: 'numeric' }}
+                    emptyText="Unknown Date"
+                    inline
+                  />
                 </div>
               </div>
 
@@ -208,7 +207,7 @@ export default function PurchaseViewPage() {
                             <div>
                               <p className="font-medium">{currency} {payment.amount.toFixed(2)}</p>
                               <p className="text-sm text-muted-foreground">
-                                {payment.paymentNo} • {new Date(payment.date).toLocaleDateString()}
+                                {payment.paymentNo} • <DateTime value={payment.date} inline />
                               </p>
                             </div>
                             <div className="text-right">

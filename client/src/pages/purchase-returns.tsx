@@ -16,6 +16,7 @@ import { apiCall } from "@/lib/api-config";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useLocation } from "wouter";
 import { useCurrency } from "@/utils";
+import { DateTime } from "@/components/date-time";
 
 interface PurchaseReturn {
   _id: string;
@@ -386,7 +387,7 @@ export default function PurchaseReturns() {
                           {formatCurrency((returnItem as any).refundAmount || returnItem.totalAmount || 0)}
                         </TableCell>
                         <TableCell>
-                          {formatDate((returnItem as any).createdAt || returnItem.returnDate || new Date().toISOString())}
+                          <DateTime value={(returnItem as any).createdAt || returnItem.returnDate || new Date().toISOString()} />
                         </TableCell>
                         <TableCell>
                           {returnItem.attendantId?.username || 'Unknown'}

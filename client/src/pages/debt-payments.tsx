@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, HandCoins, User, Calendar } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
+import { DateTime } from "@/components/date-time";
 
 const fmt = (val: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val ?? 0);
@@ -115,7 +116,7 @@ export default function DebtPaymentsPage() {
                           {p.customerName || p.customer?.name || "Unknown Customer"}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {fmtDate(p.date || p.createdAt)}
+                          <DateTime value={p.date || p.createdAt} inline dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} />
                           {p.receiptNo ? ` · #${p.receiptNo}` : ""}
                         </p>
                         {(p.note || p.description) && (
@@ -148,7 +149,7 @@ export default function DebtPaymentsPage() {
                       <td className="px-6 py-4 font-medium text-foreground">
                         {p.customerName || p.customer?.name || "Unknown"}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">{fmtDate(p.date || p.createdAt)}</td>
+                      <td className="px-6 py-4 text-muted-foreground"><DateTime value={p.date || p.createdAt} dateOptions={{ day: "2-digit", month: "short", year: "numeric" }} /></td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {p.receiptNo ? `#${p.receiptNo}` : (p.note || p.description || "—")}
                       </td>

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DateTime } from "@/components/date-time";
 
 interface PurchaseReturnItem {
   product: { _id: string; name: string };
@@ -103,7 +104,7 @@ export default function PurchaseReturnDetails() {
           <Pill label="Purchase" value={<span className="font-mono">{returnData.purchaseId?.slice(-8) || "N/A"}</span>} />
           <Pill label="Refund" value={formatCurrency(totalReturnAmount)} />
           <Pill label="Items" value={totalItems} />
-          <Pill label="Date" value={formatDate(returnData.createdAt || returnData.returnDate || "")} />
+          <Pill label="Date" value={<DateTime value={returnData.createdAt || returnData.returnDate || ""} inline emptyText="N/A" />} />
           <Pill label="Attendant" value={returnData.attendantId?.username || "Unknown"} />
           <Pill label="Shop" value={returnData.shopId?.name || "Unknown"} />
           {returnData.paymentType && <Pill label="Payment" value={returnData.paymentType} />}

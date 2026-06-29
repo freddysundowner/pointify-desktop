@@ -20,6 +20,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useProducts } from "@/contexts/ProductsContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { DateTime } from "@/components/date-time";
 
 interface ReturnItem {
   productId: string;
@@ -306,7 +307,7 @@ export default function ReturnPurchase() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Order Date</Label>
-                  <p className="font-medium">{new Date(originalPurchase.orderDate).toLocaleDateString()}</p>
+                  <p className="font-medium"><DateTime value={originalPurchase.orderDate} /></p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Total Amount</Label>

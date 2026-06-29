@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { DateTime } from '@/components/date-time';
 import { Link } from 'wouter';
 
 interface MovementData {
@@ -296,7 +297,7 @@ export default function ProductMovements() {
               <tbody className="divide-y divide-gray-100">
                 {paginatedData.map((movement, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-xs hidden sm:table-cell">{new Date(movement.date).toLocaleDateString()}</td>
+                    <td className="px-3 py-2 text-xs hidden sm:table-cell"><DateTime value={movement.date} /></td>
                     <td className="px-3 py-2 text-xs font-medium">{movement.product}</td>
                     <td className="px-3 py-2 text-xs">
                       <Badge className={`text-[10px] py-0 ${getTypeBadge(movement.type)}`}>{movement.type}</Badge>
@@ -372,7 +373,7 @@ export default function ProductMovements() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-bold">{movement.quantity}</div>
-                    <div className="text-[10px] text-gray-500">{new Date(movement.date).toLocaleDateString()}</div>
+                    <div className="text-[10px] text-gray-500"><DateTime value={movement.date} /></div>
                   </div>
                 </div>
               ))}

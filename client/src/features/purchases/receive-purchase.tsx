@@ -8,6 +8,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useLocation, useParams } from "wouter";
 import { useState } from "react";
+import { DateTime } from "@/components/date-time";
 import type { Purchase, PurchaseItem } from "@shared/schema";
 
 // Mock purchase data
@@ -157,7 +158,7 @@ export default function ReceivePurchase() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Order Date</div>
-                <div className="font-medium">{new Date(originalPurchase.orderDate).toLocaleDateString()}</div>
+                <div className="font-medium"><DateTime value={originalPurchase.orderDate} /></div>
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Expected Date</div>

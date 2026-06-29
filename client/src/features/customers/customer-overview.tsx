@@ -21,6 +21,7 @@ import { useAuth } from '@/features/auth/useAuth';
 import { apiCall } from '@/lib/api-config';
 import { apiRequest } from '@/lib/queryClient';
 import { useNavigationRoute } from '@/lib/navigation-utils';
+import { DateTime } from "@/components/date-time";
 
 interface CustomerTransaction {
   _id: string;
@@ -1236,7 +1237,7 @@ export default function CustomerOverview() {
                               <Badge className={`text-[10px] ${getTransactionTypeColor(transaction.type)}`}>
                                 {transaction.paymentMethod?.charAt(0)?.toUpperCase() + transaction.paymentMethod?.slice(1) || transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                               </Badge>
-                              <span className="text-[11px] text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</span>
+                              <DateTime value={transaction.date} inline className="text-[11px] text-muted-foreground" />
                             </div>
                             <p className="text-xs text-gray-500 truncate">{transaction.referenceNumber}</p>
                           </div>
@@ -1268,7 +1269,7 @@ export default function CustomerOverview() {
                         <TableBody>
                           {paginatedTransactions.map((transaction) => (
                             <TableRow key={transaction._id}>
-                              <TableCell className="text-xs py-2">{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-xs py-2"><DateTime value={transaction.date} /></TableCell>
                               <TableCell className="py-2">
                                 <Badge className={`text-[10px] ${getTransactionTypeColor(transaction.type)}`}>
                                   {transaction.paymentMethod?.charAt(0)?.toUpperCase() + transaction.paymentMethod?.slice(1) || transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
@@ -1344,7 +1345,6 @@ export default function CustomerOverview() {
                     {/* Mobile cards */}
                     <div className="divide-y lg:hidden">
                       {customerPayments.map((payment: any) => {
-                        const date = new Date(payment.createdAt).toLocaleDateString();
                         const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
                         const amount = payment.totalAmount || 0;
                         const paymentNo = payment.paymentNo || 'N/A';
@@ -1355,7 +1355,7 @@ export default function CustomerOverview() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-0.5">
                                 <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
-                                <span className="text-[11px] text-muted-foreground">{date}</span>
+                                <DateTime value={payment.createdAt} inline className="text-[11px] text-muted-foreground" />
                               </div>
                               <p className="text-xs text-gray-500">{paymentNo} · {attendant}</p>
                             </div>
@@ -1386,7 +1386,6 @@ export default function CustomerOverview() {
                         </TableHeader>
                         <TableBody>
                           {customerPayments.map((payment: any) => {
-                            const date = new Date(payment.createdAt).toLocaleDateString();
                             const type = payment.type.charAt(0).toUpperCase() + payment.type.slice(1);
                             const amount = payment.totalAmount || 0;
                             const paymentNo = payment.paymentNo || 'N/A';
@@ -1394,7 +1393,7 @@ export default function CustomerOverview() {
                             const attendant = payment.attendantId?.username || 'System';
                             return (
                               <TableRow key={payment._id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedPayment(payment)}>
-                                <TableCell className="text-xs py-2">{date}</TableCell>
+                                <TableCell className="text-xs py-2"><DateTime value={payment.createdAt} /></TableCell>
                                 <TableCell className="py-2">
                                   <Badge variant={payment.type === 'deposit' ? 'default' : payment.type === 'withdraw' ? 'destructive' : 'secondary'} className="text-[10px]">{type}</Badge>
                                 </TableCell>

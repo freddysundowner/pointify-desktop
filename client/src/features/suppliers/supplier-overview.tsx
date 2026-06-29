@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Link, useLocation } from 'wouter';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { PageHeader } from '@/components/layout/page-header';
+import { DateTime } from '@/components/date-time';
 
 interface Supplier {
   _id: string;
@@ -309,7 +310,7 @@ export default function SupplierOverview() {
                     <TableBody>
                       {getFilteredPurchases().map((purchase) => (
                         <TableRow key={purchase._id}>
-                          <TableCell>{new Date(purchase.date).toLocaleDateString()}</TableCell>
+                          <TableCell><DateTime value={purchase.date} /></TableCell>
                           <TableCell className="font-medium">{purchase.orderNumber}</TableCell>
                           <TableCell className="max-w-xs">
                             <div className="truncate" title={purchase.items.join(', ')}>
@@ -376,7 +377,7 @@ export default function SupplierOverview() {
               <Card>
                 <CardContent className="p-3">
                   <div className="text-sm sm:text-2xl font-bold text-orange-600 truncate">
-                    {supplier.lastOrder ? new Date(supplier.lastOrder).toLocaleDateString() : 'Never'}
+                    {supplier.lastOrder ? <DateTime value={supplier.lastOrder} inline /> : 'Never'}
                   </div>
                   <p className="text-sm text-gray-600">Last Order</p>
                 </CardContent>

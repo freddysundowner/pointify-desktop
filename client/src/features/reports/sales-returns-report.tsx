@@ -12,6 +12,7 @@ import { RootState } from '@/store';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { usePrimaryShop } from '@/hooks/usePrimaryShop';
 import { useNavigationRoute } from '@/lib/navigation-utils';
+import { DateTime } from '@/components/date-time';
 
 const today = () => new Date().toISOString().split('T')[0];
 const daysAgo = (n: number) => {
@@ -185,7 +186,7 @@ export default function SalesReturnsReport() {
                       {item.reason && <div className="text-[11px] text-gray-400 italic">{item.reason}</div>}
                       <div className="flex items-center justify-between text-[10px] text-gray-400">
                         <span>{item.attendant?.name ?? item.attendantName ?? '—'}</span>
-                        <span>{fmtDate(item.createdAt ?? item.date ?? '')}</span>
+                        <DateTime value={item.createdAt ?? item.date} dateOptions={{ day: '2-digit', month: 'short', year: '2-digit' }} />
                       </div>
                     </div>
                   ))}
@@ -210,7 +211,7 @@ export default function SalesReturnsReport() {
                           <td className="px-3 py-2 text-xs text-red-600 font-semibold">{currency} {fmtAmt(item.totalAmount ?? item.amount ?? item.total)}</td>
                           <td className="px-3 py-2 text-xs text-gray-500 italic">{item.reason ?? '—'}</td>
                           <td className="px-3 py-2 text-xs">{item.attendant?.name ?? item.attendantName ?? '—'}</td>
-                          <td className="px-3 py-2 text-xs">{fmtDate(item.createdAt ?? item.date ?? '')}</td>
+                          <td className="px-3 py-2 text-xs"><DateTime value={item.createdAt ?? item.date} dateOptions={{ day: '2-digit', month: 'short', year: '2-digit' }} /></td>
                         </tr>
                       ))}
                     </tbody>

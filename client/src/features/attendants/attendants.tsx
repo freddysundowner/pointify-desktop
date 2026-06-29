@@ -21,6 +21,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/features/auth/useAuth';
+import { DateTime } from '@/components/date-time';
 
 interface Permission {
   key: string;
@@ -602,7 +603,7 @@ export default function Attendants() {
                           <span className="text-xs font-mono text-gray-500">{attendant.uniqueDigits}</span>
                         </td>
                         <td className="px-3 py-2 hidden md:table-cell">
-                          <span className="text-xs text-gray-500">{attendant.last_seen ? new Date(attendant.last_seen).toLocaleDateString() : 'Never'}</span>
+                          {attendant.last_seen ? <DateTime value={attendant.last_seen} className="text-xs text-gray-500" /> : <span className="text-xs text-gray-500">Never</span>}
                         </td>
                         <td className="px-3 py-2">
                           <Badge variant={attendant.status === 'active' || !attendant.status ? 'default' : attendant.status === 'on_leave' ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 py-0">

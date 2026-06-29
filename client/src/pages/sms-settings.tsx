@@ -12,6 +12,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
+import { DateTime } from "@/components/date-time";
 
 const DEFAULT_TEMPLATE =
   "Hi {name}, thank you for your purchase at {shop}. Amount: {amount}. Receipt #{receipt}. View: {receipt_url}";
@@ -362,9 +363,7 @@ export default function SmsSettingsPage() {
                           )}
                         </td>
                         <td className="px-4 py-2 text-gray-400 whitespace-nowrap">
-                          {log.createdAt || log.date || log.sentAt
-                            ? new Date(log.createdAt || log.date || log.sentAt).toLocaleString()
-                            : "—"}
+                          <DateTime value={log.createdAt || log.date || log.sentAt} />
                         </td>
                       </tr>
                     );

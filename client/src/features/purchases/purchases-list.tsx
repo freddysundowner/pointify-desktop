@@ -71,6 +71,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useCurrency } from "@/utils";
 import { ShopFilter } from "@/components/filters/shop-filter";
+import { DateTime } from "@/components/date-time";
 
 // Purchases data now comes from API
 
@@ -917,7 +918,7 @@ export default function PurchasesList() {
                             {purchase.totalAmount.toFixed(2)}
                           </td>
                           <td className="py-2 px-3 text-sm">
-                            {new Date(purchase.orderDate).toLocaleString()}
+                            <DateTime value={purchase.orderDate} />
                           </td>
                           <td className="py-2 px-3">
                             <Badge

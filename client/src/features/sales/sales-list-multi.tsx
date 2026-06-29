@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTime } from "@/components/date-time";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { TrendingUp, DollarSign, ShoppingCart, Users, Filter, Calendar, ChevronLeft, ChevronRight, Search, ChevronDown, ChevronUp, Edit, Trash2, RotateCcw, Receipt, MoreHorizontal } from "lucide-react";
@@ -551,7 +552,7 @@ export default function SalesListMulti() {
                             }
                           </td>
                           <td className="py-2 px-3 text-sm font-medium">${sale.totalAmount.toFixed(2)}</td>
-                          <td className="py-2 px-3 text-sm">{new Date(sale.saleDate).toLocaleDateString()}</td>
+                          <td className="py-2 px-3 text-sm"><DateTime value={sale.saleDate} /></td>
                           <td className="py-2 px-3">
                             <Badge variant={getStatusBadgeVariant(sale.status)} className="text-xs">
                               {sale.status}
