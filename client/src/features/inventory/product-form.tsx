@@ -83,7 +83,46 @@ const productSchema = z.object({
     z.number().min(0).optional(),
   ),
   description: z.string().optional().or(z.literal("")),
-});
+})
+  .superRefine((data, ctx) => {
+    // For stock products, buying price and quantity must be real numbers — not
+    // left blank — so we never save a product with missing pricing/stock.
+    // (Buying price isn't collected for bundles, so only require it otherwise.)
+    if (data.productType === "product") {
+      if (
+        !data.isBundle &&
+        (data.buyingPrice === undefined || Number.isNaN(data.buyingPrice))
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["buyingPrice"],
+          message: "Buying price is required and must be a number",
+        });
+      }
+      if (data.quantity === undefined || Number.isNaN(data.quantity)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["quantity"],
+          message: "Quantity is required and must be a number",
+        });
+      }
+    }
+
+    // Never save a product that would sell for less than it was bought for.
+    if (
+      typeof data.sellingPrice === "number" &&
+      !Number.isNaN(data.sellingPrice) &&
+      typeof data.buyingPrice === "number" &&
+      !Number.isNaN(data.buyingPrice) &&
+      data.sellingPrice < data.buyingPrice
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["sellingPrice"],
+        message: "Selling price cannot be less than the buying price",
+      });
+    }
+  });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
