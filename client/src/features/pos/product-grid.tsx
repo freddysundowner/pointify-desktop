@@ -1236,12 +1236,12 @@ export default function ProductGrid({
       }
       // Receipt handling and cleanup is now done in mutation's onSuccess callback
     } catch (error: any) {
+      // The mutation's onError already shows the right toast (a parsed
+      // "Payment Failed" for a real rejection, or "Sale Saved Offline" when the
+      // request failed at the transport layer and was queued). mutateAsync still
+      // rejects after onError runs, so we only swallow/log here — showing another
+      // toast would double up (and, offline, contradict the "Saved Offline" one).
       console.error(`${isHold ? 'Hold' : 'Payment'} transaction failed:`, error);
-      toast({
-        title: `${isHold ? 'Hold' : 'Payment'} Failed`,
-        description: error.message || `Failed to ${isHold ? 'hold' : 'process'} transaction`,
-        variant: "destructive",
-      });
     } finally {
       isFinalizingRef.current = false;
     }

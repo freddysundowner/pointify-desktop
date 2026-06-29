@@ -30,10 +30,19 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
 ## Key Configuration
 
 ### PWA (Progressive Web App)
-- Plugin: `vite-plugin-pwa` with Workbox `generateSW` strategy
+- Service worker: a hand-written `client/public/sw.js` (NOT `vite-plugin-pwa`,
+  which has been removed). It precaches the app shell (`/`, `/index.html`),
+  serves hashed `/assets/*` and icons/fonts cache-first, and uses network-first
+  with a cached-shell fallback for HTML navigation. It never intercepts `/api/*`.
+- Registration: `client/src/main.tsx` registers `/sw.js` **only in a production
+  build** (`import.meta.env.PROD`). In the dev server it actively *unregisters*
+  any SW and clears caches so Vite's HMR is never shadowed by stale bundles.
+- **Offline therefore only works in the published/production app, not the dev
+  (`*.replit.dev`) preview.** Installing the PWA from the dev URL and opening it
+  offline shows Chrome's native "You're offline" page because there is no SW
+  there by design. Install/test offline from the published `*.replit.app` URL.
 - Icons: `client/public/icon-192.png`, `client/public/icon-512.png`, `client/public/icon.svg`
-- Manifest: auto-generated as `/manifest.webmanifest`
-- Service worker: NetworkFirst for `/api/*`, precaches static assets
+- Manifest: static file at `client/public/manifest.webmanifest`
 - Supports install-to-home-screen on Android/iOS/Desktop Chrome
 
 ### Vite Config (client/vite.config.ts)

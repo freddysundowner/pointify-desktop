@@ -14,3 +14,5 @@
 - [SW clone before return](sw-clone-before-return.md) — custom sw.js must clone responses synchronously before `return response`, or body-already-used floods console and breaks the React bundle; bump CACHE name on changes.
 - [POS search name+barcode AND](pos-search-name-barcode-and.md) — upstream products/list ANDs name & barcodeid; never send both with the same query or name searches return 0. `warehouse` flag ruled out as cause.
 - [Kenyan display timezone](display-timezone-kenya.md) — all dates forced to Africa/Nairobi via a Date.prototype toLocale* patch installed in main.tsx; display-only, date-range math still local.
+- [PWA offline dev vs prod](pwa-offline-dev-vs-prod.md) — SW (and offline) only run in the published build; dev unregisters it. "You're offline" is Chrome's native PWA page.
+- [mutateAsync double-toast](mutateasync-double-notify.md) — onError runs AND mutateAsync rejects; a catch that also toasts double-notifies. Notify in one place only.
