@@ -52,3 +52,8 @@ logout and revocation is enforced (don't paper a revoked token over with cache).
 `apiCall` already self-redirects on admin 401 and rethrows a non-network message,
 so `isNetworkError` correctly excludes it. Attendant context restores
 synchronously from localStorage (no network) so it needs no equivalent change.
+
+**Run auth init once:** the `useAuthProvider` init effect must use `[]`, NOT
+`[isLoading]` — `initializeAuth` sets `isLoading=false` in its finally, so an
+`[isLoading]` dep re-triggers the effect and runs the whole startup auth flow
+(incl. the admin fetch) twice on every launch.

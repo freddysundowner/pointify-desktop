@@ -58,9 +58,13 @@ export const useAuthProvider = (): AuthContextType => {
   const [, setLocation] = useLocation();
   const dispatch = useAppDispatch();
 
+  // Run once on mount. NOTE: do NOT depend on `isLoading` here — initializeAuth
+  // sets isLoading=false in its finally, which would re-trigger this effect and
+  // run the whole auth init (including the admin fetch) a second time on every
+  // launch.
   useEffect(() => {
     initializeAuth();
-  }, [isLoading]);
+  }, []);
 
   const fetchAdminData = async (adminId: string, authToken: string) => {
     try {
