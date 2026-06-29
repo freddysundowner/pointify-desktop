@@ -651,6 +651,23 @@ export default function ProductGrid({
       });
       
       const data = await response.json();
+
+      // apiCall throws on a non-2xx status, but the server proxy's graceful
+      // fallback can still answer with HTTP 200 and a body that is NOT a created
+      // sale (an empty array, or { success:false }) when the upstream actually
+      // rejected the write. In that case the sale did NOT go through, so we must
+      // surface it as an error instead of letting onSuccess pop the receipt as if
+      // the item had been sold.
+      const saleCreated =
+        data && !Array.isArray(data) && data.success !== false && !!data.sale;
+      if (!saleCreated) {
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            "Sale could not be completed. Please try again.",
+        );
+      }
+
       return data;
     },
     onSuccess: (response: any, variables: any) => {

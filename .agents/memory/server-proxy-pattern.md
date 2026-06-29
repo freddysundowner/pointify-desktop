@@ -77,3 +77,20 @@ reintroduce it or assume a local desktop DB exists.
 
 **Why:** A future agent seeing a no-op `performDataSync` or the offline-mode plumbing might
 think sync is broken and try to restore the Electron sync machinery. It was removed on purpose.
+
+# Client writes must validate the BODY, not just HTTP status
+
+Because `gracefulFallback()` returns `[]` and masking can yield HTTP 200 on a
+failed write, a client mutation that only relies on `apiCall` throwing (non-2xx)
+is NOT enough — a rejected sale/write can still arrive as 200 with a non-result
+body (`[]` or `{success:false}`). The POS sale bug: onSuccess built a receipt with
+a `Date.now()` fallback id even when `response.sale` was missing, so a failed sale
+showed the success/receipt dialog.
+
+**Why:** Status-only checks trust the proxy to forward upstream status, which it does
+not do reliably for writes.
+
+**How to apply:** In any create/write mutationFn, after `response.json()`, assert the
+real success shape (non-array object, `success !== false`, expected entity present e.g.
+`data.sale`) and `throw` otherwise so onError surfaces the failure. Don't show
+success UI off a 200 alone.
