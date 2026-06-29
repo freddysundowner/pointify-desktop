@@ -1,9 +1,14 @@
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
+import { installKenyanTimeZone } from "./lib/timezone";
 import { store } from "./store";
 import App from "./App";
 import "./index.css";
 import { CartProvider } from "./contexts/CartContext";
+
+// Render all dates/times in Kenyan time (EAT, UTC+3) everywhere, regardless of
+// the viewer's device or server timezone. Must run before any date is formatted.
+installKenyanTimeZone();
 
 if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD) {
