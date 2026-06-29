@@ -21,18 +21,20 @@ prevention requires the SEPARATE upstream Pointify backend
 original sale on a repeat. If you touch sale-commit or sync code, keep
 `clientRef` stable across retries and do NOT regenerate it on replay.
 
-**Backend fix authored (June 2026):** the user shared their upstream backend
-source (Express+Mongoose, an attached zip — not in this repo, deployed on their
-own server). The `clientRef` idempotency was implemented in their `createSale`
-(controllers/sales.js) + Sale model: a `clientRef` String field with a
-unique+sparse index, an early `findOne({clientRef})` guard that returns the
-original sale before any stock/wallet mutation, plus an E11000 catch on
-`Sale.create` (gated on `err.keyPattern?.clientRef`) for the race. Delivered as a
-zip for them to deploy; cannot be deployed/tested from here. **Residual:**
-wallet/credit mutations still run BEFORE `Sale.create`, so a truly simultaneous
-duplicate replay could double-charge the wallet (single sale record, double
-ledger) — fully closing it needs the wallet logic moved after the create or a
-Mongo transaction. Real-world sequential "lost-response retry" is fully covered.
+**Upstream `createSale` shape (separate repo, paste-in only):** the user's
+backend is Express+Mongoose, NOT in this repo, deployed on their own server — we
+can only hand them paste-in code, never deploy/test it. Idempotency there hinges
+on a `clientRef` unique+sparse index, an early `findOne({clientRef})` guard that
+short-circuits BEFORE any stock/wallet mutation, and an E11000 catch on
+`Sale.create` for the race. **Two ordering hazards in that controller to respect
+in any future paste-in:** (1) wallet/credit mutations run BEFORE `Sale.create`, so
+a simultaneous duplicate replay can double-charge the wallet (one sale, double
+ledger); (2) stock is checked against an early `.lean()` snapshot but decremented
+later with a blind `$inc`, so concurrent multi-seller sales oversell silently —
+the fix is an atomic conditional decrement (`quantity:{$gte:qty}`) run BEFORE the
+sale with rollback on shortfall. Both are fully closed only by moving those
+mutations after a successful create or wrapping the lot in a Mongo transaction
+(replica-set only).
 
 **Confirmed (do not re-investigate):** the upstream is NOT in this repo and
 cannot be changed from here — `server/` is only a thin proxy that forwards the

@@ -84,3 +84,9 @@ id = "Nwv6dUUjNh_ldH38O44pq"
 uri = "file://attached_assets/POS_Book1_formatted.xlsx"
 type = "table"
 title = "POS_Book1_formatted.xlsx (import-ready)"
+
+[[outputs]]
+id = "MrBV_BX9cFnLA25jVU1dp"
+uri = "file://.local/deliverables/pointify-backend-stock-race-fix.md"
+type = "text"
+title = "Backend stock-race fix (paste-in for your Pointify server)"

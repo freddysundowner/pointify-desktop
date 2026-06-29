@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiCall, API_ENDPOINTS } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -893,33 +893,30 @@ export default function ProductGrid({
       return;
     }
     setIsCreatingCustomItem(true);
-    try {
-      const resolvedAttendantId = attendant?._id
-        ? attendant._id
-        : (typeof admin?.attendantId === 'object' && admin?.attendantId
-            ? (admin.attendantId as any)._id
-            : admin?.attendantId) || admin?._id;
 
-      const buyingPrice = customItemType === "product" ? parseFloat(customItemBuyingPrice || "0") : 0;
-      const quantity = customItemType === "product" ? parseInt(customItemQuantity || "1") : 0;
+    const resolvedAttendantId = attendant?._id
+      ? attendant._id
+      : (typeof admin?.attendantId === 'object' && admin?.attendantId
+          ? (admin.attendantId as any)._id
+          : admin?.attendantId) || admin?._id;
 
-      const response = await apiCall("/api/product", {
-        method: "POST",
-        body: JSON.stringify({
-          name: customItemName.trim(),
-          shopId,
-          attendantId: resolvedAttendantId,
-          admin: adminId,
-          sellingPrice: price,
-          wholesalePrice: price,
-          dealerPrice: price,
-          buyingPrice,
-          quantity,
-          productType: customItemType,
-        }),
-      });
-      const product = await response.json();
-      onAddToCart(product);
+    const buyingPrice = customItemType === "product" ? parseFloat(customItemBuyingPrice || "0") : 0;
+    const quantity = customItemType === "product" ? parseInt(customItemQuantity || "1") : 0;
+
+    const payload = {
+      name: customItemName.trim(),
+      shopId,
+      attendantId: resolvedAttendantId,
+      admin: adminId,
+      sellingPrice: price,
+      wholesalePrice: price,
+      dealerPrice: price,
+      buyingPrice,
+      quantity,
+      productType: customItemType,
+    };
+
+    const resetCustomItemForm = () => {
       setShowCustomItemDialog(false);
       setCustomItemName("");
       setCustomItemPrice("");
@@ -927,9 +924,52 @@ export default function ProductGrid({
       setCustomItemBuyingPrice("");
       setCustomItemQuantity("1");
       setShowCustomItemOptions(false);
+    };
+
+    // Offline: create the item locally with a placeholder id, queue it, and add
+    // it to the cart. On reconnect the sync engine creates it on the server first
+    // and remaps the sale line to the real product id.
+    const saveCustomItemOffline = () => {
+      const tempId = `temp_prod_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const product = {
+        _id: tempId,
+        tempId,
+        ...payload,
+        quantity: customItemType === "product" ? quantity : 1,
+        virtual: customItemType !== "product",
+        createdOffline: true,
+      };
+      offlineStorage.saveProducts([product]).catch(console.error);
+      offlineStorage.addToSyncQueue("product", { ...payload, tempId }).catch(console.error);
+      onAddToCart(product);
+      resetCustomItemForm();
+      toast({
+        title: "Custom item added (offline)",
+        description: `"${product.name}" added to cart and will sync when you're back online.`,
+      });
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      saveCustomItemOffline();
+      setIsCreatingCustomItem(false);
+      return;
+    }
+
+    try {
+      const response = await apiCall("/api/product", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      const product = await response.json();
+      onAddToCart(product);
+      resetCustomItemForm();
       toast({ title: "Custom item added", description: `"${product.name}" added to cart` });
     } catch (err: any) {
-      toast({ title: "Failed to add item", description: err.message || "Could not create custom item", variant: "destructive" });
+      if (isNetworkError(err)) {
+        saveCustomItemOffline();
+      } else {
+        toast({ title: "Failed to add item", description: err.message || "Could not create custom item", variant: "destructive" });
+      }
     } finally {
       setIsCreatingCustomItem(false);
     }
@@ -1204,19 +1244,40 @@ export default function ProductGrid({
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data: typeof newCustomerForm) => {
-      const response = await apiCall('/api/customers', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: data.name.trim(),
-          phonenumber: data.phone,
-          email: data.email,
-          address: data.address,
-          wallet: 0,
-          shopId: shopId,
-          adminid: adminId,
-        }),
-      });
-      return response.json();
+      const payload = {
+        name: data.name.trim(),
+        phonenumber: data.phone,
+        email: data.email,
+        address: data.address,
+        wallet: 0,
+        shopId: shopId,
+        adminid: adminId,
+      };
+
+      // Offline: store the customer locally with a placeholder id and queue it so
+      // it's created on the server (before any sale that references it) on
+      // reconnect. The sale's customerId is remapped to the real id during sync.
+      const saveOffline = async () => {
+        const tempId = `temp_cust_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        const tempCustomer = { _id: tempId, tempId, ...payload, phone: data.phone, createdOffline: true };
+        await offlineStorage.saveCustomers([tempCustomer]);
+        await offlineStorage.addToSyncQueue('customer', { ...payload, tempId });
+        return { ...tempCustomer, _offline: true };
+      };
+
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return await saveOffline();
+      }
+      try {
+        const response = await apiCall('/api/customers', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        return response.json();
+      } catch (err) {
+        if (isNetworkError(err)) return await saveOffline();
+        throw err;
+      }
     },
     onSuccess: (createdCustomer: any, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -1224,7 +1285,12 @@ export default function ProductGrid({
       if (newId) setSelectedCustomerId(newId);
       setNewCustomerForm({ name: '', phone: '', email: '', address: '' });
       setShowAddCustomerDialog(false);
-      toast({ title: 'Customer created', description: `${variables.name} was added successfully.` });
+      toast({
+        title: createdCustomer?._offline ? 'Customer saved offline' : 'Customer created',
+        description: createdCustomer?._offline
+          ? `${variables.name} will sync when you're back online.`
+          : `${variables.name} was added successfully.`,
+      });
     },
     onError: () => {
       toast({ title: 'Failed to create customer', variant: 'destructive' });

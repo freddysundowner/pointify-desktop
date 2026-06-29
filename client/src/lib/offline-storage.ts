@@ -37,7 +37,7 @@ interface POSDatabase extends DBSchema {
     key: string;
     value: {
       id: string;
-      type: 'transaction' | 'customer' | 'product_update';
+      type: 'transaction' | 'customer' | 'product' | 'product_update';
       data: any;
       timestamp: number;
       retries: number;
@@ -251,7 +251,7 @@ class OfflineStorage {
   }
 
   // Sync queue operations
-  async addToSyncQueue(type: 'transaction' | 'customer' | 'product_update', data: any): Promise<void> {
+  async addToSyncQueue(type: 'transaction' | 'customer' | 'product' | 'product_update', data: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     // Dedupe by the sale's stable client idempotency key so the same transaction
@@ -380,6 +380,38 @@ class OfflineStorage {
     if (!this.db) throw new Error('Database not initialized');
     const setting = await this.db.get('settings', key);
     return setting?.value;
+  }
+
+  // Temp->real id map. When an offline-created customer or custom item finally
+  // syncs, the server assigns it a real _id. We persist that mapping so a queued
+  // sale that still references the temp id can be remapped before it's replayed —
+  // even across separate sync passes / app restarts.
+  async getIdMap(): Promise<Record<string, string>> {
+    try {
+      const map = await this.getSetting('idMap');
+      return (map && typeof map === 'object') ? map : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async saveIdMapping(tempId: string, realId: string): Promise<void> {
+    if (!tempId || !realId) return;
+    const map = await this.getIdMap();
+    map[tempId] = realId;
+    await this.saveSetting('idMap', map);
+  }
+
+  // Drop a temp placeholder record once its real counterpart exists, so it stops
+  // showing as a duplicate in pickers.
+  async removeCustomer(id: string): Promise<void> {
+    if (!this.db) return;
+    try { await this.db.delete('customers', id); } catch { /* ignore */ }
+  }
+
+  async removeProduct(id: string): Promise<void> {
+    if (!this.db) return;
+    try { await this.db.delete('products', id); } catch { /* ignore */ }
   }
 
   // Records the moment fresh data was last pulled from the server, so the UI can

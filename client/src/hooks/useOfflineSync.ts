@@ -5,9 +5,14 @@ import { queryClient } from '@/lib/queryClient';
 
 const ENDPOINTS: Record<string, string> = {
   transaction: '/api/sales',
+  product: '/api/product',
   product_update: '/api/product',
   customer: '/api/customers',
 };
+
+// Offline-created customers/items get a placeholder id until they sync.
+const isTempId = (id: any): id is string =>
+  typeof id === 'string' && id.startsWith('temp_');
 
 export interface QueuedSyncItem {
   id: string;
@@ -55,6 +60,12 @@ export function useOfflineSync() {
         return;
       }
 
+      // Temp->real id mappings discovered as offline-created customers/items
+      // sync. Loaded from storage so a sale deferred in an earlier pass can still
+      // be resolved, then topped up in-memory as we go through this pass.
+      const idMap: Record<string, string> = await offlineStorage.getIdMap().catch(() => ({}));
+      const resolveId = (id: any) => (isTempId(id) && idMap[id] ? idMap[id] : id);
+
       for (const item of queue) {
         const endpoint = ENDPOINTS[item.type];
         if (!endpoint) {
@@ -68,11 +79,66 @@ export function useOfflineSync() {
           }
           continue;
         }
+
+        // A sale may reference a customer/custom item that was also created
+        // offline. Swap those placeholder ids for the real ids assigned when the
+        // dependency synced. If a placeholder is still unresolved, defer the sale
+        // (retry next pass) rather than POST an id the server can't resolve.
+        let payload = item.data;
+        if (item.type === 'transaction') {
+          payload = { ...item.data };
+          if (payload.customerId) payload.customerId = resolveId(payload.customerId);
+          if (Array.isArray(payload.products)) {
+            payload.products = payload.products.map((line: any) => ({
+              ...line,
+              product: resolveId(line.product),
+              inventory: resolveId(line.inventory),
+            }));
+          }
+          const unresolved =
+            isTempId(payload.customerId) ||
+            (Array.isArray(payload.products) && payload.products.some((l: any) => isTempId(l.product)));
+          if (unresolved) {
+            console.warn('Deferring sale; offline customer/item not synced yet:', item.id);
+            await offlineStorage.markSyncFailed(item.id);
+            continue;
+          }
+        }
+
         try {
-          await apiCall(endpoint, {
+          const res = await apiCall(endpoint, {
             method: 'POST',
-            body: JSON.stringify(item.data),
+            body: JSON.stringify(payload),
           });
+
+          // Capture the real id the server assigned to an offline-created
+          // customer/item, so dependent sales (this pass or a later one) remap.
+          if ((item.type === 'customer' || item.type === 'product') && item.data?.tempId) {
+            let realId: string | undefined;
+            try {
+              const json = await res.clone().json();
+              realId = json?._id || json?.id || json?.customer?._id || json?.product?._id || json?.data?._id;
+            } catch { /* response body not JSON — fall through to the no-id guard */ }
+
+            if (!realId) {
+              // The POST appeared to succeed but we couldn't find the new id in
+              // the response. Don't mark complete — otherwise any sale that
+              // depends on this temp id would defer forever. Retry instead so a
+              // later pass (or a manual review) can resolve it.
+              console.warn('Synced customer/product but no real id in response; will retry:', item.id);
+              await offlineStorage.markSyncFailed(item.id);
+              continue;
+            }
+
+            idMap[item.data.tempId] = realId;
+            await offlineStorage.saveIdMapping(item.data.tempId, realId).catch(() => {});
+            if (item.type === 'customer') {
+              await offlineStorage.removeCustomer(item.data.tempId).catch(() => {});
+            } else {
+              await offlineStorage.removeProduct(item.data.tempId).catch(() => {});
+            }
+          }
+
           await offlineStorage.markSyncComplete(item.id);
           syncedAny = true;
         } catch (err: any) {

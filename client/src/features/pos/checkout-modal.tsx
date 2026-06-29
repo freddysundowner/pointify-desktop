@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
-import { API_ENDPOINTS, apiCall } from "@/lib/api-config";
+import { API_ENDPOINTS, apiCall, isNetworkError } from "@/lib/api-config";
+import { offlineStorage } from "@/lib/offline-storage";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/useAuth";
 import type { CartItem, Transaction } from "@shared/schema";
@@ -99,8 +100,18 @@ export default function CheckoutModal({
   const { data: shop } = useQuery<any>({
     queryKey: ["shop", shopId],
     queryFn: async () => {
-      const res = await apiCall(API_ENDPOINTS.shop.getShopById(shopId as string));
-      return res.json();
+      try {
+        const res = await apiCall(API_ENDPOINTS.shop.getShopById(shopId as string));
+        const data = await res.json();
+        // Cache shop settings (allownegativeselling, trackbatches, etc.) so they
+        // don't fall back to unsafe defaults when used offline.
+        offlineStorage.saveSetting(`shop:${shopId}`, data).catch(() => {});
+        return data;
+      } catch (err) {
+        const cached = await offlineStorage.getSetting(`shop:${shopId}`).catch(() => null);
+        if (cached) return cached;
+        throw err;
+      }
     },
     enabled: !!shopId && !!token,
   });
@@ -142,17 +153,36 @@ export default function CheckoutModal({
   const createCustomerMutation = useMutation({
     mutationFn: async (payload: { name: string; phonenumber: string }) => {
       const adminid = admin?._id || admin?.id;
-      const shopId = admin?.shopId || admin?.shop;
-      const response = await apiRequest("POST", "/api/customers", {
+      const sid = admin?.shopId || admin?.shop;
+      const body = {
         name: payload.name,
         phonenumber: payload.phonenumber,
         email: "",
         address: "",
         wallet: 0,
-        shopId,
+        shopId: sid,
         adminid,
-      });
-      return response.json();
+      };
+
+      // Offline: store locally with a placeholder id and queue for sync.
+      const saveOffline = async () => {
+        const tempId = `temp_cust_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        const tempCustomer = { _id: tempId, tempId, ...body, phone: payload.phonenumber, createdOffline: true };
+        await offlineStorage.saveCustomers([tempCustomer]);
+        await offlineStorage.addToSyncQueue("customer", { ...body, tempId });
+        return { ...tempCustomer, _offline: true };
+      };
+
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        return await saveOffline();
+      }
+      try {
+        const response = await apiRequest("POST", "/api/customers", body);
+        return response.json();
+      } catch (err) {
+        if (isNetworkError(err)) return await saveOffline();
+        throw err;
+      }
     },
     onSuccess: (newCustomer: any) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
@@ -160,7 +190,12 @@ export default function CheckoutModal({
       setShowAddCustomer(false);
       setNewCustomerName("");
       setNewCustomerPhone("");
-      toast({ title: "Customer Added", description: `${newCustomer.name} was created and selected.` });
+      toast({
+        title: newCustomer?._offline ? "Customer saved offline" : "Customer Added",
+        description: newCustomer?._offline
+          ? `${newCustomer.name} will sync when you're back online.`
+          : `${newCustomer.name} was created and selected.`,
+      });
     },
     onError: () => {
       toast({ title: "Failed to create customer", variant: "destructive" });

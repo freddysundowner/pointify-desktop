@@ -98,6 +98,29 @@ export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
   return params ? `${endpoint}?${params.toString()}` : endpoint;
 };
 
+// Detects whether an error (or the current device state) means we're offline /
+// the server is unreachable, as opposed to a real server-side rejection. Used so
+// create-customer / custom-item flows can fall back to the offline queue instead
+// of just failing. Matches the messages thrown by apiCall and apiRequest.
+export const isNetworkError = (error: any): boolean => {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  if (!error) return false;
+  if (error.name === "AbortError") return true;
+  const msg = String(error.message || "").toLowerCase();
+  // Match only true transport failures (the messages apiCall/apiRequest throw on
+  // a dropped connection, plus the browser's native fetch errors). Deliberately
+  // NOT a bare "network" substring — a real server validation error whose text
+  // happens to contain that word must NOT be misread as offline.
+  return (
+    msg.includes("unable to connect") ||
+    msg.includes("timeout") ||
+    msg.includes("networkerror") || // Firefox native fetch failure
+    msg.includes("failed to fetch") || // Chrome native fetch failure
+    msg.includes("network request failed") ||
+    msg.includes("not responding")
+  );
+};
+
 // API request wrapper - uses server proxy with auth token forwarding
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   
