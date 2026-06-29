@@ -36,6 +36,52 @@ export function getGlobalApiMode(): 'online' | 'offline' | 'hybrid' {
   return globalApiMode;
 }
 
+// --- Online upstream circuit breaker -------------------------------------
+// The proxy forwards to the online Pointify API first. When that host is
+// unreachable, EVERY request used to pay a full failed round-trip before
+// falling back to the local source — making data-heavy pages slow.
+//
+// To avoid that, online reads time out quickly, and after a failure we "open"
+// a short-lived circuit so subsequent reads skip the doomed online attempt and
+// go straight to the working source. A successful online call (or the cooldown
+// elapsing) closes the circuit again, so it self-heals when the server returns.
+const ONLINE_REQUEST_TIMEOUT_MS = 4000; // online attempt may not hang a page
+const LOCAL_REQUEST_TIMEOUT_MS = 15000; // local source still gets a hard cap
+const CIRCUIT_OPEN_MS = 30000; // skip online reads for 30s after a failure
+let onlineCircuitOpenUntil = 0;
+
+// Only skip the online attempt when there is a genuinely DIFFERENT local
+// source to fall back to. If the local and online bases are the same host,
+// skipping gains nothing and could serve empty fallbacks during a blip — so in
+// that case we keep online-first behaviour (still protected by the timeout).
+const hasDistinctLocalSource = POINTIFY_API_BASE !== POINTIFY_ONLINE_API_BASE;
+
+function isOnlineCircuitOpen(): boolean {
+  return hasDistinctLocalSource && Date.now() < onlineCircuitOpenUntil;
+}
+function tripOnlineCircuit(): void {
+  onlineCircuitOpenUntil = Date.now() + CIRCUIT_OPEN_MS;
+}
+function resetOnlineCircuit(): void {
+  onlineCircuitOpenUntil = 0;
+}
+
+// fetch() with an abort-based timeout so a slow/unreachable host can't freeze
+// a request indefinitely.
+async function fetchWithTimeout(
+  url: string,
+  options: PointifyRequestOptions,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Types
 export interface PointifyRequestOptions extends RequestInit {
   headers?: Record<string, string>;
@@ -95,7 +141,7 @@ export async function makeOnlinePointifyRequest(
     headers['content-type'] = 'application/json';
   }
 
-  const response = await fetch(url, { ...options, headers });
+  const response = await fetchWithTimeout(url, { ...options, headers }, ONLINE_REQUEST_TIMEOUT_MS);
 
   if (!response.ok) {
     let errorData: any = { success: false, offline: false, message: `HTTP error ${response.status}`, httpStatus: response.status };
@@ -145,7 +191,7 @@ export async function makeLocalPointifyRequest(
   let response: Response;
   console.log(url, headers)
   try {
-    response = await fetch(url, { ...options, headers });
+    response = await fetchWithTimeout(url, { ...options, headers }, LOCAL_REQUEST_TIMEOUT_MS);
   } catch (fetchError: any) {
     console.log(`🚨 Local API request failed: ${fetchError.message}`);
     throw fetchError;
@@ -169,9 +215,22 @@ export async function makePointifyRequest(
 
   switch (apiMode) {
     case 'online':
-      // Online only - try online API, fallback to graceful if fails
+      // Online only - try online API, fallback to graceful if fails.
+      // When the online upstream has recently failed, skip it for READS and go
+      // straight to the local source — otherwise every read pays a failed
+      // round-trip. Writes always still attempt online first (correctness).
+      if (!isWriteMethod(options) && isOnlineCircuitOpen()) {
+        try {
+          return await makeLocalPointifyRequest(endpoint, options);
+        } catch (localError) {
+          console.log(`🏠 Local API error for ${endpoint}, using graceful fallback...`);
+          return gracefulFallback(endpoint);
+        }
+      }
       try {
         let response: any = await makeOnlinePointifyRequest(endpoint, options);
+        // Reached the upstream (even an HTTP error means it's online) -> heal.
+        resetOnlineCircuit();
         console.log(`🌐 Online API response for ${endpoint}:`);
         if (response.success === false) {
           // A definitive upstream HTTP error (4xx/5xx) on a write must NOT be
@@ -190,6 +249,9 @@ export async function makePointifyRequest(
         }
         return response;
       } catch (onlineError) {
+        // Online upstream unreachable/timed out: open the circuit so the next
+        // reads skip it for a cooldown instead of each paying this failure.
+        tripOnlineCircuit();
         console.log(`🌐 Online API error for ${endpoint}, using graceful fallback... ${onlineError}`);
         try {
           return await makeLocalPointifyRequest(endpoint, options);
