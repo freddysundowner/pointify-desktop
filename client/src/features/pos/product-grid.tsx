@@ -214,11 +214,18 @@ export default function ProductGrid({
   // Server-side search function (fallback)
   const searchServer = async (query: string) => {
     try {
+      // The upstream list endpoint ANDs `name` and `barcodeid`, so sending the
+      // same text in both makes a name search also require a matching barcode —
+      // which returns nothing for normal product searches. Send the query as a
+      // barcode lookup only when it looks like a scanned code (digits); otherwise
+      // search by name (mirrors the inventory page, which only sends `name`).
+      const q = query.trim();
+      const isBarcodeLike = /^\d{6,}$/.test(q);
       const params = new URLSearchParams({
         page: "1",
         limit: "100",
-        name: query.trim(),
-        barcodeid: query.trim(),
+        name: isBarcodeLike ? "" : q,
+        barcodeid: isBarcodeLike ? q : "",
         shop: shopId || "",
         adminid: adminId || "",
         useWarehouse: "true",

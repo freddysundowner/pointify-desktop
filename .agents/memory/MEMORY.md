@@ -11,3 +11,4 @@
 - [Sales report HTTP caching](sales-report-http-caching.md) — report endpoint returns 304; default fetcher serves stale per-filter data. Use a no-store queryFn + staleTime 0 for filter-sensitive queries.
 - [Route code-splitting](route-code-splitting.md) — App.tsx routes MUST be React.lazy() inside Suspense; a static page import re-inflates the entry bundle. Keep ChunkErrorBoundary for stale-SW chunk failures.
 - [SW clone before return](sw-clone-before-return.md) — custom sw.js must clone responses synchronously before `return response`, or body-already-used floods console and breaks the React bundle; bump CACHE name on changes.
+- [POS search name+barcode AND](pos-search-name-barcode-and.md) — upstream products/list ANDs name & barcodeid; never send both with the same query or name searches return 0. `warehouse` flag ruled out as cause.
