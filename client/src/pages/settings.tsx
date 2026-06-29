@@ -6,16 +6,16 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Settings, Globe, CheckCircle2, AlertCircle, Wifi, WifiOff, RefreshCw, Clock } from "lucide-react";
+import { Globe, CheckCircle2, AlertCircle, Wifi, WifiOff, RefreshCw, Clock } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { API_ENDPOINTS, apiCall } from "@/lib/api-config";
+import { apiCall } from "@/lib/api-config";
 
 export default function SettingsPage() {
-  const { admin,token } = useAuth();
+  const { admin } = useAuth();
   const { toast } = useToast();
   const [selectedMode, setSelectedMode] = useState<'online' | 'offline' | 'hybrid'>('hybrid');
   const [syncInterval, setSyncInterval] = useState<number>(120000); // Default 2 min
@@ -56,7 +56,6 @@ export default function SettingsPage() {
     },
   });
   
-  console.log("Settings Data:", settingsData);
   // Load settings data
   useEffect(() => {
     if (settingsData?.success && settingsData?.data) {
@@ -325,42 +324,6 @@ export default function SettingsPage() {
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Simple System Status */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <CardTitle className="text-lg">System Status</CardTitle>
-              </div>
-              <CardDescription>
-                Current system health and operational status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-medium text-gray-700">API Routing</span>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Operational</Badge>
-                </div>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-medium text-gray-700">Authentication</span>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Ready</Badge>
-                </div>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm font-medium text-gray-700">Configuration</span>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">Simplified</Badge>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
