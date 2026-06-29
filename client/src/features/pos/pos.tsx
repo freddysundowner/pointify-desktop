@@ -15,6 +15,7 @@ import { useCart } from "@/hooks/useCart";
 
 import type { RootState } from "@/store";
 import { Button } from "@/components/ui/button";
+import { NetworkStatusBar } from "@/components/network-status-bar";
 
 export default function POS() {
   const [, setLocation] = useLocation();
@@ -73,7 +74,11 @@ export default function POS() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background">
+      {/* Always-visible connection + sync status for the cashier (POS is not
+          wrapped by the dashboard layout, so mount the bar here too). */}
+      <NetworkStatusBar />
+      <div className="flex flex-1 min-h-0 relative">
       {/* Desktop only — mobile uses the back button inside the POS nav bar */}
       <div className="absolute top-3 left-4 z-50 hidden lg:block">
         <Button
@@ -126,6 +131,7 @@ export default function POS() {
           canEditPrice={canEditPrice}
           onBack={handleBackToDashboard}
         />
+      </div>
       </div>
 
       <ReceiptModal

@@ -61,17 +61,32 @@ export function NetworkStatusBar() {
   // rather than hiding the bar entirely.
   if (isOnline && pendingCount === 0 && failedCount === 0) {
     return (
-      <div
-        className="flex items-center gap-2 px-4 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border-b border-emerald-200"
-        data-testid="text-network-status"
-      >
-        <Wifi className="h-3.5 w-3.5 shrink-0" />
-        <span>Online · all sales synced</span>
+      <div className="flex items-center justify-between px-4 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border-b border-emerald-200">
+        <div className="flex items-center gap-2" data-testid="text-network-status">
+          <Wifi className="h-3.5 w-3.5 shrink-0" />
+          <span>Online · all sales synced</span>
+        </div>
+        {/* Keep a manual sync action present even when nothing is queued, so the
+            cashier always has it to hand (disabled when there is nothing to do). */}
+        <button
+          onClick={syncNow}
+          disabled
+          data-testid="button-sync-now"
+          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Sync Now
+        </button>
       </div>
     );
   }
 
-  const staleness = !isOnline && lastSync ? formatAge(Date.now() - lastSync) : null;
+  // Treat data as stale once it is older than this while offline, so the cashier
+  // gets an explicit "may be out of date" warning rather than just an age.
+  const STALE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
+  const ageMs = lastSync ? Date.now() - lastSync : null;
+  const staleness = !isOnline && ageMs != null ? formatAge(ageMs) : null;
+  const isStale = !isOnline && ageMs != null && ageMs > STALE_THRESHOLD_MS;
   // A failed item while online makes this an alert, not just an info notice.
   const hasFailed = failedCount > 0;
   const alertTone = hasFailed && isOnline;
@@ -100,7 +115,7 @@ export function NetworkStatusBar() {
                     ? `${pendingCount > 0 ? ' · ' : ''}${failedCount} sale${failedCount !== 1 ? 's' : ''} failed to sync`
                     : ''
                 }`
-              : `Offline mode${pendingCount > 0 ? ` · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} queued` : ' · changes will sync when connected'}${hasFailed ? ` · ${failedCount} failed` : ''}${staleness ? ` · data from ${staleness}` : ''}`}
+              : `Offline mode${pendingCount > 0 ? ` · ${pendingCount} item${pendingCount !== 1 ? 's' : ''} queued` : ' · changes will sync when connected'}${hasFailed ? ` · ${failedCount} failed` : ''}${staleness ? (isStale ? ` · ⚠ data may be out of date (last synced ${staleness})` : ` · data from ${staleness}`) : ''}`}
           </span>
         </div>
 
@@ -118,10 +133,10 @@ export function NetworkStatusBar() {
             Review
           </button>
 
-          {isOnline && pendingCount > 0 && (
+          {isOnline && (
             <button
               onClick={syncNow}
-              disabled={isSyncing}
+              disabled={isSyncing || pendingCount === 0}
               data-testid="button-sync-now"
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-200 hover:bg-amber-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
