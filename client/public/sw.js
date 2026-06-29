@@ -1,4 +1,4 @@
-const CACHE = 'pointify-shell-v1';
+const CACHE = 'pointify-shell-v2';
 const SHELL = ['/', '/index.html'];
 
 // Install: cache the app shell immediately
@@ -35,7 +35,8 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
           if (response.ok) {
-            caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
           }
           return response;
         });
@@ -49,7 +50,8 @@ self.addEventListener('fetch', (event) => {
     fetch(request)
       .then((response) => {
         if (response.ok) {
-          caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
         }
         return response;
       })
