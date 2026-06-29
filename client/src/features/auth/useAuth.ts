@@ -140,9 +140,27 @@ export const useAuthProvider = (): AuthContextType => {
         }
       }
     } catch (error) {
-      logout();
+      // Fall back to the cached session ONLY on a genuine transport failure
+      // (e.g. an offline PWA launch). Previously this catch called logout(),
+      // which wiped the session and bounced the user to login whenever the
+      // device was offline. A real server rejection (e.g. a 401) must still be
+      // surfaced — never papered over with cached data — so auth stays enforced.
+      if (isNetworkError(error)) {
+        console.warn("Offline — falling back to cached admin session:", error);
+        const localdata = localStorage.getItem('adminData');
+        if (localdata) {
+          try {
+            const parsed = JSON.parse(localdata);
+            if (parsed && (parsed._id || parsed.id)) {
+              setAdmin(parsed);
+              return parsed;
+            }
+          } catch {
+            /* corrupted cache — fall through to rethrow */
+          }
+        }
+      }
       console.warn("Failed to fetch admin data:", error);
-      // Don't set server error - let app continue loading normally
       throw error;
     }
   };

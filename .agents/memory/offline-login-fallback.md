@@ -32,3 +32,23 @@ because it message-sniffs (matches the bare word "network") and trusts
 - Credentials carry a cached bearer token and expire 30 days after the last
   online login. Restoring an expired JWT is tolerated (offline selling still
   works); sync just fails until the next online re-auth — accepted tradeoff.
+
+## Session RESTORE on launch (separate from login)
+
+There is a second, mirror-image gate at app startup. `useAuth.fetchAdminData`
+(called by `initializeAuth` when a stored `authToken` exists) fetches fresh admin
+data; on an offline PWA launch that fetch throws a transport error.
+
+**Rule:** that catch must NOT `logout()` — `logout()` clears
+`authToken/adminData/attendantData/selectedShopId` AND redirects to `/`, so an
+offline launch was bouncing every session (incl. attendant, since it shares the
+`authToken` path) to the login page. Instead, restore the cached `adminData`
+profile (`setAdmin` + return it) so `isAuthenticated` (`!!admin && !!token`)
+stays true and the app proceeds offline.
+
+**But gate it with `isNetworkError(error)`** — only restore on a real transport
+failure. A 401/HTTP rejection must still rethrow so `refreshAuth` can force
+logout and revocation is enforced (don't paper a revoked token over with cache).
+`apiCall` already self-redirects on admin 401 and rethrows a non-network message,
+so `isNetworkError` correctly excludes it. Attendant context restores
+synchronously from localStorage (no network) so it needs no equivalent change.
