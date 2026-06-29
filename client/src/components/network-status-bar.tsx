@@ -56,9 +56,20 @@ export function NetworkStatusBar() {
     };
   }, [isOnline]);
 
-  // Show the bar whenever there is something to surface: offline, items waiting,
-  // or items that got stuck (failed) and need the cashier's attention.
-  if (isOnline && pendingCount === 0 && failedCount === 0) return null;
+  // Healthy state: online with nothing queued or stuck. Keep a slim, persistent
+  // indicator so the cashier can always see connection + sync status at a glance,
+  // rather than hiding the bar entirely.
+  if (isOnline && pendingCount === 0 && failedCount === 0) {
+    return (
+      <div
+        className="flex items-center gap-2 px-4 py-1 text-xs font-medium bg-emerald-50 text-emerald-700 border-b border-emerald-200"
+        data-testid="text-network-status"
+      >
+        <Wifi className="h-3.5 w-3.5 shrink-0" />
+        <span>Online · all sales synced</span>
+      </div>
+    );
+  }
 
   const staleness = !isOnline && lastSync ? formatAge(Date.now() - lastSync) : null;
   // A failed item while online makes this an alert, not just an info notice.

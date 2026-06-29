@@ -219,24 +219,30 @@ class OfflineStorage {
   }
 
   // Transactions operations
-  async saveTransaction(transaction: any): Promise<void> {
+  async saveTransaction(transaction: any, forceQueue = false): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
+
+    // Queue for replay whenever the sale didn't reach the server: either the
+    // device is offline OR the request failed at the transport layer while the
+    // browser still reports online (backend unreachable / flaky WAN). Callers on
+    // a caught network error must pass forceQueue=true — otherwise the sale would
+    // be stored locally but never added to the sync queue, so it never replays.
+    const queueForSync = forceQueue || !navigator.onLine;
+
     const offlineTransaction = {
       ...transaction,
       id: transaction.id || `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
-      syncStatus: navigator.onLine ? 'pending' : 'offline',
+      syncStatus: queueForSync ? 'offline' : 'pending',
       createdOffline: !navigator.onLine
     };
-    
+
     await this.db.put('transactions', offlineTransaction);
-    
-    // Add to sync queue if offline
-    if (!navigator.onLine) {
+
+    if (queueForSync) {
       await this.addToSyncQueue('transaction', offlineTransaction);
     }
-    
+
     console.log('Transaction saved to offline storage:', offlineTransaction.id);
   }
 

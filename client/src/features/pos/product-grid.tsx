@@ -713,15 +713,13 @@ export default function ProductGrid({
     onError: (error: any, variables: any) => {
       console.error("Transaction error:", error);
 
-      const isNetworkError =
-        error?.message?.includes('Unable to connect') ||
-        error?.message?.includes('timeout') ||
-        error?.message?.includes('NetworkError') ||
-        error?.message?.includes('Failed to fetch') ||
-        error?.message?.includes('network') ||
-        error?.name === 'AbortError';
-
-      if (isNetworkError) {
+      // Use the shared transport-failure detector so a real server rejection
+      // (e.g. 400 "insufficient balance") is never misread as offline and
+      // silently queued as a completed sale.
+      if (isNetworkError(error)) {
+        // forceQueue=true: the request failed at the transport layer, which can
+        // happen even while navigator.onLine is still true, so the sale MUST be
+        // added to the sync queue regardless of the reported online state.
         offlineStorage.saveTransaction({
           ...variables,
           items: cartItems,
@@ -730,7 +728,7 @@ export default function ProductGrid({
           shopId,
           adminId,
           savedOfflineAt: new Date().toISOString(),
-        }).catch(console.error);
+        }, true).catch(console.error);
 
         toast({
           title: "Sale Saved Offline",
