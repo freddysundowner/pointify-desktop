@@ -1,0 +1,504 @@
+exports.createSale = async (req, res) => {
+  // try {
+  let {
+    products,
+    shopId,
+    customerId,
+    attendantId,
+    paymentType,
+    saleType = "Retail",
+    totalDiscount,
+    payments,
+    status,
+    amountPaid,
+    totaltax = 0,
+    duedate = "",
+    salesnote = "",
+    customerdata = "",
+    online = false,
+    orderId,
+    createdAt,
+    mpesaTotal = 0,
+    bankTotal = 0,
+    paymentTag = "cash",
+    allownegativeselling = false,
+    batchTrack = false,
+    outstandingBalance,
+    saleDiscount = 0,
+    extraCharges = [],
+    extraChargesTotal = 0,
+    mpesaTransId = "", clientRef,
+  } = req.body;
+
+
+  if (saleType === "WholeSale") saleType = "Wholesale";
+
+  if (clientRef) {
+    const existingSale = await Sale.findOne({ clientRef });
+    if (existingSale) {
+      const populated = await loadSaleForResponse(existingSale._id);
+      return res.status(200).json({
+        message: "Sale already recorded",
+        success: true,
+        duplicate: true,
+        sale: populated,
+      });
+    }
+  }
+
+  // Validate split payment
+  if (paymentTag === "split" && outstandingBalance > 0) {
+    return res.status(400).json({
+      error: `Split payment must be paid in full, balance is KES ${outstandingBalance}`
+    });
+  }
+
+  // Create customer if needed
+  if (orderId && !customerId) {
+    const existing = await Customer.findOne({ email: customerdata.email });
+    if (!existing) {
+      const c = await Customer.create({
+        name: customerdata.name,
+        phonenumber: customerdata.phonenumber,
+        email: customerdata.email,
+      });
+      customerId = c._id;
+    } else {
+      customerId = existing._id;
+    }
+  }
+
+  paymentType = paymentType || "cash";
+
+  // ----------------------------------------
+  // 1️⃣ LOAD ALL PRODUCTS IN ONE QUERY
+  // ----------------------------------------
+  const productIds = products.map((p) => p.product);
+  const dbProducts = await Product.find({ _id: { $in: productIds } }).populate("shopId", "mpesa_require_validation").lean();
+
+  // Load inventory for this shop
+  const inventories = await Inventory.find({
+    product: { $in: productIds },
+    shop: shopId
+  }).lean();
+
+
+  const productMap = {};
+  dbProducts.forEach((p) => (productMap[p._id.toString()] = p));
+
+  const inventoryMap = {};
+  inventories.forEach(i => inventoryMap[i.product.toString()] = i);
+
+  let totalAmount = 0;
+  let totalWithDiscount = 0;
+  let customer;
+
+  for (const item of products) {
+    const product = productMap[item.product];
+    if (!product) {
+      return res.status(400).json({ error: "Product not found" });
+    }
+
+    if (product.productType === "product") {
+      if (product.maxDiscount < item.lineDiscount) {
+        return res.status(400).json({
+          error: `Discount for ${product.name} cannot exceed ${product.maxDiscount}`,
+        });
+      }
+
+      if (
+        product.minSellingPrice > 0 &&
+        item.unitPrice < product.minSellingPrice
+      ) {
+        return res.status(400).json({
+          error: `${product.name} selling price cannot be less than ${product.minSellingPrice}`,
+        });
+      }
+
+      if (
+        item.unitPrice < product.buyingPrice &&
+        !product.manageByPrice
+      ) {
+        return res.status(400).json({
+          error: `${product.name} selling price cannot be less than ${product.buyingPrice}`,
+        });
+      }
+
+      if (
+        product.productType === "product" &&
+        !allownegativeselling
+      ) {
+        const inventory = inventoryMap[item.product];
+
+        let activeInventory = inventory;
+
+        // INVENTORY MISSING
+        if (!activeInventory) {
+
+          console.log(
+            `AUTO CREATE INVENTORY | ${product.name}`
+          );
+
+          try {
+
+            activeInventory =
+              await Inventory.findOneAndUpdate(
+
+                {
+                  product: product._id,
+                  shop: shopId
+                },
+
+                {
+                  $setOnInsert: {
+
+                    quantity:
+                      product.quantity,
+
+                    lastCount:
+                      product.quantity,
+
+                    reorderLevel:
+                      product.reorderLevel || 0,
+
+                    product:
+                      product._id,
+
+                    shop:
+                      shopId,
+
+                    attendant:
+                      product.attendantId,
+
+                    expiryDate:
+                      product.expiryDate || null,
+
+                    barcode:
+                      product.barcode || null
+                  }
+                },
+
+                {
+                  upsert: true,
+                  new: true
+                }
+              );
+
+          } catch (err) {
+
+            // duplicate created by another request
+            if (err.code === 11000) {
+
+              activeInventory =
+                await Inventory.findOne({
+                  product: product._id,
+                  shop: shopId
+                });
+
+            } else {
+
+
+            }
+          }
+          // update memory map
+          inventoryMap[item.product] =
+            activeInventory;
+        }
+
+        // INVENTORY BROKEN
+        if (
+          activeInventory.quantity <= 0 &&
+          product.quantity > 0
+        ) {
+
+          console.log(
+            `SELF HEAL | ${product.name} | ` +
+            `${activeInventory.quantity} -> ${product.quantity}`
+          );
+
+          await Inventory.updateOne(
+            {
+              _id: activeInventory._id
+            },
+            {
+              $set: {
+                quantity: product.quantity
+              }
+            }
+          );
+
+          activeInventory.quantity =
+            product.quantity;
+        }
+
+        if (activeInventory.quantity < item.quantity) {
+          return res.status(400).json({
+            error: `Insufficient stock for ${product.name}`
+          });
+        }
+      }
+
+    }
+
+    const lineTotal = item.unitPrice * item.quantity;
+    const lineNet = lineTotal - item.lineDiscount;
+
+    totalAmount += lineTotal;
+    totalWithDiscount += lineNet;
+  }
+
+  const parsedExtraChargesTotal =
+    Number(extraChargesTotal || 0);
+
+  const decremented = []; // { productId, qty } already taken — for rollback
+  const restoreStock = async () => {
+    for (const d of decremented) {
+      await Inventory.updateOne(
+        { product: d.productId, shop: shopId },
+        { $inc: { quantity: d.qty } }
+      );
+      await Product.updateOne({ _id: d.productId }, { $inc: { quantity: d.qty } });
+    }
+    decremented.length = 0;
+  };
+  try {
+    for (const item of products) {
+      const product = productMap[item.product];
+      if (!product || product.productType !== "product") continue;
+      const qty = product.manageByPrice
+        ? item.unitPrice / product.sellingPrice
+        : item.quantity;
+      if (!(qty > 0)) continue;
+      // Negative selling allowed → no >= guard (this sale may go below zero).
+      const filter = allownegativeselling
+        ? { product: item.product, shop: shopId }
+        : { product: item.product, shop: shopId, quantity: { $gte: qty } };
+      const result = await Inventory.updateOne(filter, { $inc: { quantity: -qty } });
+      // The key line: nothing matched → someone took the last units first.
+      if (result.modifiedCount === 0 && !allownegativeselling) {
+        throw { __insufficient: true, name: product.name };
+      }
+      await Product.updateOne({ _id: item.product }, { $inc: { quantity: -qty } });
+      decremented.push({ productId: item.product, qty });
+    }
+  } catch (e) {
+    await restoreStock();
+    if (e && e.__insufficient) {
+      return res.status(400).json({ error: `Insufficient stock for ${e.name}` });
+    }
+    throw e;
+  }
+
+
+  // ----------------------------------------
+  // 3️⃣ WALLET / CREDIT LOGIC
+  // ----------------------------------------
+  if ((paymentType === "credit" || paymentType === "wallet") && !customerId) {
+    return res.status(400).json({ error: "Select a customer" });
+  }
+
+  if (paymentType === "wallet") {
+    customer = await Customer.findById(customerId);
+    if (!customer || customer.wallet < totalWithDiscount) {
+      await restoreStock(); // give back the stock claimed in step 2.5
+      return res.status(400).json({ error: "Insufficient wallet balance" });
+    }
+    customer.wallet -= totalWithDiscount;
+    await customer.save();
+
+    await UserPayment.create({
+      type: "payment",
+      shopId,
+      customerId,
+      attendantId,
+      totalAmount: totalWithDiscount,
+      balance: customer.wallet,
+    });
+  }
+  let saleOutstandingBalance = outstandingBalance;
+  if (paymentType === "credit" || (status === "hold" && customerId)) {
+    customer = await Customer.findById(customerId);
+    const grandtotal = totaltax + totalWithDiscount - amountPaid;
+    saleOutstandingBalance = outstandingBalance;
+    outstandingBalance -= customer.wallet;
+    customer.wallet -= grandtotal;
+    await customer.save();
+
+    await UserPayment.create({
+      type: "withdraw",
+      shopId,
+      customerId,
+      attendantId,
+      totalAmount: totalWithDiscount,
+      balance: customer.wallet,
+    });
+  }
+
+  // ----------------------------------------
+  // 4️⃣ CREATE SALE
+  // ----------------------------------------
+  if (paymentTag === "mpesa" && paymentType != "mpesa") {
+    mpesaTotal = totaltax + totalWithDiscount;
+    paymentType = "mpesa";
+  }
+  let sale;
+  try {
+     sale = await Sale.create({
+      totalAmount,
+      totalWithDiscount: totaltax + totalWithDiscount,
+      products,
+      duedate: duedate ? new Date(duedate) : null,
+      shopId,
+      order: online ? "pending" : null,
+      totaltax,
+      saleType: online ? "Order" : saleType,
+      customerId,
+      clientRef: clientRef || undefined,
+      attendantId,
+      amountPaid,
+      paymentType,
+      totalDiscount: saleDiscount + totalDiscount,
+      salesnote,
+      payments,
+      status,
+      createdAt,
+      saleDate: new Date(),
+      mpesaNewTotal: mpesaTotal,
+      bankTotal,
+      paymentTag,
+      outstandingBalance,
+      saleDiscount,
+      orderId,
+      extraCharges,
+      extraChargesTotal,
+    });
+
+  } catch (err) {
+    if (err && err.code === 11000 && err.keyPattern?.clientRef && clientRef) {
+      const populated = await loadSaleForResponse(
+        (await Sale.findOne({ clientRef }))?._id
+      );
+      return res.status(200).json({
+        message: "Sale already recorded",
+        success: true,
+        duplicate: true,
+        sale: populated,
+      });
+    }
+    throw err;
+  }
+  if (mpesaTransId && (paymentTag === "mpesa" || paymentTag === "split") && (dbProducts.length > 0 && dbProducts[0]?.shopId?.mpesa_require_validation == true)) {
+    const codes = mpesaTransId
+      .split(",")
+      .map((c) => c.trim().toUpperCase())
+      .filter(Boolean);
+    const allocatedRefs = [];
+    for (const code of codes) {
+      const payment = await allocatePayment({
+        code,
+        shopId,
+        saleId: sale._id,
+      });
+      if (payment) {
+        allocatedRefs.push(code);
+      } else {
+        // Not found, wrong shop, or already used by another sale.
+        console.warn(`M-Pesa code not allocated: ${code} (sale ${sale._id})`);
+      }
+    }
+    sale.mpesaCode = allocatedRefs.join(",");
+    await sale.save();
+  }
+
+
+
+  // ----------------------------------------
+  // 6️⃣ BULK INSERT SALE ITEMS
+  // ----------------------------------------
+  const saleItemDocs = products.map((item) => {
+    const product = productMap[item.product];
+
+    const qty = product.manageByPrice
+      ? item.unitPrice / product.sellingPrice
+      : item.quantity;
+
+    return {
+      shopId,
+      product: item.product,
+      tax: item.tax,
+      quantity: qty,
+      saleType,
+      unitPrice: item.unitPrice,
+      unitBuyingPrice: product.buyingPrice,
+      sale: sale._id,
+      attendantId,
+      lineDiscount: item.lineDiscount,
+      status,
+      manageByPrice: product.manageByPrice,
+      salesnote,
+      createdAt,
+      paymentTag,
+    };
+  });
+
+  let saleItems = await SaleItem.insertMany(saleItemDocs);
+  saleItems = await SaleItem.populate(saleItems, {
+    path: "product",
+  });
+
+  // Attach back to sale document
+  sale.items = saleItems.map((item) => item._id);
+  await sale.populate(["attendantId", "customerId",
+    {
+      path: "shopId",
+      populate: {
+        path: "shopCategoryId",
+      },
+    },]);
+
+  if (paymentType === "credit" && amountPaid > 0 && customerId) {
+    await UserPayment.create({
+      type: "payment",
+      shopId,
+      customerId,
+      attendantId,
+      totalAmount: amountPaid,
+      balance: customer.wallet,
+    });
+    sale.payments.push({
+      amount: amountPaid,
+      attendantId,
+      paymentNo: `REC${Date.now()}`,
+      balance: outstandingBalance,
+      paymentType: "cash",
+    });
+  }
+  await sale.save();
+  // await sale.save();
+  let saleObj = sale.toObject();
+  saleObj.items = saleItems;
+  res.status(201).json({
+    message: "Sale created successfully",
+    success: true,
+    sale: saleObj,
+  });
+  let template = "";
+  if (sale?.shopId?.shopCategoryId?.name == 'Laundry') {
+    let due_date = req.body.ready_date == "" || req.body.ready_date == null ? 'shortly' : `by ${duedate ? new Date(duedate).toDateString() : req.body.ready_date}`;
+    let payment_instructions = '';
+    if (saleOutstandingBalance > 0 && sale?.shopId?.paybill) {
+      payment_instructions = sale?.shopId?.paybill ? `pay via Paybill ${sale?.shopId?.paybill} , Acc: Your Name` : "";
+    }
+    template = `{shop}: Hi {name}, your order {receipt} has been received and it will be ready ${due_date}, balance Ksh ${saleOutstandingBalance} ${payment_instructions} View receipt: {receipt_url}`;
+
+  }
+  sendSaleSmsAfterSale({
+    sale,
+    template
+  })
+
+  // } catch (error) {
+  //   console.error("Sale error:", error);
+  //   res.status(500).json({ error: "Error when selling" });
+  // }
+};
