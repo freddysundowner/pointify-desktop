@@ -201,9 +201,26 @@ export default function ShopDetails() {
       const validationLabel = `M-Pesa validation is ${validationOn ? "ON" : "OFF"}.`;
 
       if (linkError) {
+        // The upstream error often looks like `SunPay 409: {"message":"..."}`.
+        // Pull out the human-readable message so we don't show raw JSON.
+        const readableLinkError = (() => {
+          const raw = String(linkError);
+          const braceIdx = raw.indexOf("{");
+          if (braceIdx !== -1) {
+            try {
+              const parsed = JSON.parse(raw.slice(braceIdx));
+              const msg = parsed?.message || parsed?.error;
+              if (msg) return String(msg);
+            } catch {
+              /* fall through to raw */
+            }
+          }
+          return raw;
+        })();
+
         toast({
           title: "Saved — but M-Pesa isn't linked",
-          description: `SunPay link error: ${linkError} ${validationLabel}`,
+          description: `${readableLinkError}. ${validationLabel}`,
           variant: "destructive",
           duration: 10000,
         });
