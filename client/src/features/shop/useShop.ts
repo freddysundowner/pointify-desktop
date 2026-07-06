@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/useAuth";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS } from "@/lib/api-config";
 
 interface Shop {
   _id: string;
@@ -30,10 +30,15 @@ export function useShop() {
     queryKey: ["shop", shopId],
     queryFn: async () => {
       if (!shopId) return null;
-      
-      const shopData = await apiCall(`/shop/${shopId}`, {
+
+      // Must hit the proxied `/api/shop/:id` path (Vite only proxies `/api`)
+      // and parse the JSON body. `apiCall` returns a raw fetch Response, so
+      // returning it directly here previously poisoned the shared ["shop", id]
+      // cache with a Response object (no _id), breaking shop-details/settings.
+      const response = await apiCall(API_ENDPOINTS.shop.getShopById(shopId), {
         method: "GET",
       });
+      const shopData = await response.json();
       return shopData as Shop;
     },
     enabled: !!shopId,
