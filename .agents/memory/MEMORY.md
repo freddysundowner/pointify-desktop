@@ -19,3 +19,4 @@
 - [Kenyan display timezone](display-timezone-kenya.md) — all dates forced to Africa/Nairobi via a Date.prototype toLocale* patch installed in main.tsx; display-only, date-range math still local.
 - [PWA offline dev vs prod](pwa-offline-dev-vs-prod.md) — SW (and offline) only run in the published build; dev unregisters it. "You're offline" is Chrome's native PWA page.
 - [mutateAsync double-toast](mutateasync-double-notify.md) — onError runs AND mutateAsync rejects; a catch that also toasts double-notifies. Notify in one place only.
+- [Active shop resolution in POS](pos-active-shop-resolution.md) — always resolve shop as selectedShopId(Redux)→attendant.shopId→admin fields; never trust admin.primaryShop alone; gate shop query on token||attendantToken.

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   X, CreditCard, Banknote, UserX, User, Wallet,
@@ -15,6 +17,7 @@ import { API_ENDPOINTS, apiCall, isNetworkError } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/useAuth";
+import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import type { CartItem, Transaction } from "@shared/schema";
 
 type PaymentMethod = "cash" | "wallet" | "split" | "mpesa" | "bank" | "card" | "credit" | null;
@@ -94,8 +97,20 @@ export default function CheckoutModal({
 
   const { toast } = useToast();
   const { admin, token } = useAuth();
+  const { attendant, token: attendantToken } = useAttendantAuth();
   const queryClient = useQueryClient();
-  const shopId = admin?.shopId || admin?.shop || admin?.primaryShop;
+  // Resolve the active shop the same way the rest of POS does (see pos.tsx):
+  // prefer the currently SELECTED shop (Redux), then the attendant's assigned
+  // shop, then admin fields. This ensures M-Pesa/SunPay state is read for the
+  // shop the user actually picked — not the admin's primaryShop, which may be a
+  // different, unlinked branch. primaryShop/shopId can be a string or object.
+  const selectedShopId = useSelector((state: RootState) => state.shop.selectedShopId);
+  const attendantShopId =
+    typeof attendant?.shopId === "object" ? attendant?.shopId?._id : attendant?.shopId;
+  const primaryShopId =
+    typeof admin?.primaryShop === "object" ? (admin?.primaryShop as any)?._id : admin?.primaryShop;
+  const shopId =
+    selectedShopId || attendantShopId || (admin as any)?.shopId || (admin as any)?.shop || primaryShopId;
 
   const { data: shop } = useQuery<any>({
     queryKey: ["shop", shopId],
@@ -113,7 +128,7 @@ export default function CheckoutModal({
         throw err;
       }
     },
-    enabled: !!shopId && !!token,
+    enabled: !!shopId && !!(token || attendantToken),
   });
 
   const { data: customers = [] } = useQuery({
