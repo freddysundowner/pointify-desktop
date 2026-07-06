@@ -187,14 +187,32 @@ export default function ShopDetails() {
       });
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["shop", id] });
       queryClient.invalidateQueries({ queryKey: ["shops"] });
-      
+
+      // The PUT returns the saved shop. Surface the real M-Pesa/SunPay state
+      // instead of a generic toast so the user knows whether M-Pesa linking
+      // actually succeeded and what the validation setting is now.
+      const updated = data && !Array.isArray(data) ? data : null;
+      const linkError = updated?.sunpay_link_error;
+      const validationOn = updated?.mpesa_require_validation !== false;
+      const validationLabel = `M-Pesa validation is ${validationOn ? "ON" : "OFF"}.`;
+
+      if (linkError) {
+        toast({
+          title: "Saved — but M-Pesa isn't linked",
+          description: `SunPay link error: ${linkError} ${validationLabel}`,
+          variant: "destructive",
+          duration: 10000,
+        });
+        return;
+      }
+
       toast({
         title: "Shop Updated",
-        description: "Shop settings have been updated successfully.",
+        description: `Shop settings saved. ${validationLabel}`,
       });
     },
     onError: () => {
