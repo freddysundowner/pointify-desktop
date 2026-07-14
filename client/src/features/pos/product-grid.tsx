@@ -185,7 +185,15 @@ export default function ProductGrid({
   const { products: allProducts, isLoading, refreshProducts,hasMore,fetchMoreProducts } = useProducts();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table'); // Default to restaurant grid view
+  // Remember the user's last-selected view (Cards/Table) across visits.
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
+    const saved = localStorage.getItem('pos-view-mode');
+    return saved === 'grid' || saved === 'table' ? saved : 'table';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pos-view-mode', viewMode);
+  }, [viewMode]);
   const [showMobileCart, setShowMobileCart] = useState(false);
   const [dropdownHighlight, setDropdownHighlight] = useState(-1);
 
