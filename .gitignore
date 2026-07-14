@@ -4,6 +4,7 @@
 /package-lock.json
 /client/dist
 /server/dist
+/server/uploads
 /client/node_modules
 /server/node_modules
 /final

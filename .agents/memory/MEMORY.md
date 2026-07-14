@@ -20,3 +20,4 @@
 - [PWA offline dev vs prod](pwa-offline-dev-vs-prod.md) — SW (and offline) only run in the published build; dev unregisters it. "You're offline" is Chrome's native PWA page.
 - [mutateAsync double-toast](mutateasync-double-notify.md) — onError runs AND mutateAsync rejects; a catch that also toasts double-notifies. Notify in one place only.
 - [Active shop resolution in POS](pos-active-shop-resolution.md) — always resolve shop as selectedShopId(Redux)→attendant.shopId→admin fields; never trust admin.primaryShop alone; gate shop query on token||attendantToken.
+- [Product image upload](product-image-upload.md) — images field is `images: string[]` on product (from legacy Dart app); static file mounts must stay OUTSIDE `/api` prefix or response Content-Type gets forced to json.

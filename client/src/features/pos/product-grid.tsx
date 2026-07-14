@@ -2496,6 +2496,7 @@ export default function ProductGrid({
                     const isVirtual = product.virtual || product?.productType == "service";
                     const isOutOfStock = !isVirtual && quantity === 0;
                     const isLowStock = !isVirtual && quantity > 0 && quantity <= reorderLevel;
+                    const imageUrl = product.images?.[0] || product.image;
                     
                     return (
                       <div
@@ -2510,8 +2511,19 @@ export default function ProductGrid({
                         onClick={() => !isOutOfStock && onAddToCart(product)}
                       >
                         {/* Image area */}
-                        <div className="h-20 lg:h-24 bg-gradient-to-br from-purple-50 to-gray-100 flex items-center justify-center">
-                          <Package className="h-7 w-7 lg:h-8 lg:w-8 text-purple-200" />
+                        <div className="h-20 lg:h-24 bg-gradient-to-br from-purple-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={productName}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <Package className="h-7 w-7 lg:h-8 lg:w-8 text-purple-200" />
+                          )}
                         </div>
                         {/* Content */}
                         <div className="p-2.5 lg:p-2.5">

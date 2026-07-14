@@ -176,6 +176,8 @@ export default function ProductForm() {
   const [isBundleDialogOpen, setIsBundleDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const [expandedSections, setExpandedSections] = useState({
     manufacturer: false,
@@ -333,6 +335,9 @@ export default function ProductForm() {
 
       form.reset(formData as any);
 
+      const existingImage = productData.images?.[0] || productData.image;
+      if (existingImage) setImagePreviewUrl(existingImage);
+
       setExpandedSections({
         manufacturer: !!formData.manufacturer,
         wholesalePrice: !!(
@@ -393,6 +398,9 @@ export default function ProductForm() {
 
       form.reset(formData as any);
 
+      const existingImage = productData.images?.[0] || productData.image;
+      if (existingImage) setImagePreviewUrl(existingImage);
+
       setExpandedSections({
         manufacturer: !!formData.manufacturer,
         serialnumber: !!formData.serialnumber,
@@ -411,6 +419,25 @@ export default function ProductForm() {
       });
     }
   }, [product, form, isEditMode]);
+
+  // Uploads the selected image file for a saved product, forwarding it to
+  // the server which persists the resulting URL on the product record.
+  const uploadProductImage = async (savedProductId: string, file: File) => {
+    const body = new FormData();
+    body.append("image", file);
+    const response = await fetch(`/api/product/${savedProductId}/image`, {
+      method: "POST",
+      body,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(parseApiError(response.status, errorData));
+    }
+    return response.json();
+  };
 
   const mutation = useMutation({
     mutationFn: async (formData: ProductFormData) => {
@@ -474,7 +501,23 @@ export default function ProductForm() {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      const savedProductId =
+        productId || (data as any)?._id || (data as any)?.data?._id;
+
+      if (selectedImageFile && savedProductId) {
+        try {
+          await uploadProductImage(savedProductId, selectedImageFile);
+        } catch (error) {
+          toast({
+            title: "Product saved, but image upload failed",
+            description:
+              error instanceof Error ? error.message : "Please try uploading the image again from Edit Product.",
+            variant: "destructive",
+          });
+        }
+      }
+
       toast({
         title: "Success",
         description: `Product ${isEditMode ? "updated" : "created"} successfully!`,
@@ -1583,6 +1626,61 @@ export default function ProductForm() {
 
               {/* Right Column - Product Settings & Actions */}
               <div className="lg:space-y-8">
+                {/* Product Image */}
+                <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                  <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                    <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Product Image</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-5 lg:p-6 lg:pt-0">
+                    <div className="flex items-center gap-4">
+                      <div className="h-20 w-20 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {imagePreviewUrl ? (
+                          <img
+                            src={imagePreviewUrl}
+                            alt="Product preview"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Package className="h-8 w-8 text-gray-300" />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <input
+                          id="product-image-input"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setSelectedImageFile(file);
+                            setImagePreviewUrl(URL.createObjectURL(file));
+                          }}
+                        />
+                        <label
+                          htmlFor="product-image-input"
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+                        >
+                          {imagePreviewUrl ? "Change Image" : "Upload Image"}
+                        </label>
+                        {imagePreviewUrl && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedImageFile(null);
+                              setImagePreviewUrl(null);
+                            }}
+                            className="block text-sm text-red-600 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                        <p className="text-xs text-muted-foreground">JPG, PNG or WEBP. Max 5MB.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Product Settings - only for products */}
                 {form.watch("productType") === "product" && (
                   <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">

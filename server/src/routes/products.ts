@@ -1,5 +1,34 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Where uploaded product images are stored on disk and served from.
+// NOTE: this is local disk storage — fine for now, but on an autoscale
+// deployment the filesystem is not guaranteed to persist across instances/
+// redeploys. See the "product image storage" follow-up task.
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads", "products");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const productImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || ".jpg";
+      const productId = (req.params as any).id || "product";
+      cb(null, `${productId}-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) {
+      cb(new Error("Only image files are allowed"));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 // Authentication middleware to extract token from Authorization header
 const extractToken = (req: any) => {
@@ -296,6 +325,53 @@ export function registerProductRoutes(app: Express) {
       }
     }
   });
+
+  // Upload / replace a product's image. Stores the file locally and forwards
+  // the resulting URL to the upstream Pointify API's "images" field (the same
+  // contract the legacy mobile app used: PUT /product/:id { images: [url] }).
+  app.post(
+    "/api/product/:id/image",
+    productImageUpload.single("image"),
+    async (req, res) => {
+      try {
+        const token = extractToken(req);
+        if (!token) {
+          return res
+            .status(401)
+            .json({ error: "Authorization token required" });
+        }
+
+        const { id } = req.params;
+        const file = (req as any).file;
+        if (!file) {
+          return res.status(400).json({ error: "No image file uploaded" });
+        }
+
+        const imageUrl = `/uploads/products/${file.filename}`;
+
+        const data = await makePointifyRequest(`/product/${id}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ images: [imageUrl] }),
+        });
+
+        res.json({ url: imageUrl, product: data });
+      } catch (error) {
+        const status = (error as any).status || 500;
+        const responseBody = (error as any).responseBody;
+
+        if (responseBody) {
+          try {
+            res.status(status).json(JSON.parse(responseBody));
+          } catch {
+            res.status(status).json({ error: "Failed to upload product image" });
+          }
+        } else {
+          res.status(500).json({ error: "Failed to upload product image" });
+        }
+      }
+    },
+  );
 
   // =============================================================================
   // BUNDLE PRODUCT ROUTES

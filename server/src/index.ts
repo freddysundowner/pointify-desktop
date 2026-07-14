@@ -13,6 +13,11 @@ const __dirname = path.dirname(process.argv[1]);
 
 const app = express();
 
+// Serve uploaded product images. Mounted outside "/api" so the response
+// Content-Type header isn't forced to application/json by the /api logging
+// middleware below.
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use((req, res, next) => {
