@@ -17,6 +17,12 @@ export const usePrimaryShop = (): PrimaryShopData => {
   const { attendant } = useAttendantAuth();
   const reduxSelectedShopId = useSelector((state: RootState) => state.shop.selectedShopId);
   const reduxSelectedShopData = useSelector((state: RootState) => state.shop.selectedShopData);
+  // The attendant's shopId field on the AttendantData object is always a plain
+  // string id (see server /api/auth/attendant/login) — the actual shop object
+  // (with fields like isRestaurant) lives in this sibling slice field instead,
+  // set on login and on page-refresh re-init. Never derive shopData from
+  // attendant.shopId; it is never an object in practice.
+  const reduxAttendantShopData = useSelector((state: RootState) => state.attendant.shopData);
 
   // Attendant takes priority
   if (attendant) {
@@ -24,13 +30,15 @@ export const usePrimaryShop = (): PrimaryShopData => {
       ? attendant.shopId
       : attendant.shopId?._id || '';
 
+    const shopData = reduxAttendantShopData || attendant?.shopData || null;
+
     return {
       shopId,
       adminId: attendant.adminId || '',
-      shopData: typeof attendant.shopId === 'object' ? attendant.shopId : null,
+      shopData,
       userType: 'attendant',
       attendantId: attendant._id || attendant.id || '',
-      allowNegativeStock: attendant?.shopData?.allownegativeselling,
+      allowNegativeStock: shopData?.allownegativeselling,
     };
   }
 
