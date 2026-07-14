@@ -226,17 +226,24 @@ export default function PendingOrders() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 -mx-3 lg:-mx-6 -mt-0">
+      <div className="space-y-3 -mx-3 lg:-mx-6 -mt-0">
         {/* Restaurant-style orders board header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 lg:px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 lg:px-6 py-3 text-white">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center">
-                <UtensilsCrossed className="h-5 w-5 text-purple-300" />
+            <div className="flex items-center gap-3 min-w-0">
+              <button
+                onClick={() => setLocation(userType === "attendant" ? "/attendant/dashboard" : "/dashboard")}
+                className="text-slate-300 hover:text-white shrink-0 p-1 -ml-1 rounded-md hover:bg-white/10"
+                aria-label="Back"
+              >
+                &larr;
+              </button>
+              <div className="w-9 h-9 rounded-lg bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
+                <UtensilsCrossed className="h-4 w-4 text-purple-300" />
               </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight">Kitchen Orders</h1>
-                <p className="text-xs text-slate-400">Sent from the kitchen &middot; waiting for payment</p>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold tracking-tight leading-tight">Kitchen Orders</h1>
+                <p className="text-xs text-slate-400 truncate">Sent from the kitchen &middot; waiting for payment</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -259,18 +266,9 @@ export default function PendingOrders() {
           </div>
         </div>
 
-        <div className="px-4 lg:px-6 pb-2">
-          <button
-            onClick={() => setLocation(userType === "attendant" ? "/attendant/dashboard" : "/dashboard")}
-            className="text-sm text-purple-700 hover:text-purple-800 font-medium flex items-center gap-1"
-          >
-            &larr; Back
-          </button>
-        </div>
-
         {/* Filters: search by waiter, narrow to a date range */}
         <div className="px-4 lg:px-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1">
               <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
