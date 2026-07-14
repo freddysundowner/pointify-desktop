@@ -66,6 +66,10 @@ externalPort = 3002
 localPort = 5002
 externalPort = 3003
 
+[[ports]]
+localPort = 23636
+externalPort = 4200
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["node", "./dist/index.cjs"]
