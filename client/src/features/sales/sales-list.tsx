@@ -181,12 +181,17 @@ function SalesList() {
     return primaryShopCurrency;
   };
 
+  // Cashiers need to see every sale in the shop (they take payment on orders
+  // waiters created), not just sales attributed to their own attendantId.
+  const isCashier = hasAttendantPermission("pos", "cashier");
+
   // Memoize query parameters to prevent unnecessary refetches
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
     if (shopId) params.append("shopId", shopId);
-    // For attendants, filter by their attendantId to show only their sales
-    if (userType === "attendant" && attendant?._id) {
+    // Regular attendants only see sales they personally created; cashiers
+    // (and admins) see the whole shop's sales.
+    if (userType === "attendant" && attendant?._id && !isCashier) {
       params.append("attendantId", attendant._id);
     }
     // Only add status filter if not 'all' and map frontend values to API values
@@ -232,6 +237,7 @@ function SalesList() {
     shopId,
     userType,
     attendant?._id,
+    isCashier,
     statusFilter,
     startDate,
     endDate,
@@ -264,8 +270,8 @@ function SalesList() {
     const params = new URLSearchParams();
     if (shopId) params.append("shopid", shopId);
 
-    // For attendants, filter analytics by their attendantId
-    if (userType === "attendant" && attendant?._id) {
+    // For non-cashier attendants, filter analytics by their attendantId
+    if (userType === "attendant" && attendant?._id && !isCashier) {
       params.append("attendantId", attendant._id);
     }
 
