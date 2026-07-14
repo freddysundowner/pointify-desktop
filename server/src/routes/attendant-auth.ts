@@ -105,6 +105,83 @@ export function registerAttendantAuthRoutes(app: Express) {
     }
   });
 
+  // Restaurant-mode fast PIN-only login (no password) — attendant taps their
+  // unique staff number on a device flagged as a restaurant till.
+  app.post("/api/attendant/login/pin", async (req: Request, res: Response) => {
+    try {
+      const { pin } = req.body;
+
+      console.log('Attendant PIN login request body:', { pin });
+
+      if (!pin) {
+        return res.status(400).json({
+          error: "PIN is required"
+        });
+      }
+
+      let loginResponse: any = await makePointifyRequest('/attendant/login/pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pin })
+      });
+
+      if (!loginResponse || !loginResponse.token) {
+        return res.status(401).json({
+          error: "Invalid PIN"
+        });
+      }
+
+      let attendant: any = loginResponse.attendant || loginResponse.userdata;
+      if (!attendant?.permissions) {
+        try {
+          attendant = await makePointifyRequest(`/attendants/${attendant?._id}`, {
+            method: 'GET'
+          });
+        } catch (error: any) {
+          console.log('Could not fetch attendant permissions from API, using response as-is:', error.message);
+        }
+      }
+
+      if (attendant?.status === 'inactive') {
+        return res.status(401).json({
+          error: "Account is inactive. Contact administrator."
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Login successful",
+        attendant: {
+          _id: attendant._id,
+          username: attendant.username,
+          uniqueDigits: attendant.uniqueDigits,
+          shopId: attendant?.shopId?._id || attendant?.shopId,
+          shopname: attendant?.shopId?.name,
+          adminId: attendant.adminId,
+          permissions: attendant.permissions || [],
+          status: attendant?.status || 'active'
+        },
+        shopData: attendant?.shopId,
+        token: loginResponse.token
+      });
+
+    } catch (error: any) {
+      console.error('Attendant PIN login error:', error);
+
+      if (error.status === 401) {
+        res.status(401).json({
+          error: "Invalid PIN"
+        });
+      } else {
+        res.status(500).json({
+          error: "Authentication service unavailable"
+        });
+      }
+    }
+  });
+
   // Attendant logout endpoint
   app.post("/api/auth/attendant/logout", async (req: Request, res: Response) => {
     try {
