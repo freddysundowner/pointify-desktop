@@ -80,7 +80,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
         }
 
         return prev.map(item =>
-          item.id === product.id
+          item.id === product._id || item.id === product.id
             ? {
                 ...item,
                 quantity: item.quantity + 1,
