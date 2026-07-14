@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Delete } from 'lucide-react';
+import { Delete } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 
-const PIN_LENGTH = 5;
+const PIN_LENGTH = 6;
 
 interface RestaurantPinLoginProps {
   onUsePasswordInstead: () => void;
@@ -71,26 +71,14 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
       style={{
         minHeight: '100dvh',
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         background: 'linear-gradient(160deg,#7c3aed 0%,#9333ea 40%,#a855f7 100%)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        padding: '24px',
       }}
     >
-      <div style={{ padding: '56px 20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-        <button
-          onClick={() => setLocation('/')}
-          style={{ position: 'absolute', top: 56, left: 20, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
-        >
-          <ArrowLeft style={{ width: 18, height: 18, color: 'white' }} />
-        </button>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'white', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}>
-          Staff Number
-        </h1>
-        <p style={{ margin: '6px 0 0', fontSize: 14, color: 'rgba(255,255,255,0.7)', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}>
-          Enter your staff number to sign in
-        </p>
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32, width: '100%', maxWidth: 320 }}>
+        <div style={{ display: 'flex', gap: 12 }}>
           {Array.from({ length: PIN_LENGTH }).map((_, i) => (
             <div
               key={i}
@@ -105,10 +93,8 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
             />
           ))}
         </div>
-      </div>
 
-      <div style={{ flex: 1, background: 'white', borderRadius: '28px 28px 0 0', padding: '28px 24px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, maxWidth: 320, margin: '0 auto', width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, width: '100%' }}>
           {keys.map((key, i) => {
             if (key === '') return <div key={i} />;
             if (key === 'back') {
@@ -117,9 +103,9 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
                   key={i}
                   onClick={handleBackspace}
                   disabled={loginMutation.isPending}
-                  style={{ height: 68, borderRadius: 18, border: 'none', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+                  style={{ height: 72, borderRadius: 20, border: 'none', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <Delete style={{ width: 22, height: 22, color: '#6b7280' }} />
+                  <Delete style={{ width: 22, height: 22, color: 'white' }} />
                 </button>
               );
             }
@@ -128,7 +114,7 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
                 key={i}
                 onClick={() => handleDigit(key)}
                 disabled={loginMutation.isPending}
-                style={{ height: 68, borderRadius: 18, border: 'none', background: '#f9fafb', fontSize: 26, fontWeight: 700, color: '#111827', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}
+                style={{ height: 72, borderRadius: 20, border: 'none', background: 'rgba(255,255,255,0.95)', fontSize: 28, fontWeight: 700, color: '#111827', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}
               >
                 {key}
               </button>
@@ -136,16 +122,16 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
           })}
         </div>
 
-        {loginMutation.isPending && (
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#9333ea', margin: 0 }}>Signing in…</p>
+        {loginMutation.isPending ? (
+          <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0 }}>Signing in…</p>
+        ) : (
+          <button
+            onClick={onUsePasswordInstead}
+            style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: 0, background: 'none', border: 'none', cursor: 'pointer', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}
+          >
+            Trouble signing in? Use PIN + password instead
+          </button>
         )}
-
-        <button
-          onClick={onUsePasswordInstead}
-          style={{ textAlign: 'center', fontSize: 13, color: '#9ca3af', margin: '4px 0 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}
-        >
-          Trouble signing in? Use PIN + password instead
-        </button>
       </div>
     </div>
   );
