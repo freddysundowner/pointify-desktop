@@ -355,7 +355,18 @@ export function registerProductRoutes(app: Express) {
 
         res.json({ url: imageUrl, product: data });
       } catch (error) {
-        console.error("Product image upload failed:", error);
+        // Firebase/GCS errors carry the useful detail in .message/.code/.errors,
+        // not in the error object's own enumerable props — log those explicitly
+        // or a bare console.error(error) prints an unhelpful [Object] / stack-only line.
+        const e = error as any;
+        console.error("Product image upload failed:", {
+          message: e?.message,
+          code: e?.code,
+          errors: e?.errors,
+          responseBody: e?.responseBody,
+          status: e?.status,
+          stack: e?.stack,
+        });
         const status = (error as any).status || 500;
         const responseBody = (error as any).responseBody;
 
