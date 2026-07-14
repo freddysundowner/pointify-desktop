@@ -1207,7 +1207,6 @@ export default function ProductGrid({
       totaltax: parseFloat(totals.tax.toString()),
       orderId: orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
-      ready_date: readyDate || "",
       batchTrack: shouldTrackBatches,
       allownegativeselling: false,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
@@ -1267,14 +1266,11 @@ export default function ProductGrid({
   };
   handleCompletePaymentRef.current = handleCompletePayment;
 
-  const isLaundryShop = (shopData?.shopCategoryId?.name || '').toLowerCase().includes('laundry');
   const [mainCustomerSearch, setMainCustomerSearch] = useState('');
   const [showMainCustomerDropdown, setShowMainCustomerDropdown] = useState(false);
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
   const [showHoldAskCustomerDialog, setShowHoldAskCustomerDialog] = useState(false);
-  const [showHoldReadyDateDialog, setShowHoldReadyDateDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
-  const [readyDate, setReadyDate] = useState('');
   const [isHoldProcessing, setIsHoldProcessing] = useState(false);
   const [showHoldSuccessDialog, setShowHoldSuccessDialog] = useState(false);
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
@@ -1408,22 +1404,12 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
       setShowHoldAskCustomerDialog(true);
       return;
     }
-    // For laundry shops, always show ready date dialog even when customer is pre-selected
-    if (isLaundryShop) {
-      setShowHoldReadyDateDialog(true);
-      return;
-    }
     await processTransaction(true);
   };
 
   // User answered "No" to attaching a customer - proceed without one.
   const handleHoldWithoutCustomer = async () => {
     setShowHoldAskCustomerDialog(false);
-    // Laundry shops still need a ready date regardless of customer choice.
-    if (isLaundryShop) {
-      setShowHoldReadyDateDialog(true);
-      return;
-    }
     setIsHoldProcessing(true);
     await processTransaction(true);
     setIsHoldProcessing(false);
@@ -3580,7 +3566,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
       </Dialog>
 
       {/* Hold Transaction - Customer Required Dialog */}
-      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); setReadyDate(""); } }}>
+      <Dialog open={showHoldCustomerDialog} onOpenChange={(open) => { if (!open) { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
@@ -3674,113 +3660,16 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               )}
             </div>
 
-            {/* Ready Date - Laundry shops only */}
-            {isLaundryShop && (
-              <div className="mt-3">
-                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center space-x-1">
-                  <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                  <span>Ready Date</span>
-                </label>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    type="date"
-                    value={readyDate ? readyDate.split('T')[0] : ''}
-                    onChange={(e) => {
-                      const datePart = e.target.value;
-                      const timePart = readyDate ? (readyDate.split('T')[1] || '00:00') : '00:00';
-                      setReadyDate(datePart ? `${datePart}T${timePart}` : '');
-                    }}
-                    className="text-sm flex-1"
-                    min={new Date().toISOString().slice(0, 10)}
-                  />
-                  <Input
-                    type="time"
-                    value={readyDate ? (readyDate.split('T')[1] || '00:00') : ''}
-                    onChange={(e) => {
-                      const datePart = readyDate ? readyDate.split('T')[0] : new Date().toISOString().slice(0, 10);
-                      setReadyDate(`${datePart}T${e.target.value}`);
-                    }}
-                    className="text-sm w-28"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); setReadyDate(""); }}>
+            <Button variant="outline" onClick={() => { setShowHoldCustomerDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}>
               Cancel
             </Button>
             <Button
               onClick={handleConfirmHoldWithCustomer}
               className="bg-orange-500 hover:bg-orange-600 text-white"
               disabled={!selectedCustomerId || isHoldProcessing}
-            >
-              {isHoldProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : "Hold Sale"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Hold Ready Date Dialog - shown when customer already selected in laundry shop */}
-      <Dialog open={showHoldReadyDateDialog} onOpenChange={(open) => { if (!open) { setShowHoldReadyDateDialog(false); setReadyDate(""); } }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-orange-500" />
-              <span>Set Ready Date</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-gray-600">
-              When will this order be ready for pickup?
-            </p>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 flex items-center space-x-1">
-                <Calendar className="h-3.5 w-3.5 text-gray-500" />
-                <span>Ready Date</span>
-              </label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  type="date"
-                  value={readyDate ? readyDate.split('T')[0] : ''}
-                  onChange={(e) => {
-                    const datePart = e.target.value;
-                    const timePart = readyDate ? (readyDate.split('T')[1] || '00:00') : '00:00';
-                    setReadyDate(datePart ? `${datePart}T${timePart}` : '');
-                  }}
-                  className="text-sm flex-1"
-                  min={new Date().toISOString().slice(0, 10)}
-                />
-                <Input
-                  type="time"
-                  value={readyDate ? (readyDate.split('T')[1] || '00:00') : ''}
-                  onChange={(e) => {
-                    const datePart = readyDate ? readyDate.split('T')[0] : new Date().toISOString().slice(0, 10);
-                    setReadyDate(`${datePart}T${e.target.value}`);
-                  }}
-                  className="text-sm w-28"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowHoldReadyDateDialog(false); setReadyDate(""); }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={async () => {
-                setIsHoldProcessing(true);
-                await processTransaction(true);
-                setIsHoldProcessing(false);
-                setShowHoldReadyDateDialog(false);
-              }}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              disabled={isHoldProcessing}
             >
               {isHoldProcessing ? (
                 <>
@@ -3806,7 +3695,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
             </div>
             <Button
               className="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={() => { setShowHoldSuccessDialog(false); setReadyDate(""); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}
+              onClick={() => { setShowHoldSuccessDialog(false); setSelectedCustomerId(""); setHoldCustomerSearch(""); }}
             >
               Done
             </Button>
