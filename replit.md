@@ -25,6 +25,10 @@ The app uses a single `start.sh` script that starts both services:
 - Express backend: `cd server && npm run dev` → port 1999
 - Vite frontend: `cd client && npm run dev` → port 5000
 
+On Replit, these are wired up as two workflows: `Server` (`cd server && PORT=3000 npm run dev`) and `Start application` (`cd client && npm run dev`, port 5000, the one shown in the preview).
+
+Client dependency install currently requires `npm install --legacy-peer-deps` in `client/` due to a `jspdf`/`jspdf-autotable` peer conflict (tracked as a follow-up task). `server/` installs normally with `npm install`.
+
 Frontend proxies `/api` requests to `http://localhost:1999`.
 
 ## Key Configuration
