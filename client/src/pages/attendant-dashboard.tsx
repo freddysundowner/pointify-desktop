@@ -1,10 +1,10 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
-  User, 
   Store, 
   Clock, 
   LogOut, 
@@ -13,10 +13,8 @@ import {
   Users, 
   BarChart3,
   DollarSign,
-  Settings,
   Truck,
   Receipt,
-  FileText,
   TrendingUp,
   Wallet,
   UserCheck,
@@ -25,7 +23,8 @@ import {
   RefreshCw,
   Lock,
   AlertTriangle,
-  ChefHat
+  ChefHat,
+  ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
@@ -47,7 +46,6 @@ function AttendantDashboardContent() {
   const { attendant, isAuthenticated, isLoading, isRefreshing, logout, refreshAttendantData } = useAttendantAuth();
   const { hasPermission, hasAttendantPermission } = usePermissions();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string>('Loading...');
   const [isRestaurantShop, setIsRestaurantShop] = useState<boolean>(false);
 
@@ -366,205 +364,156 @@ function AttendantDashboardContent() {
     }
   ];
 
-  // Filter groups based on permissions - only show groups that have at least one enabled subAction
-  const availableGroups = actionGroups.filter(group => {
-    // Check if at least one subAction is enabled
-    const hasEnabledSubAction = group.subActions.some(subAction => subAction.enabled);
-    return hasEnabledSubAction;
-  });
+  // Active groups: only the sub-actions the attendant is actually permitted to use
+  const activeGroups = actionGroups
+    .map(group => ({ ...group, subActions: group.subActions.filter(sub => sub.enabled) }))
+    .filter(group => group.subActions.length > 0);
+
+  // Locked sub-actions across all groups, shown as a compact de-emphasized strip
+  const lockedGroups = actionGroups
+    .map(group => ({ ...group, subActions: group.subActions.filter(sub => !sub.enabled) }))
+    .filter(group => group.subActions.length > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <Store className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">Staff Dashboard</h1>
-                <p className="text-sm text-gray-500">{shopName}</p>
-              </div>
+      <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary text-primary-foreground p-2 rounded-xl shadow-sm">
+            <Store className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-slate-900 leading-tight">{shopName}</h1>
+            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+              <span className="flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" />
+                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                User: <span className="font-medium text-slate-700">{attendant?.username || 'Unknown User'}</span>
+              </span>
+              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 font-mono tracking-wider ml-1">
+                {attendant?.uniqueDigits || 'N/A'}
+              </Badge>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{attendant?.username || 'Unknown User'}</p>
-                <p className="text-xs text-gray-500">PIN: {attendant?.uniqueDigits || 'N/A'}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-
           </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="hidden sm:flex gap-2 h-9 border-slate-200 hover:bg-slate-100 text-slate-700"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="sm:hidden h-9 w-9 border-slate-200 text-slate-700"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button variant="default" size="sm" onClick={handleLogout} className="hidden sm:flex gap-2 h-9">
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+          <Button variant="default" size="icon" onClick={handleLogout} className="sm:hidden h-9 w-9">
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+      </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome back, {attendant?.username || 'User'}!
-          </h2>
-          <p className="text-gray-600">
-            {currentTime.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })} • {currentTime.toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </p>
-        </div>
+      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col">
 
-        {/* Feature Groups - Expandable cards */}
-        <div className="space-y-6 mb-8">
-          {availableGroups.map((group) => (
-            <div key={group.id} className="bg-white rounded-lg shadow-sm border overflow-hidden">
-              {/* Group Header */}
-              <div
-                className={`p-6 cursor-pointer transition-all duration-200 ${
-                  group.enabled ? 'hover:bg-gray-50' : 'bg-gray-50 opacity-60'
-                }`}
-                onClick={() => {
-                  if (group.enabled) {
-                    setExpandedGroup(expandedGroup === group.id ? null : group.id);
-                  }
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
-                      group.enabled ? group.color : 'bg-gray-300'
-                    }`}>
-                      {group.enabled ? (
-                        <group.icon className="h-6 w-6 text-white" />
-                      ) : (
-                        <Lock className="h-6 w-6 text-gray-500" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className={`text-lg font-semibold ${
-                        group.enabled ? 'text-gray-900' : 'text-gray-500'
-                      }`}>
-                        {group.title}
-                      </h3>
-                      <p className={`text-sm ${
-                        group.enabled ? 'text-gray-600' : 'text-gray-400'
-                      }`}>
-                        {group.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4">
-                    {group.enabled && (
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                          {group.subActions.filter(sub => sub.enabled).length} of {group.subActions.length} available
-                        </p>
-                      </div>
-                    )}
-                    
-                    {group.enabled ? (
-                      <div className={`transition-transform duration-200 ${
-                        expandedGroup === group.id ? 'rotate-180' : ''
-                      }`}>
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <span className="inline-block bg-red-50 text-red-600 text-xs px-3 py-1 rounded-full">
-                        No Access
-                      </span>
-                    )}
-                  </div>
-                </div>
+        {/* Active Tiles */}
+        <div className="space-y-8 flex-1">
+          {activeGroups.map((group) => (
+            <section key={`active-${group.id}`} className="space-y-4">
+              <div className="flex items-center gap-2.5 px-1">
+                <div className={`w-2.5 h-2.5 rounded-full ${group.color} shadow-sm`} />
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">{group.title}</h2>
               </div>
-
-              {/* Expandable Sub-actions */}
-              {expandedGroup === group.id && group.enabled && (
-                <div className="border-t bg-gray-50 p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {group.subActions.filter(subAction => subAction.enabled).map((subAction, subIndex) => (
-                      <div
-                        key={subIndex}
-                        className="bg-white rounded-lg border p-4 transition-all duration-200 cursor-pointer hover:shadow-md hover:border-blue-300"
-                        onClick={() => setLocation(subAction.route)}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${group.color}`}>
-                            <subAction.icon className="h-5 w-5 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm text-gray-900">
-                              {subAction.title}
-                            </h4>
-                            <p className="text-xs mt-1 text-gray-600">
-                              {subAction.description}
-                            </p>
-                          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {group.subActions.map((action) => (
+                  <Card
+                    key={action.title}
+                    className="group cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all duration-300 bg-white border-slate-200 overflow-hidden relative active:scale-[0.98] shadow-sm"
+                    onClick={() => setLocation(action.route)}
+                  >
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${group.color} transition-all duration-300 group-hover:w-2`} />
+                    <CardContent className="p-6 flex flex-col h-full gap-5 pl-7">
+                      <div className="flex justify-between items-start">
+                        <div className="p-3.5 rounded-2xl bg-slate-50 text-slate-700 group-hover:bg-primary/10 group-hover:text-primary transition-colors shadow-sm ring-1 ring-slate-100">
+                          <action.icon className="w-7 h-7" strokeWidth={1.5} />
+                        </div>
+                        <div className="bg-slate-50 p-1.5 rounded-full text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
+                          <ChevronRight className="w-4 h-4" />
                         </div>
                       </div>
-                    ))}
+                      <div className="space-y-1.5 mt-auto">
+                        <h3 className="font-semibold text-slate-900 text-lg leading-tight group-hover:text-primary transition-colors">{action.title}</h3>
+                        <p className="text-sm text-slate-500 line-clamp-2 leading-snug">
+                          {action.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {activeGroups.length === 0 && (
+            <Card className="mb-8">
+              <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                <Lock className="w-12 h-12 text-slate-300 mb-4" />
+                <h2 className="text-lg font-semibold text-slate-900">No Features Enabled</h2>
+                <p className="text-slate-500 max-w-sm mt-2">You don't have access to any active features. Contact your administrator to request access.</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Locked Section */}
+        {lockedGroups.length > 0 && (
+          <>
+            <div className="mt-16 mb-6">
+              <div className="flex items-center gap-4">
+                <Separator className="flex-1 bg-slate-200" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 bg-slate-50/50 px-2">
+                  <Lock className="w-3.5 h-3.5" />
+                  Restricted Access
+                </span>
+                <Separator className="flex-1 bg-slate-200" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2.5 pb-8 justify-center sm:justify-start">
+              {lockedGroups.flatMap((group) =>
+                group.subActions.map((action) => (
+                  <div
+                    key={`locked-${group.id}-${action.title}`}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white/40 opacity-[0.65] hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-not-allowed group/locked shadow-sm"
+                    title={`Locked: ${action.title} (${group.title})`}
+                  >
+                    <action.icon className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-xs font-medium text-slate-600 select-none">{action.title}</span>
+                    <Lock className="w-3 h-3 text-slate-300 ml-0.5 group-hover/locked:text-red-400 transition-colors" />
                   </div>
-                </div>
+                ))
               )}
             </div>
-          ))}
-        </div>
-
-        {/* Permission Status Summary */}
-        <div className="bg-blue-50 rounded-lg p-4 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-blue-900">Permission Status</h3>
-              <p className="text-sm text-blue-700">
-                You have access to {availableGroups.filter(g => g.enabled).length} of {availableGroups.length} feature groups
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">
-                {Math.round((availableGroups.filter(g => g.enabled).length / availableGroups.length) * 100)}%
-              </div>
-              <p className="text-xs text-blue-600">Access Level</p>
-            </div>
-          </div>
-        </div>
-
-        {availableGroups.filter(group => group.enabled).length === 0 && (
-          <Card className="mb-8">
-            <CardContent className="text-center py-8">
-              <Settings className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">No permissions assigned</p>
-              <p className="text-sm text-gray-400">Contact your administrator to request access to system features</p>
-            </CardContent>
-          </Card>
+          </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
