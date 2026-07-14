@@ -13,10 +13,11 @@ function BackBtn({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-0.5 text-primary hover:text-primary/70 active:scale-95 transition-all shrink-0 py-1 pl-0 pr-2 -ml-1 rounded-lg"
+      aria-label="Back"
+      className="flex items-center gap-1.5 h-10 px-3 -ml-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/15 active:scale-95 transition-all shrink-0"
     >
-      <ArrowLeft className="h-5 w-5" strokeWidth={2.5} />
-      <span className="text-sm font-semibold">Back</span>
+      <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+      <span className="text-sm font-semibold hidden sm:inline">Back</span>
     </button>
   );
 }
