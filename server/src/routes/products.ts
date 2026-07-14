@@ -344,7 +344,10 @@ export function registerProductRoutes(app: Express) {
           file.mimetype,
         );
 
-        const data = await makePointifyRequest(`/product/${id}`, {
+        // Matches the legacy mobile app's contract: a dedicated endpoint for
+        // updating just the product's images, distinct from the general
+        // PUT /product/:id update (which requires the full product payload).
+        const data = await makePointifyRequest(`/product/images/${id}`, {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify({ images: [imageUrl] }),
