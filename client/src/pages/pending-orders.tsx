@@ -123,7 +123,6 @@ export default function PendingOrders() {
     },
     enabled: !!shopId,
     staleTime: 0,
-    refetchInterval: 10000,
   });
 
   const orders = ((data?.data || []) as any[]).map((sale) => {
