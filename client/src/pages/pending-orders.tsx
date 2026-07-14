@@ -39,6 +39,20 @@ function useElapsedMinutes(createdAt: string) {
   return Math.max(0, Math.floor((Date.now() - created) / 60000));
 }
 
+function formatElapsed(minutes: number, createdAt: string) {
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    const remMinutes = minutes % 60;
+    return remMinutes > 0 ? `${hours}h ${remMinutes}m ago` : `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  // Beyond a week, a relative count stops being useful — show the actual date.
+  return new Date(createdAt).toLocaleDateString();
+}
+
 function ElapsedBadge({ createdAt }: { createdAt: string }) {
   const minutes = useElapsedMinutes(createdAt);
   const urgent = minutes >= 15;
@@ -54,7 +68,7 @@ function ElapsedBadge({ createdAt }: { createdAt: string }) {
       }`}
     >
       {urgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-      {minutes < 1 ? "Just now" : `${minutes}m ago`}
+      {formatElapsed(minutes, createdAt)}
     </span>
   );
 }
