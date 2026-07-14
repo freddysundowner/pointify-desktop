@@ -355,6 +355,7 @@ export function registerProductRoutes(app: Express) {
 
         res.json({ url: imageUrl, product: data });
       } catch (error) {
+        console.error("Product image upload failed:", error);
         const status = (error as any).status || 500;
         const responseBody = (error as any).responseBody;
 
