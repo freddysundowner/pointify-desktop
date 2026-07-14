@@ -41,6 +41,7 @@ const ProductForm = lazy(() => import("@/features/inventory/product-form"));
 const ProductHistory = lazy(() => import("@/features/inventory/product-history"));
 const AdjustmentHistoryPage = lazy(() => import("@/pages/adjustment-history"));
 const SalesList = lazy(() => import("@/features/sales/sales-list"));
+const PendingOrders = lazy(() => import("@/pages/pending-orders"));
 const ReturnsList = lazy(() => import("@/features/sales/returns-list"));
 const ReceiptView = lazy(() => import("@/features/sales/receipt-view"));
 const EditSale = lazy(() => import("@/features/sales/edit-sale"));
@@ -268,6 +269,13 @@ function AppContent() {
           </AttendantRoute>
         )}
       </Route>
+      <Route path="/attendant/pending-orders">
+        {() => (
+          <AttendantRoute>
+            <PendingOrders />
+          </AttendantRoute>
+        )}
+      </Route>
       <Route path="/attendant/sales/return/:id">
         {() => (
           <AttendantRoute>
@@ -487,6 +495,7 @@ function AppContent() {
             <Route path="/dashboard" component={BusinessDashboard} />
             <Route path="/pos" component={POS} />
             <Route path="/sales" component={SalesList} />
+            <Route path="/pending-orders" component={PendingOrders} />
             <Route path="/returns" component={ReturnsList} />
             <Route path="/orders" component={OrdersPage} />
             <Route path="/receipt/:id" component={ReceiptView} />
@@ -598,6 +607,13 @@ function AppContent() {
             {() => (
               <AttendantRoute>
                 <SalesList />
+              </AttendantRoute>
+            )}
+          </Route>
+          <Route path="/attendant/pending-orders">
+            {() => (
+              <AttendantRoute>
+                <PendingOrders />
               </AttendantRoute>
             )}
           </Route>

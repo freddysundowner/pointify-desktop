@@ -24,7 +24,8 @@ import {
   Archive,
   RefreshCw,
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  ChefHat
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
@@ -48,6 +49,7 @@ function AttendantDashboardContent() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [shopName, setShopName] = useState<string>('Loading...');
+  const [isRestaurantShop, setIsRestaurantShop] = useState<boolean>(false);
 
 
 
@@ -91,7 +93,8 @@ function AttendantDashboardContent() {
           if (response.ok) {
             const shopData = await response.json();
             setShopName(shopData.name || 'Unknown Shop');
-            
+            setIsRestaurantShop(!!shopData.isRestaurant);
+
             // Store complete shop data with subscription info for permission checks
             localStorage.setItem('currentShopData', JSON.stringify(shopData));
             console.log('Cached shop subscription data for attendant permissions:', {
@@ -216,6 +219,13 @@ function AttendantDashboardContent() {
           description: 'View sales records and receipts',
           enabled: hasAttendantPermission('sales', 'view_sales'),
           route: '/attendant/sales'
+        },
+        {
+          title: 'Pending Orders',
+          icon: ChefHat,
+          description: 'Take payment for orders sent from the kitchen',
+          enabled: isRestaurantShop && hasAttendantPermission('pos', 'cashier'),
+          route: '/attendant/pending-orders'
         }
       ]
     },

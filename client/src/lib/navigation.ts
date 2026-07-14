@@ -27,7 +27,7 @@ export const navItems: NavItem[] = [
 ];
 
 // Dynamic menu groups that adapt based on user type
-export const getMenuGroups = (isAttendant: boolean): MenuGroup[] => [
+export const getMenuGroups = (isAttendant: boolean, isRestaurant: boolean = false): MenuGroup[] => [
   {
     key: "transactions",
     label: "Sales & Orders",
@@ -36,6 +36,7 @@ export const getMenuGroups = (isAttendant: boolean): MenuGroup[] => [
       { href: getNavigationRoute('sales', isAttendant), label: "Sales" },
       { href: "/returns", label: "Returns" },
       { href: "/orders", label: "Orders" },
+      ...(isRestaurant ? [{ href: isAttendant ? "/attendant/pending-orders" : "/pending-orders", label: "Pending Orders" }] : []),
     ]
   },
   {

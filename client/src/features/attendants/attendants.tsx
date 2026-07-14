@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { useSelector } from 'react-redux';
@@ -111,6 +112,18 @@ export default function Attendants() {
     },
     enabled: isPermissionsDialogOpen,
   });
+
+  // Restaurant Mode gates the "Cashier" (pending orders) permission — only
+  // relevant once the attendant's shop has been switched into that mode.
+  const editingAttendantShopId = selectedAttendant
+    ? (typeof selectedAttendant.shopId === 'object' ? selectedAttendant.shopId._id : selectedAttendant.shopId)
+    : undefined;
+  const { data: editingAttendantShop } = useQuery({
+    queryKey: ['/api/shop', editingAttendantShopId],
+    queryFn: () => fetch(`/api/shop/${editingAttendantShopId}`).then(res => res.ok ? res.json() : null),
+    enabled: isPermissionsDialogOpen && !!editingAttendantShopId,
+  });
+  const isRestaurantShop = !!editingAttendantShop?.isRestaurant;
 
   // Permission editing functions
   const initializeEditingPermissions = (attendant: Attendant) => {
@@ -886,6 +899,23 @@ export default function Attendants() {
                       );
                     })}
                   </div>
+
+                  {isRestaurantShop && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2.5 bg-purple-50">
+                        <div className="pr-3">
+                          <p className="text-sm font-medium text-purple-900">Cashier (Pending Orders)</p>
+                          <p className="text-xs text-purple-700">
+                            Lets this attendant view and complete kitchen orders waiting for payment.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={hasEditingPermission('pos', 'cashier')}
+                          onCheckedChange={(checked) => toggleEditingPermission('pos', 'cashier', checked)}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

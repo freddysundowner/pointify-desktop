@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
+import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { formatDate, formatTime } from "@/utils";
 
 interface DashboardLayoutProps {
@@ -34,6 +35,8 @@ export default function DashboardLayout({ children, title, isDashboard = false }
   });
   const { isExpired: isSubscriptionExpired } = useSubscriptionStatus();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { shopData } = usePrimaryShop();
+  const isRestaurantShop = !!shopData?.isRestaurant;
 
   // Check if current route is an attendant route
   const isAttendantRoute = location.startsWith('/attendant/');
@@ -165,7 +168,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
                     );
                   })}
 
-                  {getMenuGroups(isAttendantRoute).map((group) => {
+                  {getMenuGroups(isAttendantRoute, isRestaurantShop).map((group) => {
                 const isGroupActive = group.key === 'accounts' ? true : group.items.some(item => location === item.href);
                 return (
                 <div key={group.key} className="pt-2">
@@ -327,7 +330,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
               })}
 
                   <div className="pt-3 space-y-1">
-                    {getMenuGroups(isAttendantRoute).map((group) => {
+                    {getMenuGroups(isAttendantRoute, isRestaurantShop).map((group) => {
                       const isExpanded = expandedMenus[group.key];
                       return (
                         <div key={group.key}>
