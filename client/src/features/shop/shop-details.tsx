@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "wouter";
+import type { RootState } from "@/store";
+import { setSelectedShopData } from "@/store/shopSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +43,8 @@ export default function ShopDetails() {
   const { id } = useParams();
   const { admin } = useAuth();
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  const reduxSelectedShopId = useSelector((state: RootState) => state.shop.selectedShopId);
   
   // Debug admin data to check primary shop status
   useEffect(() => {
@@ -199,6 +204,15 @@ export default function ShopDetails() {
       // instead of a generic toast so the user knows whether M-Pesa linking
       // actually succeeded and what the validation setting is now.
       const updated = data && !Array.isArray(data) ? data : null;
+
+      // usePrimaryShop() (used by POS, dashboard sidebar, etc.) reads shop
+      // data from this Redux snapshot rather than react-query, so without
+      // this the saved changes (e.g. Restaurant Mode) wouldn't show up
+      // anywhere else in the app until the next login/shop switch.
+      if (updated && (updated._id === id || updated._id === reduxSelectedShopId)) {
+        dispatch(setSelectedShopData(updated));
+      }
+
       const linkError = updated?.sunpay_link_error;
       const validationOn = updated?.mpesa_require_validation !== false;
       const validationLabel = `M-Pesa validation is ${validationOn ? "ON" : "OFF"}.`;
