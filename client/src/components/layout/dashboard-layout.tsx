@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NetworkStatusBar } from "@/components/network-status-bar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell } from "lucide-react";
+import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell, Lock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
+import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
 import { useNavigationRoute } from "@/lib/navigation-utils";
@@ -21,6 +22,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, title, isDashboard = false }: DashboardLayoutProps) {
   const [location, setLocation] = useLocation();
   const { admin, logout } = useAuth();
+  const { lockScreen } = useAttendantAuth();
   const { toast } = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
@@ -513,7 +515,14 @@ export default function DashboardLayout({ children, title, isDashboard = false }
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuSeparator />
+                  {isRestaurantShop && (
+                    <>
+                      <DropdownMenuItem onClick={lockScreen}>
+                        <Lock className="w-4 h-4 mr-2" /> Lock Screen
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
                     <LogOut className="w-4 h-4 mr-2" /> Sign Out
                   </DropdownMenuItem>

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing } from '@/store/slices/attendantSlice';
+import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing, setLocked } from '@/store/slices/attendantSlice';
 import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
 
 interface AttendantData {
@@ -21,9 +21,13 @@ interface AttendantAuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isRefreshing: boolean;
+  isLocked: boolean;
+  shopData: any;
   login: (attendantData: AttendantData, token: string,shopData: any) => void;
   logout: () => void;
   refreshAttendantData: () => Promise<void>;
+  lockScreen: () => void;
+  unlockScreen: (password: string) => Promise<void>;
 }
 
 const AttendantAuthContext = createContext<AttendantAuthContextType | undefined>(undefined);
@@ -42,7 +46,7 @@ interface AttendantAuthProviderProps {
 
 export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) => {
   const dispatch = useAppDispatch();
-  const { attendant, token, isAuthenticated, isLoading, isRefreshing } = useAppSelector(state => state.attendant);
+  const { attendant, token, isAuthenticated, isLoading, isRefreshing, isLocked, shopData } = useAppSelector(state => state.attendant);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -70,6 +74,11 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
         };
         dispatch(setCurrency(storedShopData?.currency || 'KES'));
         dispatch(setAttendant({ attendant: attendantData, token: storedToken, shopData: JSON.parse(storedShopData || '{}') }));
+        // Restore a previously-locked screen so refreshing the page (or the
+        // OS suspending/resuming the tablet) doesn't silently drop the lock.
+        if (localStorage.getItem('attendantLocked') === 'true') {
+          dispatch(setLocked(true));
+        }
         setLocation('/');
       }
     } catch (error) {
@@ -85,6 +94,7 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     localStorage.setItem('attendantData', JSON.stringify(attendantData));
     localStorage.setItem('shopData', JSON.stringify(shopData));
     localStorage.setItem('attendantToken', authToken);
+    localStorage.removeItem('attendantLocked');
   };
 
   const logout = () => {
@@ -92,7 +102,39 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     localStorage.removeItem('attendantData');
     localStorage.removeItem('attendantToken');
     localStorage.removeItem('shopData');
+    localStorage.removeItem('attendantLocked');
     setLocation('/login-selection');
+  };
+
+  // Lock the screen in place — the attendant stays "logged in" (session/cart
+  // state is untouched) but the UI is covered until their own PIN + password
+  // are re-entered. Restaurant-only feature: prevents another staff member
+  // from selling under someone else's account while they're away from the till.
+  const lockScreen = () => {
+    dispatch(setLocked(true));
+    localStorage.setItem('attendantLocked', 'true');
+  };
+
+  const unlockScreen = async (password: string) => {
+    if (!attendant) {
+      throw new Error('No active session to unlock');
+    }
+    const response = await fetch('/api/auth/attendant/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uniqueDigits: attendant.uniqueDigits, password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || 'Incorrect password');
+    }
+    // Only the same attendant's own credentials may unlock their session —
+    // a different valid attendant should log in normally instead.
+    if (data.attendant?._id !== attendant._id) {
+      throw new Error('These credentials belong to a different account');
+    }
+    dispatch(setLocked(false));
+    localStorage.removeItem('attendantLocked');
   };
 
   const refreshAttendantData = async () => {
@@ -143,9 +185,13 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     isAuthenticated,
     isLoading,
     isRefreshing,
+    isLocked,
+    shopData,
     login,
     logout,
     refreshAttendantData,
+    lockScreen,
+    unlockScreen,
   };
 
   return (

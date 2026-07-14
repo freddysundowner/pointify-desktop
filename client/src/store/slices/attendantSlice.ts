@@ -17,6 +17,7 @@ interface AttendantState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isRefreshing: boolean;
+  isLocked: boolean;
   shopData: any,
   currency: string
 }
@@ -27,6 +28,7 @@ const initialState: AttendantState = {
   isAuthenticated: false,
   isLoading: true,
   isRefreshing: false,
+  isLocked: false,
   shopData: null,
   currency: ""
 };
@@ -52,6 +54,7 @@ const attendantSlice = createSlice({
       state.isAuthenticated = false;
       state.isLoading = false;
       state.isRefreshing = false;
+      state.isLocked = false;
       state.currency = ""
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -60,8 +63,11 @@ const attendantSlice = createSlice({
     setRefreshing: (state, action: PayloadAction<boolean>) => {
       state.isRefreshing = action.payload;
     },
+    setLocked: (state, action: PayloadAction<boolean>) => {
+      state.isLocked = action.payload;
+    },
   },
 });
 
-export const { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing } = attendantSlice.actions;
+export const { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing, setLocked } = attendantSlice.actions;
 export default attendantSlice.reducer;

@@ -22,3 +22,4 @@
 - [Active shop resolution in POS](pos-active-shop-resolution.md) — always resolve shop as selectedShopId(Redux)→attendant.shopId→admin fields; never trust admin.primaryShop alone; gate shop query on token||attendantToken.
 - [Product image upload](product-image-upload.md) — images field is `images: string[]` on product (from legacy Dart app); static file mounts must stay OUTSIDE `/api` prefix or response Content-Type gets forced to json.
 - [Cart quantity increment bug](cart-quantity-increment-bug.md) — useCart addToCart found existingItem via `_id||id` but updated via `id` only (usually undefined) — silently no-opped for ALL items, not just services.
+- [Attendant shopData timing gap](attendant-shopdata-timing.md) — attendant.shopData is unpopulated right after login (only merged on refresh); read `shopData` from useAttendantAuth() instead.

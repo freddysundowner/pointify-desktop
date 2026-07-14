@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useSelector } from "react-redux";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 
 import ProductGrid from "./product-grid";
 import ReceiptModal from "./receipt-modal";
@@ -20,7 +20,7 @@ import { NetworkStatusBar } from "@/components/network-status-bar";
 export default function POS() {
   const [, setLocation] = useLocation();
   const { admin } = useAuth();
-  const { attendant } = useAttendantAuth();
+  const { attendant, lockScreen } = useAttendantAuth();
   const { products, refreshProducts } = useProducts();
   const { shopData: primaryShopData } = usePrimaryShop();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
@@ -80,7 +80,7 @@ export default function POS() {
       <NetworkStatusBar />
       <div className="flex flex-1 min-h-0 relative">
       {/* Desktop only — mobile uses the back button inside the POS nav bar */}
-      <div className="absolute top-3 left-4 z-50 hidden lg:block">
+      <div className="absolute top-3 left-4 z-50 hidden lg:flex items-center gap-2">
         <Button
           onClick={handleBackToDashboard}
           variant="outline"
@@ -90,6 +90,17 @@ export default function POS() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
+        {!!primaryShopData?.isRestaurant && (
+          <Button
+            onClick={lockScreen}
+            variant="outline"
+            size="sm"
+            className="bg-white/90 backdrop-blur-sm border-gray-200 hover:bg-white hover:border-gray-300 shadow-lg"
+          >
+            <Lock className="h-4 w-4 mr-2" />
+            Lock
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">

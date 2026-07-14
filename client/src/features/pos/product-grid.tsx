@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -90,7 +90,7 @@ export default function ProductGrid({
   orderId,
   onBack,
 }: ProductGridProps) {
-  const { attendant } = useAttendantAuth();
+  const { attendant, lockScreen } = useAttendantAuth();
   const { admin } = useAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { shopData } = usePrimaryShop();
@@ -1728,6 +1728,15 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
+                {!!shopData?.isRestaurant && (
+                  <button
+                    onClick={lockScreen}
+                    title="Lock screen"
+                    className="w-9 h-9 flex items-center justify-center rounded-full transition-colors bg-white/15 active:bg-white/25"
+                  >
+                    <Lock className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => setShowCategoriesDrawer(true)}
                   title="Browse categories"

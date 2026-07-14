@@ -10,6 +10,7 @@ import { AuthProvider } from "@/features/auth/AuthProvider";
 import { ProductsProvider } from "@/contexts/ProductsContext";
 import { AttendantAuthProvider } from "@/contexts/AttendantAuthContext";
 import { AttendantSessionChecker } from "@/components/AttendantSessionChecker";
+import { AttendantLockScreen } from "@/components/AttendantLockScreen";
 import { useAuth } from "@/features/auth/useAuth";
 
 // Eagerly-loaded helpers — tiny and needed for routing/guards on first paint.
@@ -700,6 +701,7 @@ function App() {
             <TooltipProvider>
               <PermissionsInit>
                 <AttendantSessionChecker />
+                <AttendantLockScreen />
                 <AppContent />
               </PermissionsInit>
               <Toaster />
