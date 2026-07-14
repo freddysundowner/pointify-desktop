@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { saveOfflineCredential, verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
+import RestaurantPinLogin from '@/components/RestaurantPinLogin';
 
 interface AttendantLoginForm {
   uniqueDigits: string;
@@ -23,6 +24,12 @@ function AttendantLoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<AttendantLoginForm>({ uniqueDigits: '', password: '' });
   const isMobile = useIsMobile();
+  // Restaurant Mode flags this browser (see shop-details.tsx) so staff can
+  // sign in with just their unique staff number, no password. `useFallback`
+  // lets someone bail out to the normal PIN+password form if the quick PIN
+  // login isn't working for them.
+  const isRestaurantDevice = !!localStorage.getItem('restaurantDeviceShopId');
+  const [useFallback, setUseFallback] = useState(false);
 
   const loginMutation = useMutation({
     mutationFn: async (data: AttendantLoginForm) => {
@@ -86,6 +93,10 @@ function AttendantLoginContent() {
     loginMutation.mutate(formData);
   };
 
+  if (isRestaurantDevice && !useFallback) {
+    return <RestaurantPinLogin onUsePasswordInstead={() => setUseFallback(true)} />;
+  }
+
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex items-center justify-center p-4">
@@ -130,6 +141,11 @@ function AttendantLoginContent() {
                 </Button>
               </form>
               <div className="mt-6 text-center">
+                {isRestaurantDevice && (
+                  <button type="button" onClick={() => setUseFallback(false)} className="text-xs text-purple-600 hover:text-purple-800 mb-2 underline">
+                    Back to quick staff-number login
+                  </button>
+                )}
                 <p className="text-xs text-gray-500">Need help? Contact your administrator</p>
                 <p className="text-xs text-gray-400 mt-1">PIN: Your 5-digit staff identification number</p>
               </div>
@@ -197,6 +213,11 @@ function AttendantLoginContent() {
             {loginMutation.isPending ? "Signing in…" : "Sign In"}
           </button>
         </form>
+        {isRestaurantDevice && (
+          <button type="button" onClick={() => setUseFallback(false)} style={{ textAlign: "center", fontSize: 13, color: "#9333ea", margin: 0, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>
+            Back to quick staff-number login
+          </button>
+        )}
         <p style={{ textAlign: "center", fontSize: 13, color: "#9ca3af", margin: 0, fontFamily: "-apple-system,BlinkMacSystemFont,sans-serif" }}>
           Need help? Contact your administrator
         </p>

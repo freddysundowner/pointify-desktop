@@ -213,6 +213,18 @@ export default function ShopDetails() {
         dispatch(setSelectedShopData(updated));
       }
 
+      // Restaurant Mode flips this browser into "restaurant device" mode:
+      // the key survives admin logout (it's separate from attendantData/
+      // attendantToken) so the attendant login screen can switch to a
+      // PIN-only keypad instead of the normal PIN+password form.
+      if (updated) {
+        if (updated.isRestaurant) {
+          localStorage.setItem('restaurantDeviceShopId', updated._id);
+        } else if (localStorage.getItem('restaurantDeviceShopId') === updated._id) {
+          localStorage.removeItem('restaurantDeviceShopId');
+        }
+      }
+
       const linkError = updated?.sunpay_link_error;
       const validationOn = updated?.mpesa_require_validation !== false;
       const validationLabel = `M-Pesa validation is ${validationOn ? "ON" : "OFF"}.`;
