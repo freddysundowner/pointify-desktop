@@ -233,10 +233,11 @@ export default function PendingOrders() {
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => setLocation(userType === "attendant" ? "/attendant/dashboard" : "/dashboard")}
-                className="text-slate-300 hover:text-white shrink-0 p-1 -ml-1 rounded-md hover:bg-white/10"
+                className="flex items-center gap-1.5 text-slate-200 hover:text-white shrink-0 h-10 px-3 -ml-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 active:bg-white/15 transition-colors"
                 aria-label="Back"
               >
-                &larr;
+                <span className="text-lg leading-none">&larr;</span>
+                <span className="text-sm font-medium hidden sm:inline">Back</span>
               </button>
               <div className="w-9 h-9 rounded-lg bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
                 <UtensilsCrossed className="h-4 w-4 text-purple-300" />
