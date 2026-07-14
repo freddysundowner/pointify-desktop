@@ -1271,6 +1271,7 @@ export default function ProductGrid({
   const [mainCustomerSearch, setMainCustomerSearch] = useState('');
   const [showMainCustomerDropdown, setShowMainCustomerDropdown] = useState(false);
   const [showHoldCustomerDialog, setShowHoldCustomerDialog] = useState(false);
+  const [showHoldAskCustomerDialog, setShowHoldAskCustomerDialog] = useState(false);
   const [showHoldReadyDateDialog, setShowHoldReadyDateDialog] = useState(false);
   const [holdCustomerSearch, setHoldCustomerSearch] = useState('');
   const [readyDate, setReadyDate] = useState('');
@@ -1404,7 +1405,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
     if (!selectedCustomerId) {
-      setShowHoldCustomerDialog(true);
+      setShowHoldAskCustomerDialog(true);
       return;
     }
     // For laundry shops, always show ready date dialog even when customer is pre-selected
@@ -1413,6 +1414,25 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
       return;
     }
     await processTransaction(true);
+  };
+
+  // User answered "No" to attaching a customer - proceed without one.
+  const handleHoldWithoutCustomer = async () => {
+    setShowHoldAskCustomerDialog(false);
+    // Laundry shops still need a ready date regardless of customer choice.
+    if (isLaundryShop) {
+      setShowHoldReadyDateDialog(true);
+      return;
+    }
+    setIsHoldProcessing(true);
+    await processTransaction(true);
+    setIsHoldProcessing(false);
+  };
+
+  // User answered "Yes" - open the existing customer selection dialog.
+  const handleHoldWithCustomerChoice = () => {
+    setShowHoldAskCustomerDialog(false);
+    setShowHoldCustomerDialog(true);
   };
 
   const handleConfirmHoldWithCustomer = async () => {
@@ -3516,6 +3536,44 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
             </Button>
             <Button onClick={handleDiscountUpdate}>
               Apply Discount
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hold Transaction - Ask whether to attach a customer */}
+      <Dialog open={showHoldAskCustomerDialog} onOpenChange={(open) => { if (!open) setShowHoldAskCustomerDialog(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+              <UserCheck className="h-5 w-5 text-orange-500" />
+              <span>Attach a Customer?</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-gray-600">
+              Do you want to attach a customer to this hold order?
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={handleHoldWithoutCustomer}
+              disabled={isHoldProcessing}
+            >
+              {isHoldProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "No"}
+            </Button>
+            <Button
+              onClick={handleHoldWithCustomerChoice}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              disabled={isHoldProcessing}
+            >
+              Yes
             </Button>
           </DialogFooter>
         </DialogContent>
