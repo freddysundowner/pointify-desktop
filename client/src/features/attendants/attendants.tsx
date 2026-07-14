@@ -421,6 +421,10 @@ export default function Attendants() {
 
     // Add fallback groups for common permission keys if not found in API data
     const fallbackGroups = {
+      pos: {
+        name: 'Point of Sale',
+        actions: ['can_sell', 'discount', 'edit_price', 'set_sale_date', 'can_sell_to_dealer_&_wholesaler', 'cashier']
+      },
       products: {
         name: 'Products',
         actions: ['edit', 'view_adjustment_history', 'adjust_stock']

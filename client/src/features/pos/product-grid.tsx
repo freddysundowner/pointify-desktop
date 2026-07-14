@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
+import { usbPrinter } from "@/lib/usb-printer";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProducts } from "@/contexts/ProductsContext";
@@ -710,7 +711,13 @@ export default function ProductGrid({
       
       // Check if this was a hold transaction - don't show receipt for holds
       const isHoldTransaction = variables.status === "hold" || variables.salesnote === "HOLD TRANSACTION";
-      
+
+      // Restaurant mode: a held order is the "send to kitchen" action. Print
+      // the kitchen ticket (items/qty only, no prices) instead of a receipt.
+      if (isHoldTransaction && shopData?.isRestaurant) {
+        printKitchenOrder(response.sale?.receiptNo || response.sale?._id || "");
+      }
+
       if (!isHoldTransaction) {
         // Only show receipt for regular payments
         const realTransaction: Transaction = {
@@ -1326,6 +1333,73 @@ export default function ProductGrid({
       toast({ title: 'Failed to create customer', variant: 'destructive' });
     },
   });
+
+  // Restaurant mode: print the kitchen order ticket for the current cart.
+  // Items/quantities only — no prices, this goes to the kitchen not the customer.
+  const printKitchenOrder = async (orderNumber: string) => {
+    const attendantName = attendant?.username || admin?.username || 'Staff';
+    const ticket = {
+      shopName: shopData?.name || 'Kitchen',
+      orderNumber: String(orderNumber || Date.now()),
+      date: new Date().toLocaleString('en-US', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      }),
+      customerName: selectedCustomer?.name,
+      attendant: attendantName,
+      note: extraChargeAmount > 0 ? extraChargeLabel : undefined,
+      items: cartItems.map(item => ({ name: item.name, quantity: item.quantity })),
+    };
+
+    try {
+      const statusRes = await fetch('/api/printer/status');
+      const status = statusRes.ok ? await statusRes.json() : null;
+      if (!status?.initialized) return;
+
+      if (status?.config?.type === 'WEBUSB') {
+        if (!usbPrinter.isConnected()) await usbPrinter.reconnect();
+        if (!usbPrinter.isConnected()) {
+          toast({ title: "Kitchen Printer Not Connected", description: "Connect the USB kitchen printer to print orders.", variant: "destructive" });
+          return;
+        }
+        try {
+          await usbPrinter.printKitchenTicket(ticket);
+          toast({ title: "Order Sent to Kitchen", description: `Order #${ticket.orderNumber} printed.` });
+        } catch (usbErr: any) {
+          toast({ title: "Kitchen Print Failed", description: usbErr.message, variant: "destructive" });
+        }
+        return;
+      }
+
+      // BROWSER (or any other configured type without a dedicated kitchen
+      // route): fall back to a plain browser print of the ticket.
+      const html = `<!DOCTYPE html><html><head><title>Kitchen Order</title>
+<style>
+  body{font-family:monospace;font-size:14px;width:280px;margin:0 auto;padding:8px}
+  .center{text-align:center}
+  .bold{font-weight:bold}
+  hr{border:none;border-top:1px dashed #000}
+  .item{font-size:18px;font-weight:bold;margin:6px 0}
+</style></head><body>
+<div class="center bold" style="font-size:18px">KITCHEN ORDER</div>
+<div class="center">${ticket.shopName}</div>
+<hr/>
+<div class="bold" style="font-size:18px">Order #: ${ticket.orderNumber}</div>
+<div>Time: ${ticket.date}</div>
+${ticket.customerName ? `<div>Customer: ${ticket.customerName}</div>` : ''}
+<div>Waiter: ${ticket.attendant}</div>
+<hr/>
+${ticket.items.map(i => `<div class="item">${i.quantity}x ${i.name}</div>`).join('')}
+${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
+</body></html>`;
+      const w = window.open('', '_blank', 'width=400,height=600');
+      if (!w) return;
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => { w.focus(); w.print(); }, 400);
+    } catch (err) {
+      console.error('Kitchen ticket print failed:', err);
+    }
+  };
 
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
@@ -2337,7 +2411,7 @@ export default function ProductGrid({
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button onClick={onClearCart} variant="outline" className="border-red-400 text-red-600 hover:bg-red-50 py-1.5 text-xs font-semibold rounded-lg" disabled={cartItems.length === 0}>Clear</Button>
-                  <Button onClick={handleHoldTransaction} variant="outline" className="border-gray-400 text-gray-700 hover:bg-gray-50 py-1.5 text-xs font-semibold rounded-lg" disabled={cartItems.length === 0}>Hold</Button>
+                  <Button onClick={handleHoldTransaction} variant="outline" className="border-gray-400 text-gray-700 hover:bg-gray-50 py-1.5 text-xs font-semibold rounded-lg" disabled={cartItems.length === 0}>{shopData?.isRestaurant ? "Print Order" : "Hold"}</Button>
                 </div>
               </div>
             </div>
@@ -2442,7 +2516,7 @@ export default function ProductGrid({
                   className="border-gray-400 text-gray-700 hover:bg-gray-50 py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
                   disabled={cartItems.length === 0}
                 >
-                  Hold
+                  {shopData?.isRestaurant ? "Print Order" : "Hold"}
                 </Button>
               </div>
             </div>
@@ -2706,7 +2780,7 @@ export default function ProductGrid({
                       className="border-gray-400 text-gray-700 hover:bg-gray-50 py-1.5 lg:py-3 text-xs lg:text-base font-semibold rounded-lg"
                       disabled={cartItems.length === 0}
                     >
-                      Hold
+                      {shopData?.isRestaurant ? "Print Order" : "Hold"}
                     </Button>
                   </div>
                 </div>

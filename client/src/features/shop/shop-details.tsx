@@ -25,6 +25,7 @@ interface Shop {
   email?: string;
   currency: string;
   allowOnlineSelling: boolean;
+  isRestaurant?: boolean;
   adminId: string;
   createdAt: string;
   updatedAt: string;
@@ -88,6 +89,7 @@ export default function ShopDetails() {
     allowBackup: true,
     warehouse: false,
     production: false,
+    isRestaurant: false,
     // Receipt customization fields
     contact: "",
     paybill_till: "",
@@ -164,6 +166,7 @@ export default function ShopDetails() {
         allowBackup: shop.allowBackup || true,
         warehouse: shop.warehouse || false,
         production: shop.production || false,
+        isRestaurant: shop.isRestaurant || false,
         contact: shop.contact || "",
         paybill_till: shop.paybill_till || "",
         paybill_account: shop.paybill_account || "",
@@ -272,6 +275,7 @@ export default function ShopDetails() {
       allowBackup: formData.allowBackup,
       warehouse: formData.warehouse,
       production: formData.production,
+      isRestaurant: formData.isRestaurant,
       contact: formData.contact,
       paybill_till: formData.paybill_till,
       paybill_account: formData.paybill_account,
@@ -653,6 +657,7 @@ export default function ShopDetails() {
                       { key: "allowOnlineSelling",    label: "Online Selling",   desc: "Enable e-commerce" },
                       { key: "showstockonline",       label: "Show Stock Online", desc: "Display stock levels online" },
                       { key: "showpriceonline",       label: "Show Prices Online", desc: "Display prices on online store" },
+                      { key: "isRestaurant",          label: "Restaurant Mode",   desc: "POS prints kitchen order tickets; adds a cashier queue for pending orders" },
                     ].map(({ key, label, desc }) => (
                       <div key={key} className="flex items-center justify-between py-2.5">
                         <div>

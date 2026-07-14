@@ -3,6 +3,19 @@ const GS  = 0x1D;
 const LF  = 0x0A;
 const WIDTH = 42; // 80mm paper @ 42 chars/line
 
+export interface KitchenTicketPrintData {
+  shopName: string;
+  orderNumber: string;
+  date: string;
+  customerName?: string;
+  attendant?: string;
+  note?: string;
+  items: Array<{
+    name: string;
+    quantity: number;
+  }>;
+}
+
 export interface ReceiptPrintData {
   shopName: string;
   shopAddress?: string;
@@ -248,6 +261,64 @@ class USBThermalPrinter {
 
     // Cut
     cmd(GS, 0x56, 0x42, 0x00);
+
+    await this.write(new Uint8Array(b));
+  }
+
+  // Kitchen order ticket: items + quantities only, no prices/totals — this
+  // goes to the kitchen, not the customer.
+  async printKitchenTicket(data: KitchenTicketPrintData): Promise<void> {
+    const b: number[] = [];
+    const cmd = (...v: number[]) => b.push(...v);
+    const txt = (s: string) => b.push(...this.enc(s));
+    const nl  = () => b.push(LF);
+    const divider = () => { txt('='.repeat(WIDTH)); nl(); };
+
+    cmd(ESC, 0x40); // initialize
+
+    cmd(ESC, 0x61, 0x01); // center
+    cmd(ESC, 0x45, 0x01); // bold on
+    cmd(GS,  0x21, 0x11); // double height + width
+    txt('KITCHEN ORDER'); nl();
+    cmd(GS,  0x21, 0x00);
+    cmd(ESC, 0x45, 0x00);
+    txt(center(data.shopName)); nl();
+    nl();
+
+    cmd(ESC, 0x61, 0x00); // left align
+    divider();
+
+    cmd(ESC, 0x45, 0x01);
+    cmd(GS,  0x21, 0x10); // double height
+    txt(`Order #: ${data.orderNumber}`); nl();
+    cmd(GS,  0x21, 0x00);
+    cmd(ESC, 0x45, 0x00);
+    txt(pad('Time:', data.date)); nl();
+    if (data.customerName) { txt(pad('Customer:', data.customerName)); nl(); }
+    if (data.attendant) { txt(pad('Waiter:', data.attendant)); nl(); }
+
+    divider();
+
+    cmd(ESC, 0x45, 0x01);
+    cmd(GS, 0x21, 0x10); // double height for items — kitchen legibility
+    for (const item of data.items) {
+      const line = `${item.quantity}x  ${item.name}`;
+      const wrapped = wrap(line, WIDTH / 2 - 1);
+      for (const l of wrapped) { txt(l); nl(); }
+    }
+    cmd(GS, 0x21, 0x00);
+    cmd(ESC, 0x45, 0x00);
+
+    divider();
+
+    if (data.note) {
+      txt('Note:'); nl();
+      for (const l of wrap(data.note, WIDTH)) { txt(l); nl(); }
+      divider();
+    }
+
+    nl(); nl(); nl();
+    cmd(GS, 0x56, 0x42, 0x00); // cut
 
     await this.write(new Uint8Array(b));
   }
