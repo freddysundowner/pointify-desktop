@@ -3,12 +3,17 @@ import { registerRoutes } from "./routes.js";
 import { getGlobalApiMode } from "./config.js";
 import "./network-status-handler.js";
 import dotenv from 'dotenv';
-dotenv.config();
-
 import path from "path";
 import fs from "fs";
 import { performDataSync } from "./network-status-handler.js";
+
 const __dirname = path.dirname(process.argv[1]);
+// Resolve .env relative to this script's own location (server/), not
+// process.cwd() — PM2 processes are often started with a cwd one level up
+// (e.g. the repo root), which silently makes dotenv.config() find nothing
+// and every env-gated feature (Firebase, etc.) looks "not configured" even
+// though the .env file is correctly filled in one directory over.
+dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 
 const app = express();
