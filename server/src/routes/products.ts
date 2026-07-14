@@ -2,24 +2,13 @@ import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
+import { uploadProductImageBuffer } from "../firebase.js";
 
-// Where uploaded product images are stored on disk and served from.
-// NOTE: this is local disk storage — fine for now, but on an autoscale
-// deployment the filesystem is not guaranteed to persist across instances/
-// redeploys. See the "product image storage" follow-up task.
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads", "products");
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
+// Product images are uploaded to Firebase Storage (see ../firebase.ts) so
+// they persist reliably regardless of which server instance is running.
+// Files are held in memory only long enough to forward them to Storage.
 const productImageUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname) || ".jpg";
-      const productId = (req.params as any).id || "product";
-      cb(null, `${productId}-${Date.now()}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
@@ -347,7 +336,13 @@ export function registerProductRoutes(app: Express) {
           return res.status(400).json({ error: "No image file uploaded" });
         }
 
-        const imageUrl = `/uploads/products/${file.filename}`;
+        const ext = path.extname(file.originalname) || ".jpg";
+        const filename = `${id}-${Date.now()}${ext}`;
+        const imageUrl = await uploadProductImageBuffer(
+          file.buffer,
+          filename,
+          file.mimetype,
+        );
 
         const data = await makePointifyRequest(`/product/${id}`, {
           method: "PUT",

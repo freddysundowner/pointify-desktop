@@ -29,6 +29,11 @@ On Replit, these are wired up as two workflows: `Server` (`cd server && PORT=300
 
 Client dependency install currently requires `npm install --legacy-peer-deps` in `client/` due to a `jspdf`/`jspdf-autotable` peer conflict (tracked as a follow-up task). `server/` installs normally with `npm install`.
 
+### Product Images
+- Uploaded from the Add/Edit Product form; stored in Firebase Storage (bucket in `FIREBASE_STORAGE_BUCKET` secret) via `server/src/firebase.ts` (Firebase Admin SDK, credentials from `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` secrets).
+- Upload endpoint: `POST /api/product/:id/image` (multipart, field name `image`) — uploads to Storage, makes the file public, then saves the resulting URL to the product's `images` field via the existing Pointify proxy (`PUT /product/:id`).
+- Displayed in the POS "Restaurant Style" grid (`client/src/features/pos/product-grid.tsx`) via `product.images?.[0] || product.image`.
+
 Frontend proxies `/api` requests to `http://localhost:1999`.
 
 ## Key Configuration
