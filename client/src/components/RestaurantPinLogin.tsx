@@ -25,11 +25,11 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
   const [pin, setPin] = useState('');
 
   const loginMutation = useMutation({
-    mutationFn: async (uniqueDigits: string) => {
-      const response = await fetch('/api/auth/attendant/pin-login', {
+    mutationFn: async (pinValue: string) => {
+      const response = await fetch('/api/attendant/login/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uniqueDigits }),
+        body: JSON.stringify({ pin: pinValue }),
       });
       if (!response.ok) {
         // Whatever went wrong server-side (bad PIN, endpoint issue, etc.) —
