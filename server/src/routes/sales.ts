@@ -127,6 +127,7 @@ export function registerSalesRoutes(app: Express) {
         end = '',
         shopId = '',
         attendantId = '',
+        attendantUsername = '',
         paymentType = '',
         customerId = '',
         customer = '',
@@ -151,6 +152,7 @@ export function registerSalesRoutes(app: Express) {
       if (end) params.append('end', end as string);
       if (shopId) params.append('shopId', shopId as string);
       if (attendantId) params.append('attendantId', attendantId as string);
+      if (attendantUsername) params.append('attendantUsername', attendantUsername as string);
       if (paymentType) params.append('paymentType', paymentType as string);
       if (customerId) params.append('customerId', customerId as string);
       if (customer) params.append('customer', customer as string);

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChefHat, Clock, CheckCircle, RefreshCw, Eye, User as UserIcon, Flame, UtensilsCrossed, Receipt } from "lucide-react";
+import { ChefHat, Clock, CheckCircle, RefreshCw, Eye, User as UserIcon, Flame, UtensilsCrossed, Receipt, Search, X } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -94,18 +94,30 @@ export default function PendingOrders() {
     }
   }, [isRestaurant, canAccess]);
 
+  // Filters: search by the waiter/attendant who placed the order, and
+  // narrow the list to a date range (defaults to no range = all holds).
+  const [attendantSearch, setAttendantSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["pending-orders", shopId],
+    queryKey: ["pending-orders", shopId, attendantSearch, startDate, endDate],
     queryFn: async () => {
-      const res = await fetch(
-        `/api/sales/filter?shopId=${shopId}&status=hold&limit=100`,
-        {
-          cache: "no-store",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("attendantToken") || localStorage.getItem("authToken")}`,
-          },
+      const params = new URLSearchParams({
+        shopId: shopId || "",
+        status: "hold",
+        limit: "100",
+      });
+      if (attendantSearch.trim()) params.append("attendantUsername", attendantSearch.trim());
+      if (startDate) params.append("start", startDate);
+      if (endDate) params.append("end", endDate);
+
+      const res = await fetch(`/api/sales/filter?${params.toString()}`, {
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("attendantToken") || localStorage.getItem("authToken")}`,
         },
-      );
+      });
       if (!res.ok) throw new Error("Failed to load pending orders");
       return res.json();
     },
@@ -254,6 +266,53 @@ export default function PendingOrders() {
           >
             &larr; Back
           </button>
+        </div>
+
+        {/* Filters: search by waiter, narrow to a date range */}
+        <div className="px-4 lg:px-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                value={attendantSearch}
+                onChange={(e) => setAttendantSearch(e.target.value)}
+                placeholder="Search by waiter username..."
+                className="pl-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-[150px]"
+                aria-label="From date"
+              />
+              <span className="text-slate-400 text-sm">to</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-[150px]"
+                aria-label="To date"
+              />
+              {(attendantSearch || startDate || endDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAttendantSearch("");
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="text-slate-500"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="px-4 lg:px-6">
