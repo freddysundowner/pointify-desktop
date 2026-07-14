@@ -65,10 +65,12 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
       return;
     }
 
+    const isService = product.productType === "service" || product.virtual === true;
+
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product._id || item.id === product.id);
       if (existingItem) {
-        if (!product.virtual && existingItem.quantity + 1 > quantity) {
+        if (!isService && existingItem.quantity + 1 > quantity) {
           toast({
             title: "Insufficient Stock",
             description: `Only ${quantity} ${product.name} available.`,
@@ -136,7 +138,9 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
       return;
     }
 
-    if (productData && !productData.virtual && quantity > (productData.quantity || 0)) {
+    const isService = productData?.productType === "service" || productData?.virtual === true;
+
+    if (productData && !isService && quantity > (productData.quantity || 0)) {
       toast({
         title: "Stock Limit",
         description: `Only ${productData.quantity} in stock.`,
