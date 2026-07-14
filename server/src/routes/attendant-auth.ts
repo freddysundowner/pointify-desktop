@@ -119,7 +119,7 @@ export function registerAttendantAuthRoutes(app: Express) {
         });
       }
 
-      let loginResponse: any = await makePointifyRequest('/attendant/login/pin', {
+      let loginResponse: any = await makePointifyRequest('/attendants/login/pin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
