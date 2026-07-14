@@ -32,8 +32,9 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
         body: JSON.stringify({ uniqueDigits }),
       });
       if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || 'Invalid staff number');
+        // Whatever went wrong server-side (bad PIN, endpoint issue, etc.) —
+        // surface it to the attendant as a simple "wrong PIN" message only.
+        throw new Error('wrong-pin');
       }
       return response.json();
     },
@@ -44,8 +45,8 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
       sessionStorage.setItem('attendantLoginRedirect', 'true');
       setLocation(hasCanSell ? '/attendant/pos' : '/attendant/dashboard');
     },
-    onError: (error: any) => {
-      toast({ title: 'Login Failed', description: error.message || 'Invalid staff number.', variant: 'destructive' });
+    onError: () => {
+      toast({ title: 'Wrong PIN', description: 'Please try again.', variant: 'destructive' });
       setPin('');
     },
   });
