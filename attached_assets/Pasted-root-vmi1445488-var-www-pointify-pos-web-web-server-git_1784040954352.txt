@@ -1,0 +1,404 @@
+root@vmi1445488:/var/www/pointify/pos-web/web/server# git pull
+remote: Enumerating objects: 14, done.
+remote: Counting objects: 100% (14/14), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 9 (delta 6), reused 9 (delta 6), pack-reused 0 (from 0)
+Unpacking objects: 100% (9/9), 1.93 MiB | 10.76 MiB/s, done.
+From https://github.com/freddysundowner/pointify-desktop
+   a8c31e1..6db9a1e  main       -> origin/main
+Updating a8c31e1..6db9a1e
+Fast-forward
+ attached_assets/Screenshot_2026-07-14_at_5.51.08_PM_1784040672211.png | Bin 0 -> 2131381 bytes
+ server/src/index.ts                                                   |   9 +++++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+ create mode 100644 attached_assets/Screenshot_2026-07-14_at_5.51.08_PM_1784040672211.png
+root@vmi1445488:/var/www/pointify/pos-web/web/server# npm install
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@firebase/component@0.7.3',
+npm WARN EBADENGINE   required: { node: '>=20.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@firebase/database@1.1.3',
+npm WARN EBADENGINE   required: { node: '>=20.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@firebase/database-compat@2.1.4',
+npm WARN EBADENGINE   required: { node: '>=20.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@firebase/logger@0.5.1',
+npm WARN EBADENGINE   required: { node: '>=20.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@firebase/util@1.15.1',
+npm WARN EBADENGINE   required: { node: '>=20.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.17.1', npm: '9.6.7' }
+npm WARN EBADENGINE }
+
+up to date, audited 266 packages in 3s
+
+39 packages are looking for funding
+  run `npm fund` for details
+
+9 vulnerabilities (8 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+root@vmi1445488:/var/www/pointify/pos-web/web/server# npm run build
+
+> build
+> esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.cjs --packages=external
+
+
+  dist/index.cjs  226.2kb
+
+⚡ Done in 52ms
+root@vmi1445488:/var/www/pointify/pos-web/web/server# pm2 restart pointify-web --update-env
+[PM2] Applying action restartProcessId on app [pointify-web](ids: [ 1 ])
+[PM2] [pointify-web](1) ✓
+┌────┬────────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                   │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼────────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ app                    │ default     │ 0.0.0   │ fork    │ 232320   │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 7  │ app                    │ default     │ N/A     │ fork    │ N/A      │ 4D     │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 8  │ app                    │ default     │ N/A     │ fork    │ N/A      │ 4D     │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 15 │ pointify-api           │ default     │ 0.0.0   │ fork    │ 1322340  │ 22m    │ 2    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 1  │ pointify-web           │ default     │ N/A     │ fork    │ 1330251  │ 0s     │ 7    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 9  │ pointify-website       │ default     │ N/A     │ fork    │ 912      │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 6  │ reggycodas             │ default     │ 1.0.0   │ fork    │ 841      │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 4  │ sunpay                 │ default     │ 1.0.0   │ fork    │ 827      │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 5  │ tokshop-admin          │ default     │ 1.0.0   │ cluster │ 834      │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 3  │ tokshop-doc-web        │ default     │ 1.0.0   │ fork    │ 810      │ 4D     │ 0    │ online    │ 0%       │ 0b       │ root     │ disabled │
+│ 2  │ tokshop-marketplace    │ default     │ 1.0.0   │ cluster │ 1329474  │ 2m     │ 1    │ online    │ 0%       │ 0b       │ root     │ disabled │
+└────┴────────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@vmi1445488:/var/www/pointify/pos-web/web/server# pm2 logs
+[TAILING] Tailing last 15 lines for [all] processes (change the value with --lines option)
+/root/.pm2/pm2.log last 15 lines:
+PM2        | 2026-07-14T17:54:44: PM2 error: Error caught while calling pidusage
+PM2        | 2026-07-14T17:54:44: PM2 error: TypeError: One of the pids provided is invalid
+PM2        | 2026-07-14T17:54:44: PM2 log: Stopping app:pointify-web id:1
+PM2        | 2026-07-14T17:54:45: PM2 log: App [pointify-web:1] exited with code [0] via signal [SIGINT]
+PM2        | 2026-07-14T17:54:45: PM2 log: pid=1329456 msg=process killed
+PM2        | 2026-07-14T17:54:45: PM2 log: App [pointify-web:1] starting in -fork mode-
+PM2        | 2026-07-14T17:54:45: PM2 log: App [pointify-web:1] online
+PM2        | 2026-07-14T17:54:45: PM2 error: Error caught while calling pidusage
+PM2        | 2026-07-14T17:54:45: PM2 error: TypeError: One of the pids provided is invalid
+PM2        | 2026-07-14T17:54:48: PM2 error: Error caught while calling pidusage
+PM2        | 2026-07-14T17:54:48: PM2 error: TypeError: One of the pids provided is invalid
+PM2        | 2026-07-14T17:55:18: PM2 error: Error caught while calling pidusage
+PM2        | 2026-07-14T17:55:18: PM2 error: TypeError: One of the pids provided is invalid
+PM2        | 2026-07-14T17:55:22: PM2 error: Error caught while calling pidusage
+PM2        | 2026-07-14T17:55:22: PM2 error: TypeError: One of the pids provided is invalid
+
+/root/.pm2/logs/tokshop-doc-web-error.log last 15 lines:
+3|tokshop- |     at SendStream.emit (node:events:514:28)
+3|tokshop- |     at SendStream.error (/var/www/tokshoplive/doc/node_modules/send/index.js:270:17)
+3|tokshop- |     at SendStream.pipe (/var/www/tokshoplive/doc/node_modules/send/index.js:515:10)
+3|tokshop- |     at serveStatic (/var/www/tokshoplive/doc/node_modules/serve-static/index.js:125:12)
+3|tokshop- | URIError: Failed to decode param '/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/windows/win.ini'
+3|tokshop- |     at decodeURIComponent (<anonymous>)
+3|tokshop- |     at decode_param (/var/www/tokshoplive/doc/node_modules/express/lib/router/layer.js:172:12)
+3|tokshop- |     at Layer.match (/var/www/tokshoplive/doc/node_modules/express/lib/router/layer.js:123:27)
+3|tokshop- |     at matchLayer (/var/www/tokshoplive/doc/node_modules/express/lib/router/index.js:585:18)
+3|tokshop- |     at next (/var/www/tokshoplive/doc/node_modules/express/lib/router/index.js:226:15)
+3|tokshop- |     at SendStream.error (/var/www/tokshoplive/doc/node_modules/serve-static/index.js:121:7)
+3|tokshop- |     at SendStream.emit (node:events:514:28)
+3|tokshop- |     at SendStream.error (/var/www/tokshoplive/doc/node_modules/send/index.js:270:17)
+3|tokshop- |     at SendStream.pipe (/var/www/tokshoplive/doc/node_modules/send/index.js:515:10)
+3|tokshop- |     at serveStatic (/var/www/tokshoplive/doc/node_modules/serve-static/index.js:125:12)
+
+/root/.pm2/logs/reggycodas-error.log last 15 lines:
+6|reggycod |     at SendStream.emit (node:events:514:28)
+6|reggycod |     at SendStream.error (/var/www/reggycodas/node_modules/send/index.js:270:17)
+6|reggycod |     at SendStream.pipe (/var/www/reggycodas/node_modules/send/index.js:515:10)
+6|reggycod |     at serveStatic (/var/www/reggycodas/node_modules/serve-static/index.js:125:12)
+6|reggycod | URIError: Failed to decode param '/%c0/'
+6|reggycod |     at decodeURIComponent (<anonymous>)
+6|reggycod |     at decode_param (/var/www/reggycodas/node_modules/express/lib/router/layer.js:172:12)
+6|reggycod |     at Layer.match (/var/www/reggycodas/node_modules/express/lib/router/layer.js:123:27)
+6|reggycod |     at matchLayer (/var/www/reggycodas/node_modules/express/lib/router/index.js:585:18)
+6|reggycod |     at next (/var/www/reggycodas/node_modules/express/lib/router/index.js:226:15)
+6|reggycod |     at SendStream.error (/var/www/reggycodas/node_modules/serve-static/index.js:121:7)
+6|reggycod |     at SendStream.emit (node:events:514:28)
+6|reggycod |     at SendStream.error (/var/www/reggycodas/node_modules/send/index.js:270:17)
+6|reggycod |     at SendStream.pipe (/var/www/reggycodas/node_modules/send/index.js:515:10)
+6|reggycod |     at serveStatic (/var/www/reggycodas/node_modules/serve-static/index.js:125:12)
+
+/root/.pm2/logs/pointify-api-error.log last 15 lines:
+15|pointif | 2026-07-07T14:10:21: SyntaxError: Unexpected token '}', "{"invalid":}" is not valid JSON
+15|pointif | 2026-07-07T14:10:21:     at JSON.parse (<anonymous>)
+15|pointif | 2026-07-07T14:10:21:     at parse (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/types/json.js:72:19)
+15|pointif | 2026-07-07T14:10:21:     at file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/body-parser@2.2.2/node_modules/body-parser/lib/read.js:162:18
+15|pointif | 2026-07-07T14:10:21:     at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+15|pointif | 2026-07-07T14:10:21:     at invokeCallback (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/raw-body@3.0.2/node_modules/raw-body/index.js:238:16)
+15|pointif | 2026-07-07T14:10:21:     at done (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/raw-body@3.0.2/node_modules/raw-body/index.js:227:7)
+15|pointif | 2026-07-07T14:10:21:     at IncomingMessage.onEnd (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/raw-body@3.0.2/node_modules/raw-body/index.js:287:7)
+15|pointif | 2026-07-07T14:10:21:     at IncomingMessage.emit (node:events:524:28)
+15|pointif | 2026-07-07T14:10:21:     at endReadableNT (node:internal/streams/readable:1698:12)
+15|pointif | 2026-07-07T14:10:21:     at processTicksAndRejections (node:internal/process/task_queues:82:21)
+15|pointif | 2026-07-07T23:39:15: Error: Request aborted
+15|pointif | 2026-07-07T23:39:15:     at onaborted (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/response.js:936:15)
+15|pointif | 2026-07-07T23:39:15:     at Immediate.<anonymous> (file:///var/www/pointify/Pointify-New-Admin/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/response.js:978:9)
+15|pointif | 2026-07-07T23:39:15:     at processImmediate (node:internal/timers:483:21)
+
+/root/.pm2/logs/pointify-website-out.log last 15 lines:
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+9|pointify | SSR server listening on http://0.0.0.0:3000
+
+/root/.pm2/logs/app-error.log last 15 lines:
+0|app      |       at castObjectId (/var/www/tokshoplive/backend/node_modules/mongoose/lib/cast/objectid.js:25:12)
+0|app      |       at SchemaObjectId.cast (/var/www/tokshoplive/backend/node_modules/mongoose/lib/schema/objectId.js:249:12)
+0|app      |       at SchemaType.applySetters (/var/www/tokshoplive/backend/node_modules/mongoose/lib/schemaType.js:1262:12)
+0|app      |       at SchemaType.castForQuery (/var/www/tokshoplive/backend/node_modules/mongoose/lib/schemaType.js:1698:17)
+0|app      |       at SchemaArray._castForQuery (/var/www/tokshoplive/backend/node_modules/mongoose/lib/schema/array.js:555:29)
+0|app      |       at SchemaArray.castForQuery (/var/www/tokshoplive/backend/node_modules/mongoose/lib/schema/array.js:587:17)
+0|app      |       at castUpdateVal (/var/www/tokshoplive/backend/node_modules/mongoose/lib/helpers/query/castUpdate.js:640:17)
+0|app      |       at walkUpdatePath (/var/www/tokshoplive/backend/node_modules/mongoose/lib/helpers/query/castUpdate.js:438:24)
+0|app      |       at castUpdate (/var/www/tokshoplive/backend/node_modules/mongoose/lib/helpers/query/castUpdate.js:144:7),
+0|app      |   valueType: 'string'
+0|app      | }
+0|app      | ❌ Error creating user: Error: From email address not configured
+0|app      |     at sendEmail (/var/www/tokshoplive/backend/src/shared/email.js:24:11)
+0|app      |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+0|app      |     at async exports.signupWithEmail (/var/www/tokshoplive/backend/src/controllers/auth.js:379:7)
+
+/root/.pm2/logs/pointify-website-error.log last 15 lines:
+9|pointify |     at matchLayer (/var/www/pointify-website/node_modules/router/index.js:519:18)
+9|pointify |     at next (/var/www/pointify-website/node_modules/router/index.js:237:15)
+9|pointify |     at SendStream.error (/var/www/pointify-website/node_modules/serve-static/index.js:120:7)
+9|pointify |     at SendStream.emit (node:events:514:28)
+9|pointify | URIError: Failed to decode param '%c0'
+9|pointify |     at decodeURIComponent (<anonymous>)
+9|pointify |     at decodeParam (/var/www/pointify-website/node_modules/router/lib/layer.js:225:12)
+9|pointify |     at Array.map (<anonymous>)
+9|pointify |     at /var/www/pointify-website/node_modules/path-to-regexp/dist/index.js:231:50
+9|pointify |     at Array.match (/var/www/pointify-website/node_modules/path-to-regexp/dist/index.js:244:32)
+9|pointify |     at Layer.match (/var/www/pointify-website/node_modules/router/lib/layer.js:192:31)
+9|pointify |     at matchLayer (/var/www/pointify-website/node_modules/router/index.js:519:18)
+9|pointify |     at next (/var/www/pointify-website/node_modules/router/index.js:237:15)
+9|pointify |     at SendStream.error (/var/www/pointify-website/node_modules/serve-static/index.js:120:7)
+9|pointify |     at SendStream.emit (node:events:514:28)
+
+/root/.pm2/logs/tokshop-doc-web-out.log last 15 lines:
+3|tokshop- | 6:35:04 PM [express] GET /api%252fdebug 200 in 20ms
+3|tokshop- | 6:35:04 PM [express] GET /api%2fswagger%2ejson 200 in 5ms
+3|tokshop- | 6:35:05 PM [express] GET /api%252fswagger%252ejson 200 in 14ms
+3|tokshop- | 1:58:31 PM [express] serving on port 5002
+3|tokshop- | 9:52:51 PM [express] serving on port 5002
+3|tokshop- | 2:28:14 PM [express] serving on port 5002
+3|tokshop- | 5:05:16 PM [express] GET /api/v1/health 200 in 2ms
+3|tokshop- | 5:05:16 PM [express] GET /api/v1/version 200 in 3ms
+3|tokshop- | 8:08:29 PM [express] serving on port 5002
+3|tokshop- | 11:29:53 PM [express] POST /api 200 in 3ms
+3|tokshop- | 11:29:53 PM [express] POST /api/route 200 in 2ms
+3|tokshop- | 7:08:33 AM [express] POST /api 200 in 3ms
+3|tokshop- | 7:08:34 AM [express] POST /api/route 200 in 3ms
+3|tokshop- | 7:26:27 AM [express] GET /api/env 200 in 4ms
+3|tokshop- | 7:26:27 AM [express] GET /api/config 200 in 13ms
+
+/root/.pm2/logs/tokshop-admin-error-5.log last 15 lines:
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Tokshop API login error: { success: false, message: 'User not found.' }
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Settings API error (401): Unauthorized
+5|tokshop- | Settings API error (401): Unauthorized
+
+/root/.pm2/logs/reggycodas-out.log last 15 lines:
+6|reggycod | 8:41:27 PM [express] POST /api/graphql 200 in 52ms
+6|reggycod | 8:42:55 PM [express] GET /api/.env 200 in 46ms
+6|reggycod | 8:42:56 PM [express] POST /api/graphql 200 in 30ms
+6|reggycod | 8:43:03 PM [express] GET /api/config 200 in 12ms
+6|reggycod | 8:43:03 PM [express] GET /api/settings 200 in 8ms
+6|reggycod | 8:43:03 PM [express] GET /api/v1/settings 200 in 33ms
+6|reggycod | 8:43:03 PM [express] GET /api/v2/config 200 in 13ms
+6|reggycod | 8:43:04 PM [express] GET /api/v1/config 200 in 49ms
+6|reggycod | 8:43:04 PM [express] GET /api/v2/settings 200 in 49ms
+6|reggycod | 8:43:04 PM [express] GET /api/env 200 in 53ms
+6|reggycod | 8:43:04 PM [express] GET /api/health 200 in 11ms
+6|reggycod | 2:25:35 AM [express] GET /api/session/properties 200 in 12ms
+6|reggycod | 9:59:33 AM [express] GET /api/products 200 in 22ms :: []
+6|reggycod | 9:59:34 AM [express] GET /api/seo 200 in 3ms :: [{"id":1,"pageKey":"global","title":"Reggycodas - Te…
+6|reggycod | 9:59:34 AM [express] GET /api/social-links 200 in 6ms :: [{"id":1,"platform":"Twitter","url":null,"s…
+
+/root/.pm2/logs/sunpay-out.log last 15 lines:
+4|sunpay   | [WEBHOOK] Delivering event=payment.failed merchant=c4a71ac6-2c96-4729-8a4b-9010472e4d43 (own) to 1 endpoint(s)
+4|sunpay   | [STK-CB] Received STK callback: {
+4|sunpay   |   "Body": {
+4|sunpay   |     "stkCallback": {
+4|sunpay   |       "MerchantRequestID": "e6fa-450c-adad-ad6c10aee9181815920",
+4|sunpay   |       "CheckoutRequestID": "ws_CO_14072026125659600707879128",
+4|sunpay   |       "ResultCode": 1032,
+4|sunpay   |       "ResultDesc": "Request Cancelled by user."
+4|sunpay   |     }
+4|sunpay   |   }
+4|sunpay   | }
+4|sunpay   | [STK-CB] Parsed — checkoutRequestId=ws_CO_14072026125659600707879128 resultCode=1032 resultDesc=Request Cancelled by user. mpesaRef=undefined amount=undefined
+4|sunpay   | [STK-CB] Matched transaction id=61f8b9b4-f491-40b6-94bb-1cc40e687026 merchant=c4a71ac6-2c96-4729-8a4b-9010472e4d43
+4|sunpay   | [STK-CB] Transaction 61f8b9b4-f491-40b6-94bb-1cc40e687026 updated to status=failed
+4|sunpay   | [WEBHOOK] Delivering event=payment.failed merchant=c4a71ac6-2c96-4729-8a4b-9010472e4d43 (own) to 1 endpoint(s)
+
+/root/.pm2/logs/sunpay-error.log last 15 lines:
+4|sunpay   | [POS] createSubMerchant error: duplicate key value violates unique constraint "merchants_email_unique"
+4|sunpay   | [POS] createSubMerchant error: duplicate key value violates unique constraint "merchants_email_unique"
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.completed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=401 error=Request failed with status code 401
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=401 error=Request failed with status code 401
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://153cfb33-26ee-4026-8f5d-f297dced4021-00-pigsysh0sld9.kirk.replit.dev/api/payments/webhook status=404 error=Request failed with status code 404
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=502 error=Request failed with status code 502
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=502 error=Request failed with status code 502
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=502 error=Request failed with status code 502
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=502 error=Request failed with status code 502
+4|sunpay   | [WEBHOOK] ✗ failed event=payment.failed url=https://staging.pointifypos.com/api/v2/mpesa/webhook status=502 error=Request failed with status code 502
+
+/root/.pm2/logs/tokshop-admin-out-5.log last 15 lines:
+5|tokshop- |   "service_fee": 15,
+5|tokshop- |   "weight": "1",
+5|tokshop- |   "height": "12",
+5|tokshop- |   "scale": "lb",
+5|tokshop- |   "length": "12
+5|tokshop- | 11:06:13 PM [express] GET /api/orders/items/all 200 in 89ms :: {"items":[{"_id":"6a4e06ef9260da5c1e63…
+5|tokshop- | Checking if admin exists at external API: https://api.tokshoplive.com/admin/exists
+5|tokshop- | ✅ External API response: {"success":true,"exists":true,"message":"An admin with role \"admin\" already exists."}, adminExists: true
+5|tokshop- | 11:06:13 PM [express] GET /api/admin/exists 200 in 23ms :: {"success":true,"exists":true}
+5|tokshop- | Checking if admin exists at external API: https://api.tokshoplive.com/admin/exists
+5|tokshop- | ✅ External API response: {"success":true,"exists":true,"message":"An admin with role \"admin\" already exists."}, adminExists: true
+5|tokshop- | 5:01:16 PM [express] GET /api/admin/exists 200 in 43ms :: {"success":true,"exists":true}
+5|tokshop- | Checking if admin exists at external API: https://api.tokshoplive.com/admin/exists
+5|tokshop- | ✅ External API response: {"success":true,"exists":true,"message":"An admin with role \"admin\" already exists."}, adminExists: true
+5|tokshop- | 5:01:17 PM [express] GET /api/admin/exists 200 in 30ms :: {"success":true,"exists":true}
+
+/root/.pm2/logs/tokshop-marketplace-error-52.log last 15 lines:
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | ⚠️ Firebase token verification skipped (firebase-admin disabled) — relying on external API verification
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Settings API error (401): Unauthorized
+2|tokshop- | Warning: connect.session() MemoryStore is not
+2|tokshop- | designed for a production environment, as it will leak
+2|tokshop- | memory, and will not scale past a single process.
+
+/root/.pm2/logs/tokshop-marketplace-out-52.log last 15 lines:
+2|tokshop- | Calling external API: https://api.tokshoplive.com/rooms?page=1&limit=15&category=&userid=6a55dbae7864431ba3cdc93d&currentUserId=6a55dbae7864431ba3cdc93d&title=&status=active
+2|tokshop- | 4:00:34 PM [express] GET /api/profile/6a55dbae7864431ba3cdc93d 200 in 28ms :: {"_id":"6a55dbae786443…
+2|tokshop- | 4:00:34 PM [express] GET /api/rooms 200 in 30ms :: {"rooms":[],"totalDoc":0,"limits":15,"pages":1}
+2|tokshop- | Proxying rooms request to Tokshop API
+2|tokshop- | Calling external API: https://api.tokshoplive.com/rooms?page=1&limit=15&category=all&userid=&currentUserId=6a55dbae7864431ba3cdc93d&title=&status=active
+2|tokshop- | 4:00:38 PM [express] GET /api/profile/6a55dbae7864431ba3cdc93d 200 in 55ms :: {"_id":"6a55dbae786443…
+2|tokshop- | 4:00:38 PM [express] GET /api/rooms 200 in 83ms :: {"rooms":[{"_id":"6a55ec807864431ba3cdcc02","owne…
+2|tokshop- | [API Config] BASE_URL: https://api.tokshoplive.com
+2|tokshop- | [Session Config] isProduction: true, NODE_ENV: production
+2|tokshop- | 5:52:45 PM [express] serving on port 5001
+2|tokshop- | 🔌 Connecting backend Socket.IO client to: https://api.tokshoplive.com
+2|tokshop- | ✅ Backend Socket.IO listener initialized successfully
+2|tokshop- | ✅ Socket.IO listener initialized successfully
+2|tokshop- | ✅ Backend Socket.IO connected to external API
+2|tokshop- |    Socket ID: RZxU1854VqOw9MJpAACe
+
+/root/.pm2/logs/pointify-web-error.log last 15 lines:
+1|pointify |   errors: undefined,
+1|pointify |   responseBody: undefined,
+1|pointify |   status: undefined,
+1|pointify |   stack: 'Error: Firebase is not configured — missing FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, or FIREBASE_STORAGE_BUCKET.\n' +
+1|pointify |     '    at getFirebaseBucket (/var/www/pointify/pos-web/web/server/dist/index.cjs:719:11)\n' +
+1|pointify |     '    at uploadProductImageBuffer (/var/www/pointify/pos-web/web/server/dist/index.cjs:739:19)\n' +
+1|pointify |     '    at /var/www/pointify/pos-web/web/server/dist/index.cjs:1015:32\n' +
+1|pointify |     '    at Layer.handle [as handle_request] (/var/www/pointify/pos-web/web/server/node_modules/express/lib/router/layer.js:95:5)\n' +
+1|pointify |     '    at next (/var/www/pointify/pos-web/web/server/node_modules/express/lib/router/route.js:149:13)\n' +
+1|pointify |     '    at done (/var/www/pointify/pos-web/web/server/node_modules/multer/lib/make-middleware.js:70:7)\n' +
+1|pointify |     '    at indicateDone (/var/www/pointify/pos-web/web/server/node_modules/multer/lib/make-middleware.js:74:68)\n' +
+1|pointify |     '    at Multipart.<anonymous> (/var/www/pointify/pos-web/web/server/node_modules/multer/lib/make-middleware.js:258:7)\n' +
+1|pointify |     '    at Multipart.emit (node:events:514:28)\n' +
+1|pointify |     '    at emitCloseNT (node:internal/streams/destroy:132:10)'
+1|pointify | }
+
+/root/.pm2/logs/app-out.log last 15 lines:
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | User disconnected:  UND1uwqd9ixTgH38AABq
+0|app      | A user connected:  RZxU1854VqOw9MJpAACe
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+0|app      | 🔄 Running repeating rooms job...
+0|app      | 🔄 Scheduled job executed at midnight.
+
+/root/.pm2/logs/pointify-web-out.log last 15 lines:
+1|pointify |     __v: 0,
+1|pointify |     mpesaCode: '7878'
+1|pointify |   },
+1|pointify |   saleSmsEnabled: true,
+1|pointify |   saleSmsSender: '',
+1|pointify |   saleSmsTemplate: 'Hi {name}, thank you for your purchase at {shop}. Amount: {amount}. Receipt #{receipt}. View: {receipt_url}',
+1|pointify |   mpesa_require_validation: false,
+1|pointify |   sunpay_link_error: 'SunPay 409: {"message":"A merchant with paybill/till 8556676 already exists on SunPay"}',
+1|pointify |   viewAllCustomers: false
+1|pointify | }
+1|pointify | GET /api/shop/6727106d4da061a1d95c7a7f 200 in 453ms :: {"location":{"type":"Point","coordinates":[36.7703994,-1.2439363…
+1|pointify | 🌐 Making request for /analysis/stockanalysis/?shopid=6727106d4da061a1d95c7a7f&warehouse=true&totalstock=true using API mode: online
+1|pointify | 🌐 Attempting online request for https://api.pointifypos.com/analysis/stockanalysis/?shopid=6727106d4da061a1d95c7a7f&warehouse=true&totalstock=true
+1|pointify | 🌐 Online API response for /analysis/stockanalysis/?shopid=6727106d4da061a1d95c7a7f&warehouse=true&totalstock=true:
+1|pointify | GET /api/analysis/stockanalysis/ 304 in 379ms :: {"totalStockValue":24091,"profitEstimate":9233,"outofstock":5,"lowstoc…
+
+/root/.pm2/logs/pointify-api-out.log last 15 lines:
+15|pointif | ,"req":{"id":354,"method":"GET","url":"//xwpg.php"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:48: {"level":30,"time":1784040828530,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":355,"method":"GET","url":"//wp-includes/assets/"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:48: {"level":30,"time":1784040828753,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":356,"method":"GET","url":"/wp-admin/css/colors/sunrise/"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:48: {"level":30,"time":1784040828977,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":357,"method":"GET","url":"/xstelth.php"},"res":{"statusCode":200},"responseTime":5,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:49: {"level":30,"time":1784040829255,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":358,"method":"GET","url":"/wp-admin/network/plugins.php"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:49: {"level":30,"time":1784040829469,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":359,"method":"GET","url":"/aaa.php"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:49: {"level":30,"time":1784040829702,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":360,"method":"GET","url":"/gecko.php"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:49: {"level":30,"time":1784040829917,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":361,"method":"GET","url":"/sh3ll.php"},"res":{"statusCode":200},"responseTime":2,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:50: {"level":30,"time":1784040830138,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":362,"method":"GET","url":"/wp-includes/Requests/library/"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:50: {"level":30,"time":1784040830354,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":363,"method":"GET","url":"/pbck.php"},"res":{"statusCode":200},"responseTime":1,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:51: {"level":30,"time":1784040831021,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":364,"method":"GET","url":"/wp-login.php"},"res":{"statusCode":200},"responseTime":4,"msg":"request completed"}
+15|pointif | 2026-07-14T17:53:54: {"level":30,"time":1784040834158,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":365,"method":"GET","url":"/sendfriend/product/send/id/2188/"},"res":{"statusCode":200},"responseTime":19,"msg":"request completed"}
+15|pointif | 2026-07-14T17:55:17: {"level":30,"time":1784040917429,"pid":1322340,"hostname":"vmi1445488.contaboserver.net","req":{"id":366,"method":"GET","url":"/sendfriend/product/send/id/2171/"},"res":{"statusCode":200},"responseTime":13,"msg":"request completed"}
