@@ -417,7 +417,7 @@ function AttendantDashboardContent() {
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col">
 
         {/* Active Tiles */}
-        <div className="space-y-8 flex-1">
+        <div className="space-y-8">
           {activeGroups.map((group) => (
             <section key={`active-${group.id}`} className="space-y-4">
               <div className="flex items-center gap-2.5 px-1">
@@ -463,17 +463,17 @@ function AttendantDashboardContent() {
               </CardContent>
             </Card>
           )}
+        </div>
 
-          <div className="mt-auto pt-10 pb-4">
-            <Button
-              variant="destructive"
-              onClick={handleLogout}
-              className="w-full h-16 text-lg font-semibold gap-3 rounded-2xl shadow-lg"
-            >
-              <Lock className="w-6 h-6" />
-              Lock
-            </Button>
-          </div>
+        <div className="mt-auto pt-10 pb-2">
+          <Button
+            variant="destructive"
+            onClick={handleLogout}
+            className="w-full h-16 text-lg font-semibold gap-3 rounded-2xl shadow-lg"
+          >
+            <Lock className="w-6 h-6" />
+            Lock
+          </Button>
         </div>
 
       </main>
