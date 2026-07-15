@@ -465,16 +465,14 @@ function AttendantDashboardContent() {
           )}
         </div>
 
-        <div className="mt-auto pt-10 pb-2">
-          <Button
-            variant="destructive"
-            onClick={handleLogout}
-            className="w-full h-16 text-lg font-semibold gap-3 rounded-2xl shadow-lg"
-          >
-            <Lock className="w-6 h-6" />
-            Lock
-          </Button>
-        </div>
+        <Button
+          variant="destructive"
+          onClick={handleLogout}
+          className="fixed bottom-6 right-6 h-16 px-6 text-lg font-semibold gap-3 rounded-full shadow-xl z-20"
+        >
+          <Lock className="w-6 h-6" />
+          Lock
+        </Button>
 
       </main>
     </div>
