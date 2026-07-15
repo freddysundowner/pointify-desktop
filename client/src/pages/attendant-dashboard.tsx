@@ -2,7 +2,6 @@ import { useEffect, useState, Suspense } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
   Store, 
@@ -393,9 +392,6 @@ function AttendantDashboardContent() {
               <span className="flex items-center gap-1">
                 User: <span className="font-medium text-slate-700">{attendant?.username || 'Unknown User'}</span>
               </span>
-              <Badge variant="secondary" className="text-[10px] h-4 px-1.5 py-0 font-mono tracking-wider ml-1">
-                {attendant?.uniqueDigits || 'N/A'}
-              </Badge>
             </div>
           </div>
         </div>

@@ -2,7 +2,6 @@ import { useState, FormEvent } from 'react';
 import { Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 /**
  * Full-screen lock overlay for restaurant shops. The attendant's session
@@ -49,9 +48,6 @@ export function AttendantLockScreen() {
           <p className="text-sm text-slate-500 mt-1">{shopData?.name || 'This till'} is locked</p>
           <div className="flex items-center gap-2 mt-3 text-sm">
             <span className="text-slate-700 font-medium">{attendant.username}</span>
-            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-mono tracking-wider">
-              {attendant.uniqueDigits}
-            </Badge>
           </div>
         </div>
 

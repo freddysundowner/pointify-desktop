@@ -546,7 +546,6 @@ export default function BusinessDashboard() {
                             <UserCheck className="h-4 w-4 text-purple-500" />
                             <div>
                               <div className="font-medium">{attendant.username}</div>
-                              <div className="text-xs text-gray-500">PIN: {attendant.uniqueDigits}</div>
                             </div>
                           </div>
                         </SelectItem>

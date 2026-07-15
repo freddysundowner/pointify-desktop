@@ -191,7 +191,7 @@ export default function ProfitLossPage() {
                       <SelectItem value="all">All attendants</SelectItem>
                       {attendants.map((attendant) => (
                         <SelectItem key={attendant._id} value={attendant._id}>
-                          {attendant.username} ({attendant.uniqueDigits})
+                          {attendant.username}
                         </SelectItem>
                       ))}
                     </SelectContent>

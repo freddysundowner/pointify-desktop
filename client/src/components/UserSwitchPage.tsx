@@ -49,7 +49,7 @@ export default function UserSwitchPage({ targetRoute }: UserSwitchPageProps) {
               </div>
               <div>
                 <div className="font-semibold text-gray-900">{attendant?.username || 'Attendant'}</div>
-                <div className="text-sm text-gray-500">Staff Member • PIN: {attendant?.uniqueDigits}</div>
+                <div className="text-sm text-gray-500">Staff Member</div>
               </div>
             </div>
           </CardContent>
