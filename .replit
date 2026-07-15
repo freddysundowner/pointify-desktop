@@ -72,8 +72,8 @@ externalPort = 4200
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["node", "./dist/index.cjs"]
-build = ["npm", "run", "build"]
+run = ["node", "server/dist/index.cjs"]
+build = ["bash", "-c", "npm run clean && npm run build"]
 
 [userenv]
 
