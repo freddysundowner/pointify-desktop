@@ -370,6 +370,9 @@ export default function CustomerOverview() {
   // rest of the app (selectedShopId → attendant's assigned shop → admin's shop)
   // instead of falling back to a hardcoded shop ID belonging to a different shop,
   // which silently returned zero sales for every attendant session.
+  // /receipt/:id only exists under the admin-authenticated route tree; attendants
+  // must use /attendant/receipt/:id or clicking "View Receipt" bounces to login.
+  const receiptBasePath = attendant ? '/attendant/receipt' : '/receipt';
   const attendantShopId =
     typeof attendant?.shopId === 'object' ? (attendant.shopId as any)?._id : attendant?.shopId;
   const adminShopId =
@@ -1253,7 +1256,7 @@ export default function CustomerOverview() {
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-sm font-semibold text-green-600">{transaction.currency} {transaction.amount.toLocaleString()}</span>
                             <Link
-                              href={`/receipt/${transaction._id}`}
+                              href={`${receiptBasePath}/${transaction._id}`}
                               onClick={() => { const s = salesData?.data?.find((sale: any) => sale._id === transaction._id); if (s) (window as any).__receiptData = s; }}
                             >
                               <Button variant="outline" size="sm" className="h-7 text-xs px-2">Receipt</Button>
@@ -1287,7 +1290,7 @@ export default function CustomerOverview() {
                               <TableCell className="text-xs py-2 text-gray-500">{transaction.referenceNumber}</TableCell>
                               <TableCell className="text-xs py-2 text-right font-medium text-green-600">{transaction.currency} {transaction.amount.toLocaleString()}</TableCell>
                               <TableCell className="py-2">
-                                <Link href={`/receipt/${transaction._id}`} onClick={() => { const s = salesData?.data?.find((sale: any) => sale._id === transaction._id); if (s) (window as any).__receiptData = s; }}>
+                                <Link href={`${receiptBasePath}/${transaction._id}`} onClick={() => { const s = salesData?.data?.find((sale: any) => sale._id === transaction._id); if (s) (window as any).__receiptData = s; }}>
                                   <Button variant="outline" size="sm" className="h-7 text-xs">View Receipt</Button>
                                 </Link>
                               </TableCell>
