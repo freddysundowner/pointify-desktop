@@ -41,7 +41,7 @@ interface AttendantData {
 function AttendantDashboardContent() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { attendant, isAuthenticated, isLoading, isRefreshing, logout, refreshAttendantData, lockScreen } = useAttendantAuth();
+  const { attendant, isAuthenticated, isLoading, isRefreshing, logout, refreshAttendantData } = useAttendantAuth();
   const { hasPermission, hasAttendantPermission } = usePermissions();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [shopName, setShopName] = useState<string>('Loading...');
@@ -410,34 +410,6 @@ function AttendantDashboardContent() {
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
-          {isRestaurantShop && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={lockScreen}
-                className="hidden sm:flex gap-2 h-9 border-slate-200 hover:bg-slate-100 text-slate-700"
-              >
-                <Lock className="w-4 h-4" />
-                Lock
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={lockScreen}
-                className="sm:hidden h-9 w-9 border-slate-200 text-slate-700"
-              >
-                <Lock className="w-4 h-4" />
-              </Button>
-            </>
-          )}
-          <Button variant="default" size="sm" onClick={handleLogout} className="hidden sm:flex gap-2 h-9">
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
-          <Button variant="default" size="icon" onClick={handleLogout} className="sm:hidden h-9 w-9">
-            <LogOut className="w-4 h-4" />
-          </Button>
         </div>
       </header>
 
@@ -491,6 +463,17 @@ function AttendantDashboardContent() {
               </CardContent>
             </Card>
           )}
+
+          <div className="mt-auto pt-10 pb-4">
+            <Button
+              variant="destructive"
+              onClick={handleLogout}
+              className="w-full h-16 text-lg font-semibold gap-3 rounded-2xl shadow-lg"
+            >
+              <Lock className="w-6 h-6" />
+              Lock
+            </Button>
+          </div>
         </div>
 
       </main>
