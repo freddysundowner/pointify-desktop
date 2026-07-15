@@ -299,14 +299,29 @@ function AttendantDashboardContent() {
       title: 'Users',
       icon: Users,
       description: 'Manage customers and suppliers',
-      enabled: hasAttendantPermission('customers', 'manage') || hasAttendantPermission('suppliers', 'view') || hasAttendantPermission('suppliers', 'manage'),
+      // The "customers" permission group has no literal 'manage' action — the
+      // admin's grant dialog (attendants.tsx) only offers add_customers,
+      // view_customers, edit_customers, view_debt, manage_payments. Checking
+      // for 'manage' here meant this tile could never turn on no matter what
+      // an admin granted. Any one of the real customer actions should unlock it.
+      enabled: hasAttendantPermission('customers', 'add_customers')
+        || hasAttendantPermission('customers', 'view_customers')
+        || hasAttendantPermission('customers', 'edit_customers')
+        || hasAttendantPermission('customers', 'view_debt')
+        || hasAttendantPermission('customers', 'manage_payments')
+        || hasAttendantPermission('suppliers', 'view')
+        || hasAttendantPermission('suppliers', 'manage'),
       color: 'bg-purple-500',
       subActions: [
         {
           title: 'Customers',
           icon: Users,
           description: 'Manage customer accounts',
-          enabled: hasAttendantPermission('customers', 'manage'),
+          enabled: hasAttendantPermission('customers', 'add_customers')
+            || hasAttendantPermission('customers', 'view_customers')
+            || hasAttendantPermission('customers', 'edit_customers')
+            || hasAttendantPermission('customers', 'view_debt')
+            || hasAttendantPermission('customers', 'manage_payments'),
           route: '/attendant/customers'
         },
         {
