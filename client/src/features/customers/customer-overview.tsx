@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { useAuth } from '@/features/auth/useAuth';
+import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { apiCall } from '@/lib/api-config';
 import { apiRequest } from '@/lib/queryClient';
 import { useNavigationRoute } from '@/lib/navigation-utils';
@@ -311,6 +312,7 @@ export default function CustomerOverview() {
   const { toast } = useToast();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { admin } = useAuth();
+  const { attendant } = useAttendantAuth();
   
   // Get customer ID from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
@@ -364,8 +366,15 @@ export default function CustomerOverview() {
   const customerData = passedCustomerData || (customerId ? { _id: customerId, name: 'Customer', wallet: 0 } : null);
   const customerLoading = false;
 
-  // Fetch customer-specific sales data - use hardcoded shop ID if Redux not ready
-  const effectiveShopId = selectedShopId || '685077993dd888c2f51607d4'; // Use available shop ID
+  // Fetch customer-specific sales data. Resolve in the same precedence as the
+  // rest of the app (selectedShopId → attendant's assigned shop → admin's shop)
+  // instead of falling back to a hardcoded shop ID belonging to a different shop,
+  // which silently returned zero sales for every attendant session.
+  const attendantShopId =
+    typeof attendant?.shopId === 'object' ? (attendant.shopId as any)?._id : attendant?.shopId;
+  const adminShopId =
+    typeof (admin as any)?.shopId === 'object' ? (admin as any)?.shopId?._id : (admin as any)?.shopId;
+  const effectiveShopId = selectedShopId || attendantShopId || adminShopId || (admin as any)?.primaryShop;
   
   console.log('Shop ID calculation:', {
     selectedShopId,
@@ -410,7 +419,7 @@ export default function CustomerOverview() {
       console.log('Selected Shop ID from Redux:', selectedShopId);
       console.log('PaymentTag parameter included:', params.get('paymentTag'));
       
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -502,7 +511,7 @@ export default function CustomerOverview() {
       
       const updateData = {
         wallet: newWalletBalance,
-        shopId: selectedShopId,
+        shopId: effectiveShopId,
         attendantId: attendantId
       };
 
@@ -511,7 +520,7 @@ export default function CustomerOverview() {
       console.log('Current wallet:', currentWallet);
       console.log('Payment amount entered:', paymentData.amount);
       console.log('Setting wallet to payment amount:', newWalletBalance);
-      console.log('Selected Shop ID:', selectedShopId);
+      console.log('Effective Shop ID:', effectiveShopId);
       console.log('User type:', attendantData ? 'ATTENDANT' : 'ADMIN');
       console.log('Attendant ID:', attendantId);
       console.log('Update data:', updateData);
@@ -687,7 +696,7 @@ export default function CustomerOverview() {
       // Send only the deposit amount — the API adds it to the existing balance
       const updateData = {
         wallet: depositData.amount,
-        shopId: selectedShopId,
+        shopId: effectiveShopId,
         attendantId: attendantId
       };
 
