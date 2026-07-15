@@ -5,7 +5,7 @@ import { Delete } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 
-const PIN_LENGTH = 6;
+const PIN_LENGTH = 5;
 
 interface RestaurantPinLoginProps {
   onUsePasswordInstead: () => void;
