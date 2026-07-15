@@ -70,6 +70,7 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
   return (
     <div
       style={{
+        position: 'relative',
         minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
@@ -79,6 +80,28 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32, width: '100%', maxWidth: 320 }}>
+        <button
+          onClick={() => setLocation('/login-selection')}
+          style={{
+            position: 'absolute',
+            top: 24,
+            left: 24,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.85)',
+            background: 'rgba(255,255,255,0.12)',
+            border: 'none',
+            borderRadius: 999,
+            padding: '8px 14px',
+            cursor: 'pointer',
+            fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif',
+          }}
+        >
+          ← Back to login options
+        </button>
+
         <div style={{ display: 'flex', gap: 12 }}>
           {Array.from({ length: PIN_LENGTH }).map((_, i) => (
             <div

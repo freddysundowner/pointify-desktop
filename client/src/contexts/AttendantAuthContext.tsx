@@ -103,7 +103,12 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     localStorage.removeItem('attendantToken');
     localStorage.removeItem('shopData');
     localStorage.removeItem('attendantLocked');
-    setLocation('/login-selection');
+    // Restaurant-mode tills skip the admin/attendant choice screen on logout
+    // and go straight back to the PIN keypad, since this device is always
+    // used by attendants. `restaurantDeviceShopId` is the same flag
+    // attendant-login.tsx uses to decide whether to show the PIN keypad.
+    const isRestaurantDevice = !!localStorage.getItem('restaurantDeviceShopId');
+    setLocation(isRestaurantDevice ? '/attendant/login' : '/login-selection');
   };
 
   // Lock the screen in place — the attendant stays "logged in" (session/cart
