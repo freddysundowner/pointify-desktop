@@ -212,8 +212,34 @@ export function registerAttendantAuthRoutes(app: Express) {
       }
 
       const token = authHeader.substring(7);
-      const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-      
+
+      // Two token shapes reach this endpoint:
+      // 1. Password login (/api/auth/attendant/login) mints its own token —
+      //    a base64-encoded JSON blob — which decodes cleanly here.
+      // 2. Restaurant-mode PIN login (/api/attendant/login/pin) passes through
+      //    Pointify's own opaque token as-is (a real JWT). Buffer.from(jwt,'base64')
+      //    silently strips the '.' separators and concatenates header+payload+
+      //    signature bytes, so JSON.parse succeeds on the header's `{...}` and then
+      //    chokes on the payload bytes right after — "Unexpected non-whitespace
+      //    character after JSON". We can't decode that token ourselves, so fall
+      //    back to the attendantId the client already has from its stored
+      //    attendant profile (sent as a query param) instead of failing the refresh.
+      let decoded: any;
+      try {
+        decoded = JSON.parse(Buffer.from(token, 'base64').toString());
+        if (!decoded || typeof decoded !== 'object' || !decoded.attendantId) {
+          throw new Error('Decoded token missing attendantId');
+        }
+      } catch {
+        const { attendantId, shopId, adminId } = req.query as Record<string, string | undefined>;
+        if (!attendantId) {
+          return res.status(401).json({
+            error: "Token verification failed"
+          });
+        }
+        decoded = { attendantId, shopId, adminId };
+      }
+
       console.log('Refreshing attendant data for ID:', decoded.attendantId);
       
       // Fetch actual permissions from Pointify API using direct attendant endpoint

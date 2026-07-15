@@ -147,7 +147,17 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     
     dispatch(setRefreshing(true));
     try {
-      const response = await fetch('/api/auth/attendant/verify', {
+      // Restaurant-mode PIN logins carry Pointify's own opaque token, which the
+      // server can't decode itself (see attendant-auth.ts verify handler) — so
+      // pass the attendantId/shopId/adminId we already have as a fallback the
+      // server can use instead of failing the refresh.
+      const shopId = typeof attendant.shopId === 'object' ? attendant.shopId._id : attendant.shopId;
+      const params = new URLSearchParams({
+        attendantId: attendant._id,
+        ...(shopId ? { shopId } : {}),
+        ...(attendant.adminId ? { adminId: attendant.adminId } : {}),
+      });
+      const response = await fetch(`/api/auth/attendant/verify?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

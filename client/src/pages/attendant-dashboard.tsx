@@ -79,6 +79,19 @@ function AttendantDashboardContent() {
     return () => clearInterval(interval);
   }, [isAuthenticated, isLoading, attendant, setLocation, hasAttendantPermission]);
 
+  // Pull the latest permissions on every dashboard visit. Permissions/attendantData
+  // are cached in localStorage at login and previously only updated when the
+  // attendant clicked the manual "Refresh" button — so an admin granting a new
+  // permission (e.g. customers.manage) had no effect until the attendant logged
+  // out and back in. Refreshing silently here means newly granted tiles/features
+  // show up the next time the attendant lands on (or returns to) the dashboard.
+  useEffect(() => {
+    if (isAuthenticated && attendant && !isLoading) {
+      refreshAttendantData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, attendant?._id]);
+
   // Fetch shop name and cache subscription data when attendant data is available
   useEffect(() => {
     const fetchShopData = async () => {
@@ -299,29 +312,14 @@ function AttendantDashboardContent() {
       title: 'Users',
       icon: Users,
       description: 'Manage customers and suppliers',
-      // The "customers" permission group has no literal 'manage' action — the
-      // admin's grant dialog (attendants.tsx) only offers add_customers,
-      // view_customers, edit_customers, view_debt, manage_payments. Checking
-      // for 'manage' here meant this tile could never turn on no matter what
-      // an admin granted. Any one of the real customer actions should unlock it.
-      enabled: hasAttendantPermission('customers', 'add_customers')
-        || hasAttendantPermission('customers', 'view_customers')
-        || hasAttendantPermission('customers', 'edit_customers')
-        || hasAttendantPermission('customers', 'view_debt')
-        || hasAttendantPermission('customers', 'manage_payments')
-        || hasAttendantPermission('suppliers', 'view')
-        || hasAttendantPermission('suppliers', 'manage'),
+      enabled: hasAttendantPermission('customers', 'manage') || hasAttendantPermission('suppliers', 'view') || hasAttendantPermission('suppliers', 'manage'),
       color: 'bg-purple-500',
       subActions: [
         {
           title: 'Customers',
           icon: Users,
           description: 'Manage customer accounts',
-          enabled: hasAttendantPermission('customers', 'add_customers')
-            || hasAttendantPermission('customers', 'view_customers')
-            || hasAttendantPermission('customers', 'edit_customers')
-            || hasAttendantPermission('customers', 'view_debt')
-            || hasAttendantPermission('customers', 'manage_payments'),
+          enabled: hasAttendantPermission('customers', 'manage'),
           route: '/attendant/customers'
         },
         {

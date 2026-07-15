@@ -2000,11 +2000,8 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                     </div>
                   )}
                 </div>
-                {/* Add Customer Button - Only show if attendant has permission to add customers.
-                    'manage' isn't a real customers action (see attendant-dashboard.tsx notes) —
-                    the admin grant dialog only offers add_customers/view_customers/edit_customers/
-                    view_debt/manage_payments, so checking 'manage' meant this button never appeared. */}
-                {hasAttendantPermission('customers', 'add_customers') && (
+                {/* Add Customer Button - Only show if attendant has customers manage permission */}
+                {hasAttendantPermission('customers', 'manage') && (
                   <Button 
                     onClick={() => window.open('/customers', '_blank')}
                     className="bg-red-600 hover:bg-red-700 text-white h-8 lg:h-10 px-2 lg:px-4"
