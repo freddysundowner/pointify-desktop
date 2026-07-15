@@ -2,7 +2,6 @@ import { useEffect, useState, Suspense } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { 
   Store, 
   Clock, 
@@ -368,11 +367,6 @@ function AttendantDashboardContent() {
     .map(group => ({ ...group, subActions: group.subActions.filter(sub => sub.enabled) }))
     .filter(group => group.subActions.length > 0);
 
-  // Locked sub-actions across all groups, shown as a compact de-emphasized strip
-  const lockedGroups = actionGroups
-    .map(group => ({ ...group, subActions: group.subActions.filter(sub => !sub.enabled) }))
-    .filter(group => group.subActions.length > 0);
-
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans">
       {/* Header */}
@@ -499,37 +493,6 @@ function AttendantDashboardContent() {
           )}
         </div>
 
-        {/* Locked Section */}
-        {lockedGroups.length > 0 && (
-          <>
-            <div className="mt-16 mb-6">
-              <div className="flex items-center gap-4">
-                <Separator className="flex-1 bg-slate-200" />
-                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 bg-slate-50/50 px-2">
-                  <Lock className="w-3.5 h-3.5" />
-                  Restricted Access
-                </span>
-                <Separator className="flex-1 bg-slate-200" />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2.5 pb-8 justify-center sm:justify-start">
-              {lockedGroups.flatMap((group) =>
-                group.subActions.map((action) => (
-                  <div
-                    key={`locked-${group.id}-${action.title}`}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white/40 opacity-[0.65] hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-not-allowed group/locked shadow-sm"
-                    title={`Locked: ${action.title} (${group.title})`}
-                  >
-                    <action.icon className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="text-xs font-medium text-slate-600 select-none">{action.title}</span>
-                    <Lock className="w-3 h-3 text-slate-300 ml-0.5 group-hover/locked:text-red-400 transition-colors" />
-                  </div>
-                ))
-              )}
-            </div>
-          </>
-        )}
       </main>
     </div>
   );
