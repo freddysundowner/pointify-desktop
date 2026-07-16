@@ -438,29 +438,38 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-        <div className="mb-4 rounded-lg border bg-white p-4">
-          <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="mb-4 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-600 to-purple-700 p-4 sm:p-5 text-white shadow-md">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">
-              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <BedDouble className="h-5 w-5 text-purple-600" />
+              <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <span className="bg-white/15 rounded-xl p-2">
+                  <BedDouble className="h-5 w-5" />
+                </span>
                 {view === "rooms" ? "Rooms" : "Bookings"}
               </h1>
+              <p className="text-xs text-purple-200 mt-1" data-testid="text-month-revenue">
+                Revenue ({monthLabel}):{" "}
+                <span className="font-semibold text-white">{monthRevenue.toLocaleString()}</span>
+              </p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div
-                className="rounded-md bg-purple-50 border border-purple-200 px-3 py-1.5 text-sm"
-                data-testid="text-month-revenue"
-              >
-                <span className="text-gray-600">Revenue ({monthLabel}): </span>
-                <span className="font-semibold text-purple-700">{monthRevenue.toLocaleString()}</span>
-              </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {view === "rooms" && (
-                <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
+                <Button
+                  variant="outline"
+                  className="flex-1 sm:flex-none bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                  onClick={() => setBulkOpen(true)}
+                  data-testid="button-bulk-add-rooms"
+                >
                   <BedDouble className="h-4 w-4 mr-1.5" />
                   Add Rooms
                 </Button>
               )}
-              <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
+              <Button
+                className="flex-1 sm:flex-none bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-sm"
+                onClick={() => openNewBooking()}
+                disabled={roomsLoading || rooms.length === 0}
+                data-testid="button-new-booking"
+              >
                 <Plus className="h-4 w-4 mr-1.5" />
                 New Booking
               </Button>
@@ -483,8 +492,8 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
 
         {/* Rooms grid — manage rooms, see occupancy for the selected night */}
         {view === "rooms" && rooms.length > 0 && (
-          <div className="rounded-md border bg-white p-3 mb-4">
-            <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <div className="rounded-2xl border bg-white p-3 sm:p-4 mb-4 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
               <p className="font-semibold text-gray-800 flex items-center gap-1.5">
                 <BedDouble className="h-4 w-4 text-purple-600" />
                 Rooms
@@ -498,9 +507,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap mb-3">
+            <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500">Stay:</span>
+                <span className="text-xs text-gray-500 shrink-0">Stay:</span>
                 <Input
                   type="date"
                   value={rangeFrom}
@@ -510,54 +519,59 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     setRangeFrom(v);
                     if (v >= rangeTo) setRangeTo(addDays(v, 1));
                   }}
-                  className="h-8 w-[145px] text-sm"
+                  className="h-9 flex-1 min-w-0 sm:flex-none sm:w-[145px] text-sm bg-white"
                   data-testid="input-range-from"
                 />
-                <span className="text-gray-400 text-sm">→</span>
+                <span className="text-gray-400 text-sm shrink-0">→</span>
                 <Input
                   type="date"
                   value={rangeTo}
                   min={addDays(rangeFrom, 1)}
                   onChange={(e) => { if (e.target.value) setRangeTo(e.target.value); }}
-                  className="h-8 w-[145px] text-sm"
+                  className="h-9 flex-1 min-w-0 sm:flex-none sm:w-[145px] text-sm bg-white"
                   data-testid="input-range-to"
                 />
-                <span className="text-xs text-gray-500 whitespace-nowrap" data-testid="text-range-nights">
+                <span className="text-xs text-gray-500 whitespace-nowrap hidden sm:inline" data-testid="text-range-nights">
                   {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
                 </span>
               </div>
-              <Input
-                value={roomSearch}
-                onChange={(e) => setRoomSearch(e.target.value)}
-                placeholder="Search room name…"
-                className="h-8 w-[180px] text-sm"
-                data-testid="input-room-search"
-              />
-              {groupNames.length > 1 && (
-                <Select value={groupFilter} onValueChange={setGroupFilter}>
-                  <SelectTrigger className="h-8 w-[150px] text-sm" data-testid="select-room-group">
+              <p className="text-[11px] text-gray-500 sm:hidden -mt-1">
+                {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Input
+                  value={roomSearch}
+                  onChange={(e) => setRoomSearch(e.target.value)}
+                  placeholder="Search room name…"
+                  className="h-9 flex-1 min-w-[140px] sm:flex-none sm:w-[180px] text-sm bg-white"
+                  data-testid="input-room-search"
+                />
+                {groupNames.length > 1 && (
+                  <Select value={groupFilter} onValueChange={setGroupFilter}>
+                    <SelectTrigger className="h-9 flex-1 min-w-[110px] sm:flex-none sm:w-[150px] text-sm bg-white" data-testid="select-room-group">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All groups</SelectItem>
+                      {groupNames.map((g) => (
+                        <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
+                          {g || "Ungrouped"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                  <SelectTrigger className="h-9 flex-1 min-w-[110px] sm:flex-none sm:w-[130px] text-sm bg-white" data-testid="select-room-status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All groups</SelectItem>
-                    {groupNames.map((g) => (
-                      <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
-                        {g || "Ungrouped"}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">All rooms</SelectItem>
+                    <SelectItem value="vacant">Vacant</SelectItem>
+                    <SelectItem value="occupied">Occupied</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-                <SelectTrigger className="h-8 w-[130px] text-sm" data-testid="select-room-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All rooms</SelectItem>
-                  <SelectItem value="vacant">Vacant</SelectItem>
-                  <SelectItem value="occupied">Occupied</SelectItem>
-                </SelectContent>
-              </Select>
+              </div>
             </div>
             {isLoading && (
               <div className="py-6 flex justify-center" data-testid="loader-rooms-occupancy">
@@ -576,22 +590,22 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     {group || "Ungrouped"}
                   </p>
                 )}
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-1.5">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-2">
                   {list.map((room) => {
                     const b = bookingForRoom(room._id);
                     const cls = !b
-                      ? "bg-white border-gray-200 hover:border-purple-400 hover:bg-purple-50"
+                      ? "bg-white border-gray-200 hover:border-purple-400 hover:bg-purple-50 active:bg-purple-100"
                       : b.status === "checked_in"
-                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600"
-                      : "bg-blue-500 border-blue-600 text-white hover:bg-blue-600";
+                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600 active:bg-green-700"
+                      : "bg-blue-500 border-blue-600 text-white hover:bg-blue-600 active:bg-blue-700";
                     return (
                       <button
                         key={room._id}
                         onClick={() => setRoomDialog(room)}
-                        className={`rounded-md border px-2 py-2 text-left transition-colors ${cls}`}
+                        className={`rounded-xl border px-2.5 py-3 text-left transition-colors shadow-sm ${cls}`}
                         data-testid={`tile-room-${room._id}`}
                       >
-                        <p className="text-sm font-medium truncate">{room.name}</p>
+                        <p className="text-sm font-semibold truncate">{room.name}</p>
                         <p className={`text-[11px] truncate ${b ? "text-white/85" : "text-gray-500"}`}>
                           {b ? b.guestName : Number(room.nightlyRate).toLocaleString()}
                         </p>
@@ -606,14 +620,44 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
 
         {/* All upcoming bookings */}
         {view === "bookings" && (
-        <div className="rounded-md border bg-white mt-4">
-          <p className="font-semibold text-gray-800 p-3 pb-1">All bookings</p>
+        <div className="rounded-2xl border bg-white mt-4 shadow-sm overflow-hidden">
+          <p className="font-semibold text-gray-800 p-3 sm:p-4 pb-1 sm:pb-1">All bookings</p>
           {isLoading ? (
             <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-purple-500" /></div>
           ) : bookings.length === 0 ? (
             <p className="text-sm text-gray-400 p-4">No bookings yet.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="sm:hidden divide-y">
+              {[...bookings]
+                .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
+                .map((b) => (
+                  <div key={bid(b)} className="p-3" data-testid={`card-booking-${bid(b)}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{b.guestName}</p>
+                        <p className="text-xs text-gray-500 truncate">{b.roomName}</p>
+                      </div>
+                      <Badge className={`text-[10px] shrink-0 ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
+                        {STATUS_META[b.status]?.label || b.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                        {b.checkIn} → {b.checkOut}
+                      </span>
+                      <span className="font-semibold text-gray-900">{Number(b.totalAmount).toLocaleString()}</span>
+                    </div>
+                    {(b.status === "booked" || b.status === "checked_in") && (
+                      <Button size="sm" variant="outline" className="mt-2 h-8 w-full text-xs text-purple-700 border-purple-200" onClick={() => openEditDates(b)} data-testid={`button-edit-dates-mobile-${bid(b)}`}>
+                        <CalendarDays className="h-3.5 w-3.5 mr-1" />Change dates
+                      </Button>
+                    )}
+                  </div>
+                ))}
+            </div>
+            <div className="overflow-x-auto hidden sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-gray-500 border-b">
@@ -653,6 +697,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
         )}
