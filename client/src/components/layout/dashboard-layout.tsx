@@ -75,7 +75,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/sales', '/returns', '/orders',
     '/purchases', '/purchase-returns',
     '/customers', '/suppliers',
-    '/stock/products', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
+    '/stock/products', '/stock/categories', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
     '/expenses', '/cashflow', '/profit-loss', '/debtors',
     '/printer-config', '/sms-settings', '/subscription',
     '/settings', '/edit-profile', '/reports',

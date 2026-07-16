@@ -214,6 +214,42 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Update a product category (rename). Three-segment path, so it does not
+  // clash with the two-segment /api/product/:id routes.
+  app.put("/api/product/category/:id", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const data = await makePointifyRequest(`/product/category/${req.params.id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(req.body),
+      });
+      res.json(data);
+    } catch (error) {
+      res.status((error as any).status || 500).json({ error: "Failed to update category" });
+    }
+  });
+
+  // Delete a product category
+  app.delete("/api/product/category/:id", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const data = await makePointifyRequest(`/product/category/${req.params.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      res.json(data);
+    } catch (error) {
+      res.status((error as any).status || 500).json({ error: "Failed to delete category" });
+    }
+  });
+
   // Get single product
   app.get("/api/product/:id", async (req, res) => {
     try {

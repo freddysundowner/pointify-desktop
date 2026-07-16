@@ -33,6 +33,7 @@ const ShopOnboarding = lazy(() => import("@/features/shop/shop-onboarding"));
 const Shops = lazy(() => import("@/features/shop/shops"));
 const ShopDetails = lazy(() => import("@/features/shop/shop-details"));
 const StockProducts = lazy(() => import("@/features/inventory/stock-products"));
+const ProductCategories = lazy(() => import("@/features/inventory/categories"));
 const StockCount = lazy(() => import("@/features/shop/stock-count"));
 const StockCountHistoryPage = lazy(() => import("@/pages/stock-count-history"));
 const StockSummary = lazy(() => import("@/pages/stock-summary"));
@@ -552,6 +553,7 @@ function AppContent() {
             <Route path="/shop-setup" component={ShopSetup} />
             <Route path="/shop/setup" component={ShopSetup} />
             <Route path="/stock/products" component={StockProducts} />
+            <Route path="/stock/categories" component={ProductCategories} />
             <Route path="/stock/import-products" component={ImportProductsPage} />
             <Route path="/stock/summary" component={StockSummary} />
             <Route path="/stock/count" component={StockCount} />

@@ -15,6 +15,7 @@
 - [Sales report HTTP caching](sales-report-http-caching.md) — report endpoint returns 304; default fetcher serves stale per-filter data. Use a no-store queryFn + staleTime 0 for filter-sensitive queries.
 - [Route code-splitting](route-code-splitting.md) — App.tsx routes MUST be React.lazy() inside Suspense; a static page import re-inflates the entry bundle. Keep ChunkErrorBoundary for stale-SW chunk failures.
 - [Shared query key contract](shared-query-key-contract.md) — components sharing a ['shop',id] key must share endpoint+parsing; apiCall returns a raw Response so you MUST .json(), and only /api is proxied.
+- [Category multi-shop model](category-multi-shop-model.md) — upstream has one shop per category record and PUT ignores shop changes; multi-shop = duplicate record per shop, grouped by name in UI.
 - [SW clone before return](sw-clone-before-return.md) — custom sw.js must clone responses synchronously before `return response`, or body-already-used floods console and breaks the React bundle; bump CACHE name on changes.
 - [POS search name+barcode AND](pos-search-name-barcode-and.md) — upstream products/list ANDs name & barcodeid; never send both with the same query or name searches return 0. `warehouse` flag ruled out as cause.
 - [Kenyan display timezone](display-timezone-kenya.md) — all dates forced to Africa/Nairobi via a Date.prototype toLocale* patch installed in main.tsx; display-only, date-range math still local.

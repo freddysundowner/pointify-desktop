@@ -63,6 +63,7 @@ export const getMenuGroups = (isAttendant: boolean, isRestaurant: boolean = fals
     icon: TrendingUp,
     items: [
       { href: getNavigationRoute('products', isAttendant), label: "Products" },
+      ...(!isAttendant ? [{ href: "/stock/categories", label: "Categories" }] : []),
       { href: getNavigationRoute('stockSummary', isAttendant), label: "Stock Summary" },
       { href: getNavigationRoute('stockCount', isAttendant), label: "Stock Count" },
       { href: getNavigationRoute('badStock', isAttendant), label: "Bad Stock" },
@@ -137,6 +138,7 @@ export const menuGroups: MenuGroup[] = [
     icon: TrendingUp,
     items: [
       { href: "/stock/products", label: "Products" },
+      { href: "/stock/categories", label: "Categories" },
       { href: "/stock/summary", label: "Stock Summary" },
       { href: "/stock/count", label: "Stock Count" },
       { href: "/stock/bad-stock", label: "Bad Stock" },
