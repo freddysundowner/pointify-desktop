@@ -112,6 +112,14 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
   successful. The endpoint contract the backend team must implement is in
   `BOOKINGS_API_SPEC.md`; until then the Bookings page shows a "service not
   available yet" banner.
+- **Check-out billing:** the check-out confirm dialog collects payment (cash /
+  M-Pesa / "don't record") and, before flipping the booking status, records the
+  stay as a normal POS sale (`POST /api/sales`, same payload shape as
+  product-grid) so it appears in sales & reports. The sale uses a deterministic
+  idempotency key `clientRef = "booking-checkout-<bookingId>"` so retries or a
+  reopened dialog cannot double-charge once the upstream dedupes `clientRef`.
+  If the sale succeeds but the status update fails, the dialog stays open and
+  `payMethod` flips to "none" so the retry only re-sends the status update.
 
 ## Offline Sync & Duplicate-Sale Safety
 

@@ -83,3 +83,8 @@ Delete the booking. Respond `{ success: true }`.
   `checkIn <= d < checkOut`.
 - Until these endpoints exist the POS shows "booking service not available yet"
   on the Bookings screen; nothing else breaks.
+- **Check-out billing:** when a guest is checked out, the POS records the stay
+  as a normal sale (`POST /sales`) with a deterministic idempotency key
+  `clientRef = "booking-checkout-<bookingId>"`. If the create-sale endpoint
+  stores and dedupes `clientRef` (see the offline-sync note in the POS repo's
+  replit.md), the same stay can never be billed twice even across retries.

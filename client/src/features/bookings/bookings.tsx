@@ -93,6 +93,10 @@ export default function BookingsPage() {
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
 
+  // Payment collected at check-out (recorded as a normal POS sale)
+  const [payMethod, setPayMethod] = useState<"cash" | "mpesa" | "none">("cash");
+  const [payMpesaCode, setPayMpesaCode] = useState("");
+
   // Bulk "add many rooms at once" dialog
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "" });
@@ -244,10 +248,84 @@ export default function BookingsPage() {
     setIsSaving(false);
   };
 
+  // Record the stay as a normal POS sale so it appears in sales & reports.
+  // Called during check-out, BEFORE the booking status is updated — if the
+  // sale fails the guest stays checked-in so nothing is lost.
+  const recordStaySale = async (b: Booking) => {
+    const nights = Math.max(1, nightsBetween(b.checkIn, b.checkOut));
+    const rate = Number(b.nightlyRate) || 0;
+    const total = Number(b.totalAmount) || nights * rate;
+    const unitPrice = nights > 0 ? total / nights : total;
+    const isMpesa = payMethod === "mpesa";
+    const payload = {
+      products: [
+        {
+          product: b.roomProductId,
+          quantity: nights,
+          unitPrice,
+          tax: 0,
+          attendantId,
+          inventory: b.roomProductId,
+          lineDiscount: 0,
+          createdAt: new Date().toISOString().split("T")[0],
+          salesnote: `Room booking: ${b.guestName}, ${b.checkIn} → ${b.checkOut}`,
+        },
+      ],
+      shopId,
+      attendantId,
+      saleType: "sale",
+      // Deterministic idempotency key tied to the booking itself (NOT random):
+      // every retry/reopen of check-out for this booking sends the same key, so
+      // an upstream that honours clientRef can never record the stay twice.
+      clientRef: `booking-checkout-${bid(b)}`,
+      createdAt: new Date().toISOString(),
+      status: "cashed",
+      totaltax: 0,
+      orderId: null,
+      duedate: null,
+      batchTrack: false,
+      allownegativeselling: false,
+      mpesaTransId: isMpesa ? payMpesaCode.trim() : "",
+      mpesaValidate: false,
+      mpesaTotal: isMpesa ? total : 0,
+      bankTotal: 0,
+      bankTransId: "",
+      amountPaid: total,
+      outstandingBalance: 0,
+      paymentType: isMpesa ? "mpesa" : "cash",
+      paymentTag: isMpesa ? "mpesa" : "cash",
+      totalDiscount: 0,
+      customerId: null,
+      saleDiscount: 0,
+      extraCharges: [],
+      extraChargesTotal: 0,
+      salesnote: `Room booking: ${b.roomName} — ${b.guestName}`,
+    };
+    const resp = await apiCall("/api/sales", { method: "POST", body: JSON.stringify(payload) });
+    const data = await resp.json().catch(() => null);
+    const saleCreated = data && !Array.isArray(data) && data.success !== false && !!data.sale;
+    if (!resp.ok || !saleCreated) {
+      throw new Error(
+        data?.error || data?.message || "The payment could not be recorded as a sale.",
+      );
+    }
+    queryClient.invalidateQueries({
+      predicate: (q) => {
+        const key = String(q.queryKey[0] || "");
+        return key.includes("/api/sales") || key.includes("/api/analysis") || key.includes("dashboard");
+      },
+    });
+  };
+
   const handleAction = async () => {
     if (!actionBooking || !pendingAction) return;
     setIsActing(true);
     try {
+      if (pendingAction === "checked_out" && payMethod !== "none") {
+        await recordStaySale(actionBooking);
+        // If the status update below fails and the user retries, don't charge twice.
+        setPayMethod("none");
+      }
       const resp = await apiCall(`/api/booking/${bid(actionBooking)}`, {
         method: "PUT",
         body: JSON.stringify({ status: pendingAction }),
@@ -261,14 +339,21 @@ export default function BookingsPage() {
         throw new Error("The server did not confirm the update.");
       }
       const labels = { checked_in: "checked in", checked_out: "checked out", cancelled: "cancelled" };
-      toast({ title: "Booking updated", description: `${actionBooking.guestName} ${labels[pendingAction]}.` });
+      const paid =
+        pendingAction === "checked_out" && payMethod !== "none"
+          ? " Payment recorded as a sale."
+          : "";
+      toast({ title: "Booking updated", description: `${actionBooking.guestName} ${labels[pendingAction]}.${paid}` });
       refresh();
+      setActionBooking(null);
+      setPendingAction(null);
     } catch (err: any) {
+      // Keep the dialog open so the user can fix the problem and retry.
+      // If the sale already went through, payMethod is now "none" so a retry
+      // only re-attempts the status update — it will NOT charge again.
       toast({ title: "Update failed", description: err.message, variant: "destructive" });
     }
     setIsActing(false);
-    setActionBooking(null);
-    setPendingAction(null);
   };
 
   // Create many room services in one go (e.g. Room 1..100). Sequential so we
@@ -490,7 +575,7 @@ export default function BookingsPage() {
                         </>
                       )}
                       {b.status === "checked_in" && (
-                        <Button size="sm" variant="outline" className="h-6 text-[11px] px-2" onClick={() => { setActionBooking(b); setPendingAction("checked_out"); }}>
+                        <Button size="sm" variant="outline" className="h-6 text-[11px] px-2" onClick={() => { setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }}>
                           <LogOut className="h-3 w-3 mr-1" />Check out
                         </Button>
                       )}
@@ -625,6 +710,47 @@ export default function BookingsPage() {
               {actionBooking?.guestName} — {actionBooking?.roomName}, {actionBooking?.checkIn} → {actionBooking?.checkOut}
             </DialogDescription>
           </DialogHeader>
+          {pendingAction === "checked_out" && actionBooking && (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-sm flex items-center justify-between">
+                <span className="text-gray-600">
+                  {Math.max(1, nightsBetween(actionBooking.checkIn, actionBooking.checkOut))} night
+                  {Math.max(1, nightsBetween(actionBooking.checkIn, actionBooking.checkOut)) !== 1 ? "s" : ""} × {Number(actionBooking.nightlyRate).toLocaleString()}
+                </span>
+                <span className="font-semibold text-purple-700" data-testid="text-checkout-total">
+                  Total: {Number(actionBooking.totalAmount || Math.max(1, nightsBetween(actionBooking.checkIn, actionBooking.checkOut)) * actionBooking.nightlyRate).toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Payment</label>
+                <Select value={payMethod} onValueChange={(v) => setPayMethod(v as any)} disabled={isActing}>
+                  <SelectTrigger data-testid="select-checkout-payment"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash — record as a sale</SelectItem>
+                    <SelectItem value="mpesa">M-Pesa — record as a sale</SelectItem>
+                    <SelectItem value="none">Don't record a sale (already paid / no charge)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {payMethod === "mpesa" && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">M-Pesa code (optional)</label>
+                  <Input
+                    value={payMpesaCode}
+                    onChange={(e) => setPayMpesaCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. SGH4X2K9QT"
+                    disabled={isActing}
+                    data-testid="input-checkout-mpesa-code"
+                  />
+                </div>
+              )}
+              {payMethod !== "none" && (
+                <p className="text-xs text-gray-500">
+                  The stay will appear in your sales and reports as a normal sale.
+                </p>
+              )}
+            </div>
+          )}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setActionBooking(null); setPendingAction(null); }} disabled={isActing}>Back</Button>
             <Button
