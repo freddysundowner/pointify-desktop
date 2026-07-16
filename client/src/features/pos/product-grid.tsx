@@ -679,9 +679,18 @@ export default function ProductGrid({
     if (searchQuery && searchResults.length > 0) {
       let results = searchResults;
       if (activeCategory !== "all") {
-        results = results.filter(product =>
-          product.category?.toLowerCase() === activeCategory.toLowerCase()
-        );
+        // activeCategory holds the category ID — match on productCategoryId
+        // (string or populated object), with the legacy name field as fallback.
+        results = results.filter((product: any) => {
+          const catId =
+            typeof product.productCategoryId === "string"
+              ? product.productCategoryId
+              : product.productCategoryId?._id;
+          return (
+            catId === activeCategory ||
+            product.category?.toLowerCase() === activeCategory.toLowerCase()
+          );
+        });
       }
       return sortInStock(results);
     }

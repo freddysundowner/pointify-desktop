@@ -53,6 +53,8 @@ import {
   SlidersHorizontal,
   Check,
   Upload,
+  FolderInput,
+  Loader2,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/dashboard-layout";
@@ -125,6 +127,11 @@ export default function StockProducts() {
   const [singleDeleteProduct, setSingleDeleteProduct] = useState<any>(null);
   const [isSingleDeleting, setIsSingleDeleting] = useState(false);
 
+  // Bulk category assignment state
+  const [bulkCategoryDialogOpen, setBulkCategoryDialogOpen] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [isBulkAssigning, setIsBulkAssigning] = useState(false);
+
   // Note: Adjustment history now uses standalone page instead of dialog
 
   // Check if user is an attendant
@@ -194,6 +201,66 @@ export default function StockProducts() {
     }
     setIsDeletingAll(false);
     setDeleteAllConfirmOpen(false);
+  };
+
+  // Assign the chosen category to every selected product. The upstream
+  // update endpoint expects the full product payload, so we send each
+  // product's existing data with only productCategoryId changed.
+  const handleBulkAssignCategory = async () => {
+    if (!bulkCategoryId) return;
+    setIsBulkAssigning(true);
+    let ok = 0;
+    let failed = 0;
+    const succeededIds: string[] = [];
+    for (const id of selectedIds) {
+      // Selected products may be on another page of results — fall back to
+      // fetching the product by id so cross-page selections still update.
+      let product = (filteredProducts || []).find((p: any) => p._id === id);
+      if (!product) {
+        try {
+          const resp = await apiCall(`/api/product/${id}`, { method: "GET" });
+          if (resp.ok) {
+            const fetched = await resp.json();
+            product = fetched?.product || fetched?.data || (fetched?._id ? fetched : null);
+          }
+        } catch { /* handled below */ }
+      }
+      if (!product) {
+        failed++;
+        continue;
+      }
+      try {
+        const { _id, __v, createdAt, updatedAt, ...rest } = product;
+        const resp = await apiCall(`/api/product/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({ ...rest, productCategoryId: bulkCategoryId }),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json().catch(() => null);
+        if (data && data.success === false) throw new Error(data.message || "Update failed");
+        ok++;
+        succeededIds.push(id);
+      } catch {
+        failed++;
+      }
+    }
+    setIsBulkAssigning(false);
+    setBulkCategoryDialogOpen(false);
+    setBulkCategoryId("");
+    if (failed === 0) {
+      toast({ title: "Category updated", description: `${ok} product${ok !== 1 ? "s" : ""} moved to the selected category.` });
+      setSelectedIds([]);
+    } else {
+      toast({
+        title: "Some updates failed",
+        description: `${ok} updated, ${failed} failed. The failed ones are still selected — try again.`,
+        variant: "destructive",
+      });
+      setSelectedIds((prev) => prev.filter((id) => !succeededIds.includes(id)));
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/product"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/product/category"] });
+    refreshProducts();
   };
 
   const handleSingleDelete = async () => {
@@ -727,6 +794,12 @@ export default function StockProducts() {
                   <SelectItem value="outofstock">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedIds.length > 0 && (hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                <Button variant="outline" className="h-8 text-sm gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => setBulkCategoryDialogOpen(true)} data-testid="button-bulk-category">
+                  <FolderInput className="h-4 w-4" />
+                  Set Category ({selectedIds.length})
+                </Button>
+              )}
               {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
                 <Button variant="destructive" className="h-8 text-sm gap-1.5" onClick={() => setBulkDeleteConfirmOpen(true)}>
                   <Trash2 className="h-4 w-4" />
@@ -901,6 +974,12 @@ export default function StockProducts() {
               <ArrowLeft className="h-5 w-5 text-gray-600" />
             </button>
             <h1 className="flex-1 text-lg font-bold text-gray-900">Products</h1>
+            {selectedIds.length > 0 && (hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+              <button onClick={() => setBulkCategoryDialogOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-full text-xs font-medium border border-purple-200" data-testid="button-bulk-category-mobile">
+                <FolderInput className="h-3.5 w-3.5" />
+                Category
+              </button>
+            )}
             {selectedIds.length > 0 && (hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
               <button onClick={() => setBulkDeleteConfirmOpen(true)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200">
                 <Trash2 className="h-3.5 w-3.5" />
@@ -1272,6 +1351,41 @@ export default function StockProducts() {
             </Button>
             <Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting}>
               {isBulkDeleting ? "Deleting…" : `Delete ${selectedIds.length}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk assign category dialog */}
+      <Dialog open={bulkCategoryDialogOpen} onOpenChange={(o) => { if (!isBulkAssigning) { setBulkCategoryDialogOpen(o); if (!o) setBulkCategoryId(""); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-700">
+              <FolderInput className="h-5 w-5" />
+              Set Category for {selectedIds.length} Product{selectedIds.length !== 1 ? "s" : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Choose the category to assign to all selected products.
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={bulkCategoryId} onValueChange={setBulkCategoryId} disabled={isBulkAssigning}>
+            <SelectTrigger data-testid="select-bulk-category">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              {(categoryList || []).map((category: any) => (
+                <SelectItem key={category._id} value={category._id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setBulkCategoryDialogOpen(false); setBulkCategoryId(""); }} disabled={isBulkAssigning}>
+              Cancel
+            </Button>
+            <Button className="bg-purple-600 hover:bg-purple-700" onClick={handleBulkAssignCategory} disabled={isBulkAssigning || !bulkCategoryId} data-testid="button-confirm-bulk-category">
+              {isBulkAssigning ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Updating…</>) : "Apply"}
             </Button>
           </DialogFooter>
         </DialogContent>
