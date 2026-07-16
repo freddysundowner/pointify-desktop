@@ -318,7 +318,7 @@ export default function ProductForm() {
 
       const formData = {
         name: productData.name || "",
-        unitOfMeasure: productData.measure || productData.unitOfMeasure || "",
+        unitOfMeasure: productData.measure === "room" ? "" : (productData.measure || productData.unitOfMeasure || ""),
         sellingPrice: Number(productData.sellingPrice) || 0,
         buyingPrice:
           Number(productData.buyingPrice) || Number(productData.costPrice) || 0,
@@ -330,7 +330,7 @@ export default function ProductForm() {
         productType: (productData.virtual ? "service" : "product") as
           | "product"
           | "service",
-        isRoom: Boolean(productData.isRoom),
+        isRoom: Boolean(productData.isRoom) || productData.measure === "room",
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
         barcode: productData.barcode || "",
@@ -382,7 +382,7 @@ export default function ProductForm() {
       const productData = (product as any).data || product;
       const formData = {
         name: productData.name || "",
-        unitOfMeasure: productData.measure || productData.unitOfMeasure || "",
+        unitOfMeasure: productData.measure === "room" ? "" : (productData.measure || productData.unitOfMeasure || ""),
         sellingPrice: Number(productData.sellingPrice) || 0,
         buyingPrice:
           Number(productData.buyingPrice) || Number(productData.costPrice) || 0,
@@ -394,7 +394,7 @@ export default function ProductForm() {
         productType: (productData.virtual ? "service" : "product") as
           | "product"
           | "service",
-        isRoom: Boolean(productData.isRoom),
+        isRoom: Boolean(productData.isRoom) || productData.measure === "room",
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
         barcode: productData.barcode || "",
@@ -466,7 +466,12 @@ export default function ProductForm() {
 
       const payload = {
         name: formData.name,
-        measure: formData.unitOfMeasure || "",
+        // "room" in measure doubles as the room marker until the upstream
+        // backend persists the isRoom field.
+        measure:
+          formData.productType === "service" && formData.isRoom
+            ? "room"
+            : formData.unitOfMeasure || "",
         sellingPrice: formData.sellingPrice,
         buyingPrice: formData.buyingPrice,
         quantity: formData.quantity,

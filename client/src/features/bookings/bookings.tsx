@@ -126,9 +126,11 @@ export default function BookingsPage() {
       const res = await apiCall(`/api/v2/products/list?${params.toString()}`, { method: "GET" });
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.data ?? [];
-      // Rooms are services explicitly marked "This service is a room"
+      // Rooms are services explicitly marked "This service is a room".
+      // The upstream schema may not persist `isRoom` yet, so we also mark
+      // rooms via measure === "room" (a field the upstream always saves).
       return list
-        .filter((p: any) => p.virtual === true && p.isRoom === true)
+        .filter((p: any) => p.virtual === true && (p.isRoom === true || p.measure === "room"))
         .map((p: any) => ({ _id: p._id, name: p.name, sellingPrice: p.sellingPrice || 0 }));
     },
     enabled: !!shopId,
@@ -370,7 +372,8 @@ export default function BookingsPage() {
 
   const roomPayload = (name: string) => ({
     name,
-    measure: "",
+    // "room" doubles as the room marker until the upstream persists isRoom.
+    measure: "room",
     sellingPrice: bulkRate,
     buyingPrice: 0,
     quantity: 0,
@@ -402,7 +405,77 @@ export default function BookingsPage() {
     }
     setBulkProgress({ done: 0, total: bulkCount });
     let created = 0;
+    let repaired = 0;
     try {
+      // Repair pass: services with a wanted name that exist upstream but
+      // lost their room marker (upstream drops isRoom; older rooms were
+      // created before the measure:"room" marker existed). Mark them now
+      // so they show up as rooms instead of being duplicated or ignored.
+      if (wanted.length > 0) {
+        // Fetch ALL products (paginated) so shops with >200 items are covered.
+        const all: any[] = [];
+        for (let pageNum = 1; pageNum <= 25; pageNum++) {
+          const listRes = await apiCall(
+            `/api/v2/products/list?${new URLSearchParams({ page: String(pageNum), limit: "200", shop: shopId, sort: "name", useWarehouse: "true", warehouse: "false" }).toString()}`,
+            { method: "GET" },
+          );
+          const listData = await listRes.json().catch(() => null);
+          const chunk = Array.isArray(listData) ? listData : listData?.data ?? [];
+          all.push(...chunk);
+          const totalPages = Number(listData?.totalPages) || 1;
+          if (pageNum >= totalPages || chunk.length === 0) break;
+        }
+        const wantedSet = new Set(wanted.map((n) => n.toLowerCase()));
+        const orphans = all.filter(
+          (p: any) =>
+            p.virtual === true &&
+            wantedSet.has(String(p.name || "").toLowerCase()) &&
+            p.isRoom !== true &&
+            p.measure !== "room",
+        );
+        for (const p of orphans) {
+          // Upstream PUT /product/:id expects a full product payload —
+          // send everything the product already has, with the room marker.
+          const r = await apiCall(`/api/product/${p._id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              name: p.name,
+              measure: "room",
+              sellingPrice: p.sellingPrice ?? 0,
+              buyingPrice: p.buyingPrice ?? 0,
+              quantity: p.quantity ?? 0,
+              bundle: p.bundle ?? false,
+              virtual: true,
+              isRoom: true,
+              manageByPrice: p.manageByPrice ?? false,
+              manufacturer: p.manufacturer || "",
+              barcode: p.barcode || "",
+              wholesalePrice: p.wholesalePrice ?? 0,
+              dealerPrice: p.dealerPrice ?? 0,
+              productCategoryId: p.productCategoryId?._id ?? p.productCategoryId ?? null,
+              supplierId: p.supplierId?._id ?? p.supplierId ?? null,
+              reorderLevel: p.reorderLevel ?? 0,
+              maxDiscount: p.maxDiscount ?? 0,
+              description: p.description || "",
+              shopId,
+              adminId,
+              attendantId,
+              productType: "service",
+            }),
+          });
+          const body = await r.json().catch(() => null);
+          if (r.ok && (!body || body.success !== false)) {
+            repaired++;
+            wantedSet.delete(String(p.name).toLowerCase());
+          }
+        }
+        if (repaired > 0) {
+          for (let i = wanted.length - 1; i >= 0; i--) {
+            if (!wantedSet.has(wanted[i].toLowerCase())) wanted.splice(i, 1);
+          }
+        }
+      }
+
       if (wanted.length > 0) {
         // Preferred path: ONE request creates everything
         // (upstream v2 endpoint: POST /api/v2/products/bulk/add).
@@ -451,7 +524,7 @@ export default function BookingsPage() {
       }
       toast({
         title: "Rooms created",
-        description: `${created} room${created !== 1 ? "s" : ""} added${skipped ? `, ${skipped} skipped (name already exists)` : ""}.`,
+        description: `${created} room${created !== 1 ? "s" : ""} added${repaired ? `, ${repaired} existing service${repaired !== 1 ? "s" : ""} marked as rooms` : ""}${skipped ? `, ${skipped} skipped (name already exists)` : ""}.`,
       });
       setBulkOpen(false);
     } catch (err: any) {
