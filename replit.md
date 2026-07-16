@@ -98,7 +98,12 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
   accept this field or it is silently dropped).
 - When on, a "Room Bookings" page appears (`/bookings`,
   `client/src/features/bookings/bookings.tsx`): month calendar, per-night day
-  detail, new-booking dialog (rooms = the shop's services / virtual products
+  detail. New bookings are made on a standalone page (`/bookings/new`,
+  `client/src/features/bookings/new-booking.tsx`): searchable room grid with
+  per-date availability, guest picker that searches customers (name/phone)
+  with add-new-customer-on-the-fly (POST /api/customers), and a sticky summary
+  panel. The old in-page dialog was removed; "New Booking"/"Book" buttons
+  navigate to `/bookings/new?date=YYYY-MM-DD`. (Rooms = the shop's services / virtual products
   that are marked `isRoom: true` via the "This service is a room" switch in
   the Add/Edit Service form — shown only for guest-house shops; service price
   = nightly rate; the main backend's product schema MUST persist `isRoom` or

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -81,14 +81,13 @@ export default function BookingsPage() {
   const isGuestHouse = !!shopData?.isGuestHouse;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const [monthAnchor, setMonthAnchor] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState<string>(todayStr());
-  const [formOpen, setFormOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
@@ -101,19 +100,6 @@ export default function BookingsPage() {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "" });
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
-
-  const emptyForm = {
-    roomProductId: "",
-    guestName: "",
-    guestPhone: "",
-    guestIdNumber: "",
-    guestsCount: "1",
-    checkIn: todayStr(),
-    checkOut: addDays(todayStr(), 1),
-    nightlyRate: "",
-    notes: "",
-  };
-  const [form, setForm] = useState(emptyForm);
 
   // Rooms = services (virtual products) of this shop
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<Room[]>({
@@ -181,72 +167,7 @@ export default function BookingsPage() {
 
   const openNewBooking = (day?: string) => {
     const start = day || selectedDay || todayStr();
-    setForm({ ...emptyForm, checkIn: start, checkOut: addDays(start, 1) });
-    setFormOpen(true);
-  };
-
-  const selectedRoom = rooms.find((r) => r._id === form.roomProductId);
-  const nights = nightsBetween(form.checkIn, form.checkOut);
-  const rate = form.nightlyRate !== "" ? Number(form.nightlyRate) : selectedRoom?.sellingPrice || 0;
-  const total = nights * rate;
-
-  const formConflict = useMemo(() => {
-    if (!form.roomProductId || nights <= 0) return null;
-    return activeBookings.find(
-      (b) =>
-        b.roomProductId === form.roomProductId &&
-        b.checkIn < form.checkOut &&
-        b.checkOut > form.checkIn
-    );
-  }, [activeBookings, form.roomProductId, form.checkIn, form.checkOut, nights]);
-
-  const canSave =
-    !!form.roomProductId && !!form.guestName.trim() && nights > 0 && !formConflict && !isSaving;
-
-  const handleCreate = async () => {
-    if (!canSave) return;
-    setIsSaving(true);
-    try {
-      const resp = await apiCall("/api/booking", {
-        method: "POST",
-        body: JSON.stringify({
-          shop: shopId,
-          roomProductId: form.roomProductId,
-          roomName: selectedRoom?.name || "",
-          guestName: form.guestName.trim(),
-          guestPhone: form.guestPhone.trim(),
-          guestIdNumber: form.guestIdNumber.trim(),
-          guestsCount: Math.max(1, Number(form.guestsCount) || 1),
-          checkIn: form.checkIn,
-          checkOut: form.checkOut,
-          nightlyRate: rate,
-          totalAmount: total,
-          status: "booked",
-          notes: form.notes.trim(),
-        }),
-      });
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok || (data && data.success === false)) {
-        throw new Error(data?.error || data?.message || `HTTP ${resp.status}`);
-      }
-      // Require a real booking object back — a bare [] / null means nothing was saved.
-      const created = data?.data ?? data?.booking ?? data;
-      if (!created || Array.isArray(created) || typeof created !== "object" || !(created._id || created.id)) {
-        throw new Error("The server did not confirm the booking was saved.");
-      }
-      toast({ title: "Booking created", description: `${form.guestName.trim()} — ${selectedRoom?.name}, ${nights} night${nights !== 1 ? "s" : ""}.` });
-      setFormOpen(false);
-      refresh();
-    } catch (err: any) {
-      toast({
-        title: "Could not create booking",
-        description: err.message?.includes("404")
-          ? "The booking service is not available on the main server yet."
-          : err.message,
-        variant: "destructive",
-      });
-    }
-    setIsSaving(false);
+    navigate(`/bookings/new?date=${start}`);
   };
 
   // Record the stay as a normal POS sale so it appears in sales & reports.
@@ -667,72 +588,6 @@ export default function BookingsPage() {
           )}
         </div>
       </div>
-
-      {/* New booking dialog */}
-      <Dialog open={formOpen} onOpenChange={(o) => { if (!isSaving) setFormOpen(o); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Booking</DialogTitle>
-            <DialogDescription>Reserve a room for a guest.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Select value={form.roomProductId} onValueChange={(v) => setForm((f) => ({ ...f, roomProductId: v, nightlyRate: "" }))}>
-              <SelectTrigger data-testid="select-room"><SelectValue placeholder="Select room" /></SelectTrigger>
-              <SelectContent>
-                {rooms.map((r) => (
-                  <SelectItem key={r._id} value={r._id}>
-                    {r.name} — {r.sellingPrice.toLocaleString()}/night
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input placeholder="Guest name *" value={form.guestName} onChange={(e) => setForm((f) => ({ ...f, guestName: e.target.value }))} data-testid="input-guest-name" />
-            <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Phone" value={form.guestPhone} onChange={(e) => setForm((f) => ({ ...f, guestPhone: e.target.value }))} data-testid="input-guest-phone" />
-              <Input placeholder="ID number" value={form.guestIdNumber} onChange={(e) => setForm((f) => ({ ...f, guestIdNumber: e.target.value }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-500">Check-in</label>
-                <Input type="date" value={form.checkIn} onChange={(e) => setForm((f) => ({ ...f, checkIn: e.target.value }))} data-testid="input-check-in" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500">Check-out</label>
-                <Input type="date" value={form.checkOut} min={addDays(form.checkIn, 1)} onChange={(e) => setForm((f) => ({ ...f, checkOut: e.target.value }))} data-testid="input-check-out" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-gray-500">Guests</label>
-                <Input type="number" min={1} value={form.guestsCount} onChange={(e) => setForm((f) => ({ ...f, guestsCount: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500">Rate per night</label>
-                <Input type="number" min={0} value={form.nightlyRate} placeholder={String(selectedRoom?.sellingPrice ?? "")} onChange={(e) => setForm((f) => ({ ...f, nightlyRate: e.target.value }))} data-testid="input-nightly-rate" />
-              </div>
-            </div>
-            <Textarea placeholder="Notes (optional)" rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
-            {nights > 0 && (
-              <p className="text-sm text-gray-600">
-                {nights} night{nights !== 1 ? "s" : ""} × {rate.toLocaleString()} ={" "}
-                <span className="font-semibold text-gray-900">{total.toLocaleString()}</span>
-              </p>
-            )}
-            {nights <= 0 && <p className="text-sm text-red-600">Check-out must be after check-in.</p>}
-            {formConflict && (
-              <p className="text-sm text-red-600" data-testid="text-conflict">
-                This room is already booked {formConflict.checkIn} to {formConflict.checkOut} ({formConflict.guestName}).
-              </p>
-            )}
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={isSaving}>Cancel</Button>
-            <Button className="bg-purple-600 hover:bg-purple-700" onClick={handleCreate} disabled={!canSave} data-testid="button-save-booking">
-              {isSaving ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Saving…</>) : "Save Booking"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Confirm status action */}
       <Dialog open={!!actionBooking} onOpenChange={(o) => { if (!isActing && !o) { setActionBooking(null); setPendingAction(null); } }}>

@@ -35,6 +35,7 @@ const ShopDetails = lazy(() => import("@/features/shop/shop-details"));
 const StockProducts = lazy(() => import("@/features/inventory/stock-products"));
 const ProductCategories = lazy(() => import("@/features/inventory/categories"));
 const Bookings = lazy(() => import("@/features/bookings/bookings"));
+const NewBooking = lazy(() => import("@/features/bookings/new-booking"));
 const StockCount = lazy(() => import("@/features/shop/stock-count"));
 const StockCountHistoryPage = lazy(() => import("@/pages/stock-count-history"));
 const StockSummary = lazy(() => import("@/pages/stock-summary"));
@@ -556,6 +557,7 @@ function AppContent() {
             <Route path="/stock/products" component={StockProducts} />
             <Route path="/stock/categories" component={ProductCategories} />
             <Route path="/bookings" component={Bookings} />
+            <Route path="/bookings/new" component={NewBooking} />
             <Route path="/stock/import-products" component={ImportProductsPage} />
             <Route path="/stock/summary" component={StockSummary} />
             <Route path="/stock/count" component={StockCount} />
