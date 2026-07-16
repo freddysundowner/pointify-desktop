@@ -507,7 +507,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
               </div>
             </div>
-            <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2">
+            <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-500 shrink-0">Stay:</span>
                 <Input
