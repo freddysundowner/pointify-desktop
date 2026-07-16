@@ -271,9 +271,8 @@ ${saleData.customerName && saleData.customerName !== 'Walk-in' ? `<div>Customer:
 <div>Waiter: ${saleData.attendantName}</div>
 <hr/>
 ${saleData.items.map((item: any) =>
-  `<div class="item">${item.quantity}x ${item.productName}</div>`
+  `<div class="item">${item.quantity}x ${item.productName}${item.salesnote ? `<div style="font-size:13px;font-weight:normal;padding-left:10px;color:#555;margin-top:2px">${item.salesnote}</div>` : ''}</div>`
 ).join('')}
-${saleData.salesnote && saleData.salesnote !== 'HOLD TRANSACTION' ? `<hr/><div style="font-size:13px;color:#555">Note: ${saleData.salesnote}</div>` : ''}
 </body></html>`;
     const w = window.open('', '_blank', 'width=400,height=600');
     if (!w) return;
