@@ -112,6 +112,7 @@ export default function ReceiptView() {
       unitPrice: item.unitPrice || 0,
       lineDiscount: item.lineDiscount || 0,
       totalPrice: (item.quantity || 0) * (item.unitPrice || 0),
+      salesnote: item.salesnote || "",
     })),
     attendantName: sale.attendantId?.username || "Unknown",
     amountPaid: sale.amountPaid || 0,
@@ -218,6 +219,7 @@ ${saleData.items.map((item: any) => `
   <span style="width:55px;text-align:right">${item.unitPrice.toFixed(2)}</span>
   <span style="width:55px;text-align:right;font-weight:600">${item.totalPrice.toFixed(2)}</span>
 </div>
+${item.salesnote ? `<div style="font-size:10px;color:#888;padding-left:8px;margin-bottom:2px">${item.salesnote}</div>` : ""}
 ${item.lineDiscount > 0 ? `<div class="row" style="color:#888;font-size:11px;padding-left:8px"><span>Discount</span><span>-${item.lineDiscount.toFixed(2)}</span></div>` : ""}
 `).join("")}
 <hr class="divider">
@@ -492,6 +494,11 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
                         {item.totalPrice.toFixed(2)}
                       </span>
                     </div>
+                    {item.salesnote && (
+                      <div className="text-[10px] text-gray-400 pl-2 -mt-0.5 mb-0.5">
+                        {item.salesnote}
+                      </div>
+                    )}
                     {item.lineDiscount > 0 && (
                       <div className="flex text-xs text-gray-500 pl-2">
                         <span className="flex-1">Discount</span>
