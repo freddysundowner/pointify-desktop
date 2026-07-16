@@ -23,6 +23,7 @@ import { registerMpesaRoutes } from "./mpesa.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
 import { registerAccompanimentRoutes } from "./accompaniments.js";
+import { registerBookingRoutes } from "./bookings.js";
 
 
 export function registerAllRoutes(app: Express) {
