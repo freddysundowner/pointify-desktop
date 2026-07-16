@@ -177,6 +177,43 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Get product categories — MUST be registered before "/api/product/:id",
+  // otherwise that param route captures "category" as an id and drops the
+  // query string (shop/adminId) before proxying upstream.
+  app.get("/api/product/category", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+
+      const queryParams = new URLSearchParams(req.query as any);
+      const endpoint = `/product/category?${queryParams.toString()}`;
+
+      const data = await makePointifyRequest(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      res.json(data);
+    } catch (error) {
+      const status = (error as any).status || 500;
+      const responseBody = (error as any).responseBody;
+
+      if (responseBody) {
+        try {
+          const errorData = JSON.parse(responseBody);
+          res.status(status).json(errorData);
+        } catch {
+          res
+            .status(status)
+            .json({ error: "Failed to fetch product categories" });
+        }
+      } else {
+        res.status(500).json({ error: "Failed to fetch product categories" });
+      }
+    }
+  });
+
   // Get single product
   app.get("/api/product/:id", async (req, res) => {
     try {
@@ -419,41 +456,6 @@ export function registerProductRoutes(app: Express) {
         }
       } else {
         res.status(500).json({ error: "Failed to fetch bundle items" });
-      }
-    }
-  });
-
-  // Get product categories
-  app.get("/api/product/category", async (req, res) => {
-    try {
-      const token = extractToken(req);
-      if (!token) {
-        return res.status(401).json({ error: "Authorization token required" });
-      }
-
-      const queryParams = new URLSearchParams(req.query as any);
-      const endpoint = `/product/category?${queryParams.toString()}`;
-
-      const data = await makePointifyRequest(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      res.json(data);
-    } catch (error) {
-      const status = (error as any).status || 500;
-      const responseBody = (error as any).responseBody;
-
-      if (responseBody) {
-        try {
-          const errorData = JSON.parse(responseBody);
-          res.status(status).json(errorData);
-        } catch {
-          res
-            .status(status)
-            .json({ error: "Failed to fetch product categories" });
-        }
-      } else {
-        res.status(500).json({ error: "Failed to fetch product categories" });
       }
     }
   });
