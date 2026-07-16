@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Download, Mail, Printer, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Download, Mail, Printer, ArrowLeft, Loader2, CheckCircle2, UtensilsCrossed } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useRoute, useLocation } from "wouter";
@@ -250,6 +250,37 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
 <div class="center" style="font-size:10px;color:#aaa;margin-top:4px">store.pointifypos.com</div>
 </div></body></html>`;
 
+  const handleKitchenPrint = () => {
+    const ticketDate = new Date(saleData.saleDate).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    const html = `<!DOCTYPE html><html><head><title>Kitchen Order #${saleData.receiptNo}</title>
+<style>
+  body{font-family:monospace;font-size:14px;width:280px;margin:0 auto;padding:8px}
+  .center{text-align:center}.bold{font-weight:bold}
+  hr{border:none;border-top:1px dashed #000}
+  .item{font-size:18px;font-weight:bold;margin:6px 0}
+  @media print{body{width:100%}}
+</style></head><body>
+<div class="center bold" style="font-size:18px">KITCHEN ORDER</div>
+<div class="center">${saleData.shop.name}</div>
+<hr/>
+<div class="bold" style="font-size:18px">Order #: ${saleData.receiptNo}</div>
+<div>Time: ${ticketDate}</div>
+${saleData.customerName && saleData.customerName !== 'Walk-in' ? `<div>Customer: ${saleData.customerName}</div>` : ''}
+<div>Waiter: ${saleData.attendantName}</div>
+<hr/>
+${saleData.items.map((item: any) =>
+  `<div class="item">${item.quantity}x ${item.productName}${item.salesnote ? `<div style="font-size:13px;font-weight:normal;padding-left:10px;color:#555;margin-top:2px">${item.salesnote}</div>` : ''}</div>`
+).join('')}
+</body></html>`;
+    const w = window.open('', '_blank', 'width=400,height=600');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 400);
+  };
+
   const openReceiptWindow = (autoPrint: boolean) => {
     const printWindow = window.open("", "_blank", "width=1000,height=900");
     if (!printWindow) return;
@@ -387,6 +418,10 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
             <Button variant="outline" size="sm" onClick={handleEmail}>
               <Mail className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Email</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleKitchenPrint}>
+              <UtensilsCrossed className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Kitchen</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleDownload}>
               <Download className="h-4 w-4 sm:mr-2" />
