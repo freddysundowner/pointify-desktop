@@ -1,4 +1,4 @@
-import { Home, ScanBarcode, Package, Store, TrendingUp, ShoppingCart, Receipt, Users, Truck, DollarSign, UserCheck, BarChart3, FileText, Shield, User, Settings, Building2, Crown, Plus, ShoppingBag, Printer, MessageSquare } from "lucide-react";
+import { Home, ScanBarcode, Package, Store, TrendingUp, ShoppingCart, Receipt, Users, Truck, DollarSign, UserCheck, BarChart3, FileText, Shield, User, Settings, Building2, Crown, Plus, ShoppingBag, Printer, MessageSquare, BedDouble } from "lucide-react";
 import { getNavigationRoute } from "./navigation-utils";
 
 export interface NavItem {
@@ -37,9 +37,20 @@ export const getMenuGroups = (isAttendant: boolean, isRestaurant: boolean = fals
       { href: "/returns", label: "Returns" },
       { href: "/orders", label: "Orders" },
       ...(isRestaurant ? [{ href: isAttendant ? "/attendant/pending-orders" : "/pending-orders", label: "Pending Orders" }] : []),
-      ...(isGuestHouse ? [{ href: "/bookings", label: "Room Bookings" }] : []),
     ]
   },
+  ...(isGuestHouse
+    ? [{
+        key: "roomBookings",
+        label: "Room Bookings",
+        icon: BedDouble,
+        items: [
+          { href: "/bookings", label: "Rooms & Bookings" },
+          { href: "/bookings/new", label: "New Booking" },
+          { href: "/bookings/report", label: "Rooms Report" },
+        ],
+      }]
+    : []),
   {
     key: "purchases",
     label: "Purchases",

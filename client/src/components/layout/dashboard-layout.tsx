@@ -41,6 +41,20 @@ export default function DashboardLayout({ children, title, isDashboard = false }
   const isRestaurantShop = !!shopData?.isRestaurant;
   const isGuestHouseShop = !!shopData?.isGuestHouse;
 
+  // Once shop flags load, auto-expand any conditional group (e.g. Room
+  // Bookings) that owns the current route — the first-render pass above
+  // runs before shop data exists, so those groups are missed there.
+  useEffect(() => {
+    for (const group of getMenuGroups(false, isRestaurantShop, isGuestHouseShop)) {
+      if (group.items.some(item => item.href === location)) {
+        setExpandedMenus(prev => (prev[group.key] ? prev : { ...prev, [group.key]: true }));
+      }
+    }
+    // Only when the flags load — not on every navigation, so a group the
+    // user collapsed manually stays collapsed while they browse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRestaurantShop, isGuestHouseShop]);
+
   // Check if current route is an attendant route
   const isAttendantRoute = location.startsWith('/attendant/');
 
@@ -76,7 +90,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/sales', '/returns', '/orders',
     '/purchases', '/purchase-returns',
     '/customers', '/suppliers',
-    '/bookings',
+    '/bookings', '/bookings/report',
     '/stock/products', '/stock/categories', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
     '/expenses', '/cashflow', '/profit-loss', '/debtors',
     '/printer-config', '/sms-settings', '/subscription',
