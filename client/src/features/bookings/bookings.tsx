@@ -32,7 +32,7 @@ interface Booking {
   _id?: string;
   id?: string | number;
   shop: string;
-  roomProductId: string;
+  roomId: string;
   roomName: string;
   guestName: string;
   guestPhone?: string;
@@ -44,12 +44,16 @@ interface Booking {
   totalAmount: number;
   status: "booked" | "checked_in" | "checked_out" | "cancelled";
   notes?: string;
+  paymentMethod?: "cash" | "mpesa" | "none";
+  amountPaid?: number;
+  mpesaCode?: string;
+  paidAt?: string;
 }
 
 interface Room {
   _id: string;
   name: string;
-  sellingPrice: number;
+  nightlyRate: number;
 }
 
 const bid = (b: Booking) => String(b._id ?? b.id);
@@ -92,7 +96,7 @@ export default function BookingsPage() {
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
 
-  // Payment collected at check-out (recorded as a normal POS sale)
+  // Payment collected at check-out (recorded on the booking — never a POS sale)
   const [payMethod, setPayMethod] = useState<"cash" | "mpesa" | "none">("cash");
   const [payMpesaCode, setPayMpesaCode] = useState("");
 
@@ -101,24 +105,24 @@ export default function BookingsPage() {
   const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "" });
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
-  // Rooms = services (virtual products) of this shop
+  // Rooms are their OWN records in the standalone guest-house module —
+  // NOT products or services. They live on the main Pointify backend.
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<Room[]>({
     queryKey: ["booking-rooms", shopId],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: "1", limit: "200", shop: shopId, sort: "name",
-        useWarehouse: "true", warehouse: "false",
-      });
-      const res = await apiCall(`/api/v2/products/list?${params.toString()}`, { method: "GET" });
+      const res = await apiCall(`/api/rooms?shop=${shopId}`, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.data ?? [];
-      // Rooms are services explicitly marked "This service is a room".
-      // Requires the main backend's product schema to persist `isRoom`.
-      return list
-        .filter((p: any) => p.virtual === true && p.isRoom === true)
-        .map((p: any) => ({ _id: p._id, name: p.name, sellingPrice: p.sellingPrice || 0 }));
+      const list = Array.isArray(data) ? data : data?.data ?? data?.rooms ?? [];
+      if (!Array.isArray(list)) throw new Error("Rooms endpoint not available");
+      return list.map((r: any) => ({
+        _id: r._id,
+        name: r.name,
+        nightlyRate: Number(r.nightlyRate) || 0,
+      }));
     },
     enabled: !!shopId,
+    retry: 1,
   });
 
   const {
@@ -161,7 +165,22 @@ export default function BookingsPage() {
     activeBookings.filter((b) => b.checkIn <= day && day < b.checkOut);
 
   const dayBookings = bookingsOnDay(selectedDay);
-  const occupiedRoomIdsOnDay = new Set(dayBookings.map((b) => b.roomProductId));
+  const occupiedRoomIdsOnDay = new Set(dayBookings.map((b) => b.roomId));
+
+  // Bookings revenue for the displayed month — kept fully separate from POS
+  // sales: it is the sum of payments recorded on checked-out bookings.
+  const monthRevenue = useMemo(() => {
+    const y = monthAnchor.getFullYear();
+    const m = monthAnchor.getMonth();
+    return bookings
+      .filter((b) => {
+        if (b.status !== "checked_out") return false;
+        if (b.paymentMethod === "none") return false;
+        const d = new Date((b.paidAt || b.checkOut) + (b.paidAt ? "" : "T00:00:00"));
+        return d.getFullYear() === y && d.getMonth() === m;
+      })
+      .reduce((sum, b) => sum + (Number(b.amountPaid) || Number(b.totalAmount) || 0), 0);
+  }, [bookings, monthAnchor]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
@@ -170,88 +189,32 @@ export default function BookingsPage() {
     navigate(`/bookings/new?date=${start}`);
   };
 
-  // Record the stay as a normal POS sale so it appears in sales & reports.
-  // Called during check-out, BEFORE the booking status is updated — if the
-  // sale fails the guest stays checked-in so nothing is lost.
-  const recordStaySale = async (b: Booking) => {
-    const nights = Math.max(1, nightsBetween(b.checkIn, b.checkOut));
-    const rate = Number(b.nightlyRate) || 0;
-    const total = Number(b.totalAmount) || nights * rate;
-    const unitPrice = nights > 0 ? total / nights : total;
-    const isMpesa = payMethod === "mpesa";
-    const payload = {
-      products: [
-        {
-          product: b.roomProductId,
-          quantity: nights,
-          unitPrice,
-          tax: 0,
-          attendantId,
-          inventory: b.roomProductId,
-          lineDiscount: 0,
-          createdAt: new Date().toISOString().split("T")[0],
-          salesnote: `Room booking: ${b.guestName}, ${b.checkIn} → ${b.checkOut}`,
-        },
-      ],
-      shopId,
-      attendantId,
-      saleType: "sale",
-      // Deterministic idempotency key tied to the booking itself (NOT random):
-      // every retry/reopen of check-out for this booking sends the same key, so
-      // an upstream that honours clientRef can never record the stay twice.
-      clientRef: `booking-checkout-${bid(b)}`,
-      createdAt: new Date().toISOString(),
-      status: "cashed",
-      totaltax: 0,
-      orderId: null,
-      duedate: null,
-      batchTrack: false,
-      allownegativeselling: false,
-      mpesaTransId: isMpesa ? payMpesaCode.trim() : "",
-      mpesaValidate: false,
-      mpesaTotal: isMpesa ? total : 0,
-      bankTotal: 0,
-      bankTransId: "",
-      amountPaid: total,
-      outstandingBalance: 0,
-      paymentType: isMpesa ? "mpesa" : "cash",
-      paymentTag: isMpesa ? "mpesa" : "cash",
-      totalDiscount: 0,
-      customerId: null,
-      saleDiscount: 0,
-      extraCharges: [],
-      extraChargesTotal: 0,
-      salesnote: `Room booking: ${b.roomName} — ${b.guestName}`,
-    };
-    const resp = await apiCall("/api/sales", { method: "POST", body: JSON.stringify(payload) });
-    const data = await resp.json().catch(() => null);
-    const saleCreated = data && !Array.isArray(data) && data.success !== false && !!data.sale;
-    if (!resp.ok || !saleCreated) {
-      throw new Error(
-        data?.error || data?.message || "The payment could not be recorded as a sale.",
-      );
-    }
-    queryClient.invalidateQueries({
-      predicate: (q) => {
-        const key = String(q.queryKey[0] || "");
-        return key.includes("/api/sales") || key.includes("/api/analysis") || key.includes("dashboard");
-      },
-    });
-  };
-
   const handleAction = async () => {
     if (!actionBooking || !pendingAction) return;
     setIsActing(true);
     try {
-      if (pendingAction === "checked_out" && payMethod !== "none") {
-        await recordStaySale(actionBooking);
-        // If the status update below fails and the user retries, don't charge twice.
-        setPayMethod("none");
+      let resp: Response;
+      if (pendingAction === "checked_out") {
+        // Atomic check-out on the guest-house backend: records the payment on
+        // the booking itself AND flips the status in ONE call. Payments stay
+        // completely separate from POS sales.
+        const nights = Math.max(1, nightsBetween(actionBooking.checkIn, actionBooking.checkOut));
+        const total =
+          Number(actionBooking.totalAmount) || nights * (Number(actionBooking.nightlyRate) || 0);
+        resp = await apiCall(`/api/booking/${bid(actionBooking)}/checkout`, {
+          method: "POST",
+          body: JSON.stringify({
+            paymentMethod: payMethod,
+            amountPaid: payMethod === "none" ? 0 : total,
+            mpesaCode: payMethod === "mpesa" ? payMpesaCode.trim() : "",
+          }),
+        });
+      } else {
+        resp = await apiCall(`/api/booking/${bid(actionBooking)}`, {
+          method: "PUT",
+          body: JSON.stringify({ status: pendingAction }),
+        });
       }
-      const resp = await apiCall(`/api/booking/${bid(actionBooking)}`, {
-        method: "PUT",
-        body: JSON.stringify({ status: pendingAction }),
-      });
       const data = await resp.json().catch(() => null);
       if (!resp.ok || (data && data.success === false)) {
         throw new Error(data?.error || data?.message || `HTTP ${resp.status}`);
@@ -263,23 +226,21 @@ export default function BookingsPage() {
       const labels = { checked_in: "checked in", checked_out: "checked out", cancelled: "cancelled" };
       const paid =
         pendingAction === "checked_out" && payMethod !== "none"
-          ? " Payment recorded as a sale."
+          ? " Payment recorded on the booking."
           : "";
       toast({ title: "Booking updated", description: `${actionBooking.guestName} ${labels[pendingAction]}.${paid}` });
       refresh();
       setActionBooking(null);
       setPendingAction(null);
     } catch (err: any) {
-      // Keep the dialog open so the user can fix the problem and retry.
-      // If the sale already went through, payMethod is now "none" so a retry
-      // only re-attempts the status update — it will NOT charge again.
+      // Keep the dialog open so the user can fix the problem and retry. The
+      // check-out call is atomic upstream, so a retry can never double-charge.
       toast({ title: "Update failed", description: err.message, variant: "destructive" });
     }
     setIsActing(false);
   };
 
-  // Create many room services in one go (e.g. Room 1..100). Sequential so we
-  // can show progress and stop on the first real failure.
+  // Create many rooms in one go (e.g. Room 1..100).
   const bulkCount = Math.floor(Number(bulkForm.count));
   const bulkStart = Math.floor(Number(bulkForm.start));
   const bulkRate = Number(bulkForm.rate);
@@ -289,27 +250,6 @@ export default function BookingsPage() {
     Number.isFinite(bulkCount) && bulkCount >= 1 && bulkCount <= 200 &&
     Number.isFinite(bulkRate) && bulkRate > 0 &&
     !bulkProgress;
-
-  const roomPayload = (name: string) => ({
-    name,
-    measure: "",
-    sellingPrice: bulkRate,
-    buyingPrice: 0,
-    quantity: 0,
-    bundle: false,
-    virtual: true,
-    isRoom: true,
-    manageByPrice: false,
-    productCategoryId: null,
-    supplierId: null,
-    reorderLevel: 0,
-    maxDiscount: 0,
-    description: "",
-    shopId,
-    adminId,
-    attendantId,
-    productType: "service",
-  });
 
   const handleBulkCreate = async () => {
     if (!canBulkCreate) return;
@@ -326,50 +266,26 @@ export default function BookingsPage() {
     let created = 0;
     try {
       if (wanted.length > 0) {
-        // Preferred path: ONE request creates everything
-        // (upstream v2 endpoint: POST /api/v2/products/bulk/add).
-        // On 404 fall back to creating rooms one at a time.
-        const bulkResp = await apiCall("/api/v2/products/bulk/add", {
+        // ONE request creates all rooms in the standalone rooms collection.
+        const bulkResp = await apiCall("/api/rooms/bulk", {
           method: "POST",
           body: JSON.stringify({
-            shopId,
-            adminId,
-            attendantId,
-            products: wanted.map(roomPayload),
+            shop: shopId,
+            rooms: wanted.map((name) => ({ name, nightlyRate: bulkRate })),
           }),
-        }).catch((err: any) => {
-          if (String(err?.message || "").includes("404")) return null;
-          throw err;
         });
-
-        if (bulkResp) {
-          const data = await bulkResp.json().catch(() => null);
-          if (!bulkResp.ok || !data || data.success === false) {
-            throw new Error(data?.error || data?.message || `HTTP ${bulkResp.status}`);
-          }
-          // Be tolerant of the exact response shape the v2 endpoint returns.
-          created =
-            Number(data.created) ||
-            (Array.isArray(data.data) ? data.data.length : 0) ||
-            (Array.isArray(data.products) ? data.products.length : 0) ||
-            wanted.length;
-          skipped += Number(data.skipped) || 0;
-          setBulkProgress({ done: bulkCount, total: bulkCount });
-        } else {
-          // Fallback: bulk endpoint not deployed upstream yet — one at a time.
-          for (let i = 0; i < wanted.length; i++) {
-            const resp = await apiCall("/api/product", {
-              method: "POST",
-              body: JSON.stringify(roomPayload(wanted[i])),
-            });
-            const data = await resp.json().catch(() => null);
-            if (!resp.ok || (data && data.success === false)) {
-              throw new Error(data?.error || data?.message || `HTTP ${resp.status} while creating "${wanted[i]}"`);
-            }
-            created++;
-            setBulkProgress({ done: skipped + i + 1, total: bulkCount });
-          }
+        const data = await bulkResp.json().catch(() => null);
+        if (!bulkResp.ok || !data || data.success === false) {
+          throw new Error(data?.error || data?.message || `HTTP ${bulkResp.status}`);
         }
+        // Be tolerant of the exact response shape the upstream returns.
+        created =
+          Number(data.created) ||
+          (Array.isArray(data.data) ? data.data.length : 0) ||
+          (Array.isArray(data.rooms) ? data.rooms.length : 0) ||
+          wanted.length;
+        skipped += Number(data.skipped) || 0;
+        setBulkProgress({ done: bulkCount, total: bulkCount });
       }
       toast({
         title: "Rooms created",
@@ -413,7 +329,10 @@ export default function BookingsPage() {
               Room Bookings
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Rooms are your services — add rooms as services under Products.
+              Standalone guest-house module — rooms and bookings are separate from products and sales.
+            </p>
+            <p className="text-sm font-medium text-purple-700 mt-1" data-testid="text-month-revenue">
+              Bookings revenue ({monthLabel}): {monthRevenue.toLocaleString()}
             </p>
           </div>
           <div className="flex gap-2">
@@ -436,9 +355,8 @@ export default function BookingsPage() {
         )}
         {!roomsLoading && rooms.length === 0 && (
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-            No rooms yet. Click "Add Rooms" above to create many at once (e.g. Room 1–100),
-            or add them one by one under Products as a service with "This service is a room"
-            turned on. The selling price is the nightly rate.
+            No rooms yet. Click "Add Rooms" above to create your rooms (e.g. Room 1–100)
+            with their nightly rate. Rooms are managed right here — not under Products.
           </div>
         )}
 
@@ -618,9 +536,9 @@ export default function BookingsPage() {
                 <Select value={payMethod} onValueChange={(v) => setPayMethod(v as any)} disabled={isActing}>
                   <SelectTrigger data-testid="select-checkout-payment"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash — record as a sale</SelectItem>
-                    <SelectItem value="mpesa">M-Pesa — record as a sale</SelectItem>
-                    <SelectItem value="none">Don't record a sale (already paid / no charge)</SelectItem>
+                    <SelectItem value="cash">Cash — record payment</SelectItem>
+                    <SelectItem value="mpesa">M-Pesa — record payment</SelectItem>
+                    <SelectItem value="none">Don't record a payment (already paid / no charge)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -638,7 +556,7 @@ export default function BookingsPage() {
               )}
               {payMethod !== "none" && (
                 <p className="text-xs text-gray-500">
-                  The stay will appear in your sales and reports as a normal sale.
+                  The payment is saved on the booking and counts toward your bookings revenue — it is kept separate from shop sales.
                 </p>
               )}
             </div>
@@ -664,9 +582,8 @@ export default function BookingsPage() {
           <DialogHeader>
             <DialogTitle>Add many rooms at once</DialogTitle>
             <DialogDescription>
-              Creates numbered rooms, e.g. "Room 1" to "Room 100". Each room becomes a
-              service with the nightly rate as its price. Rooms with names that already
-              exist are skipped.
+              Creates numbered rooms, e.g. "Room 1" to "Room 100", each with the nightly
+              rate you set. Rooms with names that already exist are skipped.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">

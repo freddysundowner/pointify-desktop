@@ -25,7 +25,7 @@ import {
 interface Room {
   _id: string;
   name: string;
-  sellingPrice: number;
+  nightlyRate: number;
 }
 
 interface Customer {
@@ -39,7 +39,7 @@ interface Customer {
 interface Booking {
   _id?: string;
   id?: string | number;
-  roomProductId: string;
+  roomId: string;
   guestName: string;
   checkIn: string;
   checkOut: string;
@@ -73,7 +73,7 @@ export default function NewBookingPage() {
   }, []);
 
   const [roomSearch, setRoomSearch] = useState("");
-  const [roomProductId, setRoomProductId] = useState("");
+  const [roomId, setRoomId] = useState("");
   const [guestSearch, setGuestSearch] = useState("");
   const [guestPickerOpen, setGuestPickerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -94,21 +94,23 @@ export default function NewBookingPage() {
   const [newGuest, setNewGuest] = useState({ name: "", phone: "", email: "" });
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
 
+  // Rooms are standalone records in the guest-house module (NOT products).
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<Room[]>({
     queryKey: ["booking-rooms", shopId],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: "1", limit: "200", shop: shopId, sort: "name",
-        useWarehouse: "true", warehouse: "false",
-      });
-      const res = await apiCall(`/api/v2/products/list?${params.toString()}`, { method: "GET" });
+      const res = await apiCall(`/api/rooms?shop=${shopId}`, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.data ?? [];
-      return list
-        .filter((p: any) => p.virtual === true && p.isRoom === true)
-        .map((p: any) => ({ _id: p._id, name: p.name, sellingPrice: p.sellingPrice || 0 }));
+      const list = Array.isArray(data) ? data : data?.data ?? data?.rooms ?? [];
+      if (!Array.isArray(list)) throw new Error("Rooms endpoint not available");
+      return list.map((r: any) => ({
+        _id: r._id,
+        name: r.name,
+        nightlyRate: Number(r.nightlyRate) || 0,
+      }));
     },
     enabled: !!shopId,
+    retry: 1,
   });
 
   const { data: bookings = [] } = useQuery<Booking[]>({
@@ -145,7 +147,7 @@ export default function NewBookingPage() {
 
   const isRoomFree = (rid: string) =>
     !activeBookings.some(
-      (b) => b.roomProductId === rid && b.checkIn < form.checkOut && b.checkOut > form.checkIn,
+      (b) => b.roomId === rid && b.checkIn < form.checkOut && b.checkOut > form.checkIn,
     );
 
   const filteredRooms = useMemo(() => {
@@ -164,22 +166,22 @@ export default function NewBookingPage() {
       .slice(0, 8);
   }, [customers, guestSearch]);
 
-  const selectedRoom = rooms.find((r) => r._id === roomProductId);
-  const rate = form.nightlyRate !== "" ? Number(form.nightlyRate) : selectedRoom?.sellingPrice || 0;
+  const selectedRoom = rooms.find((r) => r._id === roomId);
+  const rate = form.nightlyRate !== "" ? Number(form.nightlyRate) : selectedRoom?.nightlyRate || 0;
   const total = nights * rate;
 
   const formConflict = useMemo(() => {
-    if (!roomProductId || nights <= 0) return null;
+    if (!roomId || nights <= 0) return null;
     return activeBookings.find(
       (b) =>
-        b.roomProductId === roomProductId &&
+        b.roomId === roomId &&
         b.checkIn < form.checkOut &&
         b.checkOut > form.checkIn,
     );
-  }, [activeBookings, roomProductId, form.checkIn, form.checkOut, nights]);
+  }, [activeBookings, roomId, form.checkIn, form.checkOut, nights]);
 
   const canSave =
-    !!roomProductId && !!form.guestName.trim() && nights > 0 && rate >= 0 && !formConflict && !isSaving;
+    !!roomId && !!form.guestName.trim() && nights > 0 && rate >= 0 && !formConflict && !isSaving;
 
   const pickCustomer = (c: Customer) => {
     setSelectedCustomer(c);
@@ -242,7 +244,7 @@ export default function NewBookingPage() {
         method: "POST",
         body: JSON.stringify({
           shop: shopId,
-          roomProductId,
+          roomId,
           roomName: selectedRoom?.name || "",
           guestName: form.guestName.trim(),
           guestPhone: form.guestPhone.trim(),
@@ -354,20 +356,20 @@ export default function NewBookingPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
                   {filteredRooms.map((r) => {
                     const free = nights > 0 ? isRoomFree(r._id) : true;
-                    const selected = r._id === roomProductId;
+                    const selected = r._id === roomId;
                     return (
                       <button
                         key={r._id}
                         type="button"
                         disabled={!free}
-                        onClick={() => { setRoomProductId(r._id); setForm((f) => ({ ...f, nightlyRate: "" })); }}
+                        onClick={() => { setRoomId(r._id); setForm((f) => ({ ...f, nightlyRate: "" })); }}
                         className={`rounded-lg border p-2.5 text-left transition-colors relative
                           ${selected ? "border-purple-500 bg-purple-50 ring-1 ring-purple-500" : free ? "border-gray-200 hover:border-purple-300 hover:bg-purple-50/40" : "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"}`}
                         data-testid={`card-room-${r._id}`}
                       >
                         {selected && <Check className="h-4 w-4 text-purple-600 absolute top-2 right-2" />}
                         <p className="font-medium text-sm text-gray-900 truncate">{r.name}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{r.sellingPrice.toLocaleString()}/night</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{r.nightlyRate.toLocaleString()}/night</p>
                         <Badge variant="secondary" className={`mt-1.5 text-[10px] ${free ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                           {free ? "Available" : "Booked"}
                         </Badge>
@@ -487,7 +489,7 @@ export default function NewBookingPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600">Rate per night</label>
-                  <Input type="number" min={0} value={form.nightlyRate} placeholder={String(selectedRoom?.sellingPrice ?? "")} onChange={(e) => setForm((f) => ({ ...f, nightlyRate: e.target.value }))} data-testid="input-nightly-rate" />
+                  <Input type="number" min={0} value={form.nightlyRate} placeholder={String(selectedRoom?.nightlyRate ?? "")} onChange={(e) => setForm((f) => ({ ...f, nightlyRate: e.target.value }))} data-testid="input-nightly-rate" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-medium text-gray-600">Notes (optional)</label>

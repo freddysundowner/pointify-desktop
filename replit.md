@@ -91,42 +91,36 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
 - Reports and analytics
 - Online/offline synchronization
 
-## Room Bookings (Guest House Mode)
+## Guest House Module (Room Bookings) — STANDALONE
 
 - Shop Settings has a "Guest House Mode" toggle (`isGuestHouse` on the shop,
   saved through the normal shop update — the main backend's shop schema must
   accept this field or it is silently dropped).
-- When on, a "Room Bookings" page appears (`/bookings`,
-  `client/src/features/bookings/bookings.tsx`): month calendar, per-night day
-  detail. New bookings are made on a standalone page (`/bookings/new`,
-  `client/src/features/bookings/new-booking.tsx`): searchable room grid with
-  per-date availability, guest picker that searches customers (name/phone)
-  with add-new-customer-on-the-fly (POST /api/customers), and a sticky summary
-  panel. The old in-page dialog was removed; "New Booking"/"Book" buttons
-  navigate to `/bookings/new?date=YYYY-MM-DD`. (Rooms = the shop's services / virtual products
-  that are marked `isRoom: true` via the "This service is a room" switch in
-  the Add/Edit Service form — shown only for guest-house shops; service price
-  = nightly rate; the main backend's product schema MUST persist `isRoom` or
-  the flag is silently dropped and no rooms appear on the bookings page — a
-  measure:"room" workaround was tried and removed at the user's request:
-  isRoom is the required contract), check-in/check-out/cancel actions, and a
-  client-side overlap check (check-out day is exclusive, so back-to-back
-  bookings are allowed).
-- Bookings data lives on the **main Pointify backend (Node + MongoDB)** — NOT
-  in a local database. `server/src/routes/bookings.ts` is a thin proxy that
-  forwards `/api/booking` CRUD to upstream `/booking`, calling the online
-  upstream directly (no graceful fallback) so a failed save can never look
-  successful. The endpoint contract the backend team must implement is in
-  `BOOKINGS_API_SPEC.md`; until then the Bookings page shows a "service not
-  available yet" banner.
-- **Check-out billing:** the check-out confirm dialog collects payment (cash /
-  M-Pesa / "don't record") and, before flipping the booking status, records the
-  stay as a normal POS sale (`POST /api/sales`, same payload shape as
-  product-grid) so it appears in sales & reports. The sale uses a deterministic
-  idempotency key `clientRef = "booking-checkout-<bookingId>"` so retries or a
-  reopened dialog cannot double-charge once the upstream dedupes `clientRef`.
-  If the sale succeeds but the status update fails, the dialog stays open and
-  `payMethod` flips to "none" so the retry only re-sends the status update.
+- The module is **fully independent of products and sales** (rebuilt this way
+  at the user's request, July 2026): rooms are their OWN records — NOT
+  services/virtual products (the old `isRoom` product flag and the "This
+  service is a room" switch in the product form were removed) — and check-out
+  payments are recorded on the booking itself, never as a POS sale.
+- Pages: `/bookings` (`client/src/features/bookings/bookings.tsx`) — month
+  calendar, per-night day detail, bulk "Add Rooms" dialog (ONE call to
+  `POST /api/rooms/bulk`), a "Bookings revenue (month)" figure computed
+  client-side from checked-out bookings' `amountPaid`; `/bookings/new`
+  (`new-booking.tsx`) — searchable room grid with per-date availability,
+  guest picker over customers with add-new-guest-on-the-fly, sticky summary.
+- All data lives on the **main Pointify backend (Node + MongoDB)** — NOT in a
+  local database (user's explicit choice). `server/src/routes/bookings.ts` is
+  a thin proxy: `/api/rooms*` → upstream `/room*`, `/api/booking*` → upstream
+  `/booking*`, online-only (no graceful fallback) so a failed save can never
+  look successful. The contract the backend team must implement is in
+  `BOOKINGS_API_SPEC.md` (Room collection, Booking collection with payment
+  fields, atomic `POST /booking/:id/checkout`); until then the pages show
+  "service not available yet" banners.
+- **Check-out billing:** the confirm dialog collects payment (cash / M-Pesa /
+  "don't record") and sends ONE atomic `POST /api/booking/:id/checkout` with
+  `{paymentMethod, amountPaid, mpesaCode}` — upstream flips the status and
+  stores the payment together, and must be idempotent on repeat calls, so a
+  retry can never double-charge. Booking revenue never touches POS sales or
+  sales reports.
 
 ## Offline Sync & Duplicate-Sale Safety
 
