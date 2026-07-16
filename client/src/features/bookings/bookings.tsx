@@ -329,9 +329,6 @@ export default function BookingsPage() {
                 <BedDouble className="h-5 w-5 text-purple-600" />
                 Room Bookings
               </h1>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Rooms and bookings are managed here, separate from products and sales.
-              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div
