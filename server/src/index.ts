@@ -1,35 +1,11 @@
+import "./load-env.js";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { getGlobalApiMode } from "./config.js";
 import "./network-status-handler.js";
-import dotenv from 'dotenv';
 import path from "path";
 import fs from "fs";
 import { performDataSync } from "./network-status-handler.js";
-
-const __dirname = path.dirname(process.argv[1]);
-// Resolve .env robustly: process.cwd() varies by launcher (PM2 processes are
-// often started with a cwd one level above server/), and process.argv[1]
-// isn't reliable either — PM2 wraps script execution so it doesn't always
-// point at this file. Try the plausible locations and use whichever exists,
-// logging the outcome so a misconfigured deploy is obvious from `pm2 logs`
-// instead of surfacing only as "Firebase is not configured" downstream.
-const envCandidates = [
-  path.resolve(process.cwd(), ".env"),
-  path.resolve(process.cwd(), "server", ".env"),
-  path.resolve(__dirname, "..", ".env"),
-  path.resolve(__dirname, ".env"),
-];
-const envPath = envCandidates.find((p) => fs.existsSync(p));
-if (envPath) {
-  dotenv.config({ path: envPath });
-  console.log(`✅ Loaded .env from: ${envPath}`);
-} else {
-  console.warn(
-    `⚠️  No .env file found. Checked: ${envCandidates.join(", ")}`,
-  );
-}
-
 
 const app = express();
 
