@@ -6,9 +6,9 @@ const bookingSchema = new mongoose.Schema({
     ref: "Shop",
     required: true,
   },
-  roomProductId: {
+  roomId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
+    ref: "Room",
     required: true,
   },
   roomName: { type: String, required: true },
@@ -29,6 +29,16 @@ const bookingSchema = new mongoose.Schema({
     default: "booked",
   },
   notes: { type: String, default: "" },
+  // Payment — recorded at check-out, ON the booking itself.
+  // Booking money never touches the sales collection.
+  paymentMethod: {
+    type: String,
+    enum: ["cash", "mpesa", "none"],
+    default: "none",
+  },
+  amountPaid: { type: Number, default: 0 },
+  mpesaCode: { type: String, default: "" },
+  paidAt: { type: Date, default: null },
   sync: { type: Boolean, default: false },
   createAt: {
     type: Date,
@@ -37,7 +47,7 @@ const bookingSchema = new mongoose.Schema({
 });
 
 bookingSchema.index({ shop: 1, createAt: -1 });
-bookingSchema.index({ roomProductId: 1, checkIn: 1, checkOut: 1 });
+bookingSchema.index({ roomId: 1, checkIn: 1, checkOut: 1 });
 
 const markUnsyncedPlugin = require("../shared/markUnsynced.plugin");
 bookingSchema.plugin(markUnsyncedPlugin);
