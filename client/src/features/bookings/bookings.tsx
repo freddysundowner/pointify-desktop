@@ -24,7 +24,7 @@ import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
-  BedDouble, Plus, ChevronLeft, ChevronRight, Loader2, LogIn, LogOut,
+  BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User,
 } from "lucide-react";
 
@@ -88,7 +88,9 @@ export default function BookingsPage() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
 
-  const [selectedDay, setSelectedDay] = useState<string>(todayStr());
+  // The stay the user is checking availability for (check-in → check-out)
+  const [rangeFrom, setRangeFrom] = useState<string>(todayStr());
+  const [rangeTo, setRangeTo] = useState<string>(addDays(todayStr(), 1));
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
@@ -157,11 +159,12 @@ export default function BookingsPage() {
     [bookings]
   );
 
-  const bookingsOnDay = (day: string) =>
-    activeBookings.filter((b) => b.checkIn <= day && day < b.checkOut);
-
-  const dayBookings = bookingsOnDay(selectedDay);
-  const occupiedRoomIdsOnDay = new Set(dayBookings.map((b) => b.roomId));
+  // Bookings that overlap ANY night of the selected stay range
+  const rangeBookings = activeBookings.filter(
+    (b) => b.checkIn < rangeTo && b.checkOut > rangeFrom
+  );
+  const occupiedRoomIds = new Set(rangeBookings.map((b) => b.roomId));
+  const rangeNights = nightsBetween(rangeFrom, rangeTo);
 
   // Rooms grouped by their (optional) group label, respecting the filter
   const groupNames = useMemo(() => {
@@ -178,7 +181,7 @@ export default function BookingsPage() {
       if (q && !r.name.toLowerCase().includes(q) && !(r.group || "").toLowerCase().includes(q))
         return false;
       if (statusFilter !== "all") {
-        const occupied = occupiedRoomIdsOnDay.has(r._id);
+        const occupied = occupiedRoomIds.has(r._id);
         if (statusFilter === "vacant" && occupied) return false;
         if (statusFilter === "occupied" && !occupied) return false;
       }
@@ -197,16 +200,16 @@ export default function BookingsPage() {
       list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
     );
     return sorted;
-  }, [rooms, groupFilter, roomSearch, statusFilter, occupiedRoomIdsOnDay]);
+  }, [rooms, groupFilter, roomSearch, statusFilter, occupiedRoomIds]);
 
   // The active booking (if any) covering the selected night for a room
-  const bookingForRoomOnDay = (rid: string) =>
-    dayBookings.find((b) => b.roomId === rid) || null;
+  const bookingForRoom = (rid: string) =>
+    rangeBookings.find((b) => b.roomId === rid) || null;
 
   // Bookings revenue for the displayed month — kept fully separate from POS
   // sales: it is the sum of payments recorded on checked-out bookings.
   const monthRevenue = useMemo(() => {
-    const anchor = new Date(selectedDay + "T00:00:00");
+    const anchor = new Date(rangeFrom + "T00:00:00");
     const y = anchor.getFullYear();
     const m = anchor.getMonth();
     return bookings
@@ -217,13 +220,14 @@ export default function BookingsPage() {
         return d.getFullYear() === y && d.getMonth() === m;
       })
       .reduce((sum, b) => sum + (Number(b.amountPaid) || Number(b.totalAmount) || 0), 0);
-  }, [bookings, selectedDay]);
+  }, [bookings, rangeFrom]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
   const openNewBooking = (day?: string, roomId?: string) => {
-    const start = day || selectedDay || todayStr();
-    navigate(`/bookings/new?date=${start}${roomId ? `&room=${roomId}` : ""}`);
+    const start = day || rangeFrom || todayStr();
+    const end = !day && rangeNights > 0 ? `&out=${rangeTo}` : "";
+    navigate(`/bookings/new?date=${start}${end}${roomId ? `&room=${roomId}` : ""}`);
   };
 
   const handleAction = async () => {
@@ -344,7 +348,7 @@ export default function BookingsPage() {
     queryClient.invalidateQueries({ queryKey: ["booking-rooms", shopId] });
   };
 
-  const monthLabel = new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+  const monthLabel = new Date(rangeFrom + "T00:00:00").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
 
   // Change the dates of an existing booking (guest shortens or extends a stay).
   const openEditDates = (b: Booking) => {
@@ -458,7 +462,7 @@ export default function BookingsPage() {
                 <BedDouble className="h-4 w-4 text-purple-600" />
                 Rooms
                 <span className="text-xs font-normal text-gray-500" data-testid="text-free-count">
-                  — {rooms.length - occupiedRoomIdsOnDay.size} of {rooms.length} free this night
+                  — {rooms.length - occupiedRoomIds.size} of {rooms.length} free for this stay
                 </span>
               </p>
               <div className="flex items-center gap-2 text-[11px] text-gray-500">
@@ -468,25 +472,32 @@ export default function BookingsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setSelectedDay(addDays(selectedDay, -1))} data-testid="button-prev-day">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Stay:</span>
                 <Input
                   type="date"
-                  value={selectedDay}
-                  onChange={(e) => { if (e.target.value) setSelectedDay(e.target.value); }}
-                  className="h-8 w-[150px] text-sm"
-                  data-testid="input-selected-day"
+                  value={rangeFrom}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) return;
+                    setRangeFrom(v);
+                    if (v >= rangeTo) setRangeTo(addDays(v, 1));
+                  }}
+                  className="h-8 w-[145px] text-sm"
+                  data-testid="input-range-from"
                 />
-                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setSelectedDay(addDays(selectedDay, 1))} data-testid="button-next-day">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                {selectedDay !== todayStr() && (
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectedDay(todayStr())} data-testid="button-today">
-                    Today
-                  </Button>
-                )}
+                <span className="text-gray-400 text-sm">→</span>
+                <Input
+                  type="date"
+                  value={rangeTo}
+                  min={addDays(rangeFrom, 1)}
+                  onChange={(e) => { if (e.target.value) setRangeTo(e.target.value); }}
+                  className="h-8 w-[145px] text-sm"
+                  data-testid="input-range-to"
+                />
+                <span className="text-xs text-gray-500 whitespace-nowrap" data-testid="text-range-nights">
+                  {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
+                </span>
               </div>
               <Input
                 value={roomSearch}
@@ -540,7 +551,7 @@ export default function BookingsPage() {
                 )}
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-1.5">
                   {list.map((room) => {
-                    const b = bookingForRoomOnDay(room._id);
+                    const b = bookingForRoom(room._id);
                     const cls = !b
                       ? "bg-white border-gray-200 hover:border-purple-400 hover:bg-purple-50"
                       : b.status === "checked_in"
@@ -691,7 +702,7 @@ export default function BookingsPage() {
       <Dialog open={!!roomDialog} onOpenChange={(o) => { if (!o) setRoomDialog(null); }}>
         <DialogContent className="sm:max-w-sm">
           {roomDialog && (() => {
-            const b = bookingForRoomOnDay(roomDialog._id);
+            const b = bookingForRoom(roomDialog._id);
             return (
               <>
                 <DialogHeader>
@@ -701,8 +712,7 @@ export default function BookingsPage() {
                   </DialogTitle>
                   <DialogDescription>
                     {roomDialog.group ? `${roomDialog.group} · ` : ""}
-                    {Number(roomDialog.nightlyRate).toLocaleString()} per night · night of{" "}
-                    {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })}
+                    {Number(roomDialog.nightlyRate).toLocaleString()} per night · stay {rangeFrom} → {rangeTo}
                   </DialogDescription>
                 </DialogHeader>
                 {b ? (
@@ -745,7 +755,7 @@ export default function BookingsPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500" data-testid="room-dialog-free">
-                    This room is free for the selected night.
+                    This room is free for the selected dates.
                   </p>
                 )}
                 <DialogFooter className="gap-2">
@@ -753,7 +763,7 @@ export default function BookingsPage() {
                   {!b && (
                     <Button
                       className="bg-purple-600 hover:bg-purple-700"
-                      onClick={() => { setRoomDialog(null); openNewBooking(selectedDay, roomDialog._id); }}
+                      onClick={() => { setRoomDialog(null); openNewBooking(undefined, roomDialog._id); }}
                       data-testid="button-room-book"
                     >
                       <Plus className="h-4 w-4 mr-1.5" />

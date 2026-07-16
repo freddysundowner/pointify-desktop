@@ -75,6 +75,10 @@ export default function NewBookingPage() {
     () => new URLSearchParams(window.location.search).get("room") || "",
     []
   );
+  const initialCheckOut = useMemo(() => {
+    const p = new URLSearchParams(window.location.search).get("out");
+    return p && /^\d{4}-\d{2}-\d{2}$/.test(p) && p > initialDate ? p : addDays(initialDate, 1);
+  }, [initialDate]);
 
   const [roomSearch, setRoomSearch] = useState("");
   const [roomId, setRoomId] = useState(initialRoomId);
@@ -87,7 +91,7 @@ export default function NewBookingPage() {
     guestIdNumber: "",
     guestsCount: "1",
     checkIn: initialDate,
-    checkOut: addDays(initialDate, 1),
+    checkOut: initialCheckOut,
     nightlyRate: "",
     notes: "",
   });
