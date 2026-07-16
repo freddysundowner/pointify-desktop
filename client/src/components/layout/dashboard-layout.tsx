@@ -39,6 +39,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
   const [currentTime, setCurrentTime] = useState(new Date());
   const { shopData } = usePrimaryShop();
   const isRestaurantShop = !!shopData?.isRestaurant;
+  const isGuestHouseShop = !!shopData?.isGuestHouse;
 
   // Check if current route is an attendant route
   const isAttendantRoute = location.startsWith('/attendant/');
@@ -75,6 +76,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/sales', '/returns', '/orders',
     '/purchases', '/purchase-returns',
     '/customers', '/suppliers',
+    '/bookings',
     '/stock/products', '/stock/categories', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
     '/expenses', '/cashflow', '/profit-loss', '/debtors',
     '/printer-config', '/sms-settings', '/subscription',
@@ -170,7 +172,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
                     );
                   })}
 
-                  {getMenuGroups(isAttendantRoute, isRestaurantShop).map((group) => {
+                  {getMenuGroups(isAttendantRoute, isRestaurantShop, isGuestHouseShop).map((group) => {
                 const isGroupActive = group.key === 'accounts' ? true : group.items.some(item => location === item.href);
                 return (
                 <div key={group.key} className="pt-2">
@@ -332,7 +334,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
               })}
 
                   <div className="pt-3 space-y-1">
-                    {getMenuGroups(isAttendantRoute, isRestaurantShop).map((group) => {
+                    {getMenuGroups(isAttendantRoute, isRestaurantShop, isGuestHouseShop).map((group) => {
                       const isExpanded = expandedMenus[group.key];
                       return (
                         <div key={group.key}>

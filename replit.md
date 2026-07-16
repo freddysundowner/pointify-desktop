@@ -91,6 +91,25 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
 - Reports and analytics
 - Online/offline synchronization
 
+## Room Bookings (Guest House Mode)
+
+- Shop Settings has a "Guest House Mode" toggle (`isGuestHouse` on the shop,
+  saved through the normal shop update — the main backend's shop schema must
+  accept this field or it is silently dropped).
+- When on, a "Room Bookings" page appears (`/bookings`,
+  `client/src/features/bookings/bookings.tsx`): month calendar, per-night day
+  detail, new-booking dialog (rooms = the shop's services / virtual products;
+  service price = nightly rate), check-in/check-out/cancel actions, and a
+  client-side overlap check (check-out day is exclusive, so back-to-back
+  bookings are allowed).
+- Bookings data lives on the **main Pointify backend (Node + MongoDB)** — NOT
+  in a local database. `server/src/routes/bookings.ts` is a thin proxy that
+  forwards `/api/booking` CRUD to upstream `/booking`, calling the online
+  upstream directly (no graceful fallback) so a failed save can never look
+  successful. The endpoint contract the backend team must implement is in
+  `BOOKINGS_API_SPEC.md`; until then the Bookings page shows a "service not
+  available yet" banner.
+
 ## Offline Sync & Duplicate-Sale Safety
 
 Sales made while offline are stored on the device and automatically sent to the

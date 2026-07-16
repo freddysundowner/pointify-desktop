@@ -52,5 +52,6 @@ export function registerAllRoutes(app: Express) {
   registerPaymentRoutes(app);
   registerSyncRoutes(app);
   registerAccompanimentRoutes(app);
+  registerBookingRoutes(app);
 
 }

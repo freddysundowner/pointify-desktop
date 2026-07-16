@@ -29,6 +29,7 @@ interface Shop {
   currency: string;
   allowOnlineSelling: boolean;
   isRestaurant?: boolean;
+  isGuestHouse?: boolean;
   adminId: string;
   createdAt: string;
   updatedAt: string;
@@ -95,6 +96,7 @@ export default function ShopDetails() {
     warehouse: false,
     production: false,
     isRestaurant: false,
+    isGuestHouse: false,
     // Receipt customization fields
     contact: "",
     paybill_till: "",
@@ -172,6 +174,7 @@ export default function ShopDetails() {
         warehouse: shop.warehouse || false,
         production: shop.production || false,
         isRestaurant: shop.isRestaurant || false,
+        isGuestHouse: (shop as any).isGuestHouse || false,
         contact: shop.contact || "",
         paybill_till: shop.paybill_till || "",
         paybill_account: shop.paybill_account || "",
@@ -302,6 +305,7 @@ export default function ShopDetails() {
       warehouse: formData.warehouse,
       production: formData.production,
       isRestaurant: formData.isRestaurant,
+      isGuestHouse: formData.isGuestHouse,
       contact: formData.contact,
       paybill_till: formData.paybill_till,
       paybill_account: formData.paybill_account,
@@ -684,6 +688,7 @@ export default function ShopDetails() {
                       { key: "showstockonline",       label: "Show Stock Online", desc: "Display stock levels online" },
                       { key: "showpriceonline",       label: "Show Prices Online", desc: "Display prices on online store" },
                       { key: "isRestaurant",          label: "Restaurant Mode",   desc: "POS prints kitchen order tickets; adds a cashier queue for pending orders" },
+                      { key: "isGuestHouse",          label: "Guest House Mode",  desc: "Enables room bookings with check-in and check-out" },
                     ].map(({ key, label, desc }) => (
                       <div key={key} className="flex items-center justify-between py-2.5">
                         <div>
