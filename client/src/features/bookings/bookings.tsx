@@ -25,7 +25,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
-  XCircle, CalendarDays, Phone, User, Trash2, Sparkles,
+  XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
 } from "lucide-react";
 
 interface Booking {
@@ -645,7 +645,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               {[...bookings]
                 .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                 .map((b) => (
-                  <div key={bid(b)} className="p-3" data-testid={`card-booking-${bid(b)}`}>
+                  <div
+                    key={bid(b)}
+                    className="p-3 cursor-pointer active:bg-purple-50"
+                    onClick={() => navigate(`/bookings/${bid(b)}`)}
+                    data-testid={`card-booking-${bid(b)}`}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate">{b.guestName}</p>
@@ -663,7 +668,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       <span className="font-semibold text-gray-900">{Number(b.totalAmount).toLocaleString()}</span>
                     </div>
                     {(b.status === "booked" || b.status === "checked_in") && (
-                      <Button size="sm" variant="outline" className="mt-2 h-8 w-full text-xs text-purple-700 border-purple-200" onClick={() => openEditDates(b)} data-testid={`button-edit-dates-mobile-${bid(b)}`}>
+                      <Button size="sm" variant="outline" className="mt-2 h-8 w-full text-xs text-purple-700 border-purple-200" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-mobile-${bid(b)}`}>
                         <CalendarDays className="h-3.5 w-3.5 mr-1" />Change dates
                       </Button>
                     )}
@@ -687,7 +692,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                   {[...bookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                     .map((b) => (
-                      <tr key={bid(b)} className="border-b last:border-0" data-testid={`row-booking-${bid(b)}`}>
+                      <tr
+                        key={bid(b)}
+                        className="border-b last:border-0 cursor-pointer hover:bg-purple-50/50"
+                        onClick={() => navigate(`/bookings/${bid(b)}`)}
+                        data-testid={`row-booking-${bid(b)}`}
+                      >
                         <td className="p-2 pl-3 font-medium text-gray-900">{b.guestName}</td>
                         <td className="p-2 text-gray-600">{b.roomName}</td>
                         <td className="p-2 text-gray-600">{b.checkIn}</td>
@@ -700,7 +710,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                         </td>
                         <td className="p-2">
                           {(b.status === "booked" || b.status === "checked_in") && (
-                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={() => openEditDates(b)} data-testid={`button-edit-dates-${bid(b)}`}>
+                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
                               <CalendarDays className="h-3 w-3 mr-1" />Change dates
                             </Button>
                           )}
@@ -893,6 +903,16 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                   );
                 })()}
                 <DialogFooter className="flex-col-reverse sm:flex-row sm:flex-wrap gap-2">
+                  {b && (
+                    <Button
+                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
+                      onClick={() => { setRoomDialog(null); navigate(`/bookings/${bid(b)}`); }}
+                      data-testid="button-room-booking-details"
+                    >
+                      <Receipt className="h-4 w-4 mr-1.5" />
+                      Booking details
+                    </Button>
+                  )}
                   {!b && (
                     <Button
                       variant="outline"
