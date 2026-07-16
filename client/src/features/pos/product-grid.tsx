@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCartContext } from "@/contexts/CartContext";
 import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { usbPrinter } from "@/lib/usb-printer";
@@ -213,6 +214,8 @@ export default function ProductGrid({
   // Accompaniment selector — holds the product awaiting accompaniment selection
   const [accompanimentPendingProduct, setAccompanimentPendingProduct] = useState<any>(null);
   const [accompanimentDialogOpen, setAccompanimentDialogOpen] = useState(false);
+  const [accompanimentEditCartItemId, setAccompanimentEditCartItemId] = useState<string | number | null>(null);
+  const { setCartItems } = useCartContext();
 
   // Pre-load all accompaniment configs for this shop (restaurant mode only)
   const { data: shopAccompaniments } = useQuery({
@@ -267,9 +270,34 @@ export default function ProductGrid({
       .filter((s) => s.chosen.length > 0)
       .map((s) => `${s.groupName}: ${s.chosen.join(", ")}`);
     const note = parts.join(" | ");
-    onAddToCart({ ...accompanimentPendingProduct, accompaniments: note || undefined });
+
+    if (accompanimentEditCartItemId !== null) {
+      // Editing an existing cart item — update accompaniments in place
+      setCartItems((prev) =>
+        prev.map((ci) =>
+          ci.id === accompanimentEditCartItemId
+            ? { ...ci, ...(note ? { accompaniments: note } : { accompaniments: undefined }) } as any
+            : ci
+        )
+      );
+      setAccompanimentEditCartItemId(null);
+    } else {
+      onAddToCart({ ...accompanimentPendingProduct, accompaniments: note || undefined });
+    }
+
     setAccompanimentDialogOpen(false);
     setAccompanimentPendingProduct(null);
+  };
+
+  /** Open the accompaniment dialog to edit an existing cart item. */
+  const handleAccompanimentEdit = (cartItem: any) => {
+    const product = allProducts.find((p: any) => p._id === cartItem.id || p.id === cartItem.id);
+    if (!product) return;
+    const groups = getProductGroups(product);
+    if (!groups.length) return;
+    setAccompanimentPendingProduct(product);
+    setAccompanimentEditCartItemId(cartItem.id);
+    setAccompanimentDialogOpen(true);
   };
 
   // Local search function
@@ -2245,6 +2273,11 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               {(item as any).accompaniments && (
                                 <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                               )}
+                              {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
+                                <button onClick={() => handleAccompanimentEdit(item)} className="text-xs text-purple-500 hover:text-purple-700 underline mt-0.5">
+                                  {(item as any).accompaniments ? "Change accompaniment" : "Add accompaniment"}
+                                </button>
+                              )}
                               <p className="text-gray-400 text-xs mt-0.5">
                                 Ksh {item.price.toFixed(2)} each
                                 {(item.maxDiscount || 0) > 0 && (
@@ -2313,6 +2346,11 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                             <p className="font-semibold text-gray-800 truncate">{item.name}</p>
                             {(item as any).accompaniments && (
                               <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
+                            )}
+                            {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
+                              <button onClick={() => handleAccompanimentEdit(item)} className="text-xs text-purple-500 hover:text-purple-700 underline mt-0.5 block">
+                                {(item as any).accompaniments ? "Change accompaniment" : "Add accompaniment"}
+                              </button>
                             )}
                             <div className="flex flex-wrap gap-2 mt-1">
                               {canEditPrice && (
