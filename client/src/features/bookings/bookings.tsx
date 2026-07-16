@@ -88,10 +88,6 @@ export default function BookingsPage() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
 
-  const [monthAnchor, setMonthAnchor] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
   const [selectedDay, setSelectedDay] = useState<string>(todayStr());
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
@@ -106,9 +102,16 @@ export default function BookingsPage() {
   const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "", group: "" });
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
-  // Rooms grid: group filter + clicked room
+  // Rooms grid: filters + clicked room
   const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [roomSearch, setRoomSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "vacant" | "occupied">("all");
   const [roomDialog, setRoomDialog] = useState<Room | null>(null);
+
+  // Change the dates of an existing booking (guest extends / shortens stay)
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
+  const [editDates, setEditDates] = useState({ checkIn: "", checkOut: "" });
+  const [isSavingDates, setIsSavingDates] = useState(false);
 
   // Rooms are their OWN records in the standalone guest-house module —
   // NOT products or services. They live on the main Pointify backend.
@@ -154,19 +157,6 @@ export default function BookingsPage() {
     [bookings]
   );
 
-  // ---- Calendar layout ----
-  const monthDays = useMemo(() => {
-    const year = monthAnchor.getFullYear();
-    const month = monthAnchor.getMonth();
-    const first = new Date(year, month, 1);
-    const startWeekday = (first.getDay() + 6) % 7; // Monday-first
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const cells: (string | null)[] = [];
-    for (let i = 0; i < startWeekday; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(toDateStr(new Date(year, month, d)));
-    return cells;
-  }, [monthAnchor]);
-
   const bookingsOnDay = (day: string) =>
     activeBookings.filter((b) => b.checkIn <= day && day < b.checkOut);
 
@@ -182,8 +172,18 @@ export default function BookingsPage() {
 
   const groupedRooms = useMemo(() => {
     const filterValue = groupFilter === "__ungrouped" ? "" : groupFilter;
-    const visible =
-      groupFilter === "all" ? rooms : rooms.filter((r) => (r.group || "") === filterValue);
+    const q = roomSearch.trim().toLowerCase();
+    const visible = rooms.filter((r) => {
+      if (groupFilter !== "all" && (r.group || "") !== filterValue) return false;
+      if (q && !r.name.toLowerCase().includes(q) && !(r.group || "").toLowerCase().includes(q))
+        return false;
+      if (statusFilter !== "all") {
+        const occupied = occupiedRoomIdsOnDay.has(r._id);
+        if (statusFilter === "vacant" && occupied) return false;
+        if (statusFilter === "occupied" && !occupied) return false;
+      }
+      return true;
+    });
     const map = new Map<string, Room[]>();
     visible.forEach((r) => {
       const g = r.group || "";
@@ -197,7 +197,7 @@ export default function BookingsPage() {
       list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
     );
     return sorted;
-  }, [rooms, groupFilter]);
+  }, [rooms, groupFilter, roomSearch, statusFilter, occupiedRoomIdsOnDay]);
 
   // The active booking (if any) covering the selected night for a room
   const bookingForRoomOnDay = (rid: string) =>
@@ -206,8 +206,9 @@ export default function BookingsPage() {
   // Bookings revenue for the displayed month — kept fully separate from POS
   // sales: it is the sum of payments recorded on checked-out bookings.
   const monthRevenue = useMemo(() => {
-    const y = monthAnchor.getFullYear();
-    const m = monthAnchor.getMonth();
+    const anchor = new Date(selectedDay + "T00:00:00");
+    const y = anchor.getFullYear();
+    const m = anchor.getMonth();
     return bookings
       .filter((b) => {
         if (b.status !== "checked_out") return false;
@@ -216,7 +217,7 @@ export default function BookingsPage() {
         return d.getFullYear() === y && d.getMonth() === m;
       })
       .reduce((sum, b) => sum + (Number(b.amountPaid) || Number(b.totalAmount) || 0), 0);
-  }, [bookings, monthAnchor]);
+  }, [bookings, selectedDay]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
@@ -343,7 +344,53 @@ export default function BookingsPage() {
     queryClient.invalidateQueries({ queryKey: ["booking-rooms", shopId] });
   };
 
-  const monthLabel = monthAnchor.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+  const monthLabel = new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+
+  // Change the dates of an existing booking (guest shortens or extends a stay).
+  const openEditDates = (b: Booking) => {
+    setEditBooking(b);
+    setEditDates({ checkIn: b.checkIn, checkOut: b.checkOut });
+  };
+  const editNights = editDates.checkIn && editDates.checkOut ? nightsBetween(editDates.checkIn, editDates.checkOut) : 0;
+  const editConflict = useMemo(() => {
+    if (!editBooking || editNights <= 0) return false;
+    return activeBookings.some(
+      (b) =>
+        bid(b) !== bid(editBooking) &&
+        b.roomId === editBooking.roomId &&
+        b.checkIn < editDates.checkOut &&
+        b.checkOut > editDates.checkIn
+    );
+  }, [editBooking, editDates, editNights, activeBookings]);
+
+  const handleSaveDates = async () => {
+    if (!editBooking || editNights <= 0 || editConflict) return;
+    setIsSavingDates(true);
+    try {
+      const rate = Number(editBooking.nightlyRate) || 0;
+      const resp = await apiCall(`/api/booking/${bid(editBooking)}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          checkIn: editDates.checkIn,
+          checkOut: editDates.checkOut,
+          totalAmount: editNights * rate,
+        }),
+      });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok || (data && data.success === false)) {
+        throw new Error(data?.error || data?.message || `HTTP ${resp.status}`);
+      }
+      toast({
+        title: "Dates updated",
+        description: `${editBooking.guestName}: ${editDates.checkIn} → ${editDates.checkOut} (${editNights} night${editNights !== 1 ? "s" : ""}).`,
+      });
+      refresh();
+      setEditBooking(null);
+    } catch (err: any) {
+      toast({ title: "Could not update dates", description: err.message, variant: "destructive" });
+    }
+    setIsSavingDates(false);
+  };
 
   if (shopData && !isGuestHouse) {
     return (
@@ -410,34 +457,81 @@ export default function BookingsPage() {
               <p className="font-semibold text-gray-800 flex items-center gap-1.5">
                 <BedDouble className="h-4 w-4 text-purple-600" />
                 Rooms
-                <span className="text-xs font-normal text-gray-500">
-                  — night of {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
+                <span className="text-xs font-normal text-gray-500" data-testid="text-free-count">
+                  — {rooms.length - occupiedRoomIdsOnDay.size} of {rooms.length} free this night
                 </span>
               </p>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white border border-gray-300 inline-block" />Free</span>
-                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-blue-500 inline-block" />Booked</span>
-                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
-                </div>
-                {groupNames.length > 1 && (
-                  <Select value={groupFilter} onValueChange={setGroupFilter}>
-                    <SelectTrigger className="h-8 w-[160px] text-sm" data-testid="select-room-group">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All groups</SelectItem>
-                      {groupNames.map((g) => (
-                        <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
-                          {g || "Ungrouped"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+              <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white border border-gray-300 inline-block" />Free</span>
+                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-blue-500 inline-block" />Booked</span>
+                <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
               </div>
             </div>
-            {groupedRooms.map(([group, list]) => (
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setSelectedDay(addDays(selectedDay, -1))} data-testid="button-prev-day">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Input
+                  type="date"
+                  value={selectedDay}
+                  onChange={(e) => { if (e.target.value) setSelectedDay(e.target.value); }}
+                  className="h-8 w-[150px] text-sm"
+                  data-testid="input-selected-day"
+                />
+                <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setSelectedDay(addDays(selectedDay, 1))} data-testid="button-next-day">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                {selectedDay !== todayStr() && (
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectedDay(todayStr())} data-testid="button-today">
+                    Today
+                  </Button>
+                )}
+              </div>
+              <Input
+                value={roomSearch}
+                onChange={(e) => setRoomSearch(e.target.value)}
+                placeholder="Search room name…"
+                className="h-8 w-[180px] text-sm"
+                data-testid="input-room-search"
+              />
+              {groupNames.length > 1 && (
+                <Select value={groupFilter} onValueChange={setGroupFilter}>
+                  <SelectTrigger className="h-8 w-[150px] text-sm" data-testid="select-room-group">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All groups</SelectItem>
+                    {groupNames.map((g) => (
+                      <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
+                        {g || "Ungrouped"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="h-8 w-[130px] text-sm" data-testid="select-room-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All rooms</SelectItem>
+                  <SelectItem value="vacant">Vacant</SelectItem>
+                  <SelectItem value="occupied">Occupied</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {isLoading && (
+              <div className="py-6 flex justify-center" data-testid="loader-rooms-occupancy">
+                <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+              </div>
+            )}
+            {!isLoading && groupedRooms.length === 0 && (
+              <p className="text-sm text-gray-400 py-4 text-center" data-testid="text-no-rooms-match">
+                No rooms match these filters.
+              </p>
+            )}
+            {!isLoading && groupedRooms.map(([group, list]) => (
               <div key={group || "__none"} className="mb-2 last:mb-0">
                 {(groupNames.length > 1 || group) && (
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 mt-2 first:mt-0">
@@ -472,109 +566,6 @@ export default function BookingsPage() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[1fr,340px] gap-4">
-          {/* Calendar */}
-          <div className="rounded-md border bg-white p-3">
-            <div className="flex items-center justify-between mb-2">
-              <Button variant="ghost" size="sm" onClick={() => setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() - 1, 1))} data-testid="button-prev-month">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <p className="font-semibold text-gray-800">{monthLabel}</p>
-              <Button variant="ghost" size="sm" onClick={() => setMonthAnchor(new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 1))} data-testid="button-next-month">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-7 text-center text-xs text-gray-500 mb-1">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d} className="py-1">{d}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {monthDays.map((day, i) => {
-                if (!day) return <div key={`empty-${i}`} />;
-                const dayNum = Number(day.slice(8, 10));
-                const count = bookingsOnDay(day).length;
-                const isSelected = day === selectedDay;
-                const isToday = day === todayStr();
-                return (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedDay(day)}
-                    className={`relative aspect-square rounded-md border text-sm flex flex-col items-center justify-center transition-colors
-                      ${isSelected ? "border-purple-500 bg-purple-50" : "border-gray-100 hover:bg-gray-50"}
-                      ${isToday ? "font-bold text-purple-700" : "text-gray-700"}`}
-                    data-testid={`day-${day}`}
-                  >
-                    <span>{dayNum}</span>
-                    {count > 0 && (
-                      <span className="mt-0.5 text-[10px] leading-none px-1.5 py-0.5 rounded-full bg-purple-600 text-white">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Day detail */}
-          <div className="rounded-md border bg-white p-3 flex flex-col">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-gray-800 flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 text-purple-600" />
-                {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })}
-              </p>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openNewBooking(selectedDay)} disabled={rooms.length === 0}>
-                <Plus className="h-3 w-3 mr-1" /> Book
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mb-2">
-              {rooms.length > 0 && (
-                <>{rooms.length - occupiedRoomIdsOnDay.size} of {rooms.length} room{rooms.length !== 1 ? "s" : ""} free this night</>
-              )}
-            </p>
-            {isLoading ? (
-              <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-purple-500" /></div>
-            ) : dayBookings.length === 0 ? (
-              <p className="text-sm text-gray-400 py-6 text-center">No guests this night.</p>
-            ) : (
-              <ul className="space-y-2 overflow-y-auto">
-                {dayBookings.map((b) => (
-                  <li key={bid(b)} className="rounded-md border p-2" data-testid={`card-booking-${bid(b)}`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-sm text-gray-900 truncate flex items-center gap-1">
-                        <User className="h-3.5 w-3.5 text-gray-400" />{b.guestName}
-                      </p>
-                      <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
-                        {STATUS_META[b.status]?.label || b.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {b.roomName} · {b.checkIn} → {b.checkOut}
-                      {b.guestPhone ? <> · <Phone className="inline h-3 w-3" /> {b.guestPhone}</> : null}
-                    </p>
-                    <div className="flex gap-1.5 mt-1.5">
-                      {b.status === "booked" && (
-                        <>
-                          <Button size="sm" variant="outline" className="h-6 text-[11px] px-2 text-green-700 border-green-300" onClick={() => { setActionBooking(b); setPendingAction("checked_in"); }}>
-                            <LogIn className="h-3 w-3 mr-1" />Check in
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-6 text-[11px] px-2 text-red-600 border-red-200" onClick={() => { setActionBooking(b); setPendingAction("cancelled"); }}>
-                            <XCircle className="h-3 w-3 mr-1" />Cancel
-                          </Button>
-                        </>
-                      )}
-                      {b.status === "checked_in" && (
-                        <Button size="sm" variant="outline" className="h-6 text-[11px] px-2" onClick={() => { setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }}>
-                          <LogOut className="h-3 w-3 mr-1" />Check out
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
         {/* All upcoming bookings */}
         <div className="rounded-md border bg-white mt-4">
           <p className="font-semibold text-gray-800 p-3 pb-1">All bookings</p>
@@ -593,6 +584,7 @@ export default function BookingsPage() {
                     <th className="p-2">Check-out</th>
                     <th className="p-2 text-right">Total</th>
                     <th className="p-2">Status</th>
+                    <th className="p-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -609,6 +601,13 @@ export default function BookingsPage() {
                           <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
                             {STATUS_META[b.status]?.label || b.status}
                           </Badge>
+                        </td>
+                        <td className="p-2">
+                          {(b.status === "booked" || b.status === "checked_in") && (
+                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={() => openEditDates(b)} data-testid={`button-edit-dates-${bid(b)}`}>
+                              <CalendarDays className="h-3 w-3 mr-1" />Change dates
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -721,7 +720,12 @@ export default function BookingsPage() {
                       {b.checkIn} → {b.checkOut}
                       {b.guestPhone ? <> · <Phone className="inline h-3 w-3" /> {b.guestPhone}</> : null}
                     </p>
-                    <div className="flex gap-1.5 pt-1">
+                    <div className="flex gap-1.5 pt-1 flex-wrap">
+                      {(b.status === "booked" || b.status === "checked_in") && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setRoomDialog(null); openEditDates(b); }} data-testid="button-room-edit-dates">
+                          <CalendarDays className="h-3.5 w-3.5 mr-1" />Change dates
+                        </Button>
+                      )}
                       {b.status === "booked" && (
                         <>
                           <Button size="sm" variant="outline" className="h-7 text-xs text-green-700 border-green-300" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("checked_in"); }} data-testid="button-room-checkin">
@@ -760,6 +764,73 @@ export default function BookingsPage() {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Change booking dates */}
+      <Dialog open={!!editBooking} onOpenChange={(o) => { if (!isSavingDates && !o) setEditBooking(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change booking dates</DialogTitle>
+            <DialogDescription>
+              {editBooking?.guestName} — {editBooking?.roomName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Check-in</label>
+                <Input
+                  type="date"
+                  value={editDates.checkIn}
+                  onChange={(e) => setEditDates((d) => ({ ...d, checkIn: e.target.value }))}
+                  disabled={isSavingDates}
+                  data-testid="input-edit-checkin"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Check-out</label>
+                <Input
+                  type="date"
+                  value={editDates.checkOut}
+                  onChange={(e) => setEditDates((d) => ({ ...d, checkOut: e.target.value }))}
+                  disabled={isSavingDates}
+                  data-testid="input-edit-checkout"
+                />
+              </div>
+            </div>
+            {editBooking && editNights > 0 && !editConflict && (
+              <div className="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-sm flex items-center justify-between" data-testid="text-edit-total">
+                <span className="text-gray-600">
+                  {editNights} night{editNights !== 1 ? "s" : ""} × {Number(editBooking.nightlyRate).toLocaleString()}
+                </span>
+                <span className="font-semibold text-purple-700">
+                  New total: {(editNights * (Number(editBooking.nightlyRate) || 0)).toLocaleString()}
+                </span>
+              </div>
+            )}
+            {editNights <= 0 && (
+              <p className="text-xs text-red-600" data-testid="text-edit-invalid">
+                Check-out must be after check-in.
+              </p>
+            )}
+            {editConflict && (
+              <p className="text-xs text-red-600" data-testid="text-edit-conflict">
+                Another booking already uses this room on those dates.
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditBooking(null)} disabled={isSavingDates}>Cancel</Button>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700"
+              onClick={handleSaveDates}
+              disabled={isSavingDates || editNights <= 0 || editConflict}
+              data-testid="button-save-dates"
+            >
+              {isSavingDates ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Saving…</>) : "Save new dates"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
