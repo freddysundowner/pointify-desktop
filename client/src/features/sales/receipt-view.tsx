@@ -271,8 +271,9 @@ ${saleData.customerName && saleData.customerName !== 'Walk-in' ? `<div>Customer:
 <div>Waiter: ${saleData.attendantName}</div>
 <hr/>
 ${saleData.items.map((item: any) =>
-  `<div class="item">${item.quantity}x ${item.productName}${item.salesnote ? `<div style="font-size:13px;font-weight:normal;padding-left:10px;color:#555;margin-top:2px">${item.salesnote}</div>` : ''}</div>`
+  `<div class="item">${item.quantity}x ${item.productName}</div>`
 ).join('')}
+${saleData.salesnote && saleData.salesnote !== 'HOLD TRANSACTION' ? `<hr/><div style="font-size:13px;color:#555">Note: ${saleData.salesnote}</div>` : ''}
 </body></html>`;
     const w = window.open('', '_blank', 'width=400,height=600');
     if (!w) return;
@@ -498,7 +499,7 @@ ${saleData.items.map((item: any) =>
                 <ReceiptRow label="Customer" value={saleData.customerName} />
                 <ReceiptRow label="Cashier" value={saleData.attendantName} />
                 <ReceiptRow label="Type" value={saleData.saleType} />
-                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && saleData.extraChargesTotal <= 0 && (
+                {saleData.salesnote && saleData.salesnote !== "HOLD TRANSACTION" && (
                   <ReceiptRow label="Note" value={saleData.salesnote} />
                 )}
               </div>
