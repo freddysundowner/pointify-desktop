@@ -468,7 +468,11 @@ export function registerProductRoutes(app: Express) {
         return res.status(401).json({ error: "Authorization token required" });
       }
 
-      const data = await makePointifyRequest("/product/category", {
+      const createQuery = new URLSearchParams(req.query as any).toString();
+      const createEndpoint = createQuery
+        ? `/product/category?${createQuery}`
+        : "/product/category";
+      const data = await makePointifyRequest(createEndpoint, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify(req.body),

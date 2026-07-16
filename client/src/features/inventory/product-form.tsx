@@ -590,7 +590,11 @@ export default function ProductForm() {
 
   const createCategoryMutation = useMutation({
     mutationFn: async (categoryName: string) => {
-      const response = await fetch("/api/product/category", {
+      const createParams = new URLSearchParams({
+        shop: shopId || "",
+        admin: adminId || "",
+      });
+      const response = await fetch(`/api/product/category?${createParams.toString()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
