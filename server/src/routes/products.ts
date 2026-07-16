@@ -316,6 +316,50 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Bulk create products in ONE upstream request (upstream: POST /product/bulk).
+  // Returns 404 pass-through if the upstream doesn't have the endpoint yet, so
+  // the client can fall back to per-product creation.
+  app.post("/api/product/bulk", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+
+      const data: any = await makePointifyRequest("/product/bulk", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(req.body),
+      });
+
+      // A write must never silently look successful when upstream rejected it.
+      if (data && data.success === false) {
+        const statusCode = data.httpStatus || 502;
+        // Keep "404" in the message text — the client falls back to
+        // one-by-one creation when it sees it (upstream not deployed yet).
+        const msg =
+          statusCode === 404
+            ? "HTTP 404: bulk product endpoint not available upstream yet"
+            : data.error || data.message || "Bulk product create failed";
+        return res.status(statusCode).json({ error: msg, details: data });
+      }
+
+      res.json(data);
+    } catch (error) {
+      const status = (error as any).status || 500;
+      const responseBody = (error as any).responseBody;
+      if (responseBody) {
+        try {
+          res.status(status).json(JSON.parse(responseBody));
+        } catch {
+          res.status(status).json({ error: "Failed to bulk create products" });
+        }
+      } else {
+        res.status(status).json({ error: "Failed to bulk create products" });
+      }
+    }
+  });
+
   // Create product
   app.post("/api/product", async (req, res) => {
     try {

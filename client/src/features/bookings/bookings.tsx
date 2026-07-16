@@ -368,50 +368,81 @@ export default function BookingsPage() {
     Number.isFinite(bulkRate) && bulkRate > 0 &&
     !bulkProgress;
 
+  const roomPayload = (name: string) => ({
+    name,
+    measure: "",
+    sellingPrice: bulkRate,
+    buyingPrice: 0,
+    quantity: 0,
+    bundle: false,
+    virtual: true,
+    isRoom: true,
+    manageByPrice: false,
+    productCategoryId: null,
+    supplierId: null,
+    reorderLevel: 0,
+    maxDiscount: 0,
+    description: "",
+    shopId,
+    adminId,
+    attendantId,
+    productType: "service",
+  });
+
   const handleBulkCreate = async () => {
     if (!canBulkCreate) return;
     const prefix = bulkForm.prefix.trim();
     const existingNames = new Set(rooms.map((r) => r.name.toLowerCase()));
+    const wanted: string[] = [];
+    let skipped = 0;
+    for (let i = 0; i < bulkCount; i++) {
+      const name = `${prefix} ${bulkStart + i}`;
+      if (existingNames.has(name.toLowerCase())) skipped++;
+      else wanted.push(name);
+    }
     setBulkProgress({ done: 0, total: bulkCount });
     let created = 0;
-    let skipped = 0;
     try {
-      for (let i = 0; i < bulkCount; i++) {
-        const name = `${prefix} ${bulkStart + i}`;
-        if (existingNames.has(name.toLowerCase())) {
-          skipped++;
-          setBulkProgress({ done: i + 1, total: bulkCount });
-          continue;
-        }
-        const resp = await apiCall("/api/product", {
+      if (wanted.length > 0) {
+        // Preferred path: ONE request creates everything (POST /api/product/bulk).
+        // The upstream may not have this endpoint yet — on 404 fall back to
+        // creating rooms one at a time.
+        const bulkResp = await apiCall("/api/product/bulk", {
           method: "POST",
           body: JSON.stringify({
-            name,
-            measure: "",
-            sellingPrice: bulkRate,
-            buyingPrice: 0,
-            quantity: 0,
-            bundle: false,
-            virtual: true,
-            isRoom: true,
-            manageByPrice: false,
-            productCategoryId: null,
-            supplierId: null,
-            reorderLevel: 0,
-            maxDiscount: 0,
-            description: "",
             shopId,
             adminId,
             attendantId,
-            productType: "service",
+            products: wanted.map(roomPayload),
           }),
+        }).catch((err: any) => {
+          if (String(err?.message || "").includes("404")) return null;
+          throw err;
         });
-        const data = await resp.json().catch(() => null);
-        if (!resp.ok || (data && data.success === false)) {
-          throw new Error(data?.error || data?.message || `HTTP ${resp.status} while creating "${name}"`);
+
+        if (bulkResp) {
+          const data = await bulkResp.json().catch(() => null);
+          if (!bulkResp.ok || !data || data.success === false) {
+            throw new Error(data?.error || data?.message || `HTTP ${bulkResp.status}`);
+          }
+          created = Number(data.created) || 0;
+          skipped += Number(data.skipped) || 0;
+          setBulkProgress({ done: bulkCount, total: bulkCount });
+        } else {
+          // Fallback: bulk endpoint not deployed upstream yet — one at a time.
+          for (let i = 0; i < wanted.length; i++) {
+            const resp = await apiCall("/api/product", {
+              method: "POST",
+              body: JSON.stringify(roomPayload(wanted[i])),
+            });
+            const data = await resp.json().catch(() => null);
+            if (!resp.ok || (data && data.success === false)) {
+              throw new Error(data?.error || data?.message || `HTTP ${resp.status} while creating "${wanted[i]}"`);
+            }
+            created++;
+            setBulkProgress({ done: skipped + i + 1, total: bulkCount });
+          }
         }
-        created++;
-        setBulkProgress({ done: i + 1, total: bulkCount });
       }
       toast({
         title: "Rooms created",
