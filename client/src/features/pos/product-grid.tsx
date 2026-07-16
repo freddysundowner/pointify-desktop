@@ -645,6 +645,34 @@ export default function ProductGrid({
       return aOut - bOut;
     });
 
+  // When a category is selected, fetch that category's products from the
+  // server (the locally-loaded pages may not contain all of them).
+  const { data: categoryProductsData, isLoading: categoryProductsLoading } = useQuery({
+    queryKey: ["pos-products-by-category", shopId, adminId, activeCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: "1",
+        limit: "200",
+        name: "",
+        shop: shopId || "",
+        adminid: adminId || "",
+        categoryId: activeCategory,
+        useWarehouse: "true",
+        warehouse: "false",
+        type: "",
+        stockMode: "",
+      });
+      const response = await apiCall(`/api/v2/products/list?${params.toString()}`, {
+        method: "GET",
+      });
+      const data = await response.json();
+      if (Array.isArray(data)) return data;
+      return data?.data || data?.products || [];
+    },
+    enabled: !!shopId && activeCategory !== "all",
+    staleTime: 60 * 1000,
+  });
+
   // Filter products based on category and search query
   const products = useMemo(() => {
     // If user is searching, use search results instead of local filtering
@@ -668,18 +696,28 @@ export default function ProductGrid({
       return [];
     }
 
-    // Default: use all products with category filtering
-    let filteredProducts = allProducts;
-
-    // Filter by category
+    // Category selected: prefer the server-fetched list for that category
     if (activeCategory !== "all") {
-      filteredProducts = filteredProducts.filter(product => 
-        product.category?.toLowerCase() === activeCategory.toLowerCase()
-      );
+      if (Array.isArray(categoryProductsData)) {
+        return sortInStock(categoryProductsData);
+      }
+      // While the category fetch is loading, fall back to filtering the
+      // locally-loaded products so the grid doesn't flash empty.
+      const local = allProducts.filter((product: any) => {
+        const catId =
+          typeof product.productCategoryId === "string"
+            ? product.productCategoryId
+            : product.productCategoryId?._id;
+        return (
+          catId === activeCategory ||
+          product.category?.toLowerCase() === activeCategory.toLowerCase()
+        );
+      });
+      return sortInStock(local);
     }
 
-    return sortInStock(filteredProducts);
-  }, [allProducts, activeCategory, searchQuery, searchResults, isSearching]);
+    return sortInStock(allProducts);
+  }, [allProducts, activeCategory, searchQuery, searchResults, isSearching, categoryProductsData]);
 
   const { data: customersResponse, isLoading: customersLoading } = useQuery({
     queryKey: ["customers", adminId, shopId],
