@@ -718,8 +718,7 @@ export default function ProductGrid({
     queryKey: ["categories", adminId, shopId],
     queryFn: async () => {
       const params = new URLSearchParams({
-        adminid: adminId || "",
-        shopId: shopId || "",
+        admin: adminId || "",
         shop: shopId || ""
       });
       const response = await apiCall(`/api/product/category?${params.toString()}`, {

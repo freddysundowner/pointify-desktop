@@ -599,6 +599,7 @@ export default function ProductForm() {
         body: JSON.stringify({
           name: categoryName,
           admin: adminId,
+          shop: shopId,
         }),
       });
 

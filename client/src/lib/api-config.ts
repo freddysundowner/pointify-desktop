@@ -102,8 +102,7 @@ export const fetchProductCategories = async (
 ) => {
   const params = new URLSearchParams({
     shop: shopId || "",
-    shopId: shopId || "",
-    adminId: adminId || "",
+    admin: adminId || "",
   });
 
   const token =
