@@ -25,7 +25,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
-  XCircle, CalendarDays, Phone, User,
+  XCircle, CalendarDays, Phone, User, Trash2,
 } from "lucide-react";
 
 interface Booking {
@@ -349,6 +349,31 @@ export default function BookingsPage() {
   };
 
   const monthLabel = new Date(rangeFrom + "T00:00:00").toLocaleDateString("en-KE", { month: "long", year: "numeric" });
+
+  // Delete a room (upstream refuses with 409 if it still has active bookings)
+  const [deleteRoom, setDeleteRoom] = useState<Room | null>(null);
+  const [isDeletingRoom, setIsDeletingRoom] = useState(false);
+  const handleDeleteRoom = async () => {
+    if (!deleteRoom) return;
+    setIsDeletingRoom(true);
+    try {
+      const resp = await apiCall(`/api/rooms/${deleteRoom._id}`, { method: "DELETE" });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok || (data && data.success === false)) {
+        throw new Error(
+          resp.status === 409
+            ? "This room still has an upcoming or checked-in booking. Cancel or check out that booking first."
+            : data?.error || data?.message || `HTTP ${resp.status}`
+        );
+      }
+      toast({ title: "Room deleted", description: `${deleteRoom.name} has been removed.` });
+      setDeleteRoom(null);
+      queryClient.invalidateQueries({ queryKey: ["booking-rooms", shopId] });
+    } catch (err: any) {
+      toast({ title: "Could not delete room", description: err.message, variant: "destructive" });
+    }
+    setIsDeletingRoom(false);
+  };
 
   // Change the dates of an existing booking (guest shortens or extends a stay).
   const openEditDates = (b: Booking) => {
@@ -759,6 +784,17 @@ export default function BookingsPage() {
                   </p>
                 )}
                 <DialogFooter className="gap-2">
+                  {!b && (
+                    <Button
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50 mr-auto"
+                      onClick={() => { setRoomDialog(null); setDeleteRoom(roomDialog); }}
+                      data-testid="button-room-delete"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1.5" />
+                      Delete room
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={() => setRoomDialog(null)}>Close</Button>
                   {!b && (
                     <Button
@@ -774,6 +810,33 @@ export default function BookingsPage() {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm room deletion */}
+      <Dialog open={!!deleteRoom} onOpenChange={(o) => { if (!isDeletingRoom && !o) setDeleteRoom(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete {deleteRoom?.name}?</DialogTitle>
+            <DialogDescription>
+              This removes the room from the rooms list. Past bookings and their payments are kept for your
+              reports. A room with an upcoming or checked-in booking cannot be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteRoom(null)} disabled={isDeletingRoom}>
+              Keep room
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRoom}
+              disabled={isDeletingRoom}
+              data-testid="button-confirm-delete-room"
+            >
+              {isDeletingRoom ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+              Delete room
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
