@@ -26,7 +26,9 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface Booking {
   _id?: string;
@@ -110,6 +112,8 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   const [roomSearch, setRoomSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "vacant" | "occupied">("all");
   const [roomDialog, setRoomDialog] = useState<Room | null>(null);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const mobileFilterCount = (groupFilter !== "all" ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
 
   // Change the dates of an existing booking (guest extends / shortens stay)
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
@@ -512,7 +516,122 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
               </div>
             </div>
-            <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
+            {/* Mobile: search + filter sheet trigger */}
+            <div className="flex items-center gap-2 mb-3 sm:hidden">
+              <Input
+                value={roomSearch}
+                onChange={(e) => setRoomSearch(e.target.value)}
+                placeholder="Search room name…"
+                className="h-9 flex-1 min-w-0 text-sm bg-white"
+                data-testid="input-room-search-mobile"
+              />
+              <Button
+                variant="outline"
+                className="h-9 shrink-0 relative"
+                onClick={() => setFilterSheetOpen(true)}
+                data-testid="button-open-filters"
+              >
+                <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+                Filters
+                {mobileFilterCount > 0 && (
+                  <span className="ml-1.5 h-5 min-w-5 px-1 rounded-full bg-purple-600 text-white text-[11px] font-semibold inline-flex items-center justify-center">
+                    {mobileFilterCount}
+                  </span>
+                )}
+              </Button>
+            </div>
+            <p className="text-[11px] text-gray-500 -mt-2 mb-3 sm:hidden" data-testid="text-range-summary-mobile">
+              Stay: {rangeFrom} → {rangeTo} · {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
+            </p>
+            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+              <SheetContent side="bottom" className="rounded-t-2xl">
+                <SheetHeader className="text-left">
+                  <SheetTitle>Filters</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4 mt-3 pb-2">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1.5">Stay dates</label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        value={rangeFrom}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (!v) return;
+                          setRangeFrom(v);
+                          if (v >= rangeTo) setRangeTo(addDays(v, 1));
+                        }}
+                        className="h-10 flex-1 min-w-0 text-sm bg-white"
+                        data-testid="input-range-from-sheet"
+                      />
+                      <span className="text-gray-400 text-sm shrink-0">→</span>
+                      <Input
+                        type="date"
+                        value={rangeTo}
+                        min={addDays(rangeFrom, 1)}
+                        onChange={(e) => { if (e.target.value) setRangeTo(e.target.value); }}
+                        className="h-10 flex-1 min-w-0 text-sm bg-white"
+                        data-testid="input-range-to-sheet"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
+                    </p>
+                  </div>
+                  {groupNames.length > 1 && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Group</label>
+                      <Select value={groupFilter} onValueChange={setGroupFilter}>
+                        <SelectTrigger className="h-10 w-full text-sm bg-white" data-testid="select-room-group-sheet">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All groups</SelectItem>
+                          {groupNames.map((g) => (
+                            <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
+                              {g || "Ungrouped"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1.5">Availability</label>
+                    <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                      <SelectTrigger className="h-10 w-full text-sm bg-white" data-testid="select-room-status-sheet">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All rooms</SelectItem>
+                        <SelectItem value="vacant">Vacant</SelectItem>
+                        <SelectItem value="occupied">Occupied</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => { setGroupFilter("all"); setStatusFilter("all"); }}
+                      data-testid="button-clear-filters"
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      className="flex-1 bg-purple-600 hover:bg-purple-700"
+                      onClick={() => setFilterSheetOpen(false)}
+                      data-testid="button-apply-filters"
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop: inline filter bar */}
+            <div className="hidden rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-500 shrink-0">Stay:</span>
                 <Input
