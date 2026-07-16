@@ -6,7 +6,6 @@ model / controller / route pattern as the rest of the codebase):
 - `models/booking.js`     -> src/models/booking.js
 - `controllers/booking.js` -> src/controllers/booking.js
 - `routes/booking.js`     -> src/routes/booking.js
-- `controllers/product-bulk.js` -> src/controllers/product-bulk.js (bulk product create, see §4)
 
 Then make these small edits by hand:
 
@@ -50,27 +49,14 @@ isRoom: { type: Boolean, default: false },
 Without it, Mongoose drops `isRoom` on save and no rooms will ever show
 in the bookings page.
 
-## 4. Register the bulk product endpoint
+## Bulk room creation
 
-The POS "Add Rooms" tool can create up to 200 rooms at once. Without this
-endpoint it falls back to one `POST /product` per room (works, but slow and
-noisy in the logs). `controllers/product-bulk.js` adds a single-request
-version.
-
-In your product routes file (the one that maps `POST /` to `createProduct`),
-add:
-
-```js
-const { bulkCreateProducts } = require("../controllers/product-bulk");
-
-router.post("/bulk", bulkCreateProducts);   // BEFORE any "/:id" routes
-```
-
-- `POST /product/bulk` with `{ shopId, adminId, attendantId, products: [...] }`
-  (max 500, non-bundle only).
-- Existing names in the shop are skipped, not errors — safe to re-run.
-- Creates one Inventory row per product, same as `createProduct`.
-- Responds `{ success, created, skipped, skippedNames, data }`.
+The POS "Add Rooms" tool creates rooms via the existing v2 endpoint
+`POST /api/v2/products/bulk/add` with
+`{ shopId, adminId, attendantId, products: [...] }` (each product carries
+`virtual: true`, `isRoom: true`, `productType: "service"`). If that endpoint
+is not reachable it falls back to one `POST /product` per room. No new
+backend code is needed for this beyond the `isRoom` schema field above.
 
 ## That's it
 

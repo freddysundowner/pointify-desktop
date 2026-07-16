@@ -404,10 +404,10 @@ export default function BookingsPage() {
     let created = 0;
     try {
       if (wanted.length > 0) {
-        // Preferred path: ONE request creates everything (POST /api/product/bulk).
-        // The upstream may not have this endpoint yet — on 404 fall back to
-        // creating rooms one at a time.
-        const bulkResp = await apiCall("/api/product/bulk", {
+        // Preferred path: ONE request creates everything
+        // (upstream v2 endpoint: POST /api/v2/products/bulk/add).
+        // On 404 fall back to creating rooms one at a time.
+        const bulkResp = await apiCall("/api/v2/products/bulk/add", {
           method: "POST",
           body: JSON.stringify({
             shopId,
@@ -425,7 +425,12 @@ export default function BookingsPage() {
           if (!bulkResp.ok || !data || data.success === false) {
             throw new Error(data?.error || data?.message || `HTTP ${bulkResp.status}`);
           }
-          created = Number(data.created) || 0;
+          // Be tolerant of the exact response shape the v2 endpoint returns.
+          created =
+            Number(data.created) ||
+            (Array.isArray(data.data) ? data.data.length : 0) ||
+            (Array.isArray(data.products) ? data.products.length : 0) ||
+            wanted.length;
           skipped += Number(data.skipped) || 0;
           setBulkProgress({ done: bulkCount, total: bulkCount });
         } else {

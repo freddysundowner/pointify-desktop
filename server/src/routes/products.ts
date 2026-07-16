@@ -316,19 +316,24 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
-  // Bulk create products in ONE upstream request (upstream: POST /product/bulk).
-  // Returns 404 pass-through if the upstream doesn't have the endpoint yet, so
+  // Bulk create products in ONE upstream request
+  // (upstream: POST /api/v2/products/bulk/add — same v2 namespace as
+  // /api/v2/products/list and /api/v2/products/bulk/update above).
+  // Returns 404 pass-through if the upstream doesn't have the endpoint, so
   // the client can fall back to per-product creation.
-  app.post("/api/product/bulk", async (req, res) => {
+  app.post("/api/v2/products/bulk/add", async (req, res) => {
     try {
       const token = extractToken(req);
       if (!token) {
         return res.status(401).json({ error: "Authorization token required" });
       }
 
-      const data: any = await makePointifyRequest("/product/bulk", {
+      const data: any = await makePointifyRequest("/api/v2/products/bulk/add", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(req.body),
       });
 
