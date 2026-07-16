@@ -322,28 +322,34 @@ export default function BookingsPage() {
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <BedDouble className="h-5 w-5 text-purple-600" />
-              Room Bookings
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Standalone guest-house module — rooms and bookings are separate from products and sales.
-            </p>
-            <p className="text-sm font-medium text-purple-700 mt-1" data-testid="text-month-revenue">
-              Bookings revenue ({monthLabel}): {monthRevenue.toLocaleString()}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
-              <BedDouble className="h-4 w-4 mr-1.5" />
-              Add Rooms
-            </Button>
-            <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Booking
-            </Button>
+        <div className="mb-4 rounded-lg border bg-white p-4">
+          <div className="flex items-start justify-between flex-wrap gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <BedDouble className="h-5 w-5 text-purple-600" />
+                Room Bookings
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Rooms and bookings are managed here, separate from products and sales.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div
+                className="rounded-md bg-purple-50 border border-purple-200 px-3 py-1.5 text-sm"
+                data-testid="text-month-revenue"
+              >
+                <span className="text-gray-600">Revenue ({monthLabel}): </span>
+                <span className="font-semibold text-purple-700">{monthRevenue.toLocaleString()}</span>
+              </div>
+              <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
+                <BedDouble className="h-4 w-4 mr-1.5" />
+                Add Rooms
+              </Button>
+              <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
+                <Plus className="h-4 w-4 mr-1.5" />
+                New Booking
+              </Button>
+            </div>
           </div>
         </div>
 
