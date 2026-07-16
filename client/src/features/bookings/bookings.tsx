@@ -844,7 +844,6 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       Delete room
                     </Button>
                   )}
-                  <Button variant="outline" className="w-full sm:w-auto" onClick={() => setRoomDialog(null)}>Close</Button>
                   {!b && (
                     <Button
                       className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
