@@ -46,7 +46,6 @@ export const getMenuGroups = (isAttendant: boolean, isRestaurant: boolean = fals
         icon: BedDouble,
         items: [
           { href: "/bookings", label: "Rooms & Bookings" },
-          { href: "/bookings/new", label: "New Booking" },
           { href: "/bookings/report", label: "Rooms Report" },
         ],
       }]
