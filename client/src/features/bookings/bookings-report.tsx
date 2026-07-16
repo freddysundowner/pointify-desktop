@@ -194,7 +194,7 @@ export default function BookingsReportPage() {
 
   return (
     <DashboardLayout title="Rooms Report">
-      <div className="p-4 lg:p-6 space-y-4 max-w-6xl mx-auto">
+      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 space-y-4 max-w-6xl mx-auto">
         {/* Range picker */}
         <div className="flex flex-wrap items-end gap-3">
           <div>

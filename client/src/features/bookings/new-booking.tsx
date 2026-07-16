@@ -311,7 +311,7 @@ export default function NewBookingPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 lg:p-6 max-w-4xl mx-auto">
+      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <Button variant="ghost" size="sm" onClick={() => navigate("/bookings")} data-testid="button-back-bookings">
