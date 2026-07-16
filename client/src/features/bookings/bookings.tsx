@@ -832,6 +832,38 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     This room is free for the selected dates.
                   </p>
                 )}
+                {(() => {
+                  const history = bookings
+                    .filter((x) => x.roomId === roomDialog._id && bid(x) !== (b ? bid(b) : ""))
+                    .sort((a, c) => (a.checkIn < c.checkIn ? 1 : -1))
+                    .slice(0, 5);
+                  if (history.length === 0) return null;
+                  return (
+                    <div className="rounded-md border p-3" data-testid="room-dialog-history">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Recent bookings
+                      </p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {history.map((h) => (
+                          <div key={bid(h)} className="flex items-center justify-between gap-2 text-xs" data-testid={`room-history-${bid(h)}`}>
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-800 truncate">{h.guestName}</p>
+                              <p className="text-gray-500">
+                                {h.checkIn} → {h.checkOut}
+                                {h.status === "checked_out" && Number(h.amountPaid) > 0 && (
+                                  <> · paid {Number(h.amountPaid).toLocaleString()}{h.paymentMethod ? ` (${h.paymentMethod === "mpesa" ? "M-Pesa" : h.paymentMethod})` : ""}</>
+                                )}
+                              </p>
+                            </div>
+                            <Badge className={`text-[10px] shrink-0 ${STATUS_META[h.status]?.cls || ""}`} variant="secondary">
+                              {STATUS_META[h.status]?.label || h.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
                 <DialogFooter className="flex-col-reverse sm:flex-row sm:flex-wrap gap-2">
                   {!b && (
                     <Button
@@ -851,7 +883,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       data-testid="button-room-book"
                     >
                       <Plus className="h-4 w-4 mr-1.5" />
-                      Book this room
+                      Book now
                     </Button>
                   )}
                 </DialogFooter>
