@@ -56,7 +56,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, fetchProductCategories } from "@/lib/api-config";
 import { Link, useLocation } from "wouter";
 import { useShop } from "@/features/shop/useShop";
 import { useAuth } from "@/features/auth/useAuth";
@@ -143,6 +143,19 @@ export default function StockProducts() {
   useEffect(() => {
     setPage(1);
   }, [searchQuery, selectedCategory, productType, sortBy, stockFilter]);
+
+  // Warm the category cache so the Add/Edit Product form's category dropdown
+  // opens instantly instead of fetching on first click.
+  const prefetchAdminId = admin?._id || "";
+  useEffect(() => {
+    if (selectedShopId && prefetchAdminId) {
+      queryClient.prefetchQuery({
+        queryKey: ["/api/product/category", selectedShopId, prefetchAdminId],
+        queryFn: () => fetchProductCategories(selectedShopId, prefetchAdminId),
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  }, [selectedShopId, prefetchAdminId, queryClient]);
 
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);

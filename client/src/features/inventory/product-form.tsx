@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Package } from "lucide-react";
 import { offlineStorage } from "@/lib/offline-storage";
 import { parseApiError } from "@/lib/queryClient";
+import { fetchProductCategories } from "@/lib/api-config";
 import AccompanimentGroupsEditor from "@/components/ui/accompaniment-groups-editor";
 import type { AccompanimentGroup } from "@/types/accompaniments";
 
@@ -139,26 +140,9 @@ export default function ProductForm() {
   // Fetch categories for the dropdown
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/product/category", shopId, adminId],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        shopId: shopId || "",
-        adminId: adminId || "",
-      });
-      
-      const response = await fetch(`/api/product/category?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
-
-      const data = await response.json();
-      return data.data || data || [];
-    },
+    queryFn: () => fetchProductCategories(shopId, adminId),
     enabled: !!(shopId && adminId),
+    staleTime: 5 * 60 * 1000,
   });
 
   const isEditMode = location.includes("/edit-product");

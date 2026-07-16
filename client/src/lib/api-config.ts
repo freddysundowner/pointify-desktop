@@ -93,6 +93,38 @@ export const API_ENDPOINTS = {
   },
 };
 
+// Shared fetcher for product categories. Includes `shop` in the query so the
+// upstream API can scope categories to the selected shop. Used by the product
+// form and prefetched from the products page so the dropdown opens instantly.
+export const fetchProductCategories = async (
+  shopId: string,
+  adminId: string,
+) => {
+  const params = new URLSearchParams({
+    shop: shopId || "",
+    shopId: shopId || "",
+    adminId: adminId || "",
+  });
+
+  const token =
+    localStorage.getItem("authToken") || localStorage.getItem("attendantToken");
+  const response = await fetch(
+    `${API_ENDPOINTS.products.categories}?${params.toString()}`,
+    {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch categories");
+  }
+
+  const data = await response.json();
+  return data.data || data || [];
+};
+
 // Helper function to build URL with query params
 export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
   return params ? `${endpoint}?${params.toString()}` : endpoint;
