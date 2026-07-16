@@ -307,8 +307,11 @@ export default function StockProducts() {
       stockFilter,
     ],
     queryFn: async ({ queryKey }) => {
+      // Services don't track stock, so stock filters would hide them all.
+      // When viewing services, ignore the stock filter.
       const stockModeParam =
-        stockFilter === "outofstock" ? "outofstock"
+        productType === "service" ? ""
+        : stockFilter === "outofstock" ? "outofstock"
         : stockFilter === "lowstock" ? "runninglow"
         : stockFilter === "instock" ? "instock"
         : "";
@@ -763,6 +766,16 @@ export default function StockProducts() {
                   <SelectItem value="outofstock">Out of Stock</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={productType} onValueChange={setProductType}>
+                <SelectTrigger className="w-40 h-8 text-sm" data-testid="select-type-filter">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="product">Products</SelectItem>
+                  <SelectItem value="service">Services</SelectItem>
+                </SelectContent>
+              </Select>
               {selectedIds.length > 0 && (hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
                 <Button variant="outline" className="h-8 text-sm gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => setBulkCategoryDialogOpen(true)} data-testid="button-bulk-category">
                   <FolderInput className="h-4 w-4" />
@@ -1180,6 +1193,25 @@ export default function StockProducts() {
                 {stockFilter === opt.value && <Check className="h-4 w-4 text-purple-600" />}
               </button>
             ))}
+          </div>
+          <div className="px-5 py-3 border-t">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Type</p>
+            <div className="flex gap-2">
+              {([
+                { value: "all", label: "All" },
+                { value: "product", label: "Products" },
+                { value: "service", label: "Services" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${productType === opt.value ? "bg-purple-50 border-purple-300 text-purple-700" : "border-gray-200 text-gray-700"}`}
+                  onClick={() => { setProductType(opt.value); setFilterSheetOpen(false); }}
+                  data-testid={`button-type-${opt.value}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="px-5 pb-8 pt-2 border-t">
             <button className="w-full py-3 rounded-xl bg-gray-100 text-sm font-medium text-gray-700" onClick={() => setFilterSheetOpen(false)}>Close</button>
