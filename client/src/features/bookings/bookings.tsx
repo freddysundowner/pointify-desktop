@@ -725,7 +725,7 @@ export default function BookingsPage() {
 
       {/* Room details — booking status for the selected night, book / manage */}
       <Dialog open={!!roomDialog} onOpenChange={(o) => { if (!o) setRoomDialog(null); }}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:max-w-md rounded-lg">
           {roomDialog && (() => {
             const b = bookingForRoom(roomDialog._id);
             return (
@@ -783,11 +783,11 @@ export default function BookingsPage() {
                     This room is free for the selected dates.
                   </p>
                 )}
-                <DialogFooter className="gap-2">
+                <DialogFooter className="flex-col-reverse sm:flex-row sm:flex-wrap gap-2">
                   {!b && (
                     <Button
                       variant="outline"
-                      className="text-red-600 border-red-200 hover:bg-red-50 mr-auto"
+                      className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50 sm:mr-auto"
                       onClick={() => { setRoomDialog(null); setDeleteRoom(roomDialog); }}
                       data-testid="button-room-delete"
                     >
@@ -795,10 +795,10 @@ export default function BookingsPage() {
                       Delete room
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => setRoomDialog(null)}>Close</Button>
+                  <Button variant="outline" className="w-full sm:w-auto" onClick={() => setRoomDialog(null)}>Close</Button>
                   {!b && (
                     <Button
-                      className="bg-purple-600 hover:bg-purple-700"
+                      className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
                       onClick={() => { setRoomDialog(null); openNewBooking(undefined, roomDialog._id); }}
                       data-testid="button-room-book"
                     >
@@ -815,7 +815,7 @@ export default function BookingsPage() {
 
       {/* Confirm room deletion */}
       <Dialog open={!!deleteRoom} onOpenChange={(o) => { if (!isDeletingRoom && !o) setDeleteRoom(null); }}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:max-w-sm rounded-lg">
           <DialogHeader>
             <DialogTitle>Delete {deleteRoom?.name}?</DialogTitle>
             <DialogDescription>
@@ -823,12 +823,13 @@ export default function BookingsPage() {
               reports. A room with an upcoming or checked-in booking cannot be deleted.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteRoom(null)} disabled={isDeletingRoom}>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setDeleteRoom(null)} disabled={isDeletingRoom}>
               Keep room
             </Button>
             <Button
               variant="destructive"
+              className="w-full sm:w-auto"
               onClick={handleDeleteRoom}
               disabled={isDeletingRoom}
               data-testid="button-confirm-delete-room"
