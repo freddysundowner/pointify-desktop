@@ -82,6 +82,7 @@ export default function NewBookingPage() {
 
   const [roomSearch, setRoomSearch] = useState("");
   const [roomId, setRoomId] = useState(initialRoomId);
+  const [step, setStep] = useState(0);
   const [guestSearch, setGuestSearch] = useState("");
   const [guestPickerOpen, setGuestPickerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -190,6 +191,21 @@ export default function NewBookingPage() {
 
   const canSave =
     !!selectedRoom && !!form.guestName.trim() && nights > 0 && rate >= 0 && !formConflict && !isSaving;
+
+  // Wizard steps — the room step is skipped when the room was already picked
+  const stepKeys: ("dates" | "room" | "guest" | "review")[] = initialRoomId
+    ? ["dates", "guest", "review"]
+    : ["dates", "room", "guest", "review"];
+  const STEP_LABELS: Record<string, string> = { dates: "Dates", room: "Room", guest: "Guest", review: "Review" };
+  const currentStep = stepKeys[Math.min(step, stepKeys.length - 1)];
+  const canNext =
+    currentStep === "dates"
+      ? nights > 0
+      : currentStep === "room"
+      ? !!roomId && !formConflict
+      : currentStep === "guest"
+      ? !!form.guestName.trim()
+      : false;
 
   const pickCustomer = (c: Customer) => {
     setSelectedCustomer(c);
@@ -314,14 +330,45 @@ export default function NewBookingPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr,320px] gap-4 items-start">
+        {/* Stepper indicator */}
+        <div className="flex items-center gap-1.5 mb-5" data-testid="stepper-indicator">
+          {stepKeys.map((k, i) => (
+            <div key={k} className="flex items-center gap-1.5 flex-1 min-w-0">
+              <button
+                type="button"
+                onClick={() => { if (i < step) setStep(i); }}
+                className={`flex items-center gap-1.5 min-w-0 ${i < step ? "cursor-pointer" : "cursor-default"}`}
+                data-testid={`step-${k}`}
+              >
+                <span
+                  className={`h-7 w-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 transition-colors ${
+                    i < step
+                      ? "bg-purple-600 text-white"
+                      : i === step
+                      ? "bg-purple-600 text-white ring-4 ring-purple-100"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                </span>
+                <span className={`text-xs font-medium truncate hidden sm:inline ${i <= step ? "text-gray-900" : "text-gray-400"}`}>
+                  {STEP_LABELS[k]}
+                </span>
+              </button>
+              {i < stepKeys.length - 1 && (
+                <div className={`h-0.5 flex-1 rounded ${i < step ? "bg-purple-600" : "bg-gray-200"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-sm font-semibold text-gray-800 mb-3 sm:hidden">{STEP_LABELS[currentStep]}</p>
+
+        <div className="max-w-2xl">
           <div className="space-y-4">
-            {/* Step 1: dates */}
+            {/* Step: dates */}
+            {currentStep === "dates" && (
             <section className="rounded-xl border bg-white p-4">
-              <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">1</span>
-                Stay dates
-              </h2>
+              <h2 className="font-semibold text-gray-800 mb-3">Stay dates</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-600">Check-in</label>
@@ -340,15 +387,18 @@ export default function NewBookingPage() {
                   {nights} night{nights !== 1 ? "s" : ""}
                 </p>
               )}
+              {initialRoomId && formConflict && (
+                <p className="text-sm text-red-600 mt-2" data-testid="text-conflict-dates">
+                  This room is already booked {formConflict.checkIn} to {formConflict.checkOut} ({formConflict.guestName}). Pick different dates.
+                </p>
+              )}
             </section>
+            )}
 
-            {/* Step 2: room (hidden when the room was already picked on the Rooms page) */}
-            {!initialRoomId && (
+            {/* Step: room (skipped when the room was already picked on the Rooms page) */}
+            {currentStep === "room" && (
             <section className="rounded-xl border bg-white p-4">
-              <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">2</span>
-                Choose a room
-              </h2>
+              <h2 className="font-semibold text-gray-800 mb-3">Choose a room</h2>
               <div className="relative mb-3">
                 <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
@@ -394,13 +444,11 @@ export default function NewBookingPage() {
             </section>
             )}
 
-            {/* Step 3: guest */}
+            {/* Step: guest */}
+            {currentStep === "guest" && (
             <section className="rounded-xl border bg-white p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">{initialRoomId ? 2 : 3}</span>
-                  Guest
-                </h2>
+                <h2 className="font-semibold text-gray-800">Guest</h2>
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setNewGuest({ name: guestSearch.trim(), phone: "", email: "" }); setNewGuestOpen(true); }} data-testid="button-add-guest">
                   <UserPlus className="h-3.5 w-3.5 mr-1" /> New guest
                 </Button>
@@ -511,10 +559,11 @@ export default function NewBookingPage() {
                 </div>
               </div>
             </section>
-          </div>
+            )}
 
-          {/* Summary */}
-          <aside className="rounded-xl border bg-white p-4 lg:sticky lg:top-4">
+            {/* Step: review */}
+            {currentStep === "review" && (
+            <section className="rounded-xl border bg-white p-4">
             <h2 className="font-semibold text-gray-800 mb-3">Summary</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-2">
@@ -547,18 +596,42 @@ export default function NewBookingPage() {
                 This room is already booked {formConflict.checkIn} to {formConflict.checkOut} ({formConflict.guestName}).
               </p>
             )}
-            <Button
-              className="w-full mt-4 bg-purple-600 hover:bg-purple-700"
-              onClick={handleCreate}
-              disabled={!canSave}
-              data-testid="button-save-booking"
-            >
-              {isSaving ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Saving…</>) : "Save Booking"}
-            </Button>
-            <Button variant="outline" className="w-full mt-2" onClick={() => navigate("/bookings")} disabled={isSaving} data-testid="button-cancel-booking">
-              Cancel
-            </Button>
-          </aside>
+            </section>
+            )}
+
+            {/* Step navigation */}
+            <div className="flex gap-2">
+              {step > 0 ? (
+                <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setStep((s) => s - 1)} disabled={isSaving} data-testid="button-step-back">
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  Back
+                </Button>
+              ) : (
+                <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => navigate("/bookings")} disabled={isSaving} data-testid="button-cancel-booking">
+                  Cancel
+                </Button>
+              )}
+              {currentStep !== "review" ? (
+                <Button
+                  className="flex-1 sm:flex-none sm:ml-auto bg-purple-600 hover:bg-purple-700"
+                  onClick={() => setStep((s) => s + 1)}
+                  disabled={!canNext}
+                  data-testid="button-step-next"
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  className="flex-1 sm:flex-none sm:ml-auto bg-purple-600 hover:bg-purple-700"
+                  onClick={handleCreate}
+                  disabled={!canSave}
+                  data-testid="button-save-booking"
+                >
+                  {isSaving ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Saving…</>) : "Save Booking"}
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
