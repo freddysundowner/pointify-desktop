@@ -203,61 +203,30 @@ export default function StockProducts() {
     setDeleteAllConfirmOpen(false);
   };
 
-  // Assign the chosen category to every selected product. The upstream
-  // update endpoint expects the full product payload, so we send each
-  // product's existing data with only productCategoryId changed.
+  // Assign the chosen category to every selected product in one bulk call.
   const handleBulkAssignCategory = async () => {
     if (!bulkCategoryId) return;
     setIsBulkAssigning(true);
-    let ok = 0;
-    let failed = 0;
-    const succeededIds: string[] = [];
-    for (const id of selectedIds) {
-      // Selected products may be on another page of results — fall back to
-      // fetching the product by id so cross-page selections still update.
-      let product = (filteredProducts || []).find((p: any) => p._id === id);
-      if (!product) {
-        try {
-          const resp = await apiCall(`/api/product/${id}`, { method: "GET" });
-          if (resp.ok) {
-            const fetched = await resp.json();
-            product = fetched?.product || fetched?.data || (fetched?._id ? fetched : null);
-          }
-        } catch { /* handled below */ }
-      }
-      if (!product) {
-        failed++;
-        continue;
-      }
-      try {
-        const { _id, __v, createdAt, updatedAt, ...rest } = product;
-        const resp = await apiCall(`/api/product/${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ ...rest, productCategoryId: bulkCategoryId }),
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json().catch(() => null);
-        if (data && data.success === false) throw new Error(data.message || "Update failed");
-        ok++;
-        succeededIds.push(id);
-      } catch {
-        failed++;
-      }
-    }
-    setIsBulkAssigning(false);
-    setBulkCategoryDialogOpen(false);
-    setBulkCategoryId("");
-    if (failed === 0) {
-      toast({ title: "Category updated", description: `${ok} product${ok !== 1 ? "s" : ""} moved to the selected category.` });
+    try {
+      const resp = await apiCall("/api/v2/products/bulk/update", {
+        method: "PUT",
+        body: JSON.stringify({ productIds: selectedIds, productCategoryId: bulkCategoryId }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json().catch(() => null);
+      if (data && data.success === false) throw new Error(data.message || "Update failed");
+      toast({ title: "Category updated", description: `${selectedIds.length} product${selectedIds.length !== 1 ? "s" : ""} moved to the selected category.` });
       setSelectedIds([]);
-    } else {
+      setBulkCategoryDialogOpen(false);
+      setBulkCategoryId("");
+    } catch (err: any) {
       toast({
-        title: "Some updates failed",
-        description: `${ok} updated, ${failed} failed. The failed ones are still selected — try again.`,
+        title: "Update failed",
+        description: "The products could not be updated. Please try again.",
         variant: "destructive",
       });
-      setSelectedIds((prev) => prev.filter((id) => !succeededIds.includes(id)));
     }
+    setIsBulkAssigning(false);
     queryClient.invalidateQueries({ queryKey: ["/api/product"] });
     queryClient.invalidateQueries({ queryKey: ["/api/product/category"] });
     refreshProducts();

@@ -214,6 +214,41 @@ export function registerProductRoutes(app: Express) {
     }
   });
 
+  // Bulk-update products' category in one upstream call
+  app.put("/api/v2/products/bulk/update", async (req, res) => {
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const { productIds, productCategoryId } = req.body;
+      if (!Array.isArray(productIds) || productIds.length === 0 || !productCategoryId) {
+        return res.status(400).json({ error: "productIds array and productCategoryId are required" });
+      }
+      const data = await makePointifyRequest("/api/v2/products/bulk/update", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ productIds, productCategoryId }),
+      });
+      res.json(data);
+    } catch (error) {
+      const status = (error as any).status || 500;
+      const responseBody = (error as any).responseBody;
+      if (responseBody) {
+        try {
+          res.status(status).json(JSON.parse(responseBody));
+        } catch {
+          res.status(status).json({ error: "Failed to bulk update products" });
+        }
+      } else {
+        res.status(status).json({ error: "Failed to bulk update products" });
+      }
+    }
+  });
+
   // Update a product category (rename). Three-segment path, so it does not
   // clash with the two-segment /api/product/:id routes.
   app.put("/api/product/category/:id", async (req, res) => {
