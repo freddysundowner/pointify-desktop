@@ -45,6 +45,7 @@ import {
   SlidersHorizontal,
   Check,
   CreditCard,
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   Dialog,
@@ -440,6 +441,32 @@ function SalesList() {
   const handleDeleteSale = (sale: any) => {
     setSaleToDelete(sale);
     setDeleteDialogOpen(true);
+  };
+
+  const handleKitchenPrint = async (sale: any) => {
+    const token = localStorage.getItem("authToken") || localStorage.getItem("attendantToken");
+    const res = await fetch(`/api/sales/${sale.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const data = await res.json();
+    const ticketDate = new Date(data.saleDate || data.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const html = `<!DOCTYPE html><html><head><title>Kitchen Order #${data.receiptNo}</title>
+<style>body{font-family:monospace;font-size:14px;width:280px;margin:0 auto;padding:8px}.center{text-align:center}.bold{font-weight:bold}hr{border:none;border-top:1px dashed #000}.item{font-size:18px;font-weight:bold;margin:6px 0}@media print{body{width:100%}}</style>
+</head><body>
+<div class="center bold" style="font-size:18px">KITCHEN ORDER</div>
+<div class="center">${data.shopId?.name || ''}</div>
+<hr/>
+<div class="bold" style="font-size:18px">Order #: ${data.receiptNo}</div>
+<div>Time: ${ticketDate}</div>
+${data.customerId?.name ? `<div>Customer: ${data.customerId.name}</div>` : ''}
+${data.attendantId?.username ? `<div>Waiter: ${data.attendantId.username}</div>` : ''}
+<hr/>
+${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${item.product?.name || ''}${item.salesnote ? `<div style="font-size:13px;font-weight:normal;padding-left:10px;color:#555;margin-top:2px">${item.salesnote}</div>` : ''}</div>`).join('')}
+</body></html>`;
+    const w = window.open('', '_blank', 'width=400,height=600');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => { w.focus(); w.print(); }, 400);
   };
 
   const confirmDeleteSale = async () => {
@@ -1517,6 +1544,9 @@ function SalesList() {
                             <DropdownMenuItem onClick={() => handleViewSale(sale)}>
                               <Eye className="mr-2 h-4 w-4" />View Receipt
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleKitchenPrint(sale)}>
+                              <UtensilsCrossed className="mr-2 h-4 w-4" />Kitchen Receipt
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
                               <FileText className="mr-2 h-4 w-4" />Quotation
                             </DropdownMenuItem>
@@ -1612,6 +1642,9 @@ function SalesList() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleViewSale(sale)}>
                                     <Eye className="mr-2 h-4 w-4" />View Receipt
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleKitchenPrint(sale)}>
+                                    <UtensilsCrossed className="mr-2 h-4 w-4" />Kitchen Receipt
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
                                     <FileText className="mr-2 h-4 w-4" />Quotation
