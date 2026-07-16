@@ -36,6 +36,19 @@ isGuestHouse: { type: Boolean, default: false },
 Without this, Mongoose silently drops `isGuestHouse` when the POS saves
 shop settings, and the Guest House toggle won't stick.
 
+## 3. Add the room flag to `src/models/product.js`
+
+The POS lets a guest-house shop mark a service as a room ("This service is
+a room"), and the Room Bookings page only lists services with this flag.
+Add this field inside the product schema (next to `virtual`):
+
+```js
+isRoom: { type: Boolean, default: false },
+```
+
+Without it, Mongoose drops `isRoom` on save and no rooms will ever show
+in the bookings page.
+
 ## That's it
 
 - The existing `PUT /shop/:id` (updateShopById) already passes the whole

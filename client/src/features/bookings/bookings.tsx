@@ -117,8 +117,9 @@ export default function BookingsPage() {
       const res = await apiCall(`/api/v2/products/list?${params.toString()}`, { method: "GET" });
       const data = await res.json();
       const list = Array.isArray(data) ? data : data?.data ?? [];
+      // Rooms are services explicitly marked "This service is a room"
       return list
-        .filter((p: any) => p.virtual === true)
+        .filter((p: any) => p.virtual === true && p.isRoom === true)
         .map((p: any) => ({ _id: p._id, name: p.name, sellingPrice: p.sellingPrice || 0 }));
     },
     enabled: !!shopId,
@@ -308,8 +309,9 @@ export default function BookingsPage() {
         )}
         {!roomsLoading && rooms.length === 0 && (
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-            No rooms found. Create your rooms first: go to Products, add a product and choose
-            type "Service" — each service is a room, and its selling price is the nightly rate.
+            No rooms found. Create your rooms first: go to Products, add a service and turn on
+            "This service is a room" — its selling price is the nightly rate. Only services
+            marked as rooms appear here.
           </div>
         )}
 

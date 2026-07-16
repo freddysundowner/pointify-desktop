@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -59,6 +60,7 @@ const productSchema = z.object({
   manageInventory: z.boolean().default(false),
   manageByPrice: z.boolean().default(false),
   productType: z.enum(["product", "service"]).default("product"),
+  isRoom: z.boolean().default(false),
   manufacturer: z.string().optional().or(z.literal("")),
   serialnumber: z.string().optional().or(z.literal("")),
   barcode: z.string().optional().or(z.literal("")),
@@ -268,6 +270,7 @@ export default function ProductForm() {
       manageInventory: false,
       manageByPrice: false,
       productType: "product",
+      isRoom: false,
       barcode: "",
       maxDiscount: 0,
     },
@@ -327,6 +330,7 @@ export default function ProductForm() {
         productType: (productData.virtual ? "service" : "product") as
           | "product"
           | "service",
+        isRoom: Boolean(productData.isRoom),
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
         barcode: productData.barcode || "",
@@ -390,6 +394,7 @@ export default function ProductForm() {
         productType: (productData.virtual ? "service" : "product") as
           | "product"
           | "service",
+        isRoom: Boolean(productData.isRoom),
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
         barcode: productData.barcode || "",
@@ -467,6 +472,7 @@ export default function ProductForm() {
         quantity: formData.quantity,
         bundle: formData.isBundle,
         virtual: formData.productType === "service",
+        isRoom: formData.productType === "service" ? !!formData.isRoom : false,
         manageByPrice: formData.manageByPrice,
         manufacturer: formData.manufacturer || "",
         serialnumber: formData.serialnumber || "",
@@ -731,6 +737,33 @@ export default function ProductForm() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Room flag — only for services in guest-house shops */}
+                    {form.watch("productType") === "service" &&
+                      shopData?.isGuestHouse && (
+                        <FormField
+                          control={form.control}
+                          name="isRoom"
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                              <div>
+                                <FormLabel>This service is a room</FormLabel>
+                                <p className="text-xs text-gray-500">
+                                  Rooms appear in Room Bookings; the selling
+                                  price is the nightly rate.
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={!!field.value}
+                                  onCheckedChange={field.onChange}
+                                  data-testid="switch-is-room"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
                     <FormField
                       control={form.control}

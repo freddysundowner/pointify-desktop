@@ -98,8 +98,11 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
   accept this field or it is silently dropped).
 - When on, a "Room Bookings" page appears (`/bookings`,
   `client/src/features/bookings/bookings.tsx`): month calendar, per-night day
-  detail, new-booking dialog (rooms = the shop's services / virtual products;
-  service price = nightly rate), check-in/check-out/cancel actions, and a
+  detail, new-booking dialog (rooms = the shop's services / virtual products
+  that are marked `isRoom: true` via the "This service is a room" switch in
+  the Add/Edit Service form — shown only for guest-house shops; service price
+  = nightly rate; the main backend's product schema must persist `isRoom` or
+  the flag is silently dropped), check-in/check-out/cancel actions, and a
   client-side overlap check (check-out day is exclusive, so back-to-back
   bookings are allowed).
 - Bookings data lives on the **main Pointify backend (Node + MongoDB)** — NOT

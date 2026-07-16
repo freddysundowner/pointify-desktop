@@ -1,8 +1,9 @@
 # Room Bookings — API spec for the main Pointify backend
 
 The POS app now has a Room Bookings screen for shops in Guest House Mode.
-Rooms are the shop's **services** (products with `virtual: true`); the
-service's selling price is the nightly rate. The POS proxies these endpoints
+Rooms are the shop's **services** (products with `virtual: true`) that are
+explicitly marked as rooms (`isRoom: true`); the service's selling price is
+the nightly rate. The POS proxies these endpoints
 to the main Pointify backend, which must implement them (Node + MongoDB).
 
 ## 1. Shop flag
@@ -16,6 +17,19 @@ isGuestHouse: Boolean (default false)
 
 The POS already sends it from Shop Settings and shows the Room Bookings menu
 when it is true.
+
+## 1b. Product flag
+
+The product create/update endpoints must accept and persist a new boolean
+field on the product document:
+
+```
+isRoom: Boolean (default false)
+```
+
+The POS sets it from the Add/Edit Service form ("This service is a room",
+shown only for guest-house shops) and the Room Bookings page lists only
+services where `virtual === true && isRoom === true`.
 
 ## 2. Booking model (MongoDB)
 
