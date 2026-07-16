@@ -78,7 +78,7 @@ build = ["bash", "-c", "npm run clean && npm run build"]
 [userenv]
 
 [userenv.shared]
-POINTIFY_API_URL = "https://staging.pointifypos.com"
+POINTIFY_API_URL = "https://api.pointifypos.com"
 PORT = "1999"
 DEV = "false"
 NODE_ENV = "development"
