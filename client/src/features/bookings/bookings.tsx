@@ -53,6 +53,7 @@ interface Booking {
 interface Room {
   _id: string;
   name: string;
+  group?: string;
   nightlyRate: number;
 }
 
@@ -102,8 +103,12 @@ export default function BookingsPage() {
 
   // Bulk "add many rooms at once" dialog
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "" });
+  const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "", group: "" });
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // Rooms grid: group filter + clicked room
+  const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [roomDialog, setRoomDialog] = useState<Room | null>(null);
 
   // Rooms are their OWN records in the standalone guest-house module —
   // NOT products or services. They live on the main Pointify backend.
@@ -118,6 +123,7 @@ export default function BookingsPage() {
       return list.map((r: any) => ({
         _id: r._id,
         name: r.name,
+        group: String(r.group || "").trim(),
         nightlyRate: Number(r.nightlyRate) || 0,
       }));
     },
@@ -167,6 +173,36 @@ export default function BookingsPage() {
   const dayBookings = bookingsOnDay(selectedDay);
   const occupiedRoomIdsOnDay = new Set(dayBookings.map((b) => b.roomId));
 
+  // Rooms grouped by their (optional) group label, respecting the filter
+  const groupNames = useMemo(() => {
+    const set = new Set<string>();
+    rooms.forEach((r) => set.add(r.group || ""));
+    return [...set].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [rooms]);
+
+  const groupedRooms = useMemo(() => {
+    const filterValue = groupFilter === "__ungrouped" ? "" : groupFilter;
+    const visible =
+      groupFilter === "all" ? rooms : rooms.filter((r) => (r.group || "") === filterValue);
+    const map = new Map<string, Room[]>();
+    visible.forEach((r) => {
+      const g = r.group || "";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(r);
+    });
+    const sorted = [...map.entries()].sort(([a], [b]) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    );
+    sorted.forEach(([, list]) =>
+      list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+    );
+    return sorted;
+  }, [rooms, groupFilter]);
+
+  // The active booking (if any) covering the selected night for a room
+  const bookingForRoomOnDay = (rid: string) =>
+    dayBookings.find((b) => b.roomId === rid) || null;
+
   // Bookings revenue for the displayed month — kept fully separate from POS
   // sales: it is the sum of payments recorded on checked-out bookings.
   const monthRevenue = useMemo(() => {
@@ -184,9 +220,9 @@ export default function BookingsPage() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
-  const openNewBooking = (day?: string) => {
+  const openNewBooking = (day?: string, roomId?: string) => {
     const start = day || selectedDay || todayStr();
-    navigate(`/bookings/new?date=${start}`);
+    navigate(`/bookings/new?date=${start}${roomId ? `&room=${roomId}` : ""}`);
   };
 
   const handleAction = async () => {
@@ -271,7 +307,11 @@ export default function BookingsPage() {
           method: "POST",
           body: JSON.stringify({
             shop: shopId,
-            rooms: wanted.map((name) => ({ name, nightlyRate: bulkRate })),
+            rooms: wanted.map((name) => ({
+              name,
+              nightlyRate: bulkRate,
+              group: bulkForm.group.trim(),
+            })),
           }),
         });
         const data = await bulkResp.json().catch(() => null);
@@ -360,6 +400,75 @@ export default function BookingsPage() {
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
             No rooms yet. Click "Add Rooms" above to create your rooms (e.g. Room 1–100)
             with their nightly rate. Rooms are managed right here — not under Products.
+          </div>
+        )}
+
+        {/* Rooms grid — manage rooms, see occupancy for the selected night */}
+        {rooms.length > 0 && (
+          <div className="rounded-md border bg-white p-3 mb-4">
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+              <p className="font-semibold text-gray-800 flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4 text-purple-600" />
+                Rooms
+                <span className="text-xs font-normal text-gray-500">
+                  — night of {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { day: "numeric", month: "short" })}
+                </span>
+              </p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-white border border-gray-300 inline-block" />Free</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-blue-500 inline-block" />Booked</span>
+                  <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-green-500 inline-block" />Checked in</span>
+                </div>
+                {groupNames.length > 1 && (
+                  <Select value={groupFilter} onValueChange={setGroupFilter}>
+                    <SelectTrigger className="h-8 w-[160px] text-sm" data-testid="select-room-group">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All groups</SelectItem>
+                      {groupNames.map((g) => (
+                        <SelectItem key={g || "__ungrouped"} value={g || "__ungrouped"}>
+                          {g || "Ungrouped"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+            {groupedRooms.map(([group, list]) => (
+              <div key={group || "__none"} className="mb-2 last:mb-0">
+                {(groupNames.length > 1 || group) && (
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 mt-2 first:mt-0">
+                    {group || "Ungrouped"}
+                  </p>
+                )}
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-1.5">
+                  {list.map((room) => {
+                    const b = bookingForRoomOnDay(room._id);
+                    const cls = !b
+                      ? "bg-white border-gray-200 hover:border-purple-400 hover:bg-purple-50"
+                      : b.status === "checked_in"
+                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600"
+                      : "bg-blue-500 border-blue-600 text-white hover:bg-blue-600";
+                    return (
+                      <button
+                        key={room._id}
+                        onClick={() => setRoomDialog(room)}
+                        className={`rounded-md border px-2 py-2 text-left transition-colors ${cls}`}
+                        data-testid={`tile-room-${room._id}`}
+                      >
+                        <p className="text-sm font-medium truncate">{room.name}</p>
+                        <p className={`text-[11px] truncate ${b ? "text-white/85" : "text-gray-500"}`}>
+                          {b ? b.guestName : Number(room.nightlyRate).toLocaleString()}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -579,6 +688,81 @@ export default function BookingsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Room details — booking status for the selected night, book / manage */}
+      <Dialog open={!!roomDialog} onOpenChange={(o) => { if (!o) setRoomDialog(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          {roomDialog && (() => {
+            const b = bookingForRoomOnDay(roomDialog._id);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <BedDouble className="h-5 w-5 text-purple-600" />
+                    {roomDialog.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {roomDialog.group ? `${roomDialog.group} · ` : ""}
+                    {Number(roomDialog.nightlyRate).toLocaleString()} per night · night of{" "}
+                    {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-KE", { weekday: "short", day: "numeric", month: "short" })}
+                  </DialogDescription>
+                </DialogHeader>
+                {b ? (
+                  <div className="rounded-md border p-3 space-y-1.5" data-testid="room-dialog-booking">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-sm text-gray-900 flex items-center gap-1.5">
+                        <User className="h-4 w-4 text-gray-400" />
+                        {b.guestName}
+                      </p>
+                      <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
+                        {STATUS_META[b.status]?.label || b.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {b.checkIn} → {b.checkOut}
+                      {b.guestPhone ? <> · <Phone className="inline h-3 w-3" /> {b.guestPhone}</> : null}
+                    </p>
+                    <div className="flex gap-1.5 pt-1">
+                      {b.status === "booked" && (
+                        <>
+                          <Button size="sm" variant="outline" className="h-7 text-xs text-green-700 border-green-300" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("checked_in"); }} data-testid="button-room-checkin">
+                            <LogIn className="h-3.5 w-3.5 mr-1" />Check in
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 text-xs text-red-600 border-red-200" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("cancelled"); }} data-testid="button-room-cancel">
+                            <XCircle className="h-3.5 w-3.5 mr-1" />Cancel
+                          </Button>
+                        </>
+                      )}
+                      {b.status === "checked_in" && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }} data-testid="button-room-checkout">
+                          <LogOut className="h-3.5 w-3.5 mr-1" />Check out
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500" data-testid="room-dialog-free">
+                    This room is free for the selected night.
+                  </p>
+                )}
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setRoomDialog(null)}>Close</Button>
+                  {!b && (
+                    <Button
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => { setRoomDialog(null); openNewBooking(selectedDay, roomDialog._id); }}
+                      data-testid="button-room-book"
+                    >
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Book this room
+                    </Button>
+                  )}
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Bulk add rooms */}
       <Dialog open={bulkOpen} onOpenChange={(o) => { if (!bulkProgress) setBulkOpen(o); }}>
         <DialogContent className="sm:max-w-md">
@@ -636,6 +820,20 @@ export default function BookingsPage() {
                   data-testid="input-bulk-rate"
                 />
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Group (optional)</label>
+              <Input
+                value={bulkForm.group}
+                onChange={(e) => setBulkForm((f) => ({ ...f, group: e.target.value }))}
+                placeholder='e.g. "Property 1", "House A" or "Floor 2"'
+                disabled={!!bulkProgress}
+                data-testid="input-bulk-group"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Rooms with the same group are shown together. Run this tool once per
+                group to give each property/floor its own rooms and rate.
+              </p>
             </div>
             {canBulkCreate && (
               <p className="text-xs text-gray-500" data-testid="text-bulk-preview">

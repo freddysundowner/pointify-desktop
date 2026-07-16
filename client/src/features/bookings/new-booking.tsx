@@ -71,9 +71,13 @@ export default function NewBookingPage() {
     const p = new URLSearchParams(window.location.search).get("date");
     return p && /^\d{4}-\d{2}-\d{2}$/.test(p) ? p : todayStr();
   }, []);
+  const initialRoomId = useMemo(
+    () => new URLSearchParams(window.location.search).get("room") || "",
+    []
+  );
 
   const [roomSearch, setRoomSearch] = useState("");
-  const [roomId, setRoomId] = useState("");
+  const [roomId, setRoomId] = useState(initialRoomId);
   const [guestSearch, setGuestSearch] = useState("");
   const [guestPickerOpen, setGuestPickerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -181,7 +185,7 @@ export default function NewBookingPage() {
   }, [activeBookings, roomId, form.checkIn, form.checkOut, nights]);
 
   const canSave =
-    !!roomId && !!form.guestName.trim() && nights > 0 && rate >= 0 && !formConflict && !isSaving;
+    !!selectedRoom && !!form.guestName.trim() && nights > 0 && rate >= 0 && !formConflict && !isSaving;
 
   const pickCustomer = (c: Customer) => {
     setSelectedCustomer(c);

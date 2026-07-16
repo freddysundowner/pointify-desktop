@@ -33,7 +33,12 @@ const createRoom = async (req, res) => {
     if (exists) {
       return res.status(409).json({ error: "A room with that name already exists" });
     }
-    const room = new Room({ shop, name: trimmed, nightlyRate: rate });
+    const room = new Room({
+      shop,
+      name: trimmed,
+      group: String(req.body.group || "").trim(),
+      nightlyRate: rate,
+    });
     await room.save();
     res.status(201).json(room);
   } catch (error) {
@@ -73,7 +78,12 @@ const bulkCreateRooms = async (req, res) => {
         continue;
       }
       seenInRequest.add(key);
-      toCreate.push({ shop, name, nightlyRate: rate });
+      toCreate.push({
+        shop,
+        name,
+        group: String((r && r.group) || "").trim(),
+        nightlyRate: rate,
+      });
     }
 
     const created = toCreate.length > 0 ? await Room.insertMany(toCreate) : [];
@@ -99,6 +109,9 @@ const updateRoomById = async (req, res) => {
         return res.status(400).json({ error: "name cannot be empty" });
       }
       update.name = trimmed;
+    }
+    if (req.body.group !== undefined) {
+      update.group = String(req.body.group).trim();
     }
     if (req.body.nightlyRate !== undefined) {
       const rate = Number(req.body.nightlyRate);

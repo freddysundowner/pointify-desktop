@@ -8,6 +8,8 @@ const roomSchema = new mongoose.Schema({
     required: true,
   },
   name: { type: String, required: true },
+  // Optional grouping, e.g. "Property 1", "House A", "Floor 2"
+  group: { type: String, default: "" },
   nightlyRate: { type: Number, required: true, min: 0 },
   sync: { type: Boolean, default: false },
   createAt: {

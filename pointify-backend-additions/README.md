@@ -60,10 +60,10 @@ leave or remove the product-field — the POS ignores it either way.
 
 ### Rooms
 - `GET    /room?shop=<shopId>` — the shop's rooms, sorted by name
-- `POST   /room` — `{ shop, name, nightlyRate }`; 409 on duplicate name (case-insensitive, per shop)
-- `POST   /room/bulk` — `{ shop, rooms: [{ name, nightlyRate }, ...] }` (max 500);
+- `POST   /room` — `{ shop, name, nightlyRate, group? }`; 409 on duplicate name (case-insensitive, per shop). `group` is an optional label like "Property 1" / "Floor 2" used by the POS to organize rooms.
+- `POST   /room/bulk` — `{ shop, rooms: [{ name, nightlyRate, group? }, ...] }` (max 500);
   skips existing names; responds `{ success, created, skipped, rooms }`
-- `PUT    /room/:id` — update `name` / `nightlyRate`
+- `PUT    /room/:id` — update `name` / `group` / `nightlyRate`
 - `DELETE /room/:id` — 409 if the room has active bookings
 
 ### Bookings
