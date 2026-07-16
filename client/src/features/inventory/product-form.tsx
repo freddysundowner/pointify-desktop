@@ -1356,18 +1356,20 @@ export default function ProductForm() {
                   </CardContent>
                 </Card>
 
-                {/* Additional Information - only for products */}
-                {form.watch("productType") === "product" && (
+                {/* Additional Information - category/description for all, rest product-only */}
+                {(
                   <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
                     <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
                       <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">Additional Information</CardTitle>
                       <p className="text-xs text-gray-400 lg:text-sm lg:text-gray-500">
-                        Add optional product details
+                        {form.watch("productType") === "service"
+                          ? "Add optional service details"
+                          : "Add optional product details"}
                       </p>
                     </CardHeader>
                     <CardContent className="px-4 pb-5 lg:p-6 lg:pt-0 space-y-6">
                       <div className="flex flex-wrap gap-2">
-                        {!expandedSections.manufacturer && (
+                        {form.watch("productType") === "product" && !expandedSections.manufacturer && (
                           <button
                             type="button"
                             onClick={() => toggleSection("manufacturer")}
@@ -1377,7 +1379,7 @@ export default function ProductForm() {
                             <span>Add Manufacturer</span>
                           </button>
                         )}
-                        {!expandedSections.serialnumber && (
+                        {form.watch("productType") === "product" && !expandedSections.serialnumber && (
                           <button
                             type="button"
                             onClick={() => toggleSection("serialnumber")}
@@ -1388,7 +1390,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.wholesalePrice && (
+                        {form.watch("productType") === "product" && !expandedSections.wholesalePrice && (
                           <button
                             type="button"
                             onClick={() => toggleSection("wholesalePrice")}
@@ -1399,7 +1401,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.dealerPrice && (
+                        {form.watch("productType") === "product" && !expandedSections.dealerPrice && (
                           <button
                             type="button"
                             onClick={() => toggleSection("dealerPrice")}
@@ -1410,7 +1412,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.maxDiscount && (
+                        {form.watch("productType") === "product" && !expandedSections.maxDiscount && (
                           <button
                             type="button"
                             onClick={() => toggleSection("maxDiscount")}
@@ -1443,7 +1445,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.supplier && (
+                        {form.watch("productType") === "product" && !expandedSections.supplier && (
                           <button
                             type="button"
                             onClick={() => toggleSection("supplier")}
@@ -1454,7 +1456,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.reorderLevel && (
+                        {form.watch("productType") === "product" && !expandedSections.reorderLevel && (
                           <button
                             type="button"
                             onClick={() => toggleSection("reorderLevel")}
@@ -1465,7 +1467,7 @@ export default function ProductForm() {
                           </button>
                         )}
 
-                        {!expandedSections.expiryDate && (
+                        {form.watch("productType") === "product" && !expandedSections.expiryDate && (
                           <button
                             type="button"
                             onClick={() => toggleSection("expiryDate")}

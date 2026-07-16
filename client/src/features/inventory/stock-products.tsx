@@ -144,19 +144,6 @@ export default function StockProducts() {
     setPage(1);
   }, [searchQuery, selectedCategory, productType, sortBy, stockFilter]);
 
-  // Warm the category cache so the Add/Edit Product form's category dropdown
-  // opens instantly instead of fetching on first click.
-  const prefetchAdminId = admin?._id || "";
-  useEffect(() => {
-    if (selectedShopId && prefetchAdminId) {
-      queryClient.prefetchQuery({
-        queryKey: ["/api/product/category", selectedShopId, prefetchAdminId],
-        queryFn: () => fetchProductCategories(selectedShopId, prefetchAdminId),
-        staleTime: 5 * 60 * 1000,
-      });
-    }
-  }, [selectedShopId, prefetchAdminId, queryClient]);
-
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
@@ -255,6 +242,17 @@ export default function StockProducts() {
 
   const effectiveShopId = getShopId();
 
+  // Categories for the toolbar filter; this also warms the cache so the
+  // Add/Edit Product form's category dropdown opens instantly. Uses the same
+  // shop-resolution fallback as the product list so the filter always works.
+  const prefetchAdminId = admin?._id || "";
+  const { data: categoryList } = useQuery({
+    queryKey: ["/api/product/category", effectiveShopId, prefetchAdminId],
+    queryFn: () => fetchProductCategories(effectiveShopId || "", prefetchAdminId),
+    enabled: !!(effectiveShopId && prefetchAdminId),
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch products
   const {
     data: productsData,
@@ -273,8 +271,6 @@ export default function StockProducts() {
       stockFilter,
     ],
     queryFn: async ({ queryKey }) => {
-      // type param is for category; stockmode carries the stock filter
-      const typeParam = selectedCategory === "all" ? "" : selectedCategory;
       const stockModeParam =
         stockFilter === "outofstock" ? "outofstock"
         : stockFilter === "lowstock" ? "runninglow"
@@ -288,8 +284,9 @@ export default function StockProducts() {
         limit: itemsPerPage.toString(),
         name: searchQuery,
         shop: effectiveShopId || "",
-        type: typeParam,
+        type: "",
         stockMode: stockModeParam,
+        ...(selectedCategory !== "all" ? { categoryId: selectedCategory } : {}),
         sort: sortBy,
         productid: "",
         barcodeid: "",
@@ -706,6 +703,19 @@ export default function StockProducts() {
                 />
               </div>
               <ShopFilter />
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-44 h-8 text-sm" data-testid="select-category-filter">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {(categoryList || []).map((category: any) => (
+                    <SelectItem key={category._id} value={category._id} data-testid={`option-category-${category._id}`}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={stockFilter} onValueChange={(value: "all" | "instock" | "outofstock" | "lowstock") => setStockFilter(value)}>
                 <SelectTrigger className="w-44 h-8 text-sm">
                   <SelectValue placeholder="Stock status" />
