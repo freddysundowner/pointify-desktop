@@ -2242,6 +2242,9 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <p className="font-semibold text-gray-900 text-sm truncate pr-2">{item.name}</p>
                                 <p className="font-bold text-gray-900 text-sm shrink-0">Ksh {item.total.toFixed(2)}</p>
                               </div>
+                              {(item as any).accompaniments && (
+                                <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
+                              )}
                               <p className="text-gray-400 text-xs mt-0.5">
                                 Ksh {item.price.toFixed(2)} each
                                 {(item.maxDiscount || 0) > 0 && (
@@ -2308,6 +2311,9 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           {/* Column 1: Item Name */}
                           <div className="text-left">
                             <p className="font-semibold text-gray-800 truncate">{item.name}</p>
+                            {(item as any).accompaniments && (
+                              <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
+                            )}
                             <div className="flex flex-wrap gap-2 mt-1">
                               {canEditPrice && (
                                 <button 
