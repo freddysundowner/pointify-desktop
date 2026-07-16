@@ -311,7 +311,7 @@ export default function NewBookingPage() {
 
   return (
     <DashboardLayout>
-      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 max-w-4xl mx-auto">
+      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 w-full">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <Button variant="ghost" size="sm" onClick={() => navigate("/bookings")} data-testid="button-back-bookings">
@@ -363,7 +363,7 @@ export default function NewBookingPage() {
         </div>
         <p className="text-sm font-semibold text-gray-800 mb-3 sm:hidden">{STEP_LABELS[currentStep]}</p>
 
-        <div className="max-w-2xl">
+        <div className="w-full">
           <div className="space-y-4">
             {/* Step: dates */}
             {currentStep === "dates" && (
