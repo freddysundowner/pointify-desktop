@@ -198,7 +198,7 @@ export default function ShopDetails() {
       });
       return await response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables: any) => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["shop", id] });
       queryClient.invalidateQueries({ queryKey: ["shops"] });
@@ -206,7 +206,11 @@ export default function ShopDetails() {
       // The PUT returns the saved shop. Surface the real M-Pesa/SunPay state
       // instead of a generic toast so the user knows whether M-Pesa linking
       // actually succeeded and what the validation setting is now.
-      const updated = data && !Array.isArray(data) ? data : null;
+      // The upstream PUT can return the shop as it was BEFORE the update
+      // (Mongo findByIdAndUpdate without {new: true}), which made just-saved
+      // toggles look stale everywhere. Since the save succeeded, overlay the
+      // fields we just sent on top of the returned document.
+      const updated = data && !Array.isArray(data) ? { ...data, ...variables } : null;
 
       // usePrimaryShop() (used by POS, dashboard sidebar, etc.) reads shop
       // data from this Redux snapshot rather than react-query, so without
