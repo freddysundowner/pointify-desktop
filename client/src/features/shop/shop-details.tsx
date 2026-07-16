@@ -277,18 +277,59 @@ export default function ShopDetails() {
     },
   });
 
-  const handleSaveSettings = () => {
-    // Guard against saving before a valid shop has loaded. Without this, an
-    // intermittent failed fetch could leave the form blank and saving would
-    // overwrite the real shop name/category with empty values.
+  const buildUpdateData = (data: typeof formData) => ({
+    name: data.name,
+    receiptemail: data.receiptemail,
+    shopCategoryId: data.shopCategoryId,
+    address: data.address,
+    tax: data.tax,
+    currency: data.currency,
+    allownegativeselling: data.allownegativeselling,
+    trackbatches: data.trackbatches,
+    useWarehouse: data.useWarehouse,
+    allowOnlineSelling: data.allowOnlineSelling,
+    showstockonline: data.showstockonline,
+    showpriceonline: data.showpriceonline,
+    deletewarning: data.deletewarning,
+    backupInterval: data.backupInterval,
+    allowBackup: data.allowBackup,
+    warehouse: data.warehouse,
+    production: data.production,
+    isRestaurant: data.isRestaurant,
+    isGuestHouse: data.isGuestHouse,
+    contact: data.contact,
+    paybill_till: data.paybill_till,
+    paybill_account: data.paybill_account,
+    mpesa_require_validation: data.mpesa_require_validation,
+    address_receipt: data.address_receipt,
+  });
+
+  // Guard against saving before a valid shop has loaded. Without this, an
+  // intermittent failed fetch could leave the form blank and saving would
+  // overwrite the real shop name/category with empty values.
+  const canSaveShop = () => {
     if (!shop || Array.isArray(shop) || !shop._id || !formData.name.trim()) {
       toast({
         title: "Shop not loaded",
         description: "Shop details are still loading. Please wait a moment and try again.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+    return true;
+  };
+
+  // Feature toggles save immediately when flipped — waiting for the Save
+  // button proved confusing (the switch looked on but nothing was saved).
+  const handleToggleAndSave = (key: string, checked: boolean) => {
+    if (!canSaveShop()) return;
+    const next = { ...formData, [key]: checked };
+    setFormData(next);
+    updateShopMutation.mutate(buildUpdateData(next));
+  };
+
+  const handleSaveSettings = () => {
+    if (!canSaveShop()) return;
 
     const updateData = {
       name: formData.name,
@@ -701,7 +742,8 @@ export default function ShopDetails() {
                         </div>
                         <Switch
                           checked={!!(formData as any)[key]}
-                          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, [key]: checked }))}
+                          disabled={updateShopMutation.isPending}
+                          onCheckedChange={(checked) => handleToggleAndSave(key, checked)}
                         />
                       </div>
                     ))}
