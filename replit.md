@@ -107,7 +107,7 @@ twice during this catch-up, every sale carries a stable idempotency key
 
 This repository contains only the **POS app** (the React client) and a **thin
 proxy** (`server/`) that forwards requests to the separate main Pointify backend
-at `api.pointifypos.com` (set via `POINTIFY_API_URL` in `server/.env`). That main backend's source code is **not** part of
+at `staging.pointifypos.com` (set via `POINTIFY_API_URL` in `server/.env`). That main backend's source code is **not** part of
 this project and cannot be changed from here.
 
 Full protection against duplicate sales requires the main server's create-sale
