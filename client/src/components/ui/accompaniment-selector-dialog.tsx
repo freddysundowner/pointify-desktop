@@ -38,7 +38,7 @@ export default function AccompanimentSelectorDialog({
 
   const choiceGroups = groups.filter((g) => g.type === "choice");
   const fixedGroups = groups.filter((g) => g.type === "fixed");
-  const canConfirm = choiceGroups.every((g) => choiceMap[g.id]);
+  const canConfirm = true;
 
   const handleConfirm = () => {
     const selections: AccompanimentSelection[] = groups.map((g) => ({
