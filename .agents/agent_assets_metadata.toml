@@ -96,3 +96,9 @@ id = "4rxjnxWJBUEQVjCmVnG1B"
 uri = "file://.local/deliverables/pointify-createSale-FULL.txt"
 type = "text"
 title = "createSale — complete final file (full race-safe stock fix)"
+
+[[outputs]]
+id = "ZNyxYK6ZSIVs-y22bxQqU"
+uri = "file://pointify-backend-additions.zip"
+type = "unspecified"
+title = "Booking code for the main Pointify server (final)"
