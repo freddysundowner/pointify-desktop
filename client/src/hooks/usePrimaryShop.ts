@@ -12,6 +12,12 @@ interface PrimaryShopData {
   allowNegativeStock?: boolean
 }
 
+// Stored login data sometimes holds the attendant as a whole object
+// ({ _id, username, ... }) instead of a plain id string. Upstream Mongoose
+// requires attendantId to be an ObjectId, so always normalize to the id.
+const toId = (v: any): string =>
+  typeof v === 'string' ? v : v?._id || v?.id || '';
+
 export const usePrimaryShop = (): PrimaryShopData => {
   const { admin } = useAuth();
   const { attendant } = useAttendantAuth();
@@ -37,7 +43,7 @@ export const usePrimaryShop = (): PrimaryShopData => {
       adminId: attendant.adminId || '',
       shopData,
       userType: 'attendant',
-      attendantId: attendant._id || attendant.id || '',
+      attendantId: toId(attendant),
       allowNegativeStock: shopData?.allownegativeselling,
     };
   }
@@ -54,7 +60,7 @@ export const usePrimaryShop = (): PrimaryShopData => {
         adminId,
         shopData: reduxSelectedShopData,
         userType: 'admin',
-        attendantId: admin.attendantId || '',
+        attendantId: toId(admin.attendantId),
         allowNegativeStock: reduxSelectedShopData?.allownegativeselling,
       };
     }
@@ -72,7 +78,7 @@ export const usePrimaryShop = (): PrimaryShopData => {
       adminId,
       shopData: typeof admin.primaryShop === 'object' ? admin.primaryShop : null,
       userType: 'admin',
-      attendantId: admin.attendantId || '',
+      attendantId: toId(admin.attendantId),
       allowNegativeStock: admin?.primaryShop?.allownegativeselling,
     };
   }
@@ -88,7 +94,7 @@ export const usePrimaryShop = (): PrimaryShopData => {
       return {
         shopId,
         adminId: parsedAttendant.adminId || '',
-        attendantId: parsedAttendant._id || parsedAttendant.id || '',
+        attendantId: toId(parsedAttendant),
         shopData: typeof parsedAttendant.shopId === 'object' ? parsedAttendant.shopId : null,
         userType: 'attendant',
       };
@@ -104,7 +110,7 @@ export const usePrimaryShop = (): PrimaryShopData => {
       };
       return {
         shopId: getShopId(parsedAdmin.primaryShop),
-        attendantId: parsedAdmin.attendantId || '',
+        attendantId: toId(parsedAdmin.attendantId),
         adminId: parsedAdmin._id || parsedAdmin.id || '',
         shopData: typeof parsedAdmin.primaryShop === 'object' ? parsedAdmin.primaryShop : null,
         userType: 'admin',
