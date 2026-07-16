@@ -22,6 +22,7 @@ import { registerSmsRoutes } from "./sms.js";
 import { registerMpesaRoutes } from "./mpesa.js";
 import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
+import { registerAccompanimentRoutes } from "./accompaniments.js";
 
 
 export function registerAllRoutes(app: Express) {
@@ -49,5 +50,6 @@ export function registerAllRoutes(app: Express) {
   registerMpesaRoutes(app);
   registerPaymentRoutes(app);
   registerSyncRoutes(app);
+  registerAccompanimentRoutes(app);
 
 }

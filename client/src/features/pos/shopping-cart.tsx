@@ -62,6 +62,11 @@ export default function ShoppingCart({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800 text-sm sm:text-lg">{item.name}</h4>
+                    {(item as any).accompaniments && (
+                      <p className="text-xs text-purple-600 mt-0.5 leading-snug">
+                        {(item as any).accompaniments}
+                      </p>
+                    )}
                     <p className="text-xs sm:text-sm text-gray-500">Ksh {item.price.toFixed(2)} each</p>
                   </div>
                   <div className="text-right">

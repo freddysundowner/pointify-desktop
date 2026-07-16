@@ -19,6 +19,8 @@ import { useSelector } from "react-redux";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import type { RootState } from "@/store";
 import type { Product, CartItem, Customer, Transaction } from "@shared/schema";
+import type { AccompanimentGroup, AccompanimentSelection } from "@/types/accompaniments";
+import AccompanimentSelectorDialog from "@/components/ui/accompaniment-selector-dialog";
 
 type MpesaCandidate = {
   mpesaRef: string;
@@ -207,6 +209,68 @@ export default function ProductGrid({
   const [customItemQuantity, setCustomItemQuantity] = useState("1");
   const [showCustomItemOptions, setShowCustomItemOptions] = useState(false);
   const [isCreatingCustomItem, setIsCreatingCustomItem] = useState(false);
+
+  // Accompaniment selector — holds the product awaiting accompaniment selection
+  const [accompanimentPendingProduct, setAccompanimentPendingProduct] = useState<any>(null);
+  const [accompanimentDialogOpen, setAccompanimentDialogOpen] = useState(false);
+
+  // Pre-load all accompaniment configs for this shop (restaurant mode only)
+  const { data: shopAccompaniments } = useQuery({
+    queryKey: ["accompaniment-shop", shopId],
+    queryFn: async () => {
+      const token =
+        localStorage.getItem("authToken") ||
+        localStorage.getItem("attendantToken");
+      const res = await fetch(`/api/accompaniment/shop/${shopId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!(shopId && shopData?.isRestaurant),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  /** Return accompaniment groups configured for a product, or [] if none. */
+  const getProductGroups = (product: any): AccompanimentGroup[] => {
+    if (!shopAccompaniments?.length) return [];
+    const pid = product._id || product.id;
+    const config = (shopAccompaniments as any[]).find(
+      (c) => c.productId === pid || c.productId?._id === pid
+    );
+    return config?.groups ?? [];
+  };
+
+  /**
+   * Gate for adding a product to the cart.
+   * In restaurant mode, products with accompaniment groups trigger the
+   * selector dialog first; all other products go directly into the cart.
+   */
+  const handleProductTap = (product: any) => {
+    if (!shopData?.isRestaurant) {
+      onAddToCart(product);
+      return;
+    }
+    const groups = getProductGroups(product);
+    if (groups.length === 0) {
+      onAddToCart(product);
+      return;
+    }
+    setAccompanimentPendingProduct(product);
+    setAccompanimentDialogOpen(true);
+  };
+
+  /** Called when the waiter confirms their accompaniment choices. */
+  const handleAccompanimentConfirm = (selections: AccompanimentSelection[]) => {
+    if (!accompanimentPendingProduct) return;
+    const parts = selections
+      .filter((s) => s.chosen.length > 0)
+      .map((s) => `${s.groupName}: ${s.chosen.join(", ")}`);
+    const note = parts.join(" | ");
+    onAddToCart({ ...accompanimentPendingProduct, accompaniments: note || undefined });
+    setAccompanimentDialogOpen(false);
+    setAccompanimentPendingProduct(null);
+  };
 
   // Local search function
   const searchLocally = (query: string) => {
@@ -1187,7 +1251,8 @@ export default function ProductGrid({
           attendantId: attendantId,
           inventory: (productData as any)?.inventoryId || item.id, // Use inventoryId field
           lineDiscount: parseFloat(((item.discount || 0) * item.quantity).toString()),
-          createdAt: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+          createdAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+          salesnote: (item as any).accompaniments || '',  // accompaniment choices per item
         };
       }),
       shopId: shopId || "",
@@ -1344,7 +1409,7 @@ export default function ProductGrid({
       customerName: selectedCustomer?.name,
       attendant: attendantName,
       note: extraChargeAmount > 0 ? extraChargeLabel : undefined,
-      items: cartItems.map(item => ({ name: item.name, quantity: item.quantity })),
+      items: cartItems.map(item => ({ name: item.name, quantity: item.quantity, note: (item as any).accompaniments || '' })),
     };
 
     try {
@@ -1385,7 +1450,7 @@ export default function ProductGrid({
 ${ticket.customerName ? `<div>Customer: ${ticket.customerName}</div>` : ''}
 <div>Waiter: ${ticket.attendant}</div>
 <hr/>
-${ticket.items.map(i => `<div class="item">${i.quantity}x ${i.name}</div>`).join('')}
+${ticket.items.map(i => `<div class="item">${i.quantity}x ${i.name}${i.note ? `<div style="font-size:13px;font-weight:normal;padding-left:10px;color:#555;margin-top:2px">${i.note}</div>` : ''}</div>`).join('')}
 ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 </body></html>`;
       const w = window.open('', '_blank', 'width=400,height=600');
@@ -1812,7 +1877,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                         key={product._id || product.id}
                         ref={el => { dropdownItemRefs.current[idx] = el; }}
                         onClick={isOutOfStock ? undefined : () => {
-                          onAddToCart(product);
+                          handleProductTap(product);
                           onSearchChange('');
                           setDropdownHighlight(-1);
                         }}
@@ -2084,7 +2149,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           key={product._id}
                           ref={el => { dropdownItemRefs.current[idx] = el; }}
                           onClick={isOutOfStock ? undefined : () => {
-                            onAddToCart(product);
+                            handleProductTap(product);
                             onSearchChange('');
                             setDropdownHighlight(-1);
                           }}
@@ -2605,7 +2670,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                             ? "bg-amber-50 border-amber-200 active:border-amber-400 active:shadow-md"
                             : "bg-white border-gray-100 active:border-purple-300 active:shadow-md shadow-sm"
                         }`}
-                        onClick={() => !isOutOfStock && onAddToCart(product)}
+                        onClick={() => !isOutOfStock && handleProductTap(product)}
                       >
                         {/* Image area */}
                         <div className="h-20 lg:h-24 bg-gradient-to-br from-purple-50 to-gray-100 flex items-center justify-center overflow-hidden">
@@ -3808,7 +3873,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           onMouseDown={(e) => {
                             e.preventDefault();
                             if (outOfStock) return;
-                            onAddToCart(p);
+                            handleProductTap(p);
                             setShowCustomItemDialog(false);
                             setCustomItemName("");
                             setCustomItemPrice("");
@@ -3914,6 +3979,20 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Accompaniment selector dialog — shown when a restaurant product with groups is tapped */}
+      {accompanimentPendingProduct && (
+        <AccompanimentSelectorDialog
+          open={accompanimentDialogOpen}
+          productName={accompanimentPendingProduct.name || accompanimentPendingProduct.title || ""}
+          groups={getProductGroups(accompanimentPendingProduct)}
+          onConfirm={handleAccompanimentConfirm}
+          onCancel={() => {
+            setAccompanimentDialogOpen(false);
+            setAccompanimentPendingProduct(null);
+          }}
+        />
+      )}
     </div>
   );
 }

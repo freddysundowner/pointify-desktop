@@ -1,3 +1,4 @@
+- [Accompaniment system](accompaniment-system.md) — restaurant-mode per-item accompaniments; MongoDB not Firestore; needs backend patch in createSale line ~1007; CartItem.accompaniments accessed via (item as any).
 - [DateTime display component](datetime-display-component.md) — show time beneath each on-screen record date in EAT; skip exports/headers/ranges; toLocaleDateString ignores hour/minute opts.
 - [Cancellable async UI flows](async-flow-guards.md) — polling + mutation onSuccess must be guarded by a per-flow id ref or stale results resurrect cancelled state.
 - [Server proxy to Pointify backend](server-proxy-pattern.md) — server/ is a thin proxy; new /api/* client calls need a matching makePointifyRequest forward route or they 404.

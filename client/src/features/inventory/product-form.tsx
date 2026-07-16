@@ -7,6 +7,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Package } from "lucide-react";
 import { offlineStorage } from "@/lib/offline-storage";
 import { parseApiError } from "@/lib/queryClient";
+import AccompanimentGroupsEditor from "@/components/ui/accompaniment-groups-editor";
+import type { AccompanimentGroup } from "@/types/accompaniments";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +132,7 @@ export default function ProductForm() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { shopId, adminId,  attendantId } = usePrimaryShop();
+  const { shopId, adminId,  attendantId, shopData } = usePrimaryShop();
   const productsRoute = useNavigationRoute("products");
   const { products,refreshProducts } = useProducts();
 
@@ -161,6 +163,33 @@ export default function ProductForm() {
 
   const isEditMode = location.includes("/edit-product");
   const productId = isEditMode ? location.split("/edit-product/")[1] : null;
+
+  // Accompaniment groups — restaurant mode only, persisted separately
+  const [accompanimentGroups, setAccompanimentGroups] = useState<AccompanimentGroup[]>([]);
+
+  // Fetch existing accompaniment config when editing a restaurant product
+  const { data: existingAccompaniments } = useQuery({
+    queryKey: ["accompaniment", productId, shopId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/accompaniment/${productId}?shopId=${shopId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+      if (!res.ok) return { groups: [] };
+      return res.json();
+    },
+    enabled: !!(isEditMode && productId && shopId && shopData?.isRestaurant),
+  });
+
+  useEffect(() => {
+    if (existingAccompaniments?.groups) {
+      setAccompanimentGroups(existingAccompaniments.groups);
+    }
+  }, [existingAccompaniments]);
 
   const [selectedBundleProducts, setSelectedBundleProducts] = useState<{
     [key: string]:
@@ -515,6 +544,22 @@ export default function ProductForm() {
               error instanceof Error ? error.message : "Please try uploading the image again from Edit Product.",
             variant: "destructive",
           });
+        }
+      }
+
+      // Save accompaniment groups for restaurant-mode products
+      if (shopData?.isRestaurant && shopId && savedProductId) {
+        try {
+          await fetch(`/api/accompaniment/${savedProductId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+            body: JSON.stringify({ shopId, groups: accompanimentGroups }),
+          });
+        } catch (err) {
+          console.error("Failed to save accompaniment groups:", err);
         }
       }
 
@@ -1618,6 +1663,26 @@ export default function ProductForm() {
                           excludeProductId={productId || ""}
                           isOpen={isBundleDialogOpen}
                           onClose={() => setIsBundleDialogOpen(false)}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Accompaniment Groups — restaurant mode only */}
+                  {shopData?.isRestaurant && (
+                    <Card className="rounded-none border-0 border-b shadow-none lg:rounded-xl lg:border lg:shadow-sm">
+                      <CardHeader className="px-4 pt-5 pb-2 lg:p-6">
+                        <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide lg:text-xl lg:normal-case lg:tracking-normal lg:font-semibold lg:text-gray-900">
+                          Accompaniments
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define what comes with this dish. <strong>Fixed</strong> items are always included automatically. <strong>Choice</strong> groups let the waiter pick one option at the POS.
+                        </p>
+                      </CardHeader>
+                      <CardContent className="px-4 pb-5 lg:p-6 lg:pt-0">
+                        <AccompanimentGroupsEditor
+                          groups={accompanimentGroups}
+                          onChange={setAccompanimentGroups}
                         />
                       </CardContent>
                     </Card>
