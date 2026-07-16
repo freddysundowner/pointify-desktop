@@ -1,19 +1,22 @@
 ---
-name: Room marker workaround
-description: Upstream Mongoose drops unknown fields (isRoom); rooms are marked via measure:"room" until the backend schema adds isRoom.
+name: isRoom persistence contract
+description: Upstream Mongoose drops unknown fields (isRoom); user rejected a measure:"room" workaround — the backend schema field is the required fix.
 ---
 
 The main Pointify backend's Mongoose product schema silently drops fields it
-doesn't know (e.g. `isRoom`). Until the backend team adds the field, rooms are
-double-marked with `measure: "room"` — a field the upstream always persists —
-and room detection accepts `isRoom === true || measure === "room"`.
+doesn't know (e.g. `isRoom`). Rooms created through the app look saved but come
+back without the flag, so the bookings page shows "No rooms yet".
 
-**Why:** rooms created through the app looked saved but came back without the
-flag, so the bookings page showed "No rooms yet" even though the services
-existed.
+A workaround (double-marking rooms via the persisted `measure: "room"` field,
+plus a repair pass) was implemented and then REMOVED at the user's explicit
+request — they want `isRoom` to be the real contract, fixed on the backend.
 
-**How to apply:** any new client-side flag stored on upstream entities must
-either be added to the upstream schema first or piggyback on an
-already-persisted field. Verify persistence by reading the entity back, not by
-the write's 200 response. Also: upstream `PUT /product/:id` expects a FULL
-product payload — partial updates risk clearing fields.
+**Why:** the user owns the backend team relationship and prefers the schema
+fix (documented in pointify-backend-additions/README) over client-side hacks.
+
+**How to apply:** do not reintroduce field-piggybacking for isRoom. Until the
+backend adds `isRoom` to the product schema, the bookings page will simply not
+list rooms — that is expected. Verify persistence of any new upstream field by
+reading the entity back, not by the write's 200 response. Upstream
+`PUT /product/:id` expects a FULL product payload; partial updates risk
+clearing fields.

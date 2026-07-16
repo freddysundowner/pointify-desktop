@@ -101,12 +101,10 @@ Frontend proxies `/api` requests to `http://localhost:1999`.
   detail, new-booking dialog (rooms = the shop's services / virtual products
   that are marked `isRoom: true` via the "This service is a room" switch in
   the Add/Edit Service form — shown only for guest-house shops; service price
-  = nightly rate; the main backend's product schema must persist `isRoom` or
-  the flag is silently dropped. **Workaround until then:** rooms are also
-  marked with `measure: "room"` — a field the upstream already persists — and
-  the bookings page treats `isRoom === true || measure === "room"` as a room.
-  The bulk Add Rooms flow includes a repair pass that stamps
-  `measure: "room"` onto existing same-named services that lost the flag), check-in/check-out/cancel actions, and a
+  = nightly rate; the main backend's product schema MUST persist `isRoom` or
+  the flag is silently dropped and no rooms appear on the bookings page — a
+  measure:"room" workaround was tried and removed at the user's request:
+  isRoom is the required contract), check-in/check-out/cancel actions, and a
   client-side overlap check (check-out day is exclusive, so back-to-back
   bookings are allowed).
 - Bookings data lives on the **main Pointify backend (Node + MongoDB)** — NOT
