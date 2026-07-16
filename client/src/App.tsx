@@ -557,7 +557,8 @@ function AppContent() {
             <Route path="/shop/setup" component={ShopSetup} />
             <Route path="/stock/products" component={StockProducts} />
             <Route path="/stock/categories" component={ProductCategories} />
-            <Route path="/bookings" component={Bookings} />
+            <Route path="/bookings">{() => <Bookings view="bookings" />}</Route>
+            <Route path="/rooms">{() => <Bookings view="rooms" />}</Route>
             <Route path="/bookings/new" component={NewBooking} />
             <Route path="/bookings/report" component={BookingsReport} />
             <Route path="/stock/import-products" component={ImportProductsPage} />

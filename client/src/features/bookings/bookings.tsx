@@ -81,7 +81,7 @@ const addDays = (dateStr: string, n: number) => {
 const nightsBetween = (a: string, b: string) =>
   Math.max(0, Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000));
 
-export default function BookingsPage() {
+export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "bookings" }) {
   const { shopId, adminId, attendantId, shopData } = usePrimaryShop();
   const isGuestHouse = !!shopData?.isGuestHouse;
   const { toast } = useToast();
@@ -443,7 +443,7 @@ export default function BookingsPage() {
             <div className="min-w-0">
               <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <BedDouble className="h-5 w-5 text-purple-600" />
-                Room Bookings
+                {view === "rooms" ? "Rooms" : "Bookings"}
               </h1>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -454,10 +454,12 @@ export default function BookingsPage() {
                 <span className="text-gray-600">Revenue ({monthLabel}): </span>
                 <span className="font-semibold text-purple-700">{monthRevenue.toLocaleString()}</span>
               </div>
-              <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
-                <BedDouble className="h-4 w-4 mr-1.5" />
-                Add Rooms
-              </Button>
+              {view === "rooms" && (
+                <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
+                  <BedDouble className="h-4 w-4 mr-1.5" />
+                  Add Rooms
+                </Button>
+              )}
               <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
                 <Plus className="h-4 w-4 mr-1.5" />
                 New Booking
@@ -472,7 +474,7 @@ export default function BookingsPage() {
             once the backend team adds the endpoints described in <span className="font-mono">BOOKINGS_API_SPEC.md</span>.
           </div>
         )}
-        {!roomsLoading && rooms.length === 0 && (
+        {view === "rooms" && !roomsLoading && rooms.length === 0 && (
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
             No rooms yet. Click "Add Rooms" above to create your rooms (e.g. Room 1–100)
             with their nightly rate. Rooms are managed right here — not under Products.
@@ -480,7 +482,7 @@ export default function BookingsPage() {
         )}
 
         {/* Rooms grid — manage rooms, see occupancy for the selected night */}
-        {rooms.length > 0 && (
+        {view === "rooms" && rooms.length > 0 && (
           <div className="rounded-md border bg-white p-3 mb-4">
             <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
               <p className="font-semibold text-gray-800 flex items-center gap-1.5">
@@ -603,6 +605,7 @@ export default function BookingsPage() {
         )}
 
         {/* All upcoming bookings */}
+        {view === "bookings" && (
         <div className="rounded-md border bg-white mt-4">
           <p className="font-semibold text-gray-800 p-3 pb-1">All bookings</p>
           {isLoading ? (
@@ -652,6 +655,7 @@ export default function BookingsPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Confirm status action */}
