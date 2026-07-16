@@ -103,7 +103,8 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
           originalPrice: price,
           maxDiscount: product.maxDiscount || 0,
           serialnumber: product?.serialnumber,
-          orderId:passedOrderId || orderId
+          orderId: passedOrderId || orderId,
+          ...((product as any).accompaniments ? { accompaniments: (product as any).accompaniments } : {}),
         }
       ];
     });
