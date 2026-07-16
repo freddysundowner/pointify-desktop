@@ -304,9 +304,13 @@ export default function NewBookingPage() {
           <div>
             <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <BedDouble className="h-5 w-5 text-purple-600" />
-              New Booking
+              {initialRoomId && selectedRoom ? `Book ${selectedRoom.name}` : "New Booking"}
             </h1>
-            <p className="text-sm text-gray-500">Reserve a room for a guest.</p>
+            <p className="text-sm text-gray-500">
+              {initialRoomId && selectedRoom
+                ? `${Number(selectedRoom.nightlyRate).toLocaleString()} per night`
+                : "Reserve a room for a guest."}
+            </p>
           </div>
         </div>
 
@@ -338,7 +342,8 @@ export default function NewBookingPage() {
               )}
             </section>
 
-            {/* Step 2: room */}
+            {/* Step 2: room (hidden when the room was already picked on the Rooms page) */}
+            {!initialRoomId && (
             <section className="rounded-xl border bg-white p-4">
               <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">2</span>
@@ -387,12 +392,13 @@ export default function NewBookingPage() {
                 </div>
               )}
             </section>
+            )}
 
             {/* Step 3: guest */}
             <section className="rounded-xl border bg-white p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                  <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">3</span>
+                  <span className="h-6 w-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">{initialRoomId ? 2 : 3}</span>
                   Guest
                 </h2>
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setNewGuest({ name: guestSearch.trim(), phone: "", email: "" }); setNewGuestOpen(true); }} data-testid="button-add-guest">
