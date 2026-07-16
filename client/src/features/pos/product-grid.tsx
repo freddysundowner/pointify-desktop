@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw, Lock } from "lucide-react";
+import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw, Lock, Utensils } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -2273,11 +2273,6 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               {(item as any).accompaniments && (
                                 <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                               )}
-                              {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                                <button onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="inline-flex items-center justify-center w-5 h-5 rounded-full text-purple-500 hover:bg-purple-100 hover:text-purple-700 transition-colors mt-0.5">
-                                  <Edit3 className="h-3 w-3" />
-                                </button>
-                              )}
                               <p className="text-gray-400 text-xs mt-0.5">
                                 Ksh {item.price.toFixed(2)} each
                                 {(item.maxDiscount || 0) > 0 && (
@@ -2325,6 +2320,11 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                   Add discount
                                 </button>
                               )}
+                              {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
+                                <Button variant="ghost" size="sm" onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="w-6 h-6 p-0 rounded-full text-purple-500 hover:text-purple-700 hover:bg-purple-50">
+                                  <Utensils className="h-3 w-3" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2346,11 +2346,6 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                             <p className="font-semibold text-gray-800 truncate">{item.name}</p>
                             {(item as any).accompaniments && (
                               <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
-                            )}
-                            {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                              <button onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="inline-flex items-center justify-center w-5 h-5 rounded-full text-purple-500 hover:bg-purple-100 hover:text-purple-700 transition-colors mt-0.5">
-                                <Edit3 className="h-3 w-3" />
-                              </button>
                             )}
                             <div className="flex flex-wrap gap-2 mt-1">
                               {canEditPrice && (
@@ -2441,7 +2436,12 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           </div>
                           
                           {/* Column 6: Remove */}
-                          <div className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
+                              <Button variant="ghost" size="sm" onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="w-7 h-7 p-0 rounded-full text-purple-500 hover:text-purple-700 hover:bg-purple-50">
+                                <Utensils className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
