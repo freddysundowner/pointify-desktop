@@ -1,4 +1,4 @@
-const CACHE = 'pointify-shell-v3';
+const CACHE = '__CACHE_VERSION__';
 const SHELL = ['/', '/index.html'];
 
 // Install: cache the app shell immediately

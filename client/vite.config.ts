@@ -1,7 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 import type { Plugin } from 'vite';
+
+// Stamp sw.js with a unique build version on every production build so
+// the service worker cache is automatically busted on each new deploy.
+function swCacheBustPlugin(): Plugin {
+  return {
+    name: 'sw-cache-bust',
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist/sw.js');
+      if (!fs.existsSync(swPath)) return;
+      const version = `pointify-shell-${Date.now()}`;
+      const content = fs.readFileSync(swPath, 'utf-8').replace(/__CACHE_VERSION__/g, version);
+      fs.writeFileSync(swPath, content);
+    },
+  };
+}
 
 // In dev mode, if the browser has a stale service worker that cached a
 // production build, it will request hashed assets like /assets/index-XYZ.js
@@ -41,7 +57,7 @@ function swResetFallbackPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), swResetFallbackPlugin()],
+  plugins: [react(), swResetFallbackPlugin(), swCacheBustPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
