@@ -2274,8 +2274,8 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                               )}
                               {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                                <button onClick={() => handleAccompanimentEdit(item)} className="text-xs text-purple-500 hover:text-purple-700 underline mt-0.5">
-                                  {(item as any).accompaniments ? "Change accompaniment" : "Add accompaniment"}
+                                <button onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="inline-flex items-center justify-center w-5 h-5 rounded-full text-purple-500 hover:bg-purple-100 hover:text-purple-700 transition-colors mt-0.5">
+                                  <Edit3 className="h-3 w-3" />
                                 </button>
                               )}
                               <p className="text-gray-400 text-xs mt-0.5">
@@ -2348,8 +2348,8 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                             )}
                             {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                              <button onClick={() => handleAccompanimentEdit(item)} className="text-xs text-purple-500 hover:text-purple-700 underline mt-0.5 block">
-                                {(item as any).accompaniments ? "Change accompaniment" : "Add accompaniment"}
+                              <button onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="inline-flex items-center justify-center w-5 h-5 rounded-full text-purple-500 hover:bg-purple-100 hover:text-purple-700 transition-colors mt-0.5">
+                                <Edit3 className="h-3 w-3" />
                               </button>
                             )}
                             <div className="flex flex-wrap gap-2 mt-1">
