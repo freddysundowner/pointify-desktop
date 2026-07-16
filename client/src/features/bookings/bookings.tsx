@@ -77,7 +77,7 @@ const nightsBetween = (a: string, b: string) =>
   Math.max(0, Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000));
 
 export default function BookingsPage() {
-  const { shopId, shopData } = usePrimaryShop();
+  const { shopId, adminId, attendantId, shopData } = usePrimaryShop();
   const isGuestHouse = !!shopData?.isGuestHouse;
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,6 +92,11 @@ export default function BookingsPage() {
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
+
+  // Bulk "add many rooms at once" dialog
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "" });
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   const emptyForm = {
     roomProductId: "",
@@ -266,6 +271,79 @@ export default function BookingsPage() {
     setPendingAction(null);
   };
 
+  // Create many room services in one go (e.g. Room 1..100). Sequential so we
+  // can show progress and stop on the first real failure.
+  const bulkCount = Math.floor(Number(bulkForm.count));
+  const bulkStart = Math.floor(Number(bulkForm.start));
+  const bulkRate = Number(bulkForm.rate);
+  const canBulkCreate =
+    !!bulkForm.prefix.trim() &&
+    Number.isFinite(bulkStart) && bulkStart >= 0 &&
+    Number.isFinite(bulkCount) && bulkCount >= 1 && bulkCount <= 200 &&
+    Number.isFinite(bulkRate) && bulkRate > 0 &&
+    !bulkProgress;
+
+  const handleBulkCreate = async () => {
+    if (!canBulkCreate) return;
+    const prefix = bulkForm.prefix.trim();
+    const existingNames = new Set(rooms.map((r) => r.name.toLowerCase()));
+    setBulkProgress({ done: 0, total: bulkCount });
+    let created = 0;
+    let skipped = 0;
+    try {
+      for (let i = 0; i < bulkCount; i++) {
+        const name = `${prefix} ${bulkStart + i}`;
+        if (existingNames.has(name.toLowerCase())) {
+          skipped++;
+          setBulkProgress({ done: i + 1, total: bulkCount });
+          continue;
+        }
+        const resp = await apiCall("/api/product", {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            measure: "",
+            sellingPrice: bulkRate,
+            buyingPrice: 0,
+            quantity: 0,
+            bundle: false,
+            virtual: true,
+            isRoom: true,
+            manageByPrice: false,
+            productCategoryId: null,
+            supplierId: null,
+            reorderLevel: 0,
+            maxDiscount: 0,
+            description: "",
+            shopId,
+            adminId,
+            attendantId,
+            productType: "service",
+          }),
+        });
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok || (data && data.success === false)) {
+          throw new Error(data?.error || data?.message || `HTTP ${resp.status} while creating "${name}"`);
+        }
+        created++;
+        setBulkProgress({ done: i + 1, total: bulkCount });
+      }
+      toast({
+        title: "Rooms created",
+        description: `${created} room${created !== 1 ? "s" : ""} added${skipped ? `, ${skipped} skipped (name already exists)` : ""}.`,
+      });
+      setBulkOpen(false);
+    } catch (err: any) {
+      toast({
+        title: created > 0 ? `Stopped after creating ${created} room${created !== 1 ? "s" : ""}` : "Could not create rooms",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+    setBulkProgress(null);
+    queryClient.invalidateQueries({ queryKey: ["booking-rooms", shopId] });
+  };
+
   const monthLabel = monthAnchor.toLocaleDateString("en-KE", { month: "long", year: "numeric" });
 
   if (shopData && !isGuestHouse) {
@@ -295,10 +373,16 @@ export default function BookingsPage() {
               Rooms are your services — add rooms as services under Products.
             </p>
           </div>
-          <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
-            <Plus className="h-4 w-4 mr-1.5" />
-            New Booking
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkOpen(true)} data-testid="button-bulk-add-rooms">
+              <BedDouble className="h-4 w-4 mr-1.5" />
+              Add Rooms
+            </Button>
+            <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => openNewBooking()} disabled={roomsLoading || rooms.length === 0} data-testid="button-new-booking">
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Booking
+            </Button>
+          </div>
         </div>
 
         {isError && (
@@ -309,9 +393,9 @@ export default function BookingsPage() {
         )}
         {!roomsLoading && rooms.length === 0 && (
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-            No rooms found. Create your rooms first: go to Products, add a service and turn on
-            "This service is a room" — its selling price is the nightly rate. Only services
-            marked as rooms appear here.
+            No rooms yet. Click "Add Rooms" above to create many at once (e.g. Room 1–100),
+            or add them one by one under Products as a service with "This service is a room"
+            turned on. The selling price is the nightly rate.
           </div>
         )}
 
@@ -551,6 +635,98 @@ export default function BookingsPage() {
               data-testid="button-confirm-action"
             >
               {isActing ? "Saving…" : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk add rooms */}
+      <Dialog open={bulkOpen} onOpenChange={(o) => { if (!bulkProgress) setBulkOpen(o); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add many rooms at once</DialogTitle>
+            <DialogDescription>
+              Creates numbered rooms, e.g. "Room 1" to "Room 100". Each room becomes a
+              service with the nightly rate as its price. Rooms with names that already
+              exist are skipped.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Name prefix</label>
+                <Input
+                  value={bulkForm.prefix}
+                  onChange={(e) => setBulkForm((f) => ({ ...f, prefix: e.target.value }))}
+                  placeholder="Room"
+                  disabled={!!bulkProgress}
+                  data-testid="input-bulk-prefix"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Start number</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={bulkForm.start}
+                  onChange={(e) => setBulkForm((f) => ({ ...f, start: e.target.value }))}
+                  disabled={!!bulkProgress}
+                  data-testid="input-bulk-start"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">How many rooms</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={bulkForm.count}
+                  onChange={(e) => setBulkForm((f) => ({ ...f, count: e.target.value }))}
+                  disabled={!!bulkProgress}
+                  data-testid="input-bulk-count"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Nightly rate</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={bulkForm.rate}
+                  onChange={(e) => setBulkForm((f) => ({ ...f, rate: e.target.value }))}
+                  placeholder="e.g. 2500"
+                  disabled={!!bulkProgress}
+                  data-testid="input-bulk-rate"
+                />
+              </div>
+            </div>
+            {canBulkCreate && (
+              <p className="text-xs text-gray-500" data-testid="text-bulk-preview">
+                Will create: {bulkForm.prefix.trim()} {bulkStart} … {bulkForm.prefix.trim()} {bulkStart + bulkCount - 1}
+              </p>
+            )}
+            {bulkProgress && (
+              <div>
+                <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                  <div
+                    className="h-full bg-purple-600 transition-all"
+                    style={{ width: `${Math.round((bulkProgress.done / bulkProgress.total) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1" data-testid="text-bulk-progress">
+                  Creating room {bulkProgress.done} of {bulkProgress.total}…
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setBulkOpen(false)} disabled={!!bulkProgress}>Cancel</Button>
+            <Button
+              className="bg-purple-600 hover:bg-purple-700"
+              onClick={handleBulkCreate}
+              disabled={!canBulkCreate}
+              data-testid="button-bulk-create"
+            >
+              {bulkProgress ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Creating…</>) : "Create Rooms"}
             </Button>
           </DialogFooter>
         </DialogContent>
