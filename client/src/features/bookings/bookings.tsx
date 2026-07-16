@@ -25,7 +25,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
-  XCircle, CalendarDays, Phone, User, Trash2,
+  XCircle, CalendarDays, Phone, User, Trash2, Sparkles,
 } from "lucide-react";
 
 interface Booking {
@@ -55,6 +55,7 @@ interface Room {
   name: string;
   group?: string;
   nightlyRate: number;
+  amenities?: string[];
 }
 
 const bid = (b: Booking) => String(b._id ?? b.id);
@@ -101,7 +102,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
 
   // Bulk "add many rooms at once" dialog
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "", group: "" });
+  const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "", group: "", amenities: "" });
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Rooms grid: filters + clicked room
@@ -130,6 +131,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
         name: r.name,
         group: String(r.group || "").trim(),
         nightlyRate: Number(r.nightlyRate) || 0,
+        amenities: Array.isArray(r.amenities)
+          ? Array.from(new Set(r.amenities.map((a: any) => String(a ?? "").trim()).filter(Boolean)))
+          : [],
       }));
     },
     enabled: !!shopId,
@@ -316,6 +320,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               name,
               nightlyRate: bulkRate,
               group: bulkForm.group.trim(),
+              amenities: bulkForm.amenities.split(",").map((a) => a.trim()).filter(Boolean),
             })),
           }),
         });
@@ -605,7 +610,15 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                         className={`rounded-xl border px-2.5 py-3 text-left transition-colors shadow-sm ${cls}`}
                         data-testid={`tile-room-${room._id}`}
                       >
-                        <p className="text-sm font-semibold truncate">{room.name}</p>
+                        <p className="text-sm font-semibold truncate flex items-center gap-1">
+                          <span className="truncate">{room.name}</span>
+                          {(room.amenities?.length ?? 0) > 0 && (
+                            <Sparkles
+                              className={`h-3 w-3 shrink-0 ${b ? "text-white/80" : "text-purple-500"}`}
+                              data-testid={`icon-amenities-${room._id}`}
+                            />
+                          )}
+                        </p>
                         <p className={`text-[11px] truncate ${b ? "text-white/85" : "text-gray-500"}`}>
                           {b ? b.guestName : Number(room.nightlyRate).toLocaleString()}
                         </p>
@@ -789,6 +802,21 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     {Number(roomDialog.nightlyRate).toLocaleString()} per night · stay {rangeFrom} → {rangeTo}
                   </DialogDescription>
                 </DialogHeader>
+                {(roomDialog.amenities?.length ?? 0) > 0 && (
+                  <div className="rounded-md border border-purple-100 bg-purple-50/60 p-3" data-testid="room-dialog-amenities">
+                    <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Amenities
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {roomDialog.amenities!.map((a) => (
+                        <span key={a} className="text-xs bg-white border border-purple-200 text-purple-800 rounded-full px-2 py-0.5">
+                          {a}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {b ? (
                   <div className="rounded-md border p-3 space-y-1.5" data-testid="room-dialog-booking">
                     <div className="flex items-center justify-between gap-2">
@@ -1058,6 +1086,19 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               <p className="text-xs text-gray-500 mt-1">
                 Rooms with the same group are shown together. Run this tool once per
                 group to give each property/floor its own rooms and rate.
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Amenities (optional)</label>
+              <Input
+                value={bulkForm.amenities}
+                onChange={(e) => setBulkForm((f) => ({ ...f, amenities: e.target.value }))}
+                placeholder='e.g. "Wi-Fi, TV, Hot shower, Breakfast"'
+                disabled={!!bulkProgress}
+                data-testid="input-bulk-amenities"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Separate with commas. These amenities are added to every room created here.
               </p>
             </div>
             {canBulkCreate && (

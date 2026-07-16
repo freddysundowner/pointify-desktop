@@ -11,6 +11,8 @@ const roomSchema = new mongoose.Schema({
   // Optional grouping, e.g. "Property 1", "House A", "Floor 2"
   group: { type: String, default: "" },
   nightlyRate: { type: Number, required: true, min: 0 },
+  // Optional amenities, e.g. ["Wi-Fi", "TV", "Hot shower"]
+  amenities: { type: [String], default: [] },
   sync: { type: Boolean, default: false },
   createAt: {
     type: Date,

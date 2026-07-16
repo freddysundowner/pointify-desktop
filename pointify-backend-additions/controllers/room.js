@@ -15,6 +15,22 @@ const getAllRooms = async (req, res) => {
   }
 };
 
+// Normalise amenities to a clean array of non-empty strings (max 30).
+const parseAmenities = (value) => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const a of value) {
+    const s = String(a || "").trim();
+    const key = s.toLowerCase();
+    if (!s || seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+    if (out.length >= 30) break;
+  }
+  return out;
+};
+
 const createRoom = async (req, res) => {
   try {
     const { shop, name, nightlyRate } = req.body;
@@ -38,6 +54,7 @@ const createRoom = async (req, res) => {
       name: trimmed,
       group: String(req.body.group || "").trim(),
       nightlyRate: rate,
+      amenities: parseAmenities(req.body.amenities),
     });
     await room.save();
     res.status(201).json(room);
@@ -83,6 +100,7 @@ const bulkCreateRooms = async (req, res) => {
         name,
         group: String((r && r.group) || "").trim(),
         nightlyRate: rate,
+        amenities: parseAmenities(r && r.amenities),
       });
     }
 
@@ -119,6 +137,9 @@ const updateRoomById = async (req, res) => {
         return res.status(400).json({ error: "nightlyRate must be a number >= 0" });
       }
       update.nightlyRate = rate;
+    }
+    if (req.body.amenities !== undefined) {
+      update.amenities = parseAmenities(req.body.amenities);
     }
     const room = await Room.findByIdAndUpdate(id, update, { new: true });
     if (!room) {

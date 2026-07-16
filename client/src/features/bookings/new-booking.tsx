@@ -19,13 +19,14 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, ArrowLeft, Loader2, Search, User, UserPlus, Check, Phone,
-  CalendarDays, X,
+  CalendarDays, X, Sparkles,
 } from "lucide-react";
 
 interface Room {
   _id: string;
   name: string;
   nightlyRate: number;
+  amenities?: string[];
 }
 
 interface Customer {
@@ -116,6 +117,9 @@ export default function NewBookingPage() {
         _id: r._id,
         name: r.name,
         nightlyRate: Number(r.nightlyRate) || 0,
+        amenities: Array.isArray(r.amenities)
+          ? Array.from(new Set(r.amenities.map((a: any) => String(a ?? "").trim()).filter(Boolean)))
+          : [],
       }));
     },
     enabled: !!shopId,
@@ -327,6 +331,16 @@ export default function NewBookingPage() {
                 ? `${Number(selectedRoom.nightlyRate).toLocaleString()} per night`
                 : "Reserve a room for a guest."}
             </p>
+            {initialRoomId && selectedRoom && (selectedRoom.amenities?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5" data-testid="header-room-amenities">
+                <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                {selectedRoom.amenities!.map((a) => (
+                  <span key={a} className="text-[11px] bg-purple-50 border border-purple-200 text-purple-800 rounded-full px-2 py-0.5">
+                    {a}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -433,6 +447,12 @@ export default function NewBookingPage() {
                         {selected && <Check className="h-4 w-4 text-purple-600 absolute top-2 right-2" />}
                         <p className="font-medium text-sm text-gray-900 truncate">{r.name}</p>
                         <p className="text-xs text-gray-500 mt-0.5">{r.nightlyRate.toLocaleString()}/night</p>
+                        {(r.amenities?.length ?? 0) > 0 && (
+                          <p className="text-[10px] text-purple-700 mt-0.5 truncate flex items-center gap-0.5" data-testid={`text-amenities-${r._id}`}>
+                            <Sparkles className="h-2.5 w-2.5 shrink-0" />
+                            <span className="truncate">{r.amenities!.join(" · ")}</span>
+                          </p>
+                        )}
                         <Badge variant="secondary" className={`mt-1.5 text-[10px] ${free ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                           {free ? "Available" : "Booked"}
                         </Badge>
@@ -570,6 +590,14 @@ export default function NewBookingPage() {
                 <dt className="text-gray-500">Room</dt>
                 <dd className="font-medium text-gray-900 text-right" data-testid="text-summary-room">{selectedRoom?.name || "—"}</dd>
               </div>
+              {(selectedRoom?.amenities?.length ?? 0) > 0 && (
+                <div className="flex justify-between gap-2">
+                  <dt className="text-gray-500">Amenities</dt>
+                  <dd className="text-gray-900 text-right" data-testid="text-summary-amenities">
+                    {selectedRoom!.amenities!.join(", ")}
+                  </dd>
+                </div>
+              )}
               <div className="flex justify-between gap-2">
                 <dt className="text-gray-500">Guest</dt>
                 <dd className="font-medium text-gray-900 text-right truncate" data-testid="text-summary-guest">{form.guestName.trim() || "—"}</dd>

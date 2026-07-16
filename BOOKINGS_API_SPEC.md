@@ -25,6 +25,7 @@ when it is true.
   shop:        ObjectId (ref Shop, required, indexed),
   name:        String (required),   // e.g. "Room 12"
   nightlyRate: Number (required, >= 0),
+  amenities:   [String] (default []),   // e.g. ["Wi-Fi", "TV", "Hot shower"]
   createdAt:   Date (default now)
 }
 ```
@@ -32,14 +33,14 @@ when it is true.
 ### Room endpoints
 
 - `GET /room?shop=<shopId>` — array of the shop's rooms, sorted by name.
-- `POST /room` — body `{ shop, name, nightlyRate }`; respond `201` with the
-  created document. Reject a duplicate name within the same shop
+- `POST /room` — body `{ shop, name, nightlyRate, amenities? }`; respond `201`
+  with the created document. Reject a duplicate name within the same shop
   (case-insensitive) with `409`.
-- `POST /room/bulk` — body `{ shop, rooms: [{ name, nightlyRate }, ...] }`.
+- `POST /room/bulk` — body `{ shop, rooms: [{ name, nightlyRate, amenities? }, ...] }`.
   Create all rooms; silently skip names that already exist in the shop.
   Respond `{ success: true, created: <n>, skipped: <n>, rooms: [...] }`.
-- `PUT /room/:id` — partial update (`name`, `nightlyRate`). Respond with the
-  updated document.
+- `PUT /room/:id` — partial update (`name`, `nightlyRate`, `amenities`).
+  Respond with the updated document.
 - `DELETE /room/:id` — respond `{ success: true }`. Reject (`409`) if the room
   has active bookings (status `booked` or `checked_in`).
 
