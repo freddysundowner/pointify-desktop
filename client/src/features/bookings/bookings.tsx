@@ -849,39 +849,51 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
             <div className="overflow-x-auto hidden sm:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-gray-500 border-b">
-                    <th className="p-2 pl-3">Guest</th>
-                    <th className="p-2">Room</th>
-                    <th className="p-2">Check-in</th>
-                    <th className="p-2">Check-out</th>
-                    <th className="p-2 text-right">Total</th>
-                    <th className="p-2">Status</th>
-                    <th className="p-2"></th>
+                  <tr className="text-left text-[11px] uppercase tracking-wider text-purple-800 bg-purple-50/70 border-y border-purple-100">
+                    <th className="px-4 py-3 font-semibold">Guest</th>
+                    <th className="px-3 py-3 font-semibold">Room</th>
+                    <th className="px-3 py-3 font-semibold">Check-in</th>
+                    <th className="px-3 py-3 font-semibold">Check-out</th>
+                    <th className="px-3 py-3 font-semibold text-right">Total</th>
+                    <th className="px-3 py-3 font-semibold">Status</th>
+                    <th className="px-3 py-3"></th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {[...bookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
-                    .map((b) => (
+                    .map((b, idx) => (
                       <tr
                         key={bid(b)}
-                        className="border-b last:border-0 cursor-pointer hover:bg-purple-50/50"
+                        className={`cursor-pointer transition-colors hover:bg-purple-50/60 ${idx % 2 === 1 ? "bg-gray-50/50" : "bg-white"}`}
                         onClick={() => navigate(`/bookings/${bid(b)}`)}
                         data-testid={`row-booking-${bid(b)}`}
                       >
-                        <td className="p-2 pl-3 font-medium text-gray-900">{b.guestName}</td>
-                        <td className="p-2 text-gray-600">{b.roomName}</td>
-                        <td className="p-2 text-gray-600">{b.checkIn}</td>
-                        <td className="p-2 text-gray-600">{b.checkOut}</td>
-                        <td className="p-2 text-right text-gray-800">{Number(b.totalAmount).toLocaleString()}</td>
-                        <td className="p-2">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="h-8 w-8 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold flex items-center justify-center shrink-0">
+                              {(b.guestName || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join("")}
+                            </span>
+                            <span className="font-medium text-gray-900 truncate">{b.guestName}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1.5 text-gray-700">
+                            <BedDouble className="h-3.5 w-3.5 text-purple-400" />
+                            {b.roomName}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-gray-600 tabular-nums">{b.checkIn}</td>
+                        <td className="px-3 py-3 text-gray-600 tabular-nums">{b.checkOut}</td>
+                        <td className="px-3 py-3 text-right font-semibold text-gray-900 tabular-nums">{Number(b.totalAmount).toLocaleString()}</td>
+                        <td className="px-3 py-3">
                           <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
                             {STATUS_META[b.status]?.label || b.status}
                           </Badge>
                         </td>
-                        <td className="p-2">
+                        <td className="px-3 py-3 text-right">
                           {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
-                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
+                            <Button size="sm" variant="outline" className="h-7 text-[11px] px-2.5 text-purple-700 border-purple-200 hover:bg-purple-50" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
                               <CalendarDays className="h-3 w-3 mr-1" />Change dates
                             </Button>
                           )}
