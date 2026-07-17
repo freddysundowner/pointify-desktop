@@ -27,8 +27,14 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
-  SlidersHorizontal,
+  SlidersHorizontal, MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface Booking {
@@ -849,13 +855,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
             <div className="overflow-x-auto hidden sm:block">
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[24%]" />
-                  <col className="w-[12%]" />
+                  <col className="w-[26%]" />
                   <col className="w-[13%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[12%]" />
-                  <col className="w-[16%]" />
+                  <col className="w-[21%]" />
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11px] uppercase tracking-wider text-purple-800 bg-purple-50/70 border-y border-purple-100">
@@ -865,7 +870,6 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     <th className="px-3 py-3 font-semibold">Check-out</th>
                     <th className="px-3 py-3 font-semibold text-right">Total</th>
                     <th className="px-3 py-3 font-semibold">Status</th>
-                    <th className="px-3 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 [&_td]:align-middle">
@@ -891,16 +895,40 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                         <td className="px-3 py-3 text-gray-600 tabular-nums whitespace-nowrap">{b.checkOut}</td>
                         <td className="px-3 py-3 text-right font-semibold text-gray-900 tabular-nums">{Number(b.totalAmount).toLocaleString()}</td>
                         <td className="px-3 py-3">
-                          <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
-                            {STATUS_META[b.status]?.label || b.status}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
-                            <Button size="sm" variant="outline" className="h-7 text-[11px] px-2.5 text-purple-700 border-purple-200 hover:bg-purple-50" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
-                              <CalendarDays className="h-3 w-3 mr-1" />Change dates
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
+                              {STATUS_META[b.status]?.label || b.status}
+                            </Badge>
+                            {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-gray-400 hover:text-purple-700" onClick={(e) => e.stopPropagation()} data-testid={`button-booking-actions-${bid(b)}`}>
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                  <DropdownMenuItem onClick={() => openEditDates(b)} data-testid={`button-edit-dates-${bid(b)}`}>
+                                    <CalendarDays className="h-4 w-4 mr-2 text-purple-600" />Change dates
+                                  </DropdownMenuItem>
+                                  {b.status === "booked" && (
+                                    <DropdownMenuItem onClick={() => { setActionBooking(b); setPendingAction("checked_in"); }} data-testid={`button-checkin-${bid(b)}`}>
+                                      <LogIn className="h-4 w-4 mr-2 text-green-600" />Check in
+                                    </DropdownMenuItem>
+                                  )}
+                                  {b.status === "checked_in" && (
+                                    <DropdownMenuItem onClick={() => { setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }} data-testid={`button-checkout-${bid(b)}`}>
+                                      <LogOut className="h-4 w-4 mr-2 text-blue-600" />Check out
+                                    </DropdownMenuItem>
+                                  )}
+                                  {b.status === "booked" && (
+                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { setActionBooking(b); setPendingAction("cancelled"); }} data-testid={`button-cancel-${bid(b)}`}>
+                                      <XCircle className="h-4 w-4 mr-2" />Cancel booking
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
