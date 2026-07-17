@@ -668,7 +668,7 @@ export default function SubscriptionPage() {
         </Button>
       </div>
 
-      <div className="max-w-2xl mx-auto">
+      <div className="w-full max-w-3xl mx-auto">
         {/* Order Summary */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
@@ -846,7 +846,7 @@ export default function SubscriptionPage() {
 
   return (
     <DashboardLayout title="Subscription">
-      <div className="w-full px-2 py-4 sm:px-3 lg:px-6 lg:py-6">
+      <div className="w-full py-4 lg:py-6">
         {renderStepIndicator()}
         
         {step === 1 && renderPlanSelection()}
