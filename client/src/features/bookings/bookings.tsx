@@ -24,7 +24,7 @@ import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { useNavigationRoute } from "@/lib/navigation-utils";
+import { useNavigationRoute, goBack } from "@/lib/navigation-utils";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
@@ -528,7 +528,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
           <div className="flex items-center justify-between gap-3">
             {/* Back button — left */}
             <button
-              onClick={() => navigate(view === "rooms" ? "/bookings" : dashboardRoute)}
+              onClick={() => goBack(navigate, view === "rooms" ? "/bookings" : dashboardRoute)}
               className="h-9 w-9 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
               aria-label={view === "rooms" ? "Back to bookings" : "Back to home"}
               data-testid="button-back-header"

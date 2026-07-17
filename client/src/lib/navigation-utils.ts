@@ -109,6 +109,16 @@ export const ROUTE_MAPPINGS = {
   }
 };
 
+// Go back using the browser history when possible, otherwise fall back to a
+// sensible default route (e.g. when the page was opened directly via a link).
+export const goBack = (navigate: (to: string) => void, fallback: string) => {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    navigate(fallback);
+  }
+};
+
 // Hook to get the correct route based on user type
 export const useNavigationRoute = (routeKey: keyof typeof ROUTE_MAPPINGS) => {
   const { attendant } = useAttendantAuth();

@@ -7,6 +7,7 @@ import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { goBack } from "@/lib/navigation-utils";
 import {
   BedDouble, ArrowLeft, Loader2, User, Phone, CalendarDays,
   Banknote, Smartphone, StickyNote, IdCard, Users, Receipt, Sparkles,
@@ -140,7 +141,7 @@ export default function BookingDetail() {
     <DashboardLayout title="Booking details">
       <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 w-full">
         <div className="flex items-center gap-2 mb-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/bookings")} data-testid="button-back-bookings">
+          <Button variant="ghost" size="sm" onClick={() => goBack(navigate, "/bookings")} data-testid="button-back-bookings">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-xl font-bold text-gray-900">Booking details</h1>

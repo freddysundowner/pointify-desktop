@@ -8,7 +8,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
-import { useNavigationRoute } from "@/lib/navigation-utils";
+import { useNavigationRoute, goBack } from "@/lib/navigation-utils";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -582,7 +582,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
           <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 shadow-sm">
             <div className="flex items-center gap-2 px-2 h-12">
               <button
-                onClick={() => setLocation(innerBack.href)}
+                onClick={() => goBack(setLocation, innerBack.href)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-600 active:bg-gray-100"
                 aria-label={`Back to ${innerBack.label}`}
                 data-testid="button-back-inner"
