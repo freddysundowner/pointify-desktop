@@ -163,6 +163,19 @@ function FullScreenSpinner({ label }: { label?: string }) {
   );
 }
 
+// Quiet fallback while a page's code loads on first visit — a thin animated
+// bar at the top instead of a full-screen spinner, so the app doesn't look
+// like it's being torn down and replaced on every navigation.
+function RouteLoading() {
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="fixed top-0 left-0 right-0 h-0.5 z-[100] overflow-hidden bg-purple-100">
+        <div className="h-full w-1/3 bg-purple-600 animate-[route-loading_1s_ease-in-out_infinite]" />
+      </div>
+    </div>
+  );
+}
+
 function RedirectToStockProducts() {
   const [, navigate] = useLocation();
   useEffect(() => { navigate('/stock/products'); }, []);
@@ -249,7 +262,7 @@ function AppContent() {
 
   return (
     <ChunkErrorBoundary>
-    <Suspense fallback={<FullScreenSpinner />}>
+    <Suspense fallback={<RouteLoading />}>
     <Switch>
       {/* Attendant routes - always check first before admin auth */}
       <Route path="/attendant/login" component={AttendantLogin} />
