@@ -550,6 +550,10 @@ export default function ProductForm() {
         } catch (err) {
           console.error("Failed to save accompaniment groups:", err);
         }
+        queryClient.invalidateQueries({ queryKey: ["accompaniment-shop"] });
+        queryClient.invalidateQueries({
+          queryKey: ["accompaniment", savedProductId],
+        });
       }
 
       toast({
