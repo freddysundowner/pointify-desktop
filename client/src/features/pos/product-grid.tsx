@@ -2307,11 +2307,11 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                         <div className="lg:hidden px-3 py-2 border-b border-gray-100 bg-white active:bg-gray-50">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 text-sm truncate">{item.name}</p>
+                              <p className="font-semibold text-gray-900 text-[15px] truncate">{item.name}</p>
                               {(item as any).accompaniments && (
-                                <p className="text-[11px] text-purple-600 leading-snug truncate">{(item as any).accompaniments}</p>
+                                <p className="text-xs text-purple-600 leading-snug truncate">{(item as any).accompaniments}</p>
                               )}
-                              <p className="text-gray-400 text-[11px]">
+                              <p className="text-gray-400 text-xs">
                                 Ksh {item.price.toFixed(2)} each
                                 {(item.maxDiscount || 0) > 0 && (
                                   <span className="text-green-500 ml-1">−Ksh {(item.discount || 0).toFixed(2)}</span>
@@ -2328,7 +2328,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
-                              <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
+                              <span className="w-6 text-center text-[15px] font-bold text-gray-800">{item.quantity}</span>
                               <button
                                 onClick={() => {
                                   const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
@@ -2339,8 +2339,8 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <p className="font-bold text-gray-900 text-sm shrink-0 min-w-[72px] whitespace-nowrap text-right tabular-nums">
-                              <span className="text-[10px] font-medium text-gray-400 mr-0.5">Ksh</span>
+                            <p className="font-bold text-gray-900 text-[15px] shrink-0 min-w-[72px] whitespace-nowrap text-right tabular-nums">
+                              <span className="text-[11px] font-medium text-gray-400 mr-0.5">Ksh</span>
                               {item.total.toFixed(2)}
                             </p>
                             <DropdownMenu>
