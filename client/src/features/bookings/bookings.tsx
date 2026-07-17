@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -250,21 +250,38 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
       .reduce((sum, b) => sum + (Number(b.amountPaid) || Number(b.totalAmount) || 0), 0);
   }, [bookings, rangeFrom]);
 
-  // Filtered "All bookings" list — search by guest name / ID / phone, plus
-  // status and date-range filters. Runs on the device over the fetched list.
-  const filteredBookings = useMemo(() => {
-    const q = filterText.trim().toLowerCase();
-    return bookings.filter((b) => {
-      if (filterStatus !== "all" && b.status !== filterStatus) return false;
-      if (filterFrom && b.checkOut < filterFrom) return false;
-      if (filterTo && b.checkIn > filterTo) return false;
-      if (q) {
-        const hay = `${b.guestName || ""} ${b.guestIdNumber || ""} ${b.guestPhone || ""} ${b.roomName || ""}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [bookings, filterText, filterStatus, filterFrom, filterTo]);
+  // Debounce the guest search so we don't hit the server on every keystroke.
+  const [debouncedText, setDebouncedText] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedText(filterText.trim()), 350);
+    return () => clearTimeout(t);
+  }, [filterText]);
+
+  const hasFilters = !!(debouncedText || filterStatus !== "all" || filterFrom || filterTo);
+
+  // Server-side filtered "All bookings" list. The server (and eventually the
+  // main backend database) applies status / date-range / guest search filters.
+  const { data: serverFiltered = [], isFetching: isFilterFetching } = useQuery<Booking[]>({
+    queryKey: ["bookings", shopId, "filtered", filterStatus, filterFrom, filterTo, debouncedText],
+    queryFn: async () => {
+      const params = new URLSearchParams({ shop: shopId! });
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      if (filterFrom) params.set("from", filterFrom);
+      if (filterTo) params.set("to", filterTo);
+      if (debouncedText) params.set("q", debouncedText);
+      const res = await apiCall(`/api/booking?${params.toString()}`, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data?.data ?? data?.bookings ?? [];
+      if (!Array.isArray(list)) throw new Error("Bookings endpoint not available");
+      return list;
+    },
+    enabled: !!shopId && hasFilters,
+    placeholderData: (prev) => prev,
+    retry: 1,
+  });
+
+  const filteredBookings = hasFilters ? serverFiltered : bookings;
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
@@ -855,6 +872,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               <span className="text-xs text-gray-400">to</span>
               <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-9 sm:w-[150px]" data-testid="input-filter-to" />
             </div>
+            {isFilterFetching && <Loader2 className="h-4 w-4 animate-spin text-purple-400 shrink-0" />}
             {(filterText || filterStatus !== "all" || filterFrom || filterTo) && (
               <Button variant="ghost" size="sm" className="h-9 text-xs text-gray-500 self-start sm:self-auto" onClick={() => { setFilterText(""); setFilterStatus("all"); setFilterFrom(""); setFilterTo(""); }} data-testid="button-clear-filters">
                 <XCircle className="h-3.5 w-3.5 mr-1" />Clear

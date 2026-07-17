@@ -59,9 +59,50 @@ export function registerBookingRoutes(app: Express) {
   app.delete("/api/rooms/:id", (req, res) => forward(req, res, `/room/${req.params.id}`, "DELETE"));
 
   // ---- Bookings ----
-  app.get("/api/booking", (req, res) => {
+  // Server-side filtering: supports ?status=, ?from=, ?to= (YYYY-MM-DD, matched
+  // against the stay range) and ?q= (guest name / ID number / phone / room name).
+  // All params are forwarded upstream so the main backend can filter at the
+  // database level once it supports them; until then this proxy applies the
+  // same filters itself, so the API contract is identical either way.
+  app.get("/api/booking", async (req, res) => {
+    const { status, from, to, q, ...rest } = req.query as Record<string, string>;
     const qs = new URLSearchParams(req.query as any).toString();
-    forward(req, res, `/booking${qs ? `?${qs}` : ""}`, "GET");
+    try {
+      const token = extractToken(req);
+      if (!token) {
+        return res.status(401).json({ error: "Authorization token required" });
+      }
+      const data: any = await makeOnlinePointifyRequest(`/booking${qs ? `?${qs}` : ""}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data && data.success === false && data.httpStatus) {
+        return res.status(data.httpStatus).json(data);
+      }
+      const hasFilters = !!(status || from || to || q);
+      const list = Array.isArray(data) ? data : data?.data ?? data?.bookings;
+      if (!hasFilters || !Array.isArray(list)) {
+        return res.json(data);
+      }
+      const needle = (q || "").trim().toLowerCase();
+      const filtered = list.filter((b: any) => {
+        if (status && b.status !== status) return false;
+        // Keep bookings whose stay overlaps the [from, to] window.
+        if (from && b.checkOut < from) return false;
+        if (to && b.checkIn > to) return false;
+        if (needle) {
+          const hay = `${b.guestName || ""} ${b.guestIdNumber || ""} ${b.guestPhone || ""} ${b.roomName || ""}`.toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      });
+      if (Array.isArray(data)) return res.json(filtered);
+      if (Array.isArray(data?.data)) return res.json({ ...data, data: filtered });
+      return res.json({ ...data, bookings: filtered });
+    } catch (error) {
+      const s = (error as any).status || 500;
+      res.status(s).json({ error: "Guest house request failed" });
+    }
   });
   app.post("/api/booking", (req, res) => forward(req, res, "/booking", "POST"));
   // Atomic check-out: records the payment AND flips the status in one upstream

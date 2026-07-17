@@ -75,6 +75,14 @@ when it is true.
 #### GET /booking?shop=<shopId>
 Array of the shop's bookings (most recent first, cap ~500).
 
+Optional filter params (the POS app already sends these; the proxy currently
+applies them itself, but the backend should filter at the database level):
+- `status` — exact match on booking status (`booked` / `checked_in` / `checked_out` / `cancelled`)
+- `from`, `to` — `YYYY-MM-DD`; return bookings whose stay overlaps the window
+  (`checkOut >= from` and `checkIn <= to`)
+- `q` — case-insensitive substring match against `guestName`, `guestIdNumber`,
+  `guestPhone`, and `roomName`
+
 #### POST /booking
 Body: the model fields above (without `_id` / payment fields). Server must:
 - validate required fields and `checkOut > checkIn`;
