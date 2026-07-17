@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NetworkStatusBar } from "@/components/network-status-bar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell, Lock } from "lucide-react";
+import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell, Lock, BedDouble, CalendarDays, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -11,6 +11,7 @@ import { navItems, menuGroups, getMenuGroups } from "@/lib/navigation";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePermissions } from "@/hooks/usePermissions";
 import { formatDate, formatTime } from "@/utils";
 
 interface DashboardLayoutProps {
@@ -97,6 +98,16 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/settings', '/edit-profile', '/reports',
   ]);
   const isTopLevelRoute = topLevelRoutes.has(location) || location.startsWith('/reports/');
+
+  // Room-bookings module gets its own mobile-app style bottom tab bar on
+  // every bookings screen (list, new, report, detail).
+  const isBookingsRoute =
+    location === '/rooms' || location === '/bookings' || location.startsWith('/bookings/');
+
+  const { hasAttendantPermission, isAdmin } = usePermissions();
+  const isAdminUser = isAdmin || localStorage.getItem('userType') === 'admin';
+  const canCreateBookings = isAdminUser || hasAttendantPermission('bookings', 'create_bookings');
+  const canViewBookingsReport = isAdminUser || hasAttendantPermission('bookings', 'view_reports');
 
   const handleLogout = () => {
     logout();
@@ -552,14 +563,57 @@ export default function DashboardLayout({ children, title, isDashboard = false }
         <NetworkStatusBar />
 
         {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
-        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${isTopLevelRoute ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
+        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${(isTopLevelRoute || isBookingsRoute) ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
           {children}
         </div>
 
       </div>
 
+      {/* ── Room Bookings mobile-app tab bar (all bookings screens) ──────── */}
+      {isBookingsRoute && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
+             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="relative flex items-stretch">
+            {[
+              { href: dashboardRoute,    icon: Home,         label: "Home",     show: true },
+              { href: "/rooms",          icon: BedDouble,    label: "Rooms",    show: true },
+              { href: "/bookings",       icon: CalendarDays, label: "Bookings", show: true },
+              { href: "/bookings/report", icon: BarChart3,   label: "Report",   show: canViewBookingsReport },
+            ].filter(t => t.show).map(({ href, icon: Icon, label }) => {
+              const active = location === href;
+              return (
+                <Link key={href} href={href}>
+                  <div className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 cursor-pointer transition-colors ${
+                    active ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
+                  }`} data-testid={`tab-bookings-${label.toLowerCase()}`}>
+                    <div className={`p-1 rounded-xl transition-all ${active ? 'bg-purple-50' : ''}`}>
+                      <Icon className={`h-5 w-5 ${active ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
+                    </div>
+                    <span className={`text-[10px] leading-none font-medium ${active ? 'text-purple-600' : 'text-gray-400'}`}>
+                      {label}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Floating "new booking" button */}
+          {canCreateBookings && location !== '/bookings/new' && (
+            <button
+              onClick={() => setLocation('/bookings/new')}
+              className="absolute -top-6 right-4 h-12 w-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-300 flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="New booking"
+              data-testid="fab-new-booking"
+            >
+              <Plus className="h-6 w-6" />
+            </button>
+          )}
+        </nav>
+      )}
+
       {/* ── Mobile Bottom Tab Bar (top-level pages only) ─────────────────── */}
-      {!isAttendantRoute && isTopLevelRoute && (
+      {!isAttendantRoute && !isBookingsRoute && isTopLevelRoute && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-stretch">

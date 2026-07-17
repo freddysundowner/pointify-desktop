@@ -469,7 +469,7 @@ export default function Attendants() {
     };
 
     // Merge API data with fallbacks
-    Object.keys(fallbackGroups).forEach(key => {
+    (Object.keys(fallbackGroups) as Array<keyof typeof fallbackGroups>).forEach(key => {
       if (!groups[key]) {
         groups[key] = fallbackGroups[key];
       }
