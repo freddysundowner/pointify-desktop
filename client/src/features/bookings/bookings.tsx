@@ -944,14 +944,23 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
             return (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <BedDouble className="h-5 w-5 text-purple-600" />
-                    {roomDialog.name}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {roomDialog.group ? `${roomDialog.group} · ` : ""}
-                    {Number(roomDialog.nightlyRate).toLocaleString()} per night · stay {rangeFrom} → {rangeTo}
-                  </DialogDescription>
+                  <div className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 -mx-1 mb-1">
+                    <DialogTitle className="flex items-center gap-2 text-white">
+                      <span className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                        <BedDouble className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate">{roomDialog.name}</span>
+                        {roomDialog.group && (
+                          <span className="block text-xs font-normal text-purple-200 truncate">{roomDialog.group}</span>
+                        )}
+                      </span>
+                    </DialogTitle>
+                    <DialogDescription className="text-purple-100 mt-2 flex items-center justify-between gap-2">
+                      <span className="font-semibold text-white">{Number(roomDialog.nightlyRate).toLocaleString()} <span className="font-normal text-purple-200">/ night</span></span>
+                      <span className="text-xs text-purple-200">{rangeFrom} → {rangeTo}</span>
+                    </DialogDescription>
+                  </div>
                 </DialogHeader>
                 {(roomDialog.amenities?.length ?? 0) > 0 && (
                   <div className="rounded-md border border-purple-100 bg-purple-50/60 p-3" data-testid="room-dialog-amenities">
@@ -1007,42 +1016,16 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500" data-testid="room-dialog-free">
-                    This room is free for the selected dates.
-                  </p>
-                )}
-                {(() => {
-                  const history = bookings
-                    .filter((x) => x.roomId === roomDialog._id && bid(x) !== (b ? bid(b) : ""))
-                    .sort((a, c) => (a.checkIn < c.checkIn ? 1 : -1))
-                    .slice(0, 5);
-                  if (history.length === 0) return null;
-                  return (
-                    <div className="rounded-md border p-3" data-testid="room-dialog-history">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        Recent bookings
-                      </p>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {history.map((h) => (
-                          <div key={bid(h)} className="flex items-center justify-between gap-2 text-xs" data-testid={`room-history-${bid(h)}`}>
-                            <div className="min-w-0">
-                              <p className="font-medium text-gray-800 truncate">{h.guestName}</p>
-                              <p className="text-gray-500">
-                                {h.checkIn} → {h.checkOut}
-                                {h.status === "checked_out" && Number(h.amountPaid) > 0 && (
-                                  <> · paid {Number(h.amountPaid).toLocaleString()}{h.paymentMethod ? ` (${h.paymentMethod === "mpesa" ? "M-Pesa" : h.paymentMethod})` : ""}</>
-                                )}
-                              </p>
-                            </div>
-                            <Badge className={`text-[10px] shrink-0 ${STATUS_META[h.status]?.cls || ""}`} variant="secondary">
-                              {STATUS_META[h.status]?.label || h.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-3 flex items-center gap-2.5" data-testid="room-dialog-free">
+                    <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                      <BedDouble className="h-4 w-4 text-green-600" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-green-800">Available</p>
+                      <p className="text-xs text-green-700">This room is free for the selected dates.</p>
                     </div>
-                  );
-                })()}
+                  </div>
+                )}
                 <DialogFooter className="flex-col-reverse sm:flex-row sm:flex-wrap gap-2">
                   {b && (
                     <Button
