@@ -427,7 +427,7 @@ function AttendantDashboardContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 w-full flex flex-col">
 
         {/* Active Tiles */}
         <div className="space-y-8">

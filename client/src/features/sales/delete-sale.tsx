@@ -82,7 +82,7 @@ export default function DeleteSale() {
 
   return (
     <DashboardLayout title={`Delete Sale #${sale.id}`}>
-      <div className="p-6 w-full max-w-4xl mx-auto">
+      <div className="p-6 w-full">
         <PageHeader
           title={`Delete Sale #${sale.id}`}
           onBack={() => window.history.back()}

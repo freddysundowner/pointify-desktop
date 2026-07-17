@@ -9,7 +9,7 @@ export default function Inventory() {
       <ExpandedSidebar />
       
       <div className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Inventory Management</h1>

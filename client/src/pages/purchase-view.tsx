@@ -55,9 +55,9 @@ export default function PurchaseViewPage() {
         }
       />
 
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* Receipt-style Layout */}
-        <div className="w-full max-w-4xl mx-auto">
+        <div className="w-full">
           <Card className="shadow-lg">
             <CardContent className="p-8">
               {/* Receipt Header */}

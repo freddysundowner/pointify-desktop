@@ -246,7 +246,7 @@ export default function BulkCreateProducts() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container p-6 w-full">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

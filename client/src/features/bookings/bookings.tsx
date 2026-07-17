@@ -446,7 +446,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
 
   return (
     <DashboardLayout>
-      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 max-w-6xl mx-auto">
+      <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 w-full">
         <div className="mb-4 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-600 to-purple-700 p-4 sm:p-5 text-white shadow-md">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">

@@ -382,7 +382,7 @@ export default function ImportProductsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-5 p-4 sm:p-6">
+      <div className="w-full space-y-5 p-4 sm:p-6">
         <PageHeader
           title="Import Products"
           subtitle="Upload an Excel file to bulk-import products into your inventory"

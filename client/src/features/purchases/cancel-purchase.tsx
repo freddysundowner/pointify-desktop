@@ -58,7 +58,7 @@ export default function CancelPurchase() {
   if (!purchase) {
     return (
       <DashboardLayout title="Purchase Not Found">
-        <div className="p-6 w-full max-w-4xl mx-auto">
+        <div className="p-6 w-full">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
               Purchase Order Not Found
@@ -102,7 +102,7 @@ export default function CancelPurchase() {
 
   return (
     <DashboardLayout title={`Cancel Purchase Order #${purchase.id}`}>
-      <div className="p-6 w-full max-w-4xl mx-auto">
+      <div className="p-6 w-full">
         <PageHeader
           title={`Cancel Purchase Order #${purchase.id}`}
           onBack={() => setLocation(purchasesRoute)}

@@ -190,7 +190,7 @@ export default function EditProfilePage() {
 
   return (
     <DashboardLayout title="Edit Profile">
-      <div className="max-w-4xl mx-auto">
+      <div className="w-full">
         <PageHeader
           title="Edit Profile"
           subtitle="Update your personal information and preferences"

@@ -251,7 +251,7 @@ export default function CategoriesPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 lg:p-6 max-w-4xl mx-auto">
+      <div className="p-4 lg:p-6 w-full">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
