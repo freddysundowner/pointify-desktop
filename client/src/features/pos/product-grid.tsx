@@ -2388,7 +2388,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                             {(item as any).accompaniments && (
                               <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                             )}
-                            <div className="flex flex-wrap gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex flex-wrap gap-1 mt-1">
                               {canEditPrice && (
                                 <button 
                                   onClick={() => handlePriceChange(item)}
