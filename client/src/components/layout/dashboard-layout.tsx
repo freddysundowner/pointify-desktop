@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NetworkStatusBar } from "@/components/network-status-bar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell, Lock, BedDouble, CalendarDays, Plus } from "lucide-react";
+import { Menu, X, Home, ScanBarcode, Package, BarChart3, History, Settings, User, LogOut, Store, ChevronDown, ChevronRight, TrendingUp, Receipt, ShoppingCart, Users, Truck, DollarSign, UserCheck, FileText, Shield, Edit, Clock, MoreHorizontal, Bell, Lock, BedDouble, CalendarDays, Plus, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -97,7 +97,10 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/printer-config', '/sms-settings', '/subscription',
     '/settings', '/edit-profile', '/reports',
   ]);
-  const isTopLevelRoute = topLevelRoutes.has(location) || location.startsWith('/reports/');
+  // Individual report pages (/reports/…) are inner pages: no bottom nav,
+  // they get a mobile back header instead (rendered below).
+  const isTopLevelRoute = topLevelRoutes.has(location);
+  const isInnerReportRoute = location.startsWith('/reports/');
 
   // Room-bookings module gets its own mobile-app style bottom tab bar, but
   // ONLY on its top-level tab screens. Inner pages (like /bookings/new) hide
@@ -562,6 +565,23 @@ export default function DashboardLayout({ children, title, isDashboard = false }
 
         {/* Network / offline status banner */}
         <NetworkStatusBar />
+
+        {/* Mobile back header for inner report pages (they have no back button of their own) */}
+        {isInnerReportRoute && (
+          <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 shadow-sm">
+            <div className="flex items-center gap-2 px-2 h-12">
+              <button
+                onClick={() => setLocation('/reports')}
+                className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-600 active:bg-gray-100"
+                aria-label="Back to reports"
+                data-testid="button-back-reports"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <span className="text-sm font-semibold text-gray-900">Reports</span>
+            </div>
+          </div>
+        )}
 
         {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
         <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${(isTopLevelRoute || isBookingsRoute) ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
