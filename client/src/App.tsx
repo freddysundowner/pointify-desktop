@@ -168,9 +168,26 @@ function FullScreenSpinner({ label }: { label?: string }) {
 // like it's being torn down and replaced on every navigation.
 function RouteLoading() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <div className="fixed top-0 left-0 right-0 h-0.5 z-[100] overflow-hidden bg-purple-100">
         <div className="h-full w-1/3 bg-purple-600 animate-[route-loading_1s_ease-in-out_infinite]" />
+      </div>
+      {/* Simple page skeleton so the screen never looks blank while loading */}
+      <div className="animate-pulse">
+        <div className="h-14 bg-white border-b flex items-center px-4 gap-3">
+          <div className="h-8 w-8 rounded-lg bg-purple-100" />
+          <div className="h-4 w-32 rounded bg-gray-200" />
+        </div>
+        <div className="p-4 space-y-4 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="h-20 rounded-xl bg-white border" />
+            <div className="h-20 rounded-xl bg-white border" />
+            <div className="h-20 rounded-xl bg-white border hidden lg:block" />
+            <div className="h-20 rounded-xl bg-white border hidden lg:block" />
+          </div>
+          <div className="h-64 rounded-xl bg-white border" />
+          <div className="h-40 rounded-xl bg-white border" />
+        </div>
       </div>
     </div>
   );
