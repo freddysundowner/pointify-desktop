@@ -358,19 +358,28 @@ class _PendingOrdersPageState extends State<PendingOrdersPage> {
   }
 
   /// Opens the existing held-sale flow: load the sale back into the register
-  /// and take the cashier to the normal payment screen (the same path the
-  /// current On-Hold Sales page uses to cash a held sale).
+  /// (exactly like the "Edit" action in sales_card.dart's Manage Receipt
+  /// sheet), then open the normal payment screen. SalePreview takes only
+  /// `page` — it reads the sale from salesController.receipt.
   void _collectPayment(SaleModel sale) {
-    Get.to(() => SalePreview(saleModel: sale))?.then((_) => _loadOrders());
+    salesController.receipt.value = sale;
+    salesController.amountPaid.clear();
+    salesController.selectedCustomerController.clear();
+    salesController.receipt.refresh();
+
+    Get.to(() => SalePreview(page: "admin"))?.then((_) => _loadOrders());
   }
 }
 ```
 
 > `item.salesnote` requires the `SaleItem` change from section 5e (the
-> per-item accompaniments note). If your `SalePreview` constructor differs,
-> pass the sale the same way `sales_card.dart` does — the point is to reuse
-> the exact screen that already cashes a held sale, so payment logic isn't
-> duplicated.
+> per-item accompaniments note).
+>
+> Alternative "quick cash" (no payment screen): the same one-liner the
+> existing Manage Receipt sheet uses —
+> `salesController.updateSaleReceipt(data: {"status": "cashed"}, salesModel: sale);`
+> — but going through `SalePreview` is better for restaurants because the
+> cashier picks cash/M-Pesa and the amount is recorded properly.
 
 **Menu entry** (attendant home / cashier dashboard), shown only when relevant:
 
