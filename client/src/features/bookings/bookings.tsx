@@ -847,7 +847,16 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 ))}
             </div>
             <div className="overflow-x-auto hidden sm:block">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[24%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[16%]" />
+                </colgroup>
                 <thead>
                   <tr className="text-left text-[11px] uppercase tracking-wider text-purple-800 bg-purple-50/70 border-y border-purple-100">
                     <th className="px-4 py-3 font-semibold">Guest</th>
@@ -865,7 +874,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     .map((b, idx) => (
                       <tr
                         key={bid(b)}
-                        className={`cursor-pointer transition-colors hover:bg-purple-50/60 ${idx % 2 === 1 ? "bg-gray-50/50" : "bg-white"}`}
+                        className={`h-[60px] cursor-pointer transition-colors hover:bg-purple-50/60 ${idx % 2 === 1 ? "bg-gray-50/50" : "bg-white"}`}
                         onClick={() => navigate(`/bookings/${bid(b)}`)}
                         data-testid={`row-booking-${bid(b)}`}
                       >
@@ -877,14 +886,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                             <span className="font-medium text-gray-900 truncate">{b.guestName}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-gray-700">
-                            <BedDouble className="h-3.5 w-3.5 text-purple-400" />
-                            {b.roomName}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-gray-600 tabular-nums">{b.checkIn}</td>
-                        <td className="px-3 py-3 text-gray-600 tabular-nums">{b.checkOut}</td>
+                        <td className="px-3 py-3 text-gray-700 truncate">{b.roomName}</td>
+                        <td className="px-3 py-3 text-gray-600 tabular-nums whitespace-nowrap">{b.checkIn}</td>
+                        <td className="px-3 py-3 text-gray-600 tabular-nums whitespace-nowrap">{b.checkOut}</td>
                         <td className="px-3 py-3 text-right font-semibold text-gray-900 tabular-nums">{Number(b.totalAmount).toLocaleString()}</td>
                         <td className="px-3 py-3">
                           <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
