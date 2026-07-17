@@ -108,6 +108,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   // The stay the user is checking availability for (check-in → check-out)
   const [rangeFrom, setRangeFrom] = useState<string>(todayStr());
   const [rangeTo, setRangeTo] = useState<string>(addDays(todayStr(), 1));
+  // Filters for the "All bookings" list (applied on the device — no server call)
+  const [filterText, setFilterText] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterFrom, setFilterFrom] = useState<string>("");
+  const [filterTo, setFilterTo] = useState<string>("");
+
   const [actionBooking, setActionBooking] = useState<Booking | null>(null);
   const [pendingAction, setPendingAction] = useState<"checked_in" | "checked_out" | "cancelled" | null>(null);
   const [isActing, setIsActing] = useState(false);
@@ -243,6 +249,22 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
       })
       .reduce((sum, b) => sum + (Number(b.amountPaid) || Number(b.totalAmount) || 0), 0);
   }, [bookings, rangeFrom]);
+
+  // Filtered "All bookings" list — search by guest name / ID / phone, plus
+  // status and date-range filters. Runs on the device over the fetched list.
+  const filteredBookings = useMemo(() => {
+    const q = filterText.trim().toLowerCase();
+    return bookings.filter((b) => {
+      if (filterStatus !== "all" && b.status !== filterStatus) return false;
+      if (filterFrom && b.checkOut < filterFrom) return false;
+      if (filterTo && b.checkIn > filterTo) return false;
+      if (q) {
+        const hay = `${b.guestName || ""} ${b.guestIdNumber || ""} ${b.guestPhone || ""} ${b.roomName || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [bookings, filterText, filterStatus, filterFrom, filterTo]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
 
@@ -806,14 +828,49 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
         {view === "bookings" && (
         <div className="rounded-2xl border bg-white mt-4 shadow-sm overflow-hidden">
           <p className="font-semibold text-gray-800 p-3 sm:p-4 pb-1 sm:pb-1">All bookings</p>
+
+          {/* Filters — applied on the device, no server call needed */}
+          <div className="px-3 sm:px-4 pt-2 pb-3 flex flex-col sm:flex-row gap-2 sm:items-center border-b">
+            <Input
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              placeholder="Search guest name, ID or phone…"
+              className="h-9 sm:max-w-[240px]"
+              data-testid="input-filter-guest"
+            />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9 sm:w-[150px]" data-testid="select-filter-status">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="booked">Booked</SelectItem>
+                <SelectItem value="checked_in">Checked in</SelectItem>
+                <SelectItem value="checked_out">Checked out</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2">
+              <Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} className="h-9 sm:w-[150px]" data-testid="input-filter-from" />
+              <span className="text-xs text-gray-400">to</span>
+              <Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} className="h-9 sm:w-[150px]" data-testid="input-filter-to" />
+            </div>
+            {(filterText || filterStatus !== "all" || filterFrom || filterTo) && (
+              <Button variant="ghost" size="sm" className="h-9 text-xs text-gray-500 self-start sm:self-auto" onClick={() => { setFilterText(""); setFilterStatus("all"); setFilterFrom(""); setFilterTo(""); }} data-testid="button-clear-filters">
+                <XCircle className="h-3.5 w-3.5 mr-1" />Clear
+              </Button>
+            )}
+          </div>
           {isLoading ? (
             <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-purple-500" /></div>
           ) : bookings.length === 0 ? (
             <p className="text-sm text-gray-400 p-4">No bookings yet.</p>
+          ) : filteredBookings.length === 0 ? (
+            <p className="text-sm text-gray-400 p-4" data-testid="text-no-filter-results">No bookings match these filters.</p>
           ) : (
             <>
             <div className="sm:hidden divide-y">
-              {[...bookings]
+              {[...filteredBookings]
                 .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                 .map((b) => (
                   <div
@@ -859,7 +916,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                   </tr>
                 </thead>
                 <tbody className="[&_td]:align-middle">
-                  {[...bookings]
+                  {[...filteredBookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                     .map((b) => (
                       <tr
