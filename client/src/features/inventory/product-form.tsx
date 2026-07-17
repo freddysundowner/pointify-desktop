@@ -325,9 +325,10 @@ export default function ProductForm() {
         isBundle: Boolean(productData.bundle || productData.isBundle),
         manageInventory: false,
         manageByPrice: Boolean(productData.manageByPrice),
-        productType: (productData.virtual ? "service" : "product") as
-          | "product"
-          | "service",
+        productType: ((productData.productType === "service" ||
+          productData.virtual)
+          ? "service"
+          : "product") as "product" | "service",
 
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
@@ -389,9 +390,10 @@ export default function ProductForm() {
         isBundle: Boolean(productData.bundle || productData.isBundle),
         manageInventory: false,
         manageByPrice: Boolean(productData.manageByPrice),
-        productType: (productData.virtual ? "service" : "product") as
-          | "product"
-          | "service",
+        productType: ((productData.productType === "service" ||
+          productData.virtual)
+          ? "service"
+          : "product") as "product" | "service",
 
         manufacturer: productData.manufacturer || "",
         serialnumber: productData.serialnumber || "",
@@ -469,7 +471,7 @@ export default function ProductForm() {
         buyingPrice: formData.buyingPrice,
         quantity: formData.quantity,
         bundle: formData.isBundle,
-        virtual: formData.productType === "service",
+        virtual: false,
         manageByPrice: formData.manageByPrice,
         manufacturer: formData.manufacturer || "",
         serialnumber: formData.serialnumber || "",
