@@ -168,6 +168,8 @@ export default function ProductForm() {
       return res.json();
     },
     enabled: !!(isEditMode && productId && shopId && shopData?.isRestaurant),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
