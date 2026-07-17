@@ -956,7 +956,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     <th className="p-2 w-[15%]">Check-out</th>
                     <th className="p-2 text-right w-[12%]">Total</th>
                     <th className="p-2 w-[16%] text-center">Status</th>
-                    <th className="p-2 w-[18%]"></th>
+                    <th className="p-2 w-[18%] text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="[&_td]:align-middle">
@@ -981,11 +981,13 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                             {STATUS_META[b.status]?.label || b.status}
                           </Badge>
                         </td>
-                        <td className="p-2 pr-3 text-right whitespace-nowrap">
-                          {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
-                            <Button size="sm" variant="ghost" className="h-7 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
+                        <td className="p-2 text-center whitespace-nowrap">
+                          {canManageBookings && (b.status === "booked" || b.status === "checked_in") ? (
+                            <Button size="sm" variant="outline" className="h-7 text-[11px] px-2 text-purple-700 border-purple-200" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
                               <CalendarDays className="h-3 w-3 mr-1" />Change dates
                             </Button>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
                           )}
                         </td>
                       </tr>
