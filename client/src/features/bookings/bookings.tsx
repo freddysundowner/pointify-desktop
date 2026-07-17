@@ -630,49 +630,54 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               </SheetContent>
             </Sheet>
 
-            {/* Desktop: inline filter bar */}
-            <div className="hidden rounded-xl bg-gray-50 border border-gray-100 p-2.5 sm:p-3 mb-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:flex-wrap sm:gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500 shrink-0">Stay:</span>
-                <Input
-                  type="date"
-                  value={rangeFrom}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (!v) return;
-                    setRangeFrom(v);
-                    if (v >= rangeTo) setRangeTo(addDays(v, 1));
-                  }}
-                  className="h-9 flex-1 min-w-0 sm:flex-none sm:w-[145px] text-sm bg-white"
-                  data-testid="input-range-from"
-                />
-                <span className="text-gray-400 text-sm shrink-0">→</span>
-                <Input
-                  type="date"
-                  value={rangeTo}
-                  min={addDays(rangeFrom, 1)}
-                  onChange={(e) => { if (e.target.value) setRangeTo(e.target.value); }}
-                  className="h-9 flex-1 min-w-0 sm:flex-none sm:w-[145px] text-sm bg-white"
-                  data-testid="input-range-to"
-                />
-                <span className="text-xs text-gray-500 whitespace-nowrap hidden sm:inline" data-testid="text-range-nights">
-                  {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
-                </span>
+            {/* Desktop: inline filter bar — evenly distributed */}
+            <div className="hidden sm:flex items-end gap-3 rounded-xl bg-gray-50 border border-gray-100 p-3 mb-4">
+              <div className="flex-[2] min-w-0">
+                <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide block mb-1">
+                  Stay dates
+                  <span className="normal-case font-normal text-gray-400 ml-1.5" data-testid="text-range-nights">
+                    ({rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"})
+                  </span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={rangeFrom}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (!v) return;
+                      setRangeFrom(v);
+                      if (v >= rangeTo) setRangeTo(addDays(v, 1));
+                    }}
+                    className="h-9 flex-1 min-w-0 text-sm bg-white"
+                    data-testid="input-range-from"
+                  />
+                  <span className="text-gray-400 text-sm shrink-0">→</span>
+                  <Input
+                    type="date"
+                    value={rangeTo}
+                    min={addDays(rangeFrom, 1)}
+                    onChange={(e) => { if (e.target.value) setRangeTo(e.target.value); }}
+                    className="h-9 flex-1 min-w-0 text-sm bg-white"
+                    data-testid="input-range-to"
+                  />
+                </div>
               </div>
-              <p className="text-[11px] text-gray-500 sm:hidden -mt-1">
-                {rangeNights > 0 ? `${rangeNights} night${rangeNights !== 1 ? "s" : ""}` : "invalid dates"}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex-[1.5] min-w-0">
+                <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide block mb-1">Search</label>
                 <Input
                   value={roomSearch}
                   onChange={(e) => setRoomSearch(e.target.value)}
                   placeholder="Search room name…"
-                  className="h-9 flex-1 min-w-[140px] sm:flex-none sm:w-[180px] text-sm bg-white"
+                  className="h-9 w-full text-sm bg-white"
                   data-testid="input-room-search"
                 />
-                {groupNames.length > 1 && (
+              </div>
+              {groupNames.length > 1 && (
+                <div className="flex-1 min-w-0">
+                  <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide block mb-1">Group</label>
                   <Select value={groupFilter} onValueChange={setGroupFilter}>
-                    <SelectTrigger className="h-9 flex-1 min-w-[110px] sm:flex-none sm:w-[150px] text-sm bg-white" data-testid="select-room-group">
+                    <SelectTrigger className="h-9 w-full text-sm bg-white" data-testid="select-room-group">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -684,9 +689,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       ))}
                     </SelectContent>
                   </Select>
-                )}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide block mb-1">Availability</label>
                 <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-                  <SelectTrigger className="h-9 flex-1 min-w-[110px] sm:flex-none sm:w-[130px] text-sm bg-white" data-testid="select-room-status">
+                  <SelectTrigger className="h-9 w-full text-sm bg-white" data-testid="select-room-status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -708,38 +716,52 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               </p>
             )}
             {!isLoading && groupedRooms.map(([group, list]) => (
-              <div key={group || "__none"} className="mb-2 last:mb-0">
+              <div key={group || "__none"} className="mb-4 last:mb-0">
                 {(groupNames.length > 1 || group) && (
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 mt-2 first:mt-0">
-                    {group || "Ungrouped"}
-                  </p>
+                  <div className="flex items-center gap-2 mb-2 mt-3 first:mt-0">
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      {group || "Ungrouped"}
+                    </p>
+                    <span className="text-[11px] text-gray-400">· {list.length} room{list.length !== 1 ? "s" : ""}</span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
                 )}
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(104px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(112px,1fr))] gap-2">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2.5 sm:gap-3">
                   {list.map((room) => {
                     const b = bookingForRoom(room._id);
                     const cls = !b
-                      ? "bg-white border-gray-200 hover:border-purple-400 hover:bg-purple-50 active:bg-purple-100"
+                      ? "bg-white border-gray-200 hover:border-purple-400 hover:shadow-md hover:-translate-y-0.5 active:bg-purple-50"
                       : b.status === "checked_in"
-                      ? "bg-green-500 border-green-600 text-white hover:bg-green-600 active:bg-green-700"
-                      : "bg-blue-500 border-blue-600 text-white hover:bg-blue-600 active:bg-blue-700";
+                      ? "bg-gradient-to-br from-green-500 to-green-600 border-green-600 text-white hover:shadow-md hover:-translate-y-0.5 active:from-green-600 active:to-green-700"
+                      : "bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white hover:shadow-md hover:-translate-y-0.5 active:from-blue-600 active:to-blue-700";
                     return (
                       <button
                         key={room._id}
                         onClick={() => setRoomDialog(room)}
-                        className={`rounded-xl border px-2.5 py-3 text-left transition-colors shadow-sm ${cls}`}
+                        className={`rounded-xl border px-3 py-3.5 text-left transition-all duration-150 shadow-sm ${cls}`}
                         data-testid={`tile-room-${room._id}`}
                       >
-                        <p className="text-sm font-semibold truncate flex items-center gap-1">
-                          <span className="truncate">{room.name}</span>
-                          {(room.amenities?.length ?? 0) > 0 && (
-                            <Sparkles
-                              className={`h-3 w-3 shrink-0 ${b ? "text-white/80" : "text-purple-500"}`}
-                              data-testid={`icon-amenities-${room._id}`}
-                            />
-                          )}
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <p className="text-sm font-semibold truncate flex items-center gap-1 min-w-0">
+                            <span className="truncate">{room.name}</span>
+                            {(room.amenities?.length ?? 0) > 0 && (
+                              <Sparkles
+                                className={`h-3 w-3 shrink-0 ${b ? "text-white/80" : "text-purple-500"}`}
+                                data-testid={`icon-amenities-${room._id}`}
+                              />
+                            )}
+                          </p>
+                          <span
+                            className={`h-2 w-2 rounded-full shrink-0 ${
+                              !b ? "bg-gray-300" : b.status === "checked_in" ? "bg-white" : "bg-white/80"
+                            }`}
+                          />
+                        </div>
+                        <p className={`text-xs truncate ${b ? "text-white/90" : "text-gray-600"}`}>
+                          {b ? b.guestName : `${Number(room.nightlyRate).toLocaleString()} / night`}
                         </p>
-                        <p className={`text-[11px] truncate ${b ? "text-white/85" : "text-gray-500"}`}>
-                          {b ? b.guestName : Number(room.nightlyRate).toLocaleString()}
+                        <p className={`text-[10px] mt-0.5 truncate ${b ? "text-white/70" : "text-gray-400"}`}>
+                          {!b ? "Available" : b.status === "checked_in" ? "Checked in" : "Booked"}
                         </p>
                       </button>
                     );
