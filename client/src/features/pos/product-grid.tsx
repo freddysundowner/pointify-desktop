@@ -2381,18 +2381,18 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                         </div>
                         
                         {/* Desktop Layout */}
-                        <div className={`hidden lg:grid grid-cols-6 gap-2 lg:gap-4 px-3 lg:px-6 py-4 border-b border-gray-100 text-sm items-center hover:bg-gray-50 transition-colors ${index % 2 === 1 ? 'bg-gray-25' : 'bg-white'}`}>
+                        <div className="hidden lg:grid grid-cols-6 gap-2 lg:gap-4 px-3 lg:px-6 py-3 border-b border-gray-100 text-sm items-center bg-white hover:bg-purple-50/40 transition-colors group">
                           {/* Column 1: Item Name */}
                           <div className="text-left">
-                            <p className="font-semibold text-gray-800 truncate">{item.name}</p>
+                            <p className="font-semibold text-gray-900 truncate">{item.name}</p>
                             {(item as any).accompaniments && (
                               <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
                             )}
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="flex flex-wrap gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               {canEditPrice && (
                                 <button 
                                   onClick={() => handlePriceChange(item)}
-                                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                  className="text-[11px] font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-full"
                                 >
                                   Change price
                                 </button>
@@ -2400,7 +2400,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               {canDiscount && (item.maxDiscount || 0) > 0 && (
                                 <button 
                                   onClick={() => handleDiscountChange(item)}
-                                  className="text-xs text-green-600 hover:text-green-800 underline"
+                                  className="text-[11px] font-medium text-green-700 bg-green-50 hover:bg-green-100 px-2 py-0.5 rounded-full"
                                 >
                                   Add discount
                                 </button>
@@ -2418,15 +2418,15 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           
                           {/* Column 3: Quantity */}
                           <div className="text-center">
-                            <div className="flex items-center justify-center space-x-1">
+                            <div className="inline-flex items-center bg-gray-100 rounded-lg p-0.5">
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => {
                                   const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
                                   onUpdateQuantity(item.id, Math.max(1, item.quantity - 1), productData);
                                 }}
-                                className="w-7 h-7 p-0 rounded border-gray-300"
+                                className="w-7 h-7 p-0 rounded-md text-purple-600 hover:bg-white hover:shadow-sm"
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -2449,17 +2449,17 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                     (e.target as HTMLInputElement).blur();
                                   }
                                 }}
-                                className="w-14 h-7 p-1 text-center text-sm font-semibold border-purple-300 focus:border-purple-500 rounded"
+                                className="w-12 h-7 p-1 text-center text-sm font-semibold border-0 bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-purple-400 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 min="1"
                               />
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => {
                                   const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
                                   onUpdateQuantity(item.id, item.quantity + 1, productData);
                                 }}
-                                className="w-7 h-7 p-0 rounded border-gray-300"
+                                className="w-7 h-7 p-0 rounded-md text-purple-600 hover:bg-white hover:shadow-sm"
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -2468,12 +2468,12 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           
                           {/* Column 4: Tax */}
                           <div className="text-right">
-                            <p className="font-semibold text-orange-600">Ksh {itemTax.toFixed(2)}</p>
+                            <p className="text-gray-500 tabular-nums">Ksh {itemTax.toFixed(2)}</p>
                           </div>
                           
                           {/* Column 5: Subtotal */}
                           <div className="text-right">
-                            <p className="font-bold text-primary">Ksh {item.total.toFixed(2)}</p>
+                            <p className="font-bold text-gray-900 tabular-nums">Ksh {item.total.toFixed(2)}</p>
                           </div>
                           
                           {/* Column 6: Remove */}
