@@ -2961,39 +2961,31 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
         )}
       </div>
 
-      {/* Mobile Bottom Tab Bar — hidden in table mode (layout already shows everything) */}
-      <div className={`lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] flex ${viewMode === 'table' ? 'hidden' : ''}`}>
-        {/* Products Tab */}
-        <button
-          onClick={() => { setShowMobileCart(false); setViewMode('grid'); }}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors active:bg-gray-50 ${
-            !showMobileCart ? 'text-purple-600' : 'text-gray-400'
-          }`}
-        >
-          <LayoutGrid className="h-5 w-5" />
-          <span className="text-xs font-medium">Products</span>
-        </button>
-
-        {/* Cart Tab */}
-        <button
-          onClick={() => setShowMobileCart(true)}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 transition-colors active:bg-gray-50 relative ${
-            showMobileCart ? 'text-purple-600' : 'text-gray-400'
-          }`}
-        >
-          <div className="relative">
-            <ShoppingCart className="h-5 w-5" />
-            {cartItems.length > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-purple-600 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5">
-                {cartItems.length > 99 ? '99+' : cartItems.length}
+      {/* Mobile bottom bar — full-width "View cart" button once items are
+          picked; tapping it opens the cart to preview and proceed to payment.
+          Hidden in table mode (layout already shows everything). */}
+      {!showMobileCart && cartItems.length > 0 && viewMode !== 'table' && (
+        <div className="lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <button
+            onClick={() => setShowMobileCart(true)}
+            className="w-full h-12 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-semibold flex items-center justify-between px-4 transition-colors"
+            data-testid="button-view-cart"
+          >
+            <span className="flex items-center gap-2">
+              <span className="relative">
+                <ShoppingCart className="h-5 w-5" />
               </span>
-            )}
-          </div>
-          <span className="text-xs font-medium">
-            {cartItems.length > 0 ? `Cart · Ksh ${grandTotal.toFixed(0)}` : 'Cart'}
-          </span>
-        </button>
-      </div>
+              <span className="bg-white/20 rounded-full min-w-[22px] h-[22px] px-1.5 inline-flex items-center justify-center text-xs font-bold" data-testid="text-cart-count">
+                {cartItems.reduce((n, it) => n + (Number(it.quantity) || 0), 0)}
+              </span>
+              <span className="text-sm">View cart</span>
+            </span>
+            <span className="text-base font-bold" data-testid="text-cart-total">
+              Ksh {grandTotal.toFixed(0)}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Payment Dialog */}
       <Dialog open={showPaymentDialog} onOpenChange={resetPaymentDialog}>
