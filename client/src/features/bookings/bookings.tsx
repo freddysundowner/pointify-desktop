@@ -149,6 +149,10 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   // Rooms are their OWN records in the standalone guest-house module —
   // NOT products or services. They live on the main Pointify backend.
   const { data: rooms = [], isLoading: roomsLoading } = useQuery<Room[]>({
+    // Always refetch on page open — the room grid's vacant/occupied state must
+    // reflect the latest data, not the app-wide 5-minute cache.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryKey: ["booking-rooms", shopId],
     queryFn: async () => {
       const res = await apiCall(`/api/rooms?shop=${shopId}`, { method: "GET" });
@@ -175,6 +179,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
     isLoading,
     isError,
   } = useQuery<Booking[]>({
+    // Fresh on every page open — booked/occupied status must never be 5 minutes old.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryKey: ["bookings", shopId],
     queryFn: async () => {
       const res = await apiCall(`/api/booking?shop=${shopId}`, { method: "GET" });
@@ -285,6 +292,10 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
     enabled: !!shopId && hasFilters,
     placeholderData: (prev) => prev,
     retry: 1,
+    // Filter results must always come fresh from the server — the app-wide
+    // 5-minute cache would otherwise silently serve stale filter data.
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const filteredBookings = hasFilters ? serverFiltered : bookings;
