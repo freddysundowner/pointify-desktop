@@ -851,7 +851,6 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <thead>
                   <tr className="text-left text-xs text-gray-500 border-b">
                     <th className="p-2 pl-3">Guest</th>
-                    <th className="p-2">Room</th>
                     <th className="p-2">Check-in</th>
                     <th className="p-2">Check-out</th>
                     <th className="p-2 text-right">Total</th>
@@ -869,8 +868,10 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                         onClick={() => navigate(`/bookings/${bid(b)}`)}
                         data-testid={`row-booking-${bid(b)}`}
                       >
-                        <td className="p-2 pl-3 font-medium text-gray-900">{b.guestName}</td>
-                        <td className="p-2 text-gray-600">{b.roomName}</td>
+                        <td className="p-2 pl-3">
+                          <p className="font-medium text-gray-900">{b.guestName}</p>
+                          <p className="text-xs text-gray-500">{b.roomName}</p>
+                        </td>
                         <td className="p-2 text-gray-600">{b.checkIn}</td>
                         <td className="p-2 text-gray-600">{b.checkOut}</td>
                         <td className="p-2 text-right text-gray-800">{Number(b.totalAmount).toLocaleString()}</td>
