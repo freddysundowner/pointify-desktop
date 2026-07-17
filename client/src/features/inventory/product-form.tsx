@@ -152,6 +152,16 @@ export default function ProductForm() {
   // Accompaniment groups — restaurant mode only, persisted separately
   const [accompanimentGroups, setAccompanimentGroups] = useState<AccompanimentGroup[]>([]);
 
+  // Fetch product data for edit mode
+  const { data: product, isLoading: isLoadingProduct } = useQuery({
+    queryKey: [`/api/product/${productId}`],
+    enabled: !!productId && isEditMode,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
   // Fetch existing accompaniment config when editing a restaurant product
   const { data: existingAccompaniments } = useQuery({
     queryKey: ["accompaniment", productId, shopId],
@@ -167,16 +177,30 @@ export default function ProductForm() {
       if (!res.ok) return { groups: [] };
       return res.json();
     },
-    enabled: !!(isEditMode && productId && shopId && shopData?.isRestaurant),
+    // Fallback only: skipped when the product arrives with its accompaniment
+    // config already populated (product.accompaniment.groups) by the backend.
+    enabled: !!(
+      isEditMode &&
+      productId &&
+      shopId &&
+      shopData?.isRestaurant &&
+      product &&
+      !(product as any)?.accompaniment?.groups
+    ),
     staleTime: 0,
     refetchOnMount: "always",
   });
 
   useEffect(() => {
-    if (existingAccompaniments?.groups) {
+    // Prefer the populated field on the product itself; fall back to the
+    // separately-fetched config for backends that don't populate it yet.
+    const populated = (product as any)?.accompaniment?.groups;
+    if (populated) {
+      setAccompanimentGroups(populated);
+    } else if (existingAccompaniments?.groups) {
       setAccompanimentGroups(existingAccompaniments.groups);
     }
-  }, [existingAccompaniments]);
+  }, [product, existingAccompaniments]);
 
   const [selectedBundleProducts, setSelectedBundleProducts] = useState<{
     [key: string]:
@@ -276,15 +300,8 @@ export default function ProductForm() {
     },
   });
 
-  // Fetch product data for edit mode
-  const { data: product, isLoading: isLoadingProduct } = useQuery({
-    queryKey: [`/api/product/${productId}`],
-    enabled: !!productId && isEditMode,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-  });
+  // (product query moved above the accompaniment query so the fallback
+  // gating can reference it)
 
   // Use products from ProductsContext for bundle selector
 
@@ -555,6 +572,11 @@ export default function ProductForm() {
         queryClient.invalidateQueries({ queryKey: ["accompaniment-shop"] });
         queryClient.invalidateQueries({
           queryKey: ["accompaniment", savedProductId],
+        });
+        // POS grid caches products with the populated accompaniment field —
+        // refresh so it doesn't serve stale groups after an edit.
+        queryClient.invalidateQueries({
+          queryKey: ["pos-products-by-category"],
         });
       }
 

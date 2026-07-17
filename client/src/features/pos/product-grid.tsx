@@ -241,6 +241,12 @@ export default function ProductGrid({
 
   /** Return accompaniment groups configured for a product, or [] if none. */
   const getProductGroups = (product: any): AccompanimentGroup[] => {
+    // Prefer the config populated directly on the product by the backend
+    // (product.accompaniment.groups); fall back to the shop-wide lookup for
+    // backends that don't populate it yet.
+    if (product?.accompaniment?.groups) {
+      return product.accompaniment.groups;
+    }
     if (!shopAccompaniments?.length) return [];
     const pid = product._id || product.id;
     const config = (shopAccompaniments as any[]).find(
