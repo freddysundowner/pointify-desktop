@@ -858,7 +858,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     <th className="p-2"></th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="[&_td]:align-middle">
                   {[...bookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                     .map((b) => (
@@ -880,9 +880,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                             {STATUS_META[b.status]?.label || b.status}
                           </Badge>
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 pr-3 text-right whitespace-nowrap">
                           {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
-                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
+                            <Button size="sm" variant="ghost" className="h-7 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
                               <CalendarDays className="h-3 w-3 mr-1" />Change dates
                             </Button>
                           )}
