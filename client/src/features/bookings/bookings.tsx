@@ -859,7 +859,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                     <th className="px-3 py-3"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 [&_td]:align-middle">
                   {[...bookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
                     .map((b, idx) => (
