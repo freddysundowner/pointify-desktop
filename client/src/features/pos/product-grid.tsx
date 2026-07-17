@@ -198,7 +198,10 @@ export default function ProductGrid({
   useEffect(() => {
     localStorage.setItem('pos-view-mode', viewMode);
   }, [viewMode]);
-  const [showMobileCart, setShowMobileCart] = useState(false);
+  const [showMobileCart, setShowMobileCart] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches
+  );
+  const [showProductDrawer, setShowProductDrawer] = useState(false);
   const [dropdownHighlight, setDropdownHighlight] = useState(-1);
 
   // Custom item states
@@ -629,13 +632,6 @@ export default function ProductGrid({
       if (target) observer.unobserve(target);
     };
   }, [hasMore, fetchMoreProducts]);
-
-  // Auto-switch back to Products tab on mobile when cart becomes empty
-  useEffect(() => {
-    if (showMobileCart && cartItems.length === 0) {
-      setShowMobileCart(false);
-    }
-  }, [cartItems.length, showMobileCart]);
 
   // Sort helper: out-of-stock products go to the end
   const sortInStock = (list: any[]) =>
@@ -1840,7 +1836,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
         {/* Top bar */}
         <div className="flex items-center justify-between px-3 pt-3 pb-2">
           <button
-            onClick={showMobileCart ? () => setShowMobileCart(false) : onBack}
+            onClick={showMobileCart ? onBack : () => setShowMobileCart(true)}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 active:bg-white/25"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -2056,7 +2052,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 overflow-y-auto' : viewMode === 'table' ? 'flex flex-col flex-1 overflow-hidden' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 min-h-0 overflow-hidden lg:overflow-visible' : viewMode === 'table' ? 'flex flex-col flex-1 overflow-hidden' : 'hidden lg:block'}`}>
           {/* Transaction ID + Date — desktop only */}
           <div className="hidden lg:grid grid-cols-2 gap-6 mb-6">
             <div>
@@ -2276,7 +2272,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           )}
 
           {/* Items Table */}
-          <div className={`border border-gray-200 rounded-lg overflow-hidden shadow-sm ${viewMode === 'table' ? 'flex-1 flex flex-col mb-0 lg:mb-6' : 'mb-2 lg:mb-6'}`}>
+          <div className={`border border-gray-200 rounded-lg overflow-hidden shadow-sm ${viewMode === 'table' ? 'flex-1 flex flex-col mb-0 lg:mb-6' : 'flex-1 min-h-0 flex flex-col lg:flex-none lg:block mb-2 lg:mb-6'}`}>
             <div className="bg-gray-50 px-3 py-1.5 lg:px-6 lg:py-3 border-b border-gray-200">
               <h3 className="text-xs font-semibold text-gray-600">
                 Cart {cartItems.length > 0 && <span className="text-purple-600">({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>}
@@ -2292,7 +2288,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               <div className="text-right">Subtotal</div>
               <div className="text-center">Remove</div>
             </div>
-            <div className={`bg-white ${viewMode === 'table' ? 'flex-1 overflow-y-auto' : 'min-h-[80px] lg:min-h-[200px]'}`}>
+            <div className={`bg-white ${viewMode === 'table' ? 'flex-1 overflow-y-auto' : 'flex-1 min-h-[80px] overflow-y-auto lg:flex-none lg:overflow-visible lg:min-h-[200px]'}`}>
               {cartItems.length === 0 ? (
                 <div className="p-3 lg:p-12 text-center text-gray-500">
                   <Package className="h-6 w-6 lg:h-16 lg:w-16 mx-auto mb-1 lg:mb-6 text-gray-300" />
@@ -2590,7 +2586,19 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
           {/* Grid Mode - Sticky Payment Summary Section */}
           {viewMode === 'grid' && (
-            <div className="sticky bottom-0 bg-white mt-2 lg:mt-6 rounded-t-2xl shadow-lg">
+            <div className="shrink-0 sticky bottom-0 bg-white mt-2 lg:mt-6 rounded-t-2xl shadow-lg">
+            {/* Mobile: Add Products button */}
+            <div className="lg:hidden px-3 pt-2">
+              <Button
+                onClick={() => setShowProductDrawer(true)}
+                variant="outline"
+                className="w-full border-purple-400 border-dashed text-purple-700 hover:bg-purple-50 py-2 text-sm font-semibold rounded-lg"
+                data-testid="button-add-products"
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                Add Products
+              </Button>
+            </div>
             {/* Summary Section */}
             <div className="bg-gray-50 p-2 lg:p-4">
               <div className="space-y-1 lg:space-y-2">
@@ -3586,6 +3594,144 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                 )}
               </div>
             ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile Product Picker Drawer */}
+      <Sheet open={showProductDrawer} onOpenChange={setShowProductDrawer}>
+        <SheetContent side="bottom" className="h-[88dvh] p-0 flex flex-col rounded-t-2xl">
+          <SheetHeader className="px-3 pt-3 pb-0 shrink-0">
+            <SheetTitle className="text-base">Add Products</SheetTitle>
+          </SheetHeader>
+          <div className="px-3 pt-2 shrink-0 space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="pl-9 h-10 text-sm"
+                data-testid="input-drawer-search"
+              />
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-3 px-3">
+              <button
+                onClick={() => onCategoryChange("all")}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  activeCategory === "all"
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-white text-gray-600 border-gray-300"
+                }`}
+                data-testid="chip-category-all"
+              >
+                All
+              </button>
+              {categories.map((category: any) => {
+                const catId = category.id || category._id || category.name;
+                return (
+                  <button
+                    key={catId}
+                    onClick={() => onCategoryChange(catId)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      activeCategory === catId
+                        ? "bg-purple-600 text-white border-purple-600"
+                        : "bg-white text-gray-600 border-gray-300"
+                    }`}
+                    data-testid={`chip-category-${catId}`}
+                  >
+                    {category.name || category.title}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-2 pb-3">
+            {isLoading && products.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-8">Loading...</p>
+            ) : products.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-8">No products found</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {products.map((product: any) => {
+                  const price = getPriceForSaleType(product, saleType);
+                  const productId = product._id || product.id;
+                  const productName = product.name || product.title;
+                  const quantity = product.quantity || 0;
+                  const isVirtual = product.virtual || product?.productType == "service";
+                  const isOutOfStock = !isVirtual && quantity === 0;
+                  const imageUrl = product.images?.[0] || product.image;
+                  const inCartQty = cartItems
+                    .filter((ci: any) => ci.id === productId || ci.productId === productId)
+                    .reduce((sum: number, ci: any) => sum + (ci.quantity || 0), 0);
+                  return (
+                    <div
+                      key={productId}
+                      onClick={() => !isOutOfStock && handleProductTap(product)}
+                      className={`relative rounded-xl border overflow-hidden select-none active:scale-[0.97] transition-all ${
+                        isOutOfStock
+                          ? "bg-gray-50 border-gray-200 opacity-50 pointer-events-none"
+                          : inCartQty > 0
+                          ? "bg-purple-50 border-purple-300"
+                          : "bg-white border-gray-200 active:border-purple-300"
+                      }`}
+                      data-testid={`drawer-product-${productId}`}
+                    >
+                      {inCartQty > 0 && (
+                        <span className="absolute top-1.5 right-1.5 z-10 min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full bg-purple-600 text-white text-[11px] font-bold">
+                          {inCartQty}
+                        </span>
+                      )}
+                      <div className="h-16 bg-gradient-to-br from-purple-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={productName}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <Package className="h-6 w-6 text-purple-200" />
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold text-gray-800 truncate leading-tight">{productName}</p>
+                        <p className="text-sm font-bold text-purple-600 mt-0.5">Ksh {price.toFixed(2)}</p>
+                        {isOutOfStock && (
+                          <span className="text-[10px] text-red-500 font-medium">Out of stock</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {hasMore && !isLoading && (
+              <Button
+                variant="outline"
+                className="w-full mt-3 text-sm"
+                onClick={() => fetchMoreProducts()}
+                data-testid="button-load-more-products"
+              >
+                Load more
+              </Button>
+            )}
+            {isLoading && products.length > 0 && (
+              <p className="text-xs text-gray-400 text-center py-2">Loading...</p>
+            )}
+          </div>
+          <div className="shrink-0 border-t border-gray-200 p-3 bg-white">
+            <Button
+              onClick={() => setShowProductDrawer(false)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-sm font-bold rounded-xl"
+              data-testid="button-drawer-done"
+            >
+              {cartItems.length > 0
+                ? `Done · ${cartItems.length} item${cartItems.length !== 1 ? "s" : ""} · Ksh ${grandTotal.toFixed(2)}`
+                : "Done"}
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
