@@ -974,7 +974,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
             return (
               <>
                 <DialogHeader>
-                  <div className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 -mx-1 mb-1">
+                  <div className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 -mx-1 mb-1 mt-4">
                     <DialogTitle className="flex items-center gap-2 text-white">
                       <span className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
                         <BedDouble className="h-5 w-5" />
