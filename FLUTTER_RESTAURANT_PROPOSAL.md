@@ -171,32 +171,217 @@ cashier take payment.
   (`onholdsales.dart` already cashes held sales — reuse that code path:
   status `hold` → `cashed`). Optionally "Reprint kitchen ticket".
 
+Complete file (follows the same patterns as `onholdsales.dart`: GetX
+controllers, `Obx`, `majorTitle`, `noItemsFound`):
+
 ```dart
-class PendingOrdersPage extends StatelessWidget {
+// lib/screens/sales/pending_orders_page.dart
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../controllers/salescontroller.dart';
+import '../../controllers/shopcontroller.dart';
+import '../../models/salemodel.dart';
+import '../../models/saleitem.dart';
+import '../../utils/colors.dart';
+import '../../widgets/major_title.dart';
+import '../../widgets/no_items_found.dart';
+import 'sale_preview.dart';
+
+/// Restaurant-mode cashier queue: lists sales that a waiter sent to the
+/// kitchen (status = "hold") and are waiting for the cashier to take payment.
+/// Reuses the existing hold-sale → cash-sale mechanism.
+class PendingOrdersPage extends StatefulWidget {
+  const PendingOrdersPage({super.key});
+
+  @override
+  State<PendingOrdersPage> createState() => _PendingOrdersPageState();
+}
+
+class _PendingOrdersPageState extends State<PendingOrdersPage> {
   final SalesController salesController = Get.find<SalesController>();
+  final ShopController shopController = Get.find<ShopController>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
+    await salesController.getSalesByDate(
+      shop: shopController.currentShop.value?.id ?? '',
+      status: 'hold',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    salesController.getSalesByDate(
-        shop: shopController.currentShop.value!.id!, status: 'hold');
     return Scaffold(
-      appBar: AppBar(title: const Text("Pending Orders")),
-      body: Obx(() {
-        final orders = salesController.onHoldSales;
-        if (orders.isEmpty) {
-          return const Center(child: Text("No orders waiting for payment"));
-        }
-        return ListView.builder(
-          itemCount: orders.length,
-          itemBuilder: (_, i) => PendingOrderCard(
-            sale: orders[i],
-            onCollectPayment: () => salesController.payHeldSale(orders[i]),
+      appBar: AppBar(
+        titleSpacing: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.3,
+        centerTitle: false,
+        leading: IconButton(
+          onPressed: () => Get.back(),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+        ),
+        title: majorTitle(
+            title: "Pending Orders", color: Colors.black, size: 16.0),
+        actions: [
+          IconButton(
+            onPressed: _loadOrders,
+            icon: const Icon(Icons.refresh, color: Colors.black),
           ),
-        );
-      }),
+        ],
+      ),
+      body: Obx(
+        () => salesController.loadingSales.isTrue
+            ? const Center(child: CircularProgressIndicator())
+            : salesController.onholdSales.isEmpty
+                ? Center(child: noItemsFound(context, false))
+                : RefreshIndicator(
+                    onRefresh: _loadOrders,
+                    child: ListView.builder(
+                      itemCount: salesController.onholdSales.length,
+                      itemBuilder: (context, index) {
+                        final SaleModel sale =
+                            salesController.onholdSales.elementAt(index);
+                        return _pendingOrderCard(context, sale);
+                      },
+                    ),
+                  ),
+      ),
     );
   }
+
+  Widget _pendingOrderCard(BuildContext context, SaleModel sale) {
+    final items = sale.items ?? <SaleItem>[];
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: order number + waiter + time
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Order #${sale.receiptNo ?? ''}",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                ),
+                Text(
+                  (sale.createdAt ?? '').length >= 16
+                      ? sale.createdAt!.substring(11, 16)
+                      : '',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+            if (sale.attendant?.username != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  "Waiter: ${sale.attendant!.username}",
+                  style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                ),
+              ),
+            const Divider(height: 16),
+            // Items with accompaniment notes
+            ...items.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "${item.quantity?.toStringAsFixed(0) ?? '1'} x "
+                              "${item.product?.name ?? 'Item'}",
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            "${(item.totalLinePrice ?? 0).toStringAsFixed(0)}",
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      if ((item.salesnote ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Text(
+                            item.salesnote!,
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.purple[700]),
+                          ),
+                        ),
+                    ],
+                  ),
+                )),
+            const Divider(height: 16),
+            // Total + collect payment
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Total: ${shopController.currentShop.value?.currency ?? ''} "
+                    "${(sale.totalWithDiscount ?? sale.totalAmount ?? 0).toStringAsFixed(0)}",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mainColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => _collectPayment(sale),
+                  icon: const Icon(Icons.payments_outlined, size: 18),
+                  label: const Text("Collect Payment"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Opens the existing held-sale flow: load the sale back into the register
+  /// and take the cashier to the normal payment screen (the same path the
+  /// current On-Hold Sales page uses to cash a held sale).
+  void _collectPayment(SaleModel sale) {
+    Get.to(() => SalePreview(saleModel: sale))?.then((_) => _loadOrders());
+  }
 }
+```
+
+> `item.salesnote` requires the `SaleItem` change from section 5e (the
+> per-item accompaniments note). If your `SalePreview` constructor differs,
+> pass the sale the same way `sales_card.dart` does — the point is to reuse
+> the exact screen that already cashes a held sale, so payment logic isn't
+> duplicated.
+
+**Menu entry** (attendant home / cashier dashboard), shown only when relevant:
+
+```dart
+if (shopController.currentShop.value?.isRestaurant == true &&
+    hasPermission('pos', 'cashier'))
+  ListTile(
+    leading: const Icon(Icons.receipt_long),
+    title: const Text("Pending Orders"),
+    onTap: () => Get.to(() => const PendingOrdersPage()),
+  ),
 ```
 
 ---
@@ -236,22 +421,123 @@ class AccompanimentGroup {
 ```
 
 ### 5b. Service — new file `lib/services/accompaniment_service.dart`
-Same endpoints the web app uses (already live on the backend):
+Same endpoints the web app uses (already live on the backend). Follows your
+existing service pattern (`DbBase().databaseRequest` + `EndPoints`).
+
+First add the endpoint to `lib/services/end_points.dart`:
 
 ```dart
+// ACCOMPANIMENTS (restaurant mode)
+static const accompaniment = "${apiEndPoint}accompaniment/";
+```
+
+Then the complete service:
+
+```dart
+// lib/services/accompaniment_service.dart
+import 'dart:convert';
+
+import 'package:pointify/models/accompaniment.dart';
+import 'package:pointify/services/client.dart';
+import 'package:pointify/services/end_points.dart';
+
 class AccompanimentService {
-  // GET /accompaniment/shop/:shopId  → all configs for the shop (bulk, for POS)
-  static Future<Map<String, List<AccompanimentGroup>>> byShop(String shopId);
+  /// GET /accompaniment/shop/:shopId
+  /// Bulk-load every product's accompaniment config for the shop (used by the
+  /// sale screen so product taps don't need a network call each).
+  /// Returns a map of productId → groups.
+  static Future<Map<String, List<AccompanimentGroup>>> byShop(
+      String shopId) async {
+    final response = await DbBase().databaseRequest(
+      "${EndPoints.accompaniment}shop/$shopId",
+      DbBase().getRequestType,
+    );
+    final decoded = response is String ? jsonDecode(response) : response;
+    final Map<String, List<AccompanimentGroup>> result = {};
+    final list = decoded is List ? decoded : (decoded?['data'] ?? []);
+    for (final entry in list) {
+      final productId = entry['productId']?.toString();
+      if (productId == null) continue;
+      result[productId] = (entry['groups'] as List? ?? [])
+          .map((g) => AccompanimentGroup.fromJson(g))
+          .toList();
+    }
+    return result;
+  }
 
-  // GET /accompaniment/:productId?shopId=  → one product's groups
-  static Future<List<AccompanimentGroup>> byProduct(String productId, String shopId);
+  /// GET /accompaniment/:productId?shopId=
+  /// One product's groups (used when opening the Edit Product form).
+  static Future<List<AccompanimentGroup>> byProduct(
+      String productId, String shopId) async {
+    final response = await DbBase().databaseRequest(
+      "${EndPoints.accompaniment}$productId?shopId=$shopId",
+      DbBase().getRequestType,
+    );
+    final decoded = response is String ? jsonDecode(response) : response;
+    if (decoded == null) return [];
+    final groups = decoded['groups'] ?? decoded['data']?['groups'] ?? [];
+    return (groups as List)
+        .map((g) => AccompanimentGroup.fromJson(g))
+        .toList();
+  }
 
-  // PUT /accompaniment/:productId  body: { shopId, groups: [...] }
-  static Future<void> save(String productId, String shopId,
-      List<AccompanimentGroup> groups);
+  /// PUT /accompaniment/:productId  body: { shopId, groups }
+  /// Create-or-update the product's accompaniment config. Call this AFTER the
+  /// product itself saved successfully (same order the web app uses, so a
+  /// failed product save never leaves an orphan config).
+  static Future<bool> save(String productId, String shopId,
+      List<AccompanimentGroup> groups) async {
+    final response = await DbBase().databaseRequest(
+      "${EndPoints.accompaniment}$productId",
+      DbBase().putRequestType,
+      body: {
+        "shopId": shopId,
+        "groups": groups.map((g) => g.toJson()).toList(),
+      },
+    );
+    return response != null;
+  }
 
-  // DELETE /accompaniment/:productId?shopId=
-  static Future<void> remove(String productId, String shopId);
+  /// DELETE /accompaniment/:productId?shopId=
+  /// Remove the config entirely (e.g. product deleted, or all groups cleared).
+  static Future<bool> remove(String productId, String shopId) async {
+    final response = await DbBase().databaseRequest(
+      "${EndPoints.accompaniment}$productId?shopId=$shopId",
+      DbBase().deleteRequestType,
+    );
+    return response != null;
+  }
+}
+```
+
+Usage in the product form save flow:
+
+```dart
+// after the product saves successfully:
+if (shopController.currentShop.value?.isRestaurant == true) {
+  if (accompanimentGroups.isNotEmpty) {
+    await AccompanimentService.save(productId, shopId, accompanimentGroups);
+  } else {
+    await AccompanimentService.remove(productId, shopId);
+  }
+}
+```
+
+Usage in the sale screen (preload once when the register opens):
+
+```dart
+Map<String, List<AccompanimentGroup>> shopAccompaniments = {};
+
+if (shopController.currentShop.value?.isRestaurant == true) {
+  shopAccompaniments = await AccompanimentService.byShop(shopId);
+}
+
+// on product tap:
+final groups = shopAccompaniments[product.sId] ?? [];
+if (groups.isEmpty) {
+  addToCart(product); // normal flow
+} else {
+  showAccompanimentSheet(product, groups); // builds the salesnote string
 }
 ```
 
