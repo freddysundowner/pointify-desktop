@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { BedDouble, Loader2, Banknote, Percent, CalendarDays, Smartphone } from "lucide-react";
 
@@ -58,6 +59,12 @@ const nightsInRange = (b: Booking, from: string, to: string) => {
 export default function BookingsReportPage() {
   const { shopId, shopData } = usePrimaryShop();
   const isGuestHouse = !!shopData?.isGuestHouse;
+
+  // Attendants need the "view reports" permission under Room Bookings.
+  const { hasAttendantPermission, isAdmin } = usePermissions();
+  const canViewReports =
+    isAdmin || localStorage.getItem("userType") === "admin" ||
+    hasAttendantPermission("bookings", "view_reports");
 
   // Default: current month so far
   const now = new Date();
@@ -181,6 +188,17 @@ export default function BookingsReportPage() {
     () => [...inRange].sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1)),
     [inRange]
   );
+
+  if (!canViewReports) {
+    return (
+      <DashboardLayout title="Rooms Report">
+        <div className="p-6 text-sm text-gray-500" data-testid="text-report-no-access">
+          You don't have permission to view the rooms report. Ask your shop owner to give you the
+          "view reports" permission under Room Bookings.
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!isGuestHouse) {
     return (

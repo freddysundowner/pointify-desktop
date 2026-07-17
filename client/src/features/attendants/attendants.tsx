@@ -461,6 +461,10 @@ export default function Attendants() {
       reports: {
         name: 'Reports & Analytics',
         actions: ['view_sales_reports', 'view_inventory_reports', 'view_financial_reports', 'export_data']
+      },
+      bookings: {
+        name: 'Room Bookings',
+        actions: ['view_bookings', 'create_bookings', 'manage_bookings', 'manage_rooms', 'view_reports']
       }
     };
 

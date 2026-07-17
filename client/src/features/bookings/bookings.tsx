@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
@@ -87,6 +88,19 @@ const nightsBetween = (a: string, b: string) =>
 export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "bookings" }) {
   const { shopId, adminId, attendantId, shopData } = usePrimaryShop();
   const isGuestHouse = !!shopData?.isGuestHouse;
+
+  // Room-booking permissions: admins can do everything; attendants only what
+  // they've been granted under the "bookings" permission group.
+  const { hasAttendantPermission, isAdmin } = usePermissions();
+  const isAdminUser = isAdmin || localStorage.getItem("userType") === "admin";
+  const canManageRooms = isAdminUser || hasAttendantPermission("bookings", "manage_rooms");
+  const canCreateBookings = isAdminUser || hasAttendantPermission("bookings", "create_bookings");
+  const canManageBookings = isAdminUser || hasAttendantPermission("bookings", "manage_bookings");
+  const canViewBookings =
+    isAdminUser ||
+    canManageRooms || canCreateBookings || canManageBookings ||
+    hasAttendantPermission("bookings", "view_bookings");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -430,6 +444,20 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
     setIsSavingDates(false);
   };
 
+  if (!canViewBookings) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 max-w-lg mx-auto text-center">
+          <BedDouble className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-gray-800 mb-1">No access to Room Bookings</h1>
+          <p className="text-sm text-gray-500" data-testid="text-bookings-no-access">
+            Ask your shop owner to give you the Room Bookings permission.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (shopData && !isGuestHouse) {
     return (
       <DashboardLayout>
@@ -462,7 +490,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               </p>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {view === "rooms" && (
+              {view === "rooms" && canManageRooms && (
                 <Button
                   variant="outline"
                   className="flex-1 sm:flex-none bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
@@ -473,15 +501,17 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                   Add Rooms
                 </Button>
               )}
-              <Button
-                className="flex-1 sm:flex-none bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-sm"
-                onClick={() => openNewBooking()}
-                disabled={roomsLoading || rooms.length === 0}
-                data-testid="button-new-booking"
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                New Booking
-              </Button>
+              {canCreateBookings && (
+                <Button
+                  className="flex-1 sm:flex-none bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-sm"
+                  onClick={() => openNewBooking()}
+                  disabled={roomsLoading || rooms.length === 0}
+                  data-testid="button-new-booking"
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  New Booking
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -808,7 +838,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       </span>
                       <span className="font-semibold text-gray-900">{Number(b.totalAmount).toLocaleString()}</span>
                     </div>
-                    {(b.status === "booked" || b.status === "checked_in") && (
+                    {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
                       <Button size="sm" variant="outline" className="mt-2 h-8 w-full text-xs text-purple-700 border-purple-200" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-mobile-${bid(b)}`}>
                         <CalendarDays className="h-3.5 w-3.5 mr-1" />Change dates
                       </Button>
@@ -850,7 +880,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                           </Badge>
                         </td>
                         <td className="p-2">
-                          {(b.status === "booked" || b.status === "checked_in") && (
+                          {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
                             <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
                               <CalendarDays className="h-3 w-3 mr-1" />Change dates
                             </Button>
@@ -993,12 +1023,12 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       {b.guestPhone ? <> · <Phone className="inline h-3 w-3" /> {b.guestPhone}</> : null}
                     </p>
                     <div className="flex gap-1.5 pt-1 flex-wrap">
-                      {(b.status === "booked" || b.status === "checked_in") && (
+                      {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setRoomDialog(null); openEditDates(b); }} data-testid="button-room-edit-dates">
                           <CalendarDays className="h-3.5 w-3.5 mr-1" />Change dates
                         </Button>
                       )}
-                      {b.status === "booked" && (
+                      {canManageBookings && b.status === "booked" && (
                         <>
                           <Button size="sm" variant="outline" className="h-7 text-xs text-green-700 border-green-300" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("checked_in"); }} data-testid="button-room-checkin">
                             <LogIn className="h-3.5 w-3.5 mr-1" />Check in
@@ -1008,7 +1038,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                           </Button>
                         </>
                       )}
-                      {b.status === "checked_in" && (
+                      {canManageBookings && b.status === "checked_in" && (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setRoomDialog(null); setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }} data-testid="button-room-checkout">
                           <LogOut className="h-3.5 w-3.5 mr-1" />Check out
                         </Button>
@@ -1037,7 +1067,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       Booking details
                     </Button>
                   )}
-                  {!b && (
+                  {!b && canManageRooms && (
                     <Button
                       variant="outline"
                       className="w-full sm:w-auto text-red-600 border-red-200 hover:bg-red-50 sm:mr-auto"
@@ -1048,7 +1078,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                       Delete room
                     </Button>
                   )}
-                  {!b && (
+                  {!b && canCreateBookings && (
                     <Button
                       className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
                       onClick={() => { setRoomDialog(null); openNewBooking(undefined, roomDialog._id); }}

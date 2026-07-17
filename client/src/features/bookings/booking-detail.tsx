@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, ArrowLeft, Loader2, User, Phone, CalendarDays,
@@ -67,6 +68,15 @@ export default function BookingDetail() {
   const [, navigate] = useLocation();
   const { shopId } = usePrimaryShop();
 
+  // Attendants need a Room Bookings permission to view booking details.
+  const { hasAttendantPermission, isAdmin } = usePermissions();
+  const canViewBookings =
+    isAdmin || localStorage.getItem("userType") === "admin" ||
+    hasAttendantPermission("bookings", "view_bookings") ||
+    hasAttendantPermission("bookings", "create_bookings") ||
+    hasAttendantPermission("bookings", "manage_bookings") ||
+    hasAttendantPermission("bookings", "manage_rooms");
+
   const { data: bookings = [], isLoading, isError } = useQuery<Booking[]>({
     queryKey: ["bookings", shopId],
     queryFn: async () => {
@@ -111,6 +121,20 @@ export default function BookingDetail() {
   const amenities: string[] = Array.isArray(room?.amenities)
     ? Array.from(new Set(room.amenities.map((a: any) => String(a ?? "").trim()).filter(Boolean)))
     : [];
+
+  if (!canViewBookings) {
+    return (
+      <DashboardLayout title="Booking details">
+        <div className="p-6 max-w-lg mx-auto text-center">
+          <BedDouble className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-gray-800 mb-1">No access to Room Bookings</h1>
+          <p className="text-sm text-gray-500" data-testid="text-detail-no-access">
+            Ask your shop owner to give you the Room Bookings permission.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Booking details">

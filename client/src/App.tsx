@@ -678,6 +678,43 @@ function AppContent() {
               </AttendantRoute>
             )}
           </Route>
+          {/* Room bookings — shared pages; each page checks the attendant's
+              "bookings" permissions itself and shows a no-access screen. */}
+          <Route path="/rooms">
+            {() => (
+              <AttendantRoute>
+                <Bookings view="rooms" />
+              </AttendantRoute>
+            )}
+          </Route>
+          <Route path="/bookings">
+            {() => (
+              <AttendantRoute>
+                <Bookings view="bookings" />
+              </AttendantRoute>
+            )}
+          </Route>
+          <Route path="/bookings/new">
+            {() => (
+              <AttendantRoute>
+                <NewBooking />
+              </AttendantRoute>
+            )}
+          </Route>
+          <Route path="/bookings/report">
+            {() => (
+              <AttendantRoute>
+                <BookingsReport />
+              </AttendantRoute>
+            )}
+          </Route>
+          <Route path="/bookings/:id">
+            {() => (
+              <AttendantRoute>
+                <BookingDetail />
+              </AttendantRoute>
+            )}
+          </Route>
           
           {/* Public routes */}
           <Route path="/" component={Login} />

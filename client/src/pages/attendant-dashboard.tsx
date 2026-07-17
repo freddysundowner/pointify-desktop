@@ -22,7 +22,8 @@ import {
   Lock,
   AlertTriangle,
   ChefHat,
-  ChevronRight
+  ChevronRight,
+  BedDouble
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
@@ -46,6 +47,7 @@ function AttendantDashboardContent() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [shopName, setShopName] = useState<string>('Loading...');
   const [isRestaurantShop, setIsRestaurantShop] = useState<boolean>(false);
+  const [isGuestHouseShop, setIsGuestHouseShop] = useState<boolean>(false);
 
 
 
@@ -103,6 +105,7 @@ function AttendantDashboardContent() {
             const shopData = await response.json();
             setShopName(shopData.name || 'Unknown Shop');
             setIsRestaurantShop(!!shopData.isRestaurant);
+            setIsGuestHouseShop(!!shopData.isGuestHouse);
 
             // Store complete shop data with subscription info for permission checks
             localStorage.setItem('currentShopData', JSON.stringify(shopData));
@@ -280,6 +283,52 @@ function AttendantDashboardContent() {
           description: 'Report damaged or expired inventory',
           enabled: hasAttendantPermission('stocks', 'badstock'),
           route: '/attendant/stock/bad-stock'
+        }
+      ]
+    },
+    {
+      id: 'bookings',
+      title: 'Room Bookings',
+      icon: BedDouble,
+      description: 'Manage guest house rooms and bookings',
+      enabled: isGuestHouseShop && (
+        hasAttendantPermission('bookings', 'view_bookings') ||
+        hasAttendantPermission('bookings', 'create_bookings') ||
+        hasAttendantPermission('bookings', 'manage_bookings') ||
+        hasAttendantPermission('bookings', 'manage_rooms') ||
+        hasAttendantPermission('bookings', 'view_reports')
+      ),
+      color: 'bg-indigo-500',
+      subActions: [
+        {
+          title: 'Rooms',
+          icon: BedDouble,
+          description: 'See room availability and check guests in or out',
+          enabled: isGuestHouseShop && (
+            hasAttendantPermission('bookings', 'view_bookings') ||
+            hasAttendantPermission('bookings', 'create_bookings') ||
+            hasAttendantPermission('bookings', 'manage_bookings') ||
+            hasAttendantPermission('bookings', 'manage_rooms')
+          ),
+          route: '/rooms'
+        },
+        {
+          title: 'Bookings',
+          icon: ClipboardList,
+          description: 'View and manage guest bookings',
+          enabled: isGuestHouseShop && (
+            hasAttendantPermission('bookings', 'view_bookings') ||
+            hasAttendantPermission('bookings', 'create_bookings') ||
+            hasAttendantPermission('bookings', 'manage_bookings')
+          ),
+          route: '/bookings'
+        },
+        {
+          title: 'Rooms Report',
+          icon: BarChart3,
+          description: 'Bookings revenue and occupancy report',
+          enabled: isGuestHouseShop && hasAttendantPermission('bookings', 'view_reports'),
+          route: '/bookings/report'
         }
       ]
     },

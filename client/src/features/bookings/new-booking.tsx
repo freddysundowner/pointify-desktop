@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, ArrowLeft, Loader2, Search, User, UserPlus, Check, Phone,
@@ -64,6 +65,13 @@ const nightsBetween = (a: string, b: string) =>
 
 export default function NewBookingPage() {
   const { shopId, adminId } = usePrimaryShop();
+
+  // Attendants need the "create bookings" permission; admins always can.
+  const { hasAttendantPermission, isAdmin } = usePermissions();
+  const canCreateBookings =
+    isAdmin || localStorage.getItem("userType") === "admin" ||
+    hasAttendantPermission("bookings", "create_bookings");
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -312,6 +320,20 @@ export default function NewBookingPage() {
       setIsSaving(false);
     }
   };
+
+  if (!canCreateBookings) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 max-w-lg mx-auto text-center">
+          <BedDouble className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-gray-800 mb-1">No access to create bookings</h1>
+          <p className="text-sm text-gray-500" data-testid="text-newbooking-no-access">
+            Ask your shop owner to give you the "create bookings" permission under Room Bookings.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
