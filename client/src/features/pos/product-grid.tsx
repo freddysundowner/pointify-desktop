@@ -1856,11 +1856,12 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           <div className="flex items-center gap-1.5">
             {showMobileCart ? (
               <button
-                onClick={() => cartItems.length > 0 && openPaymentDialog()}
-                disabled={cartItems.length === 0}
-                className="bg-white text-purple-700 text-xs font-bold px-4 py-2 rounded-full disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-transform"
+                onClick={() => setShowProductDrawer(true)}
+                className="bg-white text-purple-700 text-xs font-bold px-3 py-2 rounded-full active:scale-95 transition-transform flex items-center gap-1"
+                data-testid="button-header-add-products"
               >
-                Pay
+                <Plus className="h-3.5 w-3.5" />
+                Add Products
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
@@ -2302,82 +2303,78 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                     return (
                       <div key={item.id}>
                         {/* Mobile Layout */}
-                        <div className="lg:hidden px-4 py-3.5 border-b border-gray-100 bg-white active:bg-gray-50">
-                          <div className="flex items-start gap-3">
-                            {/* Product icon */}
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 mt-0.5">
-                              <Package className="h-5 w-5 text-purple-300" />
-                            </div>
+                        <div className="lg:hidden px-3 py-2 border-b border-gray-100 bg-white active:bg-gray-50">
+                          <div className="flex items-center gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start">
-                                <p className="font-semibold text-gray-900 text-sm truncate pr-2">{item.name}</p>
-                                <p className="font-bold text-gray-900 text-sm shrink-0">Ksh {item.total.toFixed(2)}</p>
-                              </div>
+                              <p className="font-semibold text-gray-900 text-sm truncate">{item.name}</p>
                               {(item as any).accompaniments && (
-                                <p className="text-xs text-purple-600 mt-0.5 leading-snug">{(item as any).accompaniments}</p>
+                                <p className="text-[11px] text-purple-600 leading-snug truncate">{(item as any).accompaniments}</p>
                               )}
-                              <p className="text-gray-400 text-xs mt-0.5">
+                              <p className="text-gray-400 text-[11px]">
                                 Ksh {item.price.toFixed(2)} each
                                 {(item.maxDiscount || 0) > 0 && (
                                   <span className="text-green-500 ml-1">−Ksh {(item.discount || 0).toFixed(2)}</span>
                                 )}
                               </p>
-                              {/* Qty controls + actions */}
-                              <div className="flex items-center justify-between mt-2.5">
-                                <div className="flex items-center bg-gray-100 rounded-xl overflow-hidden">
-                                  <button
-                                    onClick={() => {
-                                      const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                      onUpdateQuantity(item.id, Math.max(1, item.quantity - 1), productData);
-                                    }}
-                                    className="w-8 h-8 flex items-center justify-center text-purple-600 active:bg-gray-200"
-                                  >
-                                    <Minus className="h-3.5 w-3.5" />
-                                  </button>
-                                  <span className="w-8 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
-                                  <button
-                                    onClick={() => {
-                                      const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
-                                      onUpdateQuantity(item.id, item.quantity + 1, productData);
-                                    }}
-                                    className="w-8 h-8 flex items-center justify-center text-purple-600 active:bg-gray-200"
-                                  >
-                                    <Plus className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-
-                                <div className="flex items-center gap-2">
+                            </div>
+                            <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                              <button
+                                onClick={() => {
+                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                  onUpdateQuantity(item.id, Math.max(1, item.quantity - 1), productData);
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-purple-600 active:bg-gray-200"
+                              >
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
+                              <button
+                                onClick={() => {
+                                  const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                  onUpdateQuantity(item.id, item.quantity + 1, productData);
+                                }}
+                                className="w-7 h-7 flex items-center justify-center text-purple-600 active:bg-gray-200"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <p className="font-bold text-gray-900 text-sm shrink-0 w-[76px] text-right">Ksh {item.total.toFixed(2)}</p>
+                            <div className="flex items-center shrink-0">
                               {canEditPrice && (
-                                <button 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handlePriceChange(item)}
-                                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                  title="Change price"
+                                  className="w-7 h-7 p-0 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                                 >
-                                  Change price
-                                </button>
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </Button>
                               )}
                               {canDiscount && (item.maxDiscount || 0) > 0 && (
-                                <button 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDiscountChange(item)}
-                                  className="text-xs text-green-600 hover:text-green-800 underline"
+                                  title="Add discount"
+                                  className="w-7 h-7 p-0 rounded-full text-green-600 hover:text-green-800 hover:bg-green-50"
                                 >
-                                  Add discount
-                                </button>
+                                  <Banknote className="h-3.5 w-3.5" />
+                                </Button>
                               )}
                               {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                                <Button variant="ghost" size="sm" onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="w-6 h-6 p-0 rounded-full text-purple-500 hover:text-purple-700 hover:bg-purple-50">
-                                  <Utensils className="h-3 w-3" />
+                                <Button variant="ghost" size="sm" onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="w-7 h-7 p-0 rounded-full text-purple-500 hover:text-purple-700 hover:bg-purple-50">
+                                  <Utensils className="h-3.5 w-3.5" />
                                 </Button>
                               )}
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onUpdateQuantity(item.id, 0)}
-                                className="w-6 h-6 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
+                                className="w-7 h-7 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
-                            </div>
-                              </div>
                             </div>
                           </div>
                         </div>
@@ -2587,18 +2584,6 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           {/* Grid Mode - Sticky Payment Summary Section */}
           {viewMode === 'grid' && (
             <div className="shrink-0 sticky bottom-0 bg-white mt-2 lg:mt-6 rounded-t-2xl shadow-lg">
-            {/* Mobile: Add Products button */}
-            <div className="lg:hidden px-3 pt-2">
-              <Button
-                onClick={() => setShowProductDrawer(true)}
-                variant="outline"
-                className="w-full border-purple-400 border-dashed text-purple-700 hover:bg-purple-50 py-2 text-sm font-semibold rounded-lg"
-                data-testid="button-add-products"
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                Add Products
-              </Button>
-            </div>
             {/* Summary Section */}
             <div className="bg-gray-50 p-2 lg:p-4">
               <div className="space-y-1 lg:space-y-2">
@@ -2673,7 +2658,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
             
             {/* Action Buttons */}
             <div className="p-3 lg:p-4 bg-white">
-              <div className="grid grid-cols-3 gap-2 lg:gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3">
                 <Button 
                   onClick={() => openPaymentDialog()}
                   className="bg-purple-600 hover:bg-purple-700 text-white py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
@@ -2684,7 +2669,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                 <Button 
                   onClick={onClearCart}
                   variant="outline"
-                  className="border-red-400 text-red-600 hover:bg-red-50 py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
+                  className="hidden lg:inline-flex border-red-400 text-red-600 hover:bg-red-50 py-2 lg:py-3 text-sm lg:text-base font-semibold rounded-lg"
                   disabled={cartItems.length === 0}
                 >
                   Clear
