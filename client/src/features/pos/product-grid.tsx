@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw, Lock, Utensils } from "lucide-react";
+import { MoreVertical, Search, Calculator, Package, Minus, Plus, Trash2, CreditCard, Wallet, Smartphone, Building, Banknote, Split, User, UserPlus, X, Edit3, Calendar, Clock, UserCheck, Grid3X3, Table, PlusCircle, Loader2, CheckCircle2, ArrowLeft, ShoppingCart, SlidersHorizontal, LayoutGrid, RefreshCw, Lock, Utensils } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCartContext } from "@/contexts/CartContext";
 import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
@@ -2338,44 +2339,44 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <p className="font-bold text-gray-900 text-sm shrink-0 w-[76px] text-right">Ksh {item.total.toFixed(2)}</p>
-                            <div className="flex items-center shrink-0">
-                              {canEditPrice && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handlePriceChange(item)}
-                                  title="Change price"
-                                  className="w-7 h-7 p-0 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            <p className="font-bold text-gray-900 text-sm shrink-0 min-w-[72px] whitespace-nowrap text-right tabular-nums">
+                              <span className="text-[10px] font-medium text-gray-400 mr-0.5">Ksh</span>
+                              {item.total.toFixed(2)}
+                            </p>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 active:bg-gray-100 shrink-0"
+                                  data-testid={`button-item-menu-${item.id}`}
                                 >
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              {canDiscount && (item.maxDiscount || 0) > 0 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDiscountChange(item)}
-                                  title="Add discount"
-                                  className="w-7 h-7 p-0 rounded-full text-green-600 hover:text-green-800 hover:bg-green-50"
-                                >
-                                  <Banknote className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
-                                <Button variant="ghost" size="sm" onClick={() => handleAccompanimentEdit(item)} title="Edit accompaniment" className="w-7 h-7 p-0 rounded-full text-purple-500 hover:text-purple-700 hover:bg-purple-50">
-                                  <Utensils className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onUpdateQuantity(item.id, 0)}
-                                className="w-7 h-7 p-0 rounded-full text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
+                                  <MoreVertical className="h-4 w-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                {canEditPrice && (
+                                  <DropdownMenuItem onClick={() => handlePriceChange(item)}>
+                                    <Edit3 className="h-4 w-4 mr-2 text-blue-500" />
+                                    Change price
+                                  </DropdownMenuItem>
+                                )}
+                                {canDiscount && (item.maxDiscount || 0) > 0 && (
+                                  <DropdownMenuItem onClick={() => handleDiscountChange(item)}>
+                                    <Banknote className="h-4 w-4 mr-2 text-green-600" />
+                                    Add discount
+                                  </DropdownMenuItem>
+                                )}
+                                {shopData?.isRestaurant && getProductGroups(allProducts.find((p: any) => p._id === item.id || p.id === item.id) || {}).length > 0 && (
+                                  <DropdownMenuItem onClick={() => handleAccompanimentEdit(item)}>
+                                    <Utensils className="h-4 w-4 mr-2 text-purple-500" />
+                                    Accompaniments
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => onUpdateQuantity(item.id, 0)} className="text-red-600 focus:text-red-600">
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Remove
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                         
