@@ -516,7 +516,7 @@ export default function StockProducts() {
 
   const getQuantityStatus = (product: any) => {
     // Services (virtual products) don't have stock status
-    if (product.virtual) {
+    if (product.productType === "service" || product.virtual) {
       return { label: "Service", variant: "outline" as const };
     }
 
@@ -844,7 +844,7 @@ export default function StockProducts() {
                       const stockStatus = getQuantityStatus(product);
                       const quantity = (product as any).quantity || 0;
                       const reorderLevel = (product as any).reorderLevel || 0;
-                      const isVirtual = (product as any).virtual;
+                      const isVirtual = (product as any).productType === "service" || (product as any).virtual;
                       const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
                       const isOutOfStock = !isVirtual && quantity === 0;
                       const isSelected = selectedIds.includes(product._id);
@@ -1084,7 +1084,7 @@ export default function StockProducts() {
               {filteredProducts.map((product: Product) => {
                 const quantity = (product as any).quantity || 0;
                 const reorderLevel = (product as any).reorderLevel || 0;
-                const isVirtual = (product as any).virtual;
+                const isVirtual = (product as any).productType === "service" || (product as any).virtual;
                 const isLowStock = !isVirtual && quantity > 0 && reorderLevel > 0 && quantity <= reorderLevel;
                 const isOutOfStock = !isVirtual && quantity === 0;
                 const isSelected = selectedIds.includes(product._id);

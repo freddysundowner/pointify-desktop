@@ -109,6 +109,7 @@ export default function OrdersPage() {
             discount: 0,
             maxDiscount: item.product.maxDiscount || 0,
             virtual: item.product.virtual || false,
+            productType: item.product.productType,
             serialnumber: item.product.serialnumber || undefined,
           };
   

@@ -332,9 +332,9 @@ export default function BusinessDashboard() {
   const products = Array.isArray(productsData?.data) ? productsData.data : [];
 
   // Inventory insight counts for mobile dashboard
-  const outOfStockCount = products.filter((p: any) => !p.virtual && (p.quantity || 0) === 0).length;
+  const outOfStockCount = products.filter((p: any) => !(p.productType === "service" || p.virtual) && (p.quantity || 0) === 0).length;
   const runningLowCount = products.filter((p: any) => {
-    if (p.virtual) return false;
+    if (p.productType === "service" || p.virtual) return false;
     const qty = p.quantity || 0;
     const reorder = p.reorderLevel || p.lowStockThreshold || 0;
     return qty > 0 && reorder > 0 && qty <= reorder;
@@ -343,7 +343,7 @@ export default function BusinessDashboard() {
   const lowStockProducts = products
     .filter((product: any) => {
       // Exclude virtual products (services) from stock alerts
-      if (product.virtual) return false;
+      if (product.productType === "service" || product.virtual) return false;
       
       const quantity = product.quantity || 0;
       const reorderLevel = product.reorderLevel || product.lowStockThreshold || 0;

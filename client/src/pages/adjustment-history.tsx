@@ -188,7 +188,7 @@ export default function AdjustmentHistoryPage() {
             {[
               { label: "Current Stock", value: product.quantity || 0, color: "text-gray-900" },
               { label: "Category", value: product.productCategoryId?.name || "Uncategorized", color: "text-gray-700" },
-              { label: "Type", value: product.virtual ? "Service" : "Physical", color: "text-gray-700" },
+              { label: "Type", value: (product.productType === "service" || product.virtual) ? "Service" : "Physical", color: "text-gray-700" },
             ].map(s => (
               <div key={s.label} className="bg-white rounded-xl border px-3 py-2.5">
                 <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">{s.label}</p>
@@ -365,8 +365,8 @@ export default function AdjustmentHistoryPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Type</p>
-                  <Badge variant={product.virtual ? "secondary" : "default"}>
-                    {product.virtual ? 'Service' : 'Physical'}
+                  <Badge variant={(product.productType === "service" || product.virtual) ? "secondary" : "default"}>
+                    {(product.productType === 'service' || product.virtual) ? 'Service' : 'Physical'}
                   </Badge>
                 </div>
               </div>
