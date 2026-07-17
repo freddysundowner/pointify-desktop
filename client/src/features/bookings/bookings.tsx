@@ -27,7 +27,7 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
-  SlidersHorizontal,
+  SlidersHorizontal, ArrowLeft,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
@@ -522,6 +522,16 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                {view === "rooms" && (
+                  <button
+                    onClick={() => navigate("/bookings")}
+                    className="h-9 w-9 -ml-1 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
+                    aria-label="Back to bookings"
+                    data-testid="button-back-to-bookings"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                )}
                 <span className="bg-white/15 rounded-xl p-2">
                   <BedDouble className="h-5 w-5" />
                 </span>

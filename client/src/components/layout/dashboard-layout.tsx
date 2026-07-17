@@ -91,7 +91,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/sales', '/returns', '/orders',
     '/purchases', '/purchase-returns',
     '/customers', '/suppliers',
-    '/bookings', '/rooms', '/bookings/report',
+    '/bookings', '/bookings/report',
     '/stock/products', '/stock/categories', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
     '/expenses', '/cashflow', '/profit-loss', '/debtors',
     '/printer-config', '/sms-settings', '/subscription',
@@ -105,7 +105,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
   // Room-bookings module gets its own mobile-app style bottom tab bar, but
   // ONLY on its top-level tab screens. Inner pages (like /bookings/new) hide
   // the tab bar and rely on their own top back button, like a mobile app.
-  const bookingsTabRoutes = new Set(['/rooms', '/bookings', '/bookings/report']);
+  const bookingsTabRoutes = new Set(['/bookings', '/bookings/report']);
   const isBookingsRoute = bookingsTabRoutes.has(location);
 
   const { hasAttendantPermission, isAdmin } = usePermissions();
