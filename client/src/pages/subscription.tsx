@@ -668,32 +668,9 @@ export default function SubscriptionPage() {
         </Button>
       </div>
 
-      <div className="w-full max-w-3xl mx-auto">
-        {/* Order Summary */}
-        <Card className="mb-4 sm:mb-6">
-          <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
-            <CardTitle className="text-base sm:text-lg">Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
-            <div className="flex justify-between text-sm sm:text-base">
-              <span className="text-gray-600">Plan: <span className="font-medium text-gray-900">{selectedPlan.name}</span></span>
-              <span className="font-medium">{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
-            </div>
-            <div className="flex justify-between text-sm sm:text-base">
-              <span className="text-gray-600">Selected Shops:</span>
-              <span className="font-medium">{selectedShops.length} {selectedShops.length === 1 ? 'shop' : 'shops'}</span>
-            </div>
-            <div className="border-t pt-3">
-              <div className="flex justify-between text-base sm:text-lg font-bold">
-                <span>Total:</span>
-                <span>{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="w-full grid gap-4 sm:gap-6 lg:grid-cols-5 items-start">
         {/* Payment Method */}
-        <Card className="mb-4 sm:mb-6">
+        <Card className="lg:col-span-3 lg:order-1">
           <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
             <CardTitle className="text-base sm:text-lg">Payment Method</CardTitle>
           </CardHeader>
@@ -825,21 +802,47 @@ export default function SubscriptionPage() {
           </CardContent>
         </Card>
 
-        {/* Complete Payment Button */}
-        <Button 
-          onClick={handlePayment}
-          disabled={isProcessing}
-          className="w-full bg-blue-500 hover:bg-blue-600 h-11 sm:h-12 text-sm sm:text-base font-semibold"
-        >
-          {isProcessing ? (
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span>Processing Payment...</span>
-            </div>
-          ) : (
-            `Pay ${formatCurrency(selectedPlan.amount || selectedPlan.price)} via ${paymentMethod === 'mpesa' ? 'M-Pesa' : 'Card'}`
-          )}
-        </Button>
+        {/* Order Summary + Pay */}
+        <div className="lg:col-span-2 lg:order-2 lg:sticky lg:top-6 space-y-4">
+          <Card>
+            <CardHeader className="pb-3 px-4 pt-4 sm:px-6 sm:pt-6">
+              <CardTitle className="text-base sm:text-lg">Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 px-4 pb-4 sm:px-6 sm:pb-6">
+              <div className="flex justify-between text-sm sm:text-base">
+                <span className="text-gray-600">Plan: <span className="font-medium text-gray-900">{selectedPlan.name}</span></span>
+                <span className="font-medium">{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
+              </div>
+              <div className="flex justify-between text-sm sm:text-base">
+                <span className="text-gray-600">Selected Shops:</span>
+                <span className="font-medium">{selectedShops.length} {selectedShops.length === 1 ? 'shop' : 'shops'}</span>
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex justify-between text-base sm:text-lg font-bold">
+                  <span>Total:</span>
+                  <span>{formatCurrency(selectedPlan.amount || selectedPlan.price)}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Complete Payment Button */}
+          <Button 
+            onClick={handlePayment}
+            disabled={isProcessing}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-11 sm:h-12 text-sm sm:text-base font-semibold shadow-md"
+            data-testid="button-complete-payment"
+          >
+            {isProcessing ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Processing Payment...</span>
+              </div>
+            ) : (
+              `Pay ${formatCurrency(selectedPlan.amount || selectedPlan.price)} via ${paymentMethod === 'mpesa' ? 'M-Pesa' : 'Card'}`
+            )}
+          </Button>
+        </div>
       </div>
     </>
   );
