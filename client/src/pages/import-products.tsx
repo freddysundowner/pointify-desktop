@@ -326,6 +326,7 @@ export default function ImportProductsPage() {
       manufacturer: row.manufacturer || "",
       measure: row.measure || "",
       virtual: false,
+      productType: "product",
       adminId,
       attendantId,
       shopId,

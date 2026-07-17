@@ -209,6 +209,7 @@ export default function BulkCreateProducts() {
         reorderLevel: Math.floor(template.quantity * 0.15),
         unit: 'pcs',
         virtual: false,
+        productType: "product",
         trackInventory: true,
         adminid: adminData._id,
         attendantId: attendantId,
