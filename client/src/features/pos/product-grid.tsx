@@ -2697,7 +2697,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
         {/* Right Panel - Products */}
         {viewMode === 'grid' && (
-          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden pb-2 lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
+          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden ${!showMobileCart && cartItems.length > 0 ? 'pb-24' : 'pb-2'} lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
 
           {/* Product Grid — shown on all sizes */}
           <div className="flex flex-col bg-white rounded-xl lg:rounded-2xl p-2 lg:p-4 shadow-sm lg:shadow-lg lg:flex-1 lg:min-h-0 lg:overflow-hidden">
@@ -2965,7 +2965,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           picked; tapping it opens the cart to preview and proceed to payment.
           Hidden in table mode (layout already shows everything). */}
       {!showMobileCart && cartItems.length > 0 && viewMode !== 'table' && (
-        <div className="lg:hidden bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.06)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => setShowMobileCart(true)}
             className="w-full h-12 rounded-xl bg-purple-600 active:bg-purple-700 text-white font-semibold flex items-center justify-between px-4 transition-colors"
