@@ -948,15 +948,15 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 ))}
             </div>
             <div className="overflow-x-auto hidden sm:block">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
                 <thead>
                   <tr className="text-left text-xs text-gray-500 border-b">
-                    <th className="p-2 pl-3">Guest</th>
-                    <th className="p-2">Check-in</th>
-                    <th className="p-2">Check-out</th>
-                    <th className="p-2 text-right">Total</th>
-                    <th className="p-2">Status</th>
-                    <th className="p-2"></th>
+                    <th className="p-2 pl-3 w-[24%]">Guest</th>
+                    <th className="p-2 w-[15%]">Check-in</th>
+                    <th className="p-2 w-[15%]">Check-out</th>
+                    <th className="p-2 text-right w-[12%]">Total</th>
+                    <th className="p-2 w-[16%] text-center">Status</th>
+                    <th className="p-2 w-[18%]"></th>
                   </tr>
                 </thead>
                 <tbody className="[&_td]:align-middle">
@@ -970,13 +970,13 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                         data-testid={`row-booking-${bid(b)}`}
                       >
                         <td className="p-2 pl-3">
-                          <p className="font-medium text-gray-900">{b.guestName}</p>
-                          <p className="text-xs text-gray-500">{b.roomName}</p>
+                          <p className="font-medium text-gray-900 truncate">{b.guestName}</p>
+                          <p className="text-xs text-gray-500 truncate">{b.roomName}</p>
                         </td>
                         <td className="p-2 text-gray-600">{b.checkIn}</td>
                         <td className="p-2 text-gray-600">{b.checkOut}</td>
                         <td className="p-2 text-right text-gray-800">{Number(b.totalAmount).toLocaleString()}</td>
-                        <td className="p-2">
+                        <td className="p-2 text-center">
                           <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
                             {STATUS_META[b.status]?.label || b.status}
                           </Badge>
