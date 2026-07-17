@@ -200,12 +200,37 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
     [bookings]
   );
 
-  // Bookings that overlap ANY night of the selected stay range
-  const rangeBookings = activeBookings.filter(
-    (b) => b.checkIn < rangeTo && b.checkOut > rangeFrom
+  const rangeNights = nightsBetween(rangeFrom, rangeTo);
+
+  // Bookings that overlap the selected stay range — fetched from the SERVER
+  // with the chosen dates, so changing the dates always triggers a fresh
+  // request and the vacant/occupied state can never be stale.
+  const { data: rangeBookingsRaw = [] } = useQuery<Booking[]>({
+    queryKey: ["bookings", shopId, "range", rangeFrom, rangeTo],
+    queryFn: async () => {
+      const params = new URLSearchParams({ shop: shopId!, from: rangeFrom, to: rangeTo });
+      const res = await apiCall(`/api/booking?${params.toString()}`, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data?.data ?? data?.bookings ?? [];
+      if (!Array.isArray(list)) throw new Error("Bookings endpoint not available");
+      return list;
+    },
+    enabled: !!shopId && rangeNights > 0,
+    placeholderData: (prev) => prev,
+    retry: 1,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+  // Exact overlap rule (check-out day is exclusive: a room checking out on the
+  // arrival day is free that night), applied on top of the server's window.
+  const rangeBookings = rangeBookingsRaw.filter(
+    (b) =>
+      (b.status === "booked" || b.status === "checked_in") &&
+      b.checkIn < rangeTo &&
+      b.checkOut > rangeFrom
   );
   const occupiedRoomIds = new Set(rangeBookings.map((b) => b.roomId));
-  const rangeNights = nightsBetween(rangeFrom, rangeTo);
 
   // Rooms grouped by their (optional) group label, respecting the filter
   const groupNames = useMemo(() => {
