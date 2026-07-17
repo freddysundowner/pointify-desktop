@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, UserPlus, Settings, ArrowLeft, KeyRound, MoreVertical, ChevronDown, ChevronUp, Shield, ScanBarcode, Package, Boxes, Warehouse, Receipt, Users, BarChart3, BedDouble, KanbanSquare } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Link } from 'wouter';
 import { useNavigationRoute } from '@/lib/navigation-utils';
@@ -843,58 +843,86 @@ export default function Attendants() {
         }}>
           <DialogContent className="w-[calc(100%-2rem)] max-w-4xl max-h-[90vh] flex flex-col p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle>
-                {isEditingPermissions ? 'Edit Permissions' : 'View Permissions'}
-              </DialogTitle>
-              <DialogDescription>
-                {isEditingPermissions ? 'Assign permissions for' : 'Current permissions for'} {selectedAttendant?.username}
-              </DialogDescription>
+              <div className="rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 -mx-1 mt-4">
+                <DialogTitle className="flex items-center gap-2 text-white">
+                  <span className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5" />
+                  </span>
+                  {isEditingPermissions ? 'Edit Permissions' : 'View Permissions'}
+                </DialogTitle>
+                <DialogDescription className="text-purple-100 mt-1">
+                  {isEditingPermissions ? 'Assign permissions for' : 'Current permissions for'}{' '}
+                  <span className="font-semibold text-white">{selectedAttendant?.username}</span>
+                </DialogDescription>
+              </div>
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto mt-2">
               {isLoadingPermissions ? (
-                <div className="text-center py-8">Loading permissions...</div>
+                <div className="text-center py-8 text-sm text-gray-500">Loading permissions...</div>
               ) : (
                 <div className="space-y-4">
-                  <h4 className="font-medium text-sm">Available Permissions for {selectedAttendant?.username}:</h4>
+                  <p className="text-xs text-gray-500">Tap a section to open it, then tick what {selectedAttendant?.username} is allowed to do.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {adminPermissions.map((permission: Permission) => {
                       const isExpanded = expandedGroups.has(permission.key);
                       const checkedCount = permission.value.filter(a => hasEditingPermission(permission.key, a)).length;
+                      const allChecked = checkedCount === permission.value.length && permission.value.length > 0;
+                      const groupIcons: Record<string, any> = {
+                        pos: ScanBarcode, products: Package, stocks: Boxes, warehouse: Warehouse,
+                        sales: Receipt, customers: Users, reports: BarChart3, bookings: BedDouble,
+                      };
+                      const GroupIcon = groupIcons[permission.key] || KanbanSquare;
+                      const groupLabel = permission.key === 'bookings' ? 'Room Bookings'
+                        : permission.key === 'pos' ? 'POS'
+                        : permission.key.replace(/_/g, ' ');
                       return (
-                        <div key={permission.key} className="border rounded-lg overflow-hidden">
+                        <div key={permission.key} className={`rounded-xl overflow-hidden border transition-colors ${checkedCount > 0 ? 'border-purple-200' : 'border-gray-200'}`}>
                           <button
                             type="button"
-                            className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+                            className={`w-full flex items-center justify-between px-3 py-2.5 transition-colors ${checkedCount > 0 ? 'bg-purple-50 hover:bg-purple-100' : 'bg-gray-50 hover:bg-gray-100'}`}
                             onClick={() => setExpandedGroups(prev => {
                               const next = new Set(prev);
                               next.has(permission.key) ? next.delete(permission.key) : next.add(permission.key);
                               return next;
                             })}
+                            data-testid={`button-permission-group-${permission.key}`}
                           >
-                            <span className="font-medium text-sm text-blue-700 capitalize">{permission.key}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-gray-500">{checkedCount}/{permission.value.length}</span>
+                            <span className="flex items-center gap-2 min-w-0">
+                              <span className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${checkedCount > 0 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                <GroupIcon className="h-4 w-4" />
+                              </span>
+                              <span className={`font-medium text-sm capitalize truncate ${checkedCount > 0 ? 'text-purple-900' : 'text-gray-700'}`}>{groupLabel}</span>
+                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${allChecked ? 'bg-green-100 text-green-700' : checkedCount > 0 ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                                {checkedCount}/{permission.value.length}
+                              </span>
                               {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" /> : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />}
                             </div>
                           </button>
                           {isExpanded && (
-                            <div className="p-3 space-y-2">
+                            <div className="p-2 space-y-0.5 bg-white">
                               {permission.value.map((action: string) => {
                                 const isChecked = hasEditingPermission(permission.key, action);
                                 return (
-                                  <div key={action} className="flex items-center space-x-2">
+                                  <label
+                                    key={action}
+                                    htmlFor={`${permission.key}-${action}`}
+                                    className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 cursor-pointer transition-colors ${isChecked ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
+                                  >
                                     <Checkbox
                                       id={`${permission.key}-${action}`}
                                       checked={isChecked}
                                       onCheckedChange={(checked) => {
                                         toggleEditingPermission(permission.key, action, checked as boolean);
                                       }}
+                                      className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                                     />
-                                    <Label htmlFor={`${permission.key}-${action}`} className="text-xs font-normal cursor-pointer leading-tight">
+                                    <span className={`text-xs leading-tight ${isChecked ? 'text-purple-900 font-medium' : 'text-gray-600'}`}>
                                       {action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </Label>
-                                  </div>
+                                    </span>
+                                  </label>
                                 );
                               })}
                             </div>
@@ -936,7 +964,7 @@ export default function Attendants() {
                 Cancel
               </Button>
               <Button
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700"
                 onClick={() => {
                   if (!selectedAttendant) return;
                   
