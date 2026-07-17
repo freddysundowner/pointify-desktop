@@ -619,17 +619,6 @@ export default function DashboardLayout({ children, title, isDashboard = false }
             })}
           </div>
 
-          {/* Floating "new booking" button */}
-          {canCreateBookings && location !== '/bookings/new' && (
-            <button
-              onClick={() => setLocation('/bookings/new')}
-              className="absolute -top-6 right-4 h-12 w-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-300 flex items-center justify-center active:scale-95 transition-transform"
-              aria-label="New booking"
-              data-testid="fab-new-booking"
-            >
-              <Plus className="h-6 w-6" />
-            </button>
-          )}
         </nav>
       )}
 

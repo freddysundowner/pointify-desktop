@@ -122,6 +122,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   const [payMethod, setPayMethod] = useState<"cash" | "mpesa" | "none">("cash");
   const [payMpesaCode, setPayMpesaCode] = useState("");
 
+  // Floating "+" action menu (small devices only)
+  const [fabOpen, setFabOpen] = useState(false);
+
   // Bulk "add many rooms at once" dialog
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkForm, setBulkForm] = useState({ prefix: "Room", start: "1", count: "10", rate: "", group: "", amenities: "" });
@@ -542,7 +545,8 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <span className="font-semibold text-white">{monthRevenue.toLocaleString()}</span>
               </p>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Header actions — desktop/tablet only; small devices use the floating "+" button */}
+            <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
               {view === "rooms" && canManageRooms && (
                 <Button
                   variant="outline"
@@ -1397,6 +1401,58 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating "+" action button — small devices only */}
+      {(canCreateBookings || canManageRooms) && (
+        <>
+          {fabOpen && (
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/20"
+              onClick={() => setFabOpen(false)}
+              aria-hidden="true"
+            />
+          )}
+          <div className="lg:hidden fixed bottom-20 right-4 z-50 flex flex-col items-end gap-2">
+            {fabOpen && (
+              <div className="flex flex-col items-end gap-2 mb-1">
+                {canManageRooms && (
+                  <button
+                    onClick={() => { setFabOpen(false); setBulkOpen(true); }}
+                    className="flex items-center gap-2 rounded-full bg-white shadow-lg border border-purple-100 pl-4 pr-3 py-2.5 text-sm font-semibold text-purple-700 active:scale-95 transition-transform"
+                    data-testid="fab-add-rooms"
+                  >
+                    Add Rooms
+                    <span className="h-7 w-7 rounded-full bg-purple-100 flex items-center justify-center">
+                      <BedDouble className="h-4 w-4 text-purple-700" />
+                    </span>
+                  </button>
+                )}
+                {canCreateBookings && (
+                  <button
+                    onClick={() => { setFabOpen(false); openNewBooking(); }}
+                    disabled={roomsLoading || rooms.length === 0}
+                    className="flex items-center gap-2 rounded-full bg-white shadow-lg border border-purple-100 pl-4 pr-3 py-2.5 text-sm font-semibold text-purple-700 active:scale-95 transition-transform disabled:opacity-50"
+                    data-testid="fab-new-booking"
+                  >
+                    New Booking
+                    <span className="h-7 w-7 rounded-full bg-purple-100 flex items-center justify-center">
+                      <CalendarDays className="h-4 w-4 text-purple-700" />
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+            <button
+              onClick={() => setFabOpen(o => !o)}
+              className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-300 flex items-center justify-center active:scale-95 transition-transform"
+              aria-label={fabOpen ? "Close menu" : "Open actions menu"}
+              data-testid="fab-bookings-menu"
+            >
+              <Plus className={`h-6 w-6 transition-transform ${fabOpen ? "rotate-45" : ""}`} />
+            </button>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }
