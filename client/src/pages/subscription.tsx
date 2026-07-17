@@ -399,19 +399,24 @@ export default function SubscriptionPage() {
   const renderPlanSelection = () => (
     <>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 sm:mb-8">
-        <div>
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900">Choose Your Plan</h1>
-          <p className="text-sm text-gray-600 mt-2">Select the perfect subscription for your business</p>
+      <div className="rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 text-white p-5 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden">
+        <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
+        <div className="absolute right-16 -bottom-10 h-28 w-28 rounded-full bg-white/10" />
+        <div className="flex items-start justify-between relative">
+          <div>
+            <h1 className="text-xl sm:text-3xl font-bold">Choose Your Plan</h1>
+            <p className="text-sm sm:text-base text-white/85 mt-2">Select the perfect subscription for your business</p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setLocation('/dashboard')}
+            className="hover:bg-white/15 text-white flex-shrink-0"
+            data-testid="button-close-subscription"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => setLocation('/dashboard')}
-          className="hover:bg-gray-100 flex-shrink-0"
-        >
-          <X className="h-5 w-5" />
-        </Button>
       </div>
 
       {/* Subscription Plans */}
@@ -428,12 +433,12 @@ export default function SubscriptionPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-stretch">
           {subscriptionPlans.map((plan: SubscriptionPlan, planIndex: number) => (
           <Card 
             key={plan.id} 
-            className={`relative transition-all duration-300 hover:shadow-lg cursor-pointer ${
-              plan.popular ? 'ring-2 ring-blue-500 shadow-lg sm:scale-105' : ''
+            className={`relative flex flex-col transition-all duration-300 hover:shadow-lg cursor-pointer ${
+              plan.popular ? 'ring-2 ring-blue-500 shadow-lg' : ''
             } ${
               plan.current ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300' : ''
             }`}
@@ -470,7 +475,7 @@ export default function SubscriptionPage() {
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-3 px-4 pb-4">
+            <CardContent className="flex flex-col flex-1 space-y-3 px-4 pb-4">
               <div className="flex items-center justify-between sm:block sm:text-center">
                 <div>
                   <div className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -504,7 +509,7 @@ export default function SubscriptionPage() {
                 </span>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex-1">
                 {plan.features.filter((f: string) => !/\d+\s+shop/i.test(f)).map((feature, index) => (
                   <div key={index} className="flex items-start space-x-2">
                     <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" />
@@ -841,7 +846,7 @@ export default function SubscriptionPage() {
 
   return (
     <DashboardLayout title="Subscription">
-      <div className="max-w-7xl mx-auto py-4 sm:py-6">
+      <div className="w-full px-2 py-4 sm:px-3 lg:px-6 lg:py-6">
         {renderStepIndicator()}
         
         {step === 1 && renderPlanSelection()}
