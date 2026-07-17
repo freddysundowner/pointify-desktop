@@ -2697,7 +2697,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
         {/* Right Panel - Products */}
         {viewMode === 'grid' && (
-          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col lg:h-full lg:overflow-hidden ${!showMobileCart && cartItems.length > 0 ? 'pb-24' : 'pb-2'} lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
+          <div className={`w-full lg:w-1/3 bg-gray-50 p-2 lg:p-6 flex-col flex-1 min-h-0 overflow-y-auto lg:h-full lg:overflow-hidden pb-2 lg:pb-6 ${!showMobileCart ? 'flex' : 'hidden lg:flex'}`}>
 
           {/* Product Grid — shown on all sizes */}
           <div className="flex flex-col bg-white rounded-xl lg:rounded-2xl p-2 lg:p-4 shadow-sm lg:shadow-lg lg:flex-1 lg:min-h-0 lg:overflow-hidden">
@@ -2739,7 +2739,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                 </div>
               ) : viewMode === 'grid' ? (
                 /* Grid View - Restaurant Style Cards */
-                <div className="grid grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-3 pb-4">
+                <div className={`grid grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-3 ${cartItems.length > 0 ? 'pb-28' : 'pb-4'} lg:pb-4`}>
                   {products.map((product: any) => {
                     const price = getPriceForSaleType(product, saleType);
                     const productId = product._id || product.id;
