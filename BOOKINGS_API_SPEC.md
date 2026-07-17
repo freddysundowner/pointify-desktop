@@ -83,6 +83,37 @@ applies them itself, but the backend should filter at the database level):
 - `q` — case-insensitive substring match against `guestName`, `guestIdNumber`,
   `guestPhone`, and `roomName`
 
+#### GET /booking/stats?shop=<shopId>&from=<YYYY-MM-DD>&to=<YYYY-MM-DD>
+Report summary for the period `[from, to)` (`to` is EXCLUSIVE). The POS proxy
+currently computes this itself from `/booking` + `/room`; the backend should
+implement it natively (aggregation pipeline) with this exact response shape:
+
+```json
+{
+  "from": "2026-07-01",
+  "to": "2026-08-01",
+  "revenue": { "total": 0, "cash": 0, "mpesa": 0, "unpaid": 0 },
+  "nightsSold": 0,
+  "availableNights": 0,
+  "roomCount": 0,
+  "occupancy": 0,
+  "bookingsCount": 0,
+  "perRoom": [{ "roomId": "", "name": "", "bookings": 0, "nights": 0, "revenue": 0 }],
+  "bookings": []
+}
+```
+
+Rules the numbers must follow:
+- `bookings` / `bookingsCount` / `nightsSold` / `perRoom.bookings|nights`:
+  non-cancelled bookings whose stay overlaps the window
+  (`checkIn < to && checkOut > from`); nights are clamped to the window.
+- Revenue (`total`/`cash`/`mpesa` and `perRoom.revenue`): checked-out bookings
+  counted ONCE by payment date (`paidAt` date part, falling back to `checkOut`)
+  inside `[from, to)`; `amountPaid` falling back to `totalAmount`.
+  `unpaid` sums `totalAmount` of check-outs with `paymentMethod` `"none"`/missing.
+- `roomCount` = current rooms + booked-but-deleted rooms seen in the window;
+  `availableNights = roomCount × nights in window`; `occupancy` is capped at 100.
+
 #### POST /booking
 Body: the model fields above (without `_id` / payment fields). Server must:
 - validate required fields and `checkOut > checkIn`;

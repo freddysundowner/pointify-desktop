@@ -26,11 +26,17 @@ interface Booking {
   paidAt?: string;
 }
 
-interface Room {
-  _id: string;
-  name: string;
-  group?: string;
-  nightlyRate: number;
+interface ReportStats {
+  from: string;
+  to: string;
+  revenue: { total: number; cash: number; mpesa: number; unpaid: number };
+  nightsSold: number;
+  availableNights: number;
+  roomCount: number;
+  occupancy: number;
+  bookingsCount: number;
+  perRoom: { roomId: string; name: string; bookings: number; nights: number; revenue: number }[];
+  bookings: Booking[];
 }
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -49,13 +55,6 @@ const toDateStr = (d: Date) => {
 const nightsBetween = (a: string, b: string) =>
   Math.max(0, Math.round((new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000));
 
-// Nights of a booking that fall inside [from, to) — for occupancy
-const nightsInRange = (b: Booking, from: string, to: string) => {
-  const start = b.checkIn > from ? b.checkIn : from;
-  const end = b.checkOut < to ? b.checkOut : to;
-  return nightsBetween(start, end);
-};
-
 export default function BookingsReportPage() {
   const { shopId, shopData } = usePrimaryShop();
   const isGuestHouse = !!shopData?.isGuestHouse;
@@ -71,118 +70,38 @@ export default function BookingsReportPage() {
   const [from, setFrom] = useState<string>(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [to, setTo] = useState<string>(toDateStr(new Date(now.getFullYear(), now.getMonth() + 1, 1)));
 
-  const { data: rooms = [], isLoading: roomsLoading } = useQuery<Room[]>({
-    queryKey: ["booking-rooms", shopId],
-    queryFn: async () => {
-      const res = await apiCall(`/api/rooms?shop=${shopId}`, { method: "GET" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.data ?? data?.rooms ?? [];
-      if (!Array.isArray(list)) throw new Error("Rooms endpoint not available");
-      return list.map((r: any) => ({
-        _id: r._id,
-        name: r.name,
-        group: String(r.group || "").trim(),
-        nightlyRate: Number(r.nightlyRate) || 0,
-      }));
-    },
-    enabled: !!shopId,
-    retry: 1,
-  });
-
-  const { data: bookings = [], isLoading, isError } = useQuery<Booking[]>({
-    queryKey: ["bookings", shopId],
-    queryFn: async () => {
-      const res = await apiCall(`/api/booking?shop=${shopId}`, { method: "GET" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data?.data ?? data?.bookings ?? [];
-      if (!Array.isArray(list)) throw new Error("Bookings endpoint not available");
-      return list;
-    },
-    enabled: !!shopId,
-    retry: 1,
-  });
-
   const rangeDays = nightsBetween(from, to);
   const validRange = rangeDays > 0;
 
-  // Bookings whose stay overlaps the report range (excluding cancelled)
-  const inRange = useMemo(
-    () =>
-      validRange
-        ? bookings.filter((b) => b.status !== "cancelled" && b.checkIn < to && b.checkOut > from)
-        : [],
-    [bookings, from, to, validRange]
-  );
+  // All report numbers come from ONE server endpoint. The proxy computes them
+  // today (from /booking + /room) and will pass through the main backend's
+  // /booking/stats endpoint once it exists — same response shape either way.
+  const { data: report, isLoading, isError } = useQuery<ReportStats>({
+    queryKey: ["booking-stats", shopId, from, to],
+    queryFn: async () => {
+      const res = await apiCall(`/api/booking/stats?shop=${shopId}&from=${from}&to=${to}`, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data || !Array.isArray(data.perRoom)) throw new Error("Stats endpoint not available");
+      return data;
+    },
+    enabled: !!shopId && validRange,
+    placeholderData: (prev) => prev,
+    retry: 1,
+  });
 
-  // Payment date of a checked-out booking (when the money was recorded)
-  const paidDateOf = (b: Booking) => (b.paidAt ? b.paidAt.slice(0, 10) : b.checkOut);
-
-  const stats = useMemo(() => {
-    let nightsSold = 0;
-    let cash = 0;
-    let mpesa = 0;
-    let unpaid = 0;
-    const perRoom = new Map<string, { name: string; bookings: number; nights: number; revenue: number }>();
-    const roomIdsSeen = new Set<string>();
-
-    const roomRowFor = (b: Booking) => {
-      const key = b.roomId || b.roomName;
-      let row = perRoom.get(key);
-      if (!row) {
-        row = {
-          name: b.roomName || rooms.find((r) => r._id === b.roomId)?.name || "Unknown room",
-          bookings: 0,
-          nights: 0,
-          revenue: 0,
-        };
-        perRoom.set(key, row);
-      }
-      return row;
-    };
-
-    // Nights & booking counts: by stay overlap with the period
-    for (const b of inRange) {
-      const n = nightsInRange(b, from, to);
-      nightsSold += n;
-      if (b.roomId) roomIdsSeen.add(b.roomId);
-      const row = roomRowFor(b);
-      row.bookings += 1;
-      row.nights += n;
-    }
-
-    // Revenue: by PAYMENT date (when it was collected at check-out), so a
-    // payment is counted once, in the period it was received — never split
-    // or double-counted across periods, and never mixed with POS sales.
-    for (const b of bookings) {
-      if (b.status !== "checked_out") continue;
-      const pd = paidDateOf(b);
-      if (pd < from || pd >= to) continue;
-      if (b.paymentMethod === "none" || !b.paymentMethod) {
-        unpaid += Number(b.totalAmount) || 0;
-        continue;
-      }
-      const paid = Number(b.amountPaid) || Number(b.totalAmount) || 0;
-      if (b.paymentMethod === "cash") cash += paid;
-      else if (b.paymentMethod === "mpesa") mpesa += paid;
-      roomRowFor(b).revenue += paid;
-    }
-
-    const roomRows = [...perRoom.values()].sort((a, b) => b.revenue - a.revenue || b.nights - a.nights);
-    // Denominator: current rooms PLUS any booked rooms that no longer exist,
-    // so occupancy can never exceed 100% because of a deleted room.
-    const currentIds = new Set(rooms.map((r) => r._id));
-    let extraRooms = 0;
-    roomIdsSeen.forEach((id) => {
-      if (!currentIds.has(id)) extraRooms += 1;
-    });
-    const availableNights = (rooms.length + extraRooms) * rangeDays;
-    const occupancy = availableNights > 0 ? Math.min(100, Math.round((nightsSold / availableNights) * 100)) : 0;
-    return { nightsSold, cash, mpesa, unpaid, roomRows, occupancy, availableNights, roomCount: rooms.length + extraRooms };
-  }, [inRange, bookings, from, to, rooms, rangeDays]);
-
-  const revenue = stats.cash + stats.mpesa;
+  const stats = {
+    nightsSold: report?.nightsSold ?? 0,
+    cash: report?.revenue?.cash ?? 0,
+    mpesa: report?.revenue?.mpesa ?? 0,
+    unpaid: report?.revenue?.unpaid ?? 0,
+    roomRows: report?.perRoom ?? [],
+    occupancy: report?.occupancy ?? 0,
+    availableNights: report?.availableNights ?? 0,
+    roomCount: report?.roomCount ?? 0,
+  };
+  const inRange = report?.bookings ?? [];
+  const revenue = report?.revenue?.total ?? 0;
 
   const sortedBookings = useMemo(
     () => [...inRange].sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1)),
@@ -266,7 +185,7 @@ export default function BookingsReportPage() {
           )}
         </div>
 
-        {isLoading || roomsLoading ? (
+        {isLoading ? (
           <div className="flex items-center gap-2 text-gray-500 py-10 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading report…
           </div>

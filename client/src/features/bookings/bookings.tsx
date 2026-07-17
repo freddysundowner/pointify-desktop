@@ -283,7 +283,11 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
 
   const filteredBookings = hasFilters ? serverFiltered : bookings;
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["bookings", shopId] });
+    // Report numbers are served by /api/booking/stats — keep them fresh too.
+    queryClient.invalidateQueries({ queryKey: ["booking-stats", shopId] });
+  };
 
   const openNewBooking = (day?: string, roomId?: string) => {
     const start = day || rangeFrom || todayStr();
