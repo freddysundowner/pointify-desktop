@@ -525,17 +525,20 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
     <DashboardLayout>
       <div className="px-2 py-4 sm:px-3 lg:px-4 lg:py-6 w-full">
         <div className="mb-4 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-600 to-purple-700 p-4 sm:p-5 text-white shadow-md">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                <button
-                  onClick={() => navigate(view === "rooms" ? "/bookings" : dashboardRoute)}
-                  className="h-9 w-9 -ml-1 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
-                  aria-label={view === "rooms" ? "Back to bookings" : "Back to home"}
-                  data-testid="button-back-header"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
+          <div className="flex items-center justify-between gap-3">
+            {/* Back button — left */}
+            <button
+              onClick={() => navigate(view === "rooms" ? "/bookings" : dashboardRoute)}
+              className="h-9 w-9 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
+              aria-label={view === "rooms" ? "Back to bookings" : "Back to home"}
+              data-testid="button-back-header"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+
+            {/* Title + revenue — evenly centered on small devices */}
+            <div className="min-w-0 flex-1 text-center lg:text-left">
+              <h1 className="text-lg sm:text-xl font-bold flex items-center justify-center lg:justify-start gap-2">
                 <span className="bg-white/15 rounded-xl p-2">
                   <BedDouble className="h-5 w-5" />
                 </span>
@@ -546,12 +549,13 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 <span className="font-semibold text-white">{monthRevenue.toLocaleString()}</span>
               </p>
             </div>
-            {/* Header actions — desktop/tablet only; small devices use the floating "+" button */}
-            <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
+
+            {/* Header actions — desktop only; small devices use the floating "+" button */}
+            <div className="hidden lg:flex items-center gap-2 shrink-0">
               {view === "rooms" && canManageRooms && (
                 <Button
                   variant="outline"
-                  className="flex-1 sm:flex-none bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                  className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
                   onClick={() => setBulkOpen(true)}
                   data-testid="button-bulk-add-rooms"
                 >
@@ -561,7 +565,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               )}
               {canCreateBookings && (
                 <Button
-                  className="flex-1 sm:flex-none bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-sm"
+                  className="bg-white text-purple-700 hover:bg-purple-50 font-semibold shadow-sm"
                   onClick={() => openNewBooking()}
                   disabled={roomsLoading || rooms.length === 0}
                   data-testid="button-new-booking"
@@ -571,6 +575,9 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 </Button>
               )}
             </div>
+
+            {/* Right spacer on small devices keeps the title perfectly centered */}
+            <div className="lg:hidden h-9 w-9 shrink-0" aria-hidden="true" />
           </div>
         </div>
 
