@@ -99,10 +99,11 @@ export default function DashboardLayout({ children, title, isDashboard = false }
   ]);
   const isTopLevelRoute = topLevelRoutes.has(location) || location.startsWith('/reports/');
 
-  // Room-bookings module gets its own mobile-app style bottom tab bar on
-  // every bookings screen (list, new, report, detail).
-  const isBookingsRoute =
-    location === '/rooms' || location === '/bookings' || location.startsWith('/bookings/');
+  // Room-bookings module gets its own mobile-app style bottom tab bar, but
+  // ONLY on its top-level tab screens. Inner pages (like /bookings/new) hide
+  // the tab bar and rely on their own top back button, like a mobile app.
+  const bookingsTabRoutes = new Set(['/rooms', '/bookings', '/bookings/report']);
+  const isBookingsRoute = bookingsTabRoutes.has(location);
 
   const { hasAttendantPermission, isAdmin } = usePermissions();
   const isAdminUser = isAdmin || localStorage.getItem('userType') === 'admin';
