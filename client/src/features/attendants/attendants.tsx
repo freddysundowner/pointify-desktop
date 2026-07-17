@@ -107,7 +107,18 @@ export default function Attendants() {
         })
         .then(data => {
           console.log('Admin permissions response:', data);
-          return Array.isArray(data) ? data : data.permissions || [];
+          const list = Array.isArray(data) ? data : data.permissions || [];
+          // The main backend's permission template doesn't include the
+          // standalone Room Bookings group yet — add it here so shop owners
+          // can grant booking permissions today. Once the backend adds a
+          // "bookings" entry to its template, its version is used instead.
+          if (Array.isArray(list) && !list.some((p: any) => p.key === 'bookings')) {
+            list.push({
+              key: 'bookings',
+              value: ['view_bookings', 'create_bookings', 'manage_bookings', 'manage_rooms', 'view_reports'],
+            });
+          }
+          return list;
         });
     },
     enabled: isPermissionsDialogOpen,
