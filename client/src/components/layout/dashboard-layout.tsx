@@ -91,22 +91,33 @@ export default function DashboardLayout({ children, title, isDashboard = false }
     '/sales', '/returns', '/orders',
     '/purchases', '/purchase-returns',
     '/customers', '/suppliers',
-    '/bookings', '/bookings/report',
     '/stock/products', '/stock/categories', '/stock/summary', '/stock/count', '/stock/bad-stock', '/stock/transfer',
     '/expenses', '/cashflow', '/profit-loss', '/debtors',
     '/printer-config', '/sms-settings', '/subscription',
     '/settings', '/edit-profile', '/reports',
   ]);
-  // Individual report pages (/reports/…) are inner pages: no bottom nav,
-  // they get a mobile back header instead (rendered below).
   const isTopLevelRoute = topLevelRoutes.has(location);
-  const isInnerReportRoute = location.startsWith('/reports/');
 
-  // Room-bookings module gets its own mobile-app style bottom tab bar, but
-  // ONLY on its top-level tab screens. Inner pages (like /bookings/new) hide
-  // the tab bar and rely on their own top back button, like a mobile app.
-  const bookingsTabRoutes = new Set(['/bookings', '/bookings/report']);
-  const isBookingsRoute = bookingsTabRoutes.has(location);
+  // Inner pages that have no back button of their own get a slim mobile
+  // back header from the layout (rendered below): route → where "back" goes.
+  const innerBackHeader: Record<string, { href: string; label: string }> = {
+    '/income-reports':    { href: '/reports', label: 'Reports' },
+    '/net-profit-report': { href: '/reports', label: 'Reports' },
+    '/sales-report':      { href: '/reports', label: 'Reports' },
+    '/expense-report':    { href: '/reports', label: 'Reports' },
+    '/due-sales':         { href: '/reports', label: 'Reports' },
+    '/purchases-report':  { href: '/reports', label: 'Reports' },
+    '/analysis-report':   { href: '/reports', label: 'Reports' },
+    '/profit-analysis':   { href: '/reports', label: 'Reports' },
+    '/discount-reports':  { href: '/reports', label: 'Reports' },
+    '/stock-report':      { href: '/reports', label: 'Reports' },
+    '/product-sales':     { href: '/reports', label: 'Reports' },
+    '/sales-returns':     { href: '/reports', label: 'Reports' },
+    '/purchases-summary': { href: '/reports', label: 'Reports' },
+    '/bookings/report':   { href: '/bookings', label: 'Bookings' },
+  };
+  const innerBack = innerBackHeader[location]
+    || (location.startsWith('/reports/') ? { href: '/reports', label: 'Reports' } : undefined);
 
   const { hasAttendantPermission, isAdmin } = usePermissions();
   const isAdminUser = isAdmin || localStorage.getItem('userType') === 'admin';
@@ -566,64 +577,32 @@ export default function DashboardLayout({ children, title, isDashboard = false }
         {/* Network / offline status banner */}
         <NetworkStatusBar />
 
-        {/* Mobile back header for inner report pages (they have no back button of their own) */}
-        {isInnerReportRoute && (
+        {/* Mobile back header for inner pages that have no back button of their own */}
+        {innerBack && (
           <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 shadow-sm">
             <div className="flex items-center gap-2 px-2 h-12">
               <button
-                onClick={() => setLocation('/reports')}
+                onClick={() => setLocation(innerBack.href)}
                 className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-600 active:bg-gray-100"
-                aria-label="Back to reports"
-                data-testid="button-back-reports"
+                aria-label={`Back to ${innerBack.label}`}
+                data-testid="button-back-inner"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="text-sm font-semibold text-gray-900">Reports</span>
+              <span className="text-sm font-semibold text-gray-900">{innerBack.label}</span>
             </div>
           </div>
         )}
 
         {/* Page content — pt-14 on mobile only on dashboard (offsets the fixed global header) */}
-        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${(isTopLevelRoute || isBookingsRoute) ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
+        <div className={`${location === dashboardRoute ? 'pt-14' : 'pt-0'} lg:pt-0 ${isTopLevelRoute ? 'pb-24' : 'pb-6'} lg:pb-6 px-3 lg:px-6 w-full max-w-none`}>
           {children}
         </div>
 
       </div>
 
-      {/* ── Room Bookings mobile-app tab bar (all bookings screens) ──────── */}
-      {isBookingsRoute && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
-             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="relative flex items-stretch">
-            {[
-              { href: dashboardRoute,    icon: Home,         label: "Home",     show: true },
-              { href: "/rooms",          icon: BedDouble,    label: "Rooms",    show: true },
-              { href: "/bookings",       icon: CalendarDays, label: "Bookings", show: true },
-              { href: "/bookings/report", icon: BarChart3,   label: "Report",   show: canViewBookingsReport },
-            ].filter(t => t.show).map(({ href, icon: Icon, label }) => {
-              const active = location === href;
-              return (
-                <Link key={href} href={href}>
-                  <div className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 cursor-pointer transition-colors ${
-                    active ? 'text-purple-600' : 'text-gray-400 active:text-gray-600'
-                  }`} data-testid={`tab-bookings-${label.toLowerCase()}`}>
-                    <div className={`p-1 rounded-xl transition-all ${active ? 'bg-purple-50' : ''}`}>
-                      <Icon className={`h-5 w-5 ${active ? 'stroke-[2.5px]' : 'stroke-[1.8px]'}`} />
-                    </div>
-                    <span className={`text-[10px] leading-none font-medium ${active ? 'text-purple-600' : 'text-gray-400'}`}>
-                      {label}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-
-        </nav>
-      )}
-
       {/* ── Mobile Bottom Tab Bar (top-level pages only) ─────────────────── */}
-      {!isAttendantRoute && !isBookingsRoute && isTopLevelRoute && (
+      {!isAttendantRoute && isTopLevelRoute && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]"
              style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-stretch">

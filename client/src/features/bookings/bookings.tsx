@@ -24,6 +24,7 @@ import { apiCall } from "@/lib/api-config";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
+import { useNavigationRoute } from "@/lib/navigation-utils";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
@@ -96,6 +97,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   const canManageRooms = isAdminUser || hasAttendantPermission("bookings", "manage_rooms");
   const canCreateBookings = isAdminUser || hasAttendantPermission("bookings", "create_bookings");
   const canManageBookings = isAdminUser || hasAttendantPermission("bookings", "manage_bookings");
+  const canViewBookingsReport = isAdminUser || hasAttendantPermission("bookings", "view_reports");
   const canViewBookings =
     isAdminUser ||
     canManageRooms || canCreateBookings || canManageBookings ||
@@ -104,6 +106,7 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  const dashboardRoute = useNavigationRoute('dashboard');
 
   // The stay the user is checking availability for (check-in → check-out)
   const [rangeFrom, setRangeFrom] = useState<string>(todayStr());
@@ -525,16 +528,14 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                {view === "rooms" && (
-                  <button
-                    onClick={() => navigate("/bookings")}
-                    className="h-9 w-9 -ml-1 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
-                    aria-label="Back to bookings"
-                    data-testid="button-back-to-bookings"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate(view === "rooms" ? "/bookings" : dashboardRoute)}
+                  className="h-9 w-9 -ml-1 rounded-xl flex items-center justify-center bg-white/15 active:bg-white/25 shrink-0"
+                  aria-label={view === "rooms" ? "Back to bookings" : "Back to home"}
+                  data-testid="button-back-header"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <span className="bg-white/15 rounded-xl p-2">
                   <BedDouble className="h-5 w-5" />
                 </span>
@@ -1412,9 +1413,33 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
               aria-hidden="true"
             />
           )}
-          <div className="lg:hidden fixed bottom-20 right-4 z-50 flex flex-col items-end gap-2">
+          <div className="lg:hidden fixed bottom-6 right-4 z-50 flex flex-col items-end gap-2">
             {fabOpen && (
               <div className="flex flex-col items-end gap-2 mb-1">
+                {view === "bookings" && (
+                  <button
+                    onClick={() => { setFabOpen(false); navigate("/rooms"); }}
+                    className="flex items-center gap-2 rounded-full bg-white shadow-lg border border-purple-100 pl-4 pr-3 py-2.5 text-sm font-semibold text-purple-700 active:scale-95 transition-transform"
+                    data-testid="fab-view-rooms"
+                  >
+                    Rooms
+                    <span className="h-7 w-7 rounded-full bg-purple-100 flex items-center justify-center">
+                      <BedDouble className="h-4 w-4 text-purple-700" />
+                    </span>
+                  </button>
+                )}
+                {view === "bookings" && canViewBookingsReport && (
+                  <button
+                    onClick={() => { setFabOpen(false); navigate("/bookings/report"); }}
+                    className="flex items-center gap-2 rounded-full bg-white shadow-lg border border-purple-100 pl-4 pr-3 py-2.5 text-sm font-semibold text-purple-700 active:scale-95 transition-transform"
+                    data-testid="fab-view-report"
+                  >
+                    Report
+                    <span className="h-7 w-7 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Receipt className="h-4 w-4 text-purple-700" />
+                    </span>
+                  </button>
+                )}
                 {canManageRooms && (
                   <button
                     onClick={() => { setFabOpen(false); setBulkOpen(true); }}
