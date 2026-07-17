@@ -27,14 +27,8 @@ import DashboardLayout from "@/components/layout/dashboard-layout";
 import {
   BedDouble, Plus, Loader2, LogIn, LogOut,
   XCircle, CalendarDays, Phone, User, Trash2, Sparkles, Receipt,
-  SlidersHorizontal, MoreVertical,
+  SlidersHorizontal,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface Booking {
@@ -853,82 +847,44 @@ export default function BookingsPage({ view = "rooms" }: { view?: "rooms" | "boo
                 ))}
             </div>
             <div className="overflow-x-auto hidden sm:block">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-[26%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[21%]" />
-                </colgroup>
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wider text-purple-800 bg-purple-50/70 border-y border-purple-100">
-                    <th className="px-4 py-3 font-semibold">Guest</th>
-                    <th className="px-3 py-3 font-semibold">Room</th>
-                    <th className="px-3 py-3 font-semibold">Check-in</th>
-                    <th className="px-3 py-3 font-semibold">Check-out</th>
-                    <th className="px-3 py-3 font-semibold text-right">Total</th>
-                    <th className="px-3 py-3 font-semibold">Status</th>
+                  <tr className="text-left text-xs text-gray-500 border-b">
+                    <th className="p-2 pl-3">Guest</th>
+                    <th className="p-2">Room</th>
+                    <th className="p-2">Check-in</th>
+                    <th className="p-2">Check-out</th>
+                    <th className="p-2 text-right">Total</th>
+                    <th className="p-2">Status</th>
+                    <th className="p-2"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 [&_td]:align-middle">
+                <tbody>
                   {[...bookings]
                     .sort((a, b) => (a.checkIn < b.checkIn ? 1 : -1))
-                    .map((b, idx) => (
+                    .map((b) => (
                       <tr
                         key={bid(b)}
-                        className={`h-[60px] cursor-pointer transition-colors hover:bg-purple-50/60 ${idx % 2 === 1 ? "bg-gray-50/50" : "bg-white"}`}
+                        className="border-b last:border-0 cursor-pointer hover:bg-purple-50/50"
                         onClick={() => navigate(`/bookings/${bid(b)}`)}
                         data-testid={`row-booking-${bid(b)}`}
                       >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="h-8 w-8 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold flex items-center justify-center shrink-0">
-                              {(b.guestName || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase()).join("")}
-                            </span>
-                            <span className="font-medium text-gray-900 truncate">{b.guestName}</span>
-                          </div>
+                        <td className="p-2 pl-3 font-medium text-gray-900">{b.guestName}</td>
+                        <td className="p-2 text-gray-600">{b.roomName}</td>
+                        <td className="p-2 text-gray-600">{b.checkIn}</td>
+                        <td className="p-2 text-gray-600">{b.checkOut}</td>
+                        <td className="p-2 text-right text-gray-800">{Number(b.totalAmount).toLocaleString()}</td>
+                        <td className="p-2">
+                          <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
+                            {STATUS_META[b.status]?.label || b.status}
+                          </Badge>
                         </td>
-                        <td className="px-3 py-3 text-gray-700 truncate">{b.roomName}</td>
-                        <td className="px-3 py-3 text-gray-600 tabular-nums whitespace-nowrap">{b.checkIn}</td>
-                        <td className="px-3 py-3 text-gray-600 tabular-nums whitespace-nowrap">{b.checkOut}</td>
-                        <td className="px-3 py-3 text-right font-semibold text-gray-900 tabular-nums">{Number(b.totalAmount).toLocaleString()}</td>
-                        <td className="px-3 py-3">
-                          <div className="flex items-center gap-1.5">
-                            <Badge className={`text-[10px] ${STATUS_META[b.status]?.cls || ""}`} variant="secondary">
-                              {STATUS_META[b.status]?.label || b.status}
-                            </Badge>
-                            {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-gray-400 hover:text-purple-700" onClick={(e) => e.stopPropagation()} data-testid={`button-booking-actions-${bid(b)}`}>
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                  <DropdownMenuItem onClick={() => openEditDates(b)} data-testid={`button-edit-dates-${bid(b)}`}>
-                                    <CalendarDays className="h-4 w-4 mr-2 text-purple-600" />Change dates
-                                  </DropdownMenuItem>
-                                  {b.status === "booked" && (
-                                    <DropdownMenuItem onClick={() => { setActionBooking(b); setPendingAction("checked_in"); }} data-testid={`button-checkin-${bid(b)}`}>
-                                      <LogIn className="h-4 w-4 mr-2 text-green-600" />Check in
-                                    </DropdownMenuItem>
-                                  )}
-                                  {b.status === "checked_in" && (
-                                    <DropdownMenuItem onClick={() => { setActionBooking(b); setPendingAction("checked_out"); setPayMethod("cash"); setPayMpesaCode(""); }} data-testid={`button-checkout-${bid(b)}`}>
-                                      <LogOut className="h-4 w-4 mr-2 text-blue-600" />Check out
-                                    </DropdownMenuItem>
-                                  )}
-                                  {b.status === "booked" && (
-                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => { setActionBooking(b); setPendingAction("cancelled"); }} data-testid={`button-cancel-${bid(b)}`}>
-                                      <XCircle className="h-4 w-4 mr-2" />Cancel booking
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
+                        <td className="p-2">
+                          {canManageBookings && (b.status === "booked" || b.status === "checked_in") && (
+                            <Button size="sm" variant="ghost" className="h-6 text-[11px] px-2 text-purple-700" onClick={(e) => { e.stopPropagation(); openEditDates(b); }} data-testid={`button-edit-dates-${bid(b)}`}>
+                              <CalendarDays className="h-3 w-3 mr-1" />Change dates
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
