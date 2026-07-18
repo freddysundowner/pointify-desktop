@@ -26,9 +26,12 @@ This produces `pointify-print-agent.exe` (Windows) and `pointify-print-agent`
 ## Start automatically with the computer
 
 ### Windows (easy way)
-Put `install-startup.bat` in the same folder as `pointify-print-agent.exe`
-and double-click it once. It registers the agent to start automatically at
-login and starts it right away. (`uninstall-startup.bat` removes it.)
+Keep `install-startup.bat`, `run-hidden.vbs` and `pointify-print-agent.exe`
+in the same folder and double-click `install-startup.bat` once. It registers
+the agent to start automatically at login and starts it right away — with
+**no visible window** (it runs silently in the background).
+- `stop-agent.bat` stops it.
+- `uninstall-startup.bat` stops it and removes it from startup.
 
 ### Windows (manual)
 1. Press `Win + R`, type `shell:startup`, press Enter.
