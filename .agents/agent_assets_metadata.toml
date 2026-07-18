@@ -108,3 +108,9 @@ id = "QHWq9JbT5DXIyb-OfQqyQ"
 uri = "file://FLUTTER_RESTAURANT_PROPOSAL.md"
 type = "text"
 title = "Flutter Restaurant Mode Proposal (updated)"
+
+[[outputs]]
+id = "g3vjvhSqb3KrRXIHf4SG0"
+uri = "file://pointify-print-agent-windows.zip"
+type = "unspecified"
+title = "Pointify Print Agent (Windows package)"
