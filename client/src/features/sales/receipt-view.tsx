@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/features/auth/useAuth";
 import { apiCall } from "@/lib/api-config";
 import { toast } from "@/hooks/use-toast";
+import { tryAgentPrintReceipt } from "@/lib/print-agent";
 
 export default function ReceiptView() {
   const [adminMatch, adminParams] = useRoute("/receipt/:id");
@@ -296,6 +297,37 @@ ${saleData.items.map((item: any) =>
 
   const handlePrint = async () => {
     try {
+      // Network (TCP) printers: print through the local print agent, since
+      // the cloud server can't reach a printer on the shop's own network.
+      try {
+        const statusRes = await fetch("/api/printer/status");
+        const status = statusRes.ok ? await statusRes.json() : null;
+        if (status?.config?.type === "TCP") {
+          const handled = await tryAgentPrintReceipt(status.config, getPrintData());
+          if (handled) {
+            toast({ title: "Receipt Printed" });
+            return;
+          }
+          toast({
+            title: "Print Agent Not Running",
+            description: "Start the Pointify Print Agent on this computer to print to the network printer. Opening the browser print dialog instead.",
+            variant: "destructive",
+          });
+          openReceiptWindow(true);
+          return;
+        }
+      } catch (agentErr: any) {
+        // Agent path failed — fall back to the browser print dialog so the
+        // cashier can still hand over a receipt.
+        toast({
+          title: "Print Failed",
+          description: (agentErr?.message || "Could not print via the print agent") + " — opening the browser print dialog instead.",
+          variant: "destructive",
+        });
+        openReceiptWindow(true);
+        return;
+      }
+
       const response = await apiCall("/api/printer/salereceipt", {
         method: "POST",
         body: JSON.stringify(getPrintData()),

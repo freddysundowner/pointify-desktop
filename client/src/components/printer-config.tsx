@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb, Monitor, Globe, Link, Unlink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usbPrinter } from "@/lib/usb-printer";
+import { agentAvailable, agentTestPrint, parseTcpTarget } from "@/lib/print-agent";
 
 interface PrinterConfig {
   type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM' | 'BROWSER' | 'WEBUSB';
@@ -52,7 +53,16 @@ export function PrinterConfigDialog() {
   const [usbConnected, setUsbConnected] = useState(false);
   const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
   const [usbWindowsError, setUsbWindowsError] = useState(false);
+  const [agentConnected, setAgentConnected] = useState<boolean | null>(null);
   const { toast } = useToast();
+
+  // Detect the local print agent whenever the TCP option is relevant
+  useEffect(() => {
+    if (config.type !== 'TCP' && status.config?.type !== 'TCP') return;
+    let cancelled = false;
+    agentAvailable().then(ok => { if (!cancelled) setAgentConnected(ok); });
+    return () => { cancelled = true; };
+  }, [isOpen, config.type, status.config?.type]);
 
   useEffect(() => {
     setUsbConnected(usbPrinter.isConnected());
@@ -185,11 +195,29 @@ export function PrinterConfigDialog() {
     }
     setIsLoading(true);
     try {
+      // Network printers: prefer the local print agent — the cloud server
+      // can't reach a printer on the shop's own LAN, but the agent can.
+      if (status.config?.type === 'TCP') {
+        const target = parseTcpTarget(status.config);
+        if (target && (await agentAvailable())) {
+          setAgentConnected(true);
+          await agentTestPrint(target);
+          toast({ title: "Test Successful", description: "Test receipt printed via the local print agent" });
+          return;
+        }
+        setAgentConnected(false);
+      }
       const res = await fetch('/api/printer/test', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         toast({ title: "Test Successful", description: "Test print sent successfully" });
       } else {
+        if (status.config?.type === 'TCP') {
+          throw new Error(
+            (data.message || 'Test failed') +
+            " — for network printers, the Pointify Print Agent must be running on this computer (see the agent folder / ask your provider)."
+          );
+        }
         throw new Error(data.message || 'Test failed');
       }
     } catch (err) {
@@ -307,6 +335,20 @@ export function PrinterConfigDialog() {
                   onChange={e => setConfig({ ...config, port: parseInt(e.target.value) || 9100 })}
                   placeholder="9100"
                 />
+                <div className="flex items-center gap-2 pt-1" data-testid="status-print-agent">
+                  {agentConnected === true ? (
+                    <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" /> Print agent connected
+                    </Badge>
+                  ) : agentConnected === false ? (
+                    <Badge variant="outline" className="text-amber-700 border-amber-300 flex items-center gap-1">
+                      <XCircle className="h-3 w-3" /> Print agent not detected
+                    </Badge>
+                  ) : null}
+                  <span className="text-xs text-muted-foreground">
+                    Network printing needs the Pointify Print Agent running on this computer.
+                  </span>
+                </div>
               </div>
             )}
 

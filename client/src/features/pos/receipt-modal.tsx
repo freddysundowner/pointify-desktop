@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api-config";
 import { useEffect } from "react";
 import { usbPrinter } from "@/lib/usb-printer";
+import { tryAgentPrintReceipt } from "@/lib/print-agent";
 
 interface ReceiptModalProps {
   isOpen: boolean;
@@ -148,6 +149,33 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
       }
 
       if (status?.config?.type === 'BROWSER') { browserPrint(); return; }
+
+      // Network (TCP) printers: print through the local print agent, since
+      // the cloud server can't reach a printer on the shop's own network.
+      if (status?.config?.type === 'TCP') {
+        try {
+          const handled = await tryAgentPrintReceipt(status.config, data);
+          if (handled) {
+            toast({ title: "Receipt Printed", description: "Sent to network printer" });
+            return;
+          }
+          toast({
+            title: "Print Agent Not Running",
+            description: "Start the Pointify Print Agent on this computer to print to the network printer. Opening the browser print dialog instead.",
+            variant: "destructive",
+          });
+        } catch (agentErr: any) {
+          toast({
+            title: "Print Failed",
+            description: (agentErr?.message || "Could not print via the print agent") + " — opening the browser print dialog instead.",
+            variant: "destructive",
+          });
+        }
+        // Fall back to the browser print dialog so the cashier can still
+        // hand over a receipt (same behavior as receipt-view).
+        browserPrint();
+        return;
+      }
 
       const response = await apiCall('/api/printer/salereceipt', {
         method: 'POST',

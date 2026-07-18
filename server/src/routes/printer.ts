@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import {  getPrinters,getPrinterStatus,testPrint,initializePrinter,printReceipt } from "../controllers/printerController.js";
+import {  getPrinters,getPrinterStatus,testPrint,initializePrinter,printReceipt,formatReceipt } from "../controllers/printerController.js";
 
 export function registerPrinterRoutes(app: Express) {
     app.get('/api/printers', getPrinters);
@@ -7,6 +7,7 @@ export function registerPrinterRoutes(app: Express) {
     app.post('/api/printer/test', testPrint);
     app.post('/api/printer/initialize', initializePrinter );
     app.post('/api/printer/salereceipt', printReceipt);
+    app.post('/api/printer/format', formatReceipt);
   
   // Add a test route to verify routing works
   app.get("/api/printer/test", (req, res) => {

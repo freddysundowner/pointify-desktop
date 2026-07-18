@@ -220,15 +220,14 @@ export const testPrint = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const printReceipt = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const {
-      shopName, shopAddress, receiptNumber, date, items,
-      subtotal, tax, total, paymentMethod, customerName,
-      attendant, splitPayment, currency, extraCharge, mpesaRef,
-    } = req.body;
+export function formatReceiptText(body: any, width?: number): string {
+  const {
+    shopName, shopAddress, receiptNumber, date, items,
+    subtotal, tax, total, paymentMethod, customerName,
+    attendant, splitPayment, currency, extraCharge, mpesaRef,
+  } = body;
 
-    const w = currentPrinterConfig.width || 32;
+  const w = width || currentPrinterConfig.width || 32;
     const div = '-'.repeat(w);
 
     const center = (text: string) => {
@@ -247,11 +246,11 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
 
     txt += center(shopName || 'Business Name');
     if (shopAddress) txt += center(shopAddress);
-    if (req.body.paybill_account) {
-      txt += center(`Paybill: ${req.body.paybill_account}`);
-      if (req.body.paybill_till) txt += center(`Account: ${req.body.paybill_till}`);
-    } else if (req.body.paybill_till) {
-      txt += center(`Buy Goods Till: ${req.body.paybill_till}`);
+    if (body.paybill_account) {
+      txt += center(`Paybill: ${body.paybill_account}`);
+      if (body.paybill_till) txt += center(`Account: ${body.paybill_till}`);
+    } else if (body.paybill_till) {
+      txt += center(`Buy Goods Till: ${body.paybill_till}`);
     }
     txt += center('SALES RECEIPT');
     txt += div + '\n';
@@ -295,11 +294,28 @@ export const printReceipt = async (req: Request, res: Response): Promise<void> =
     txt += center('Visit us again soon');
     txt += '\n\n\n\n';
 
+  return txt;
+}
+
+export const printReceipt = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const txt = formatReceiptText(req.body);
     await sendToPrinter(currentPrinterConfig, txt);
     res.json({ success: true, message: 'Receipt printed successfully' });
   } catch (err: any) {
     console.error('Receipt print error:', err);
     res.status(500).json({ success: false, message: err.message || 'Print failed' });
+  }
+};
+
+// Returns the formatted plain-text receipt (no printing) so the browser can
+// hand it to a local print agent on the shop's own network.
+export const formatReceipt = (req: Request, res: Response): void => {
+  try {
+    const txt = formatReceiptText(req.body, Number(req.body.width) || undefined);
+    res.json({ success: true, text: txt });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Format failed' });
   }
 };
 
