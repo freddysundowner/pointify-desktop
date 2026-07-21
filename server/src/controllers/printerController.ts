@@ -254,6 +254,9 @@ export function formatReceiptText(body: any, width?: number): string {
     } else if (body.paybill_till) {
       txt += center(`Buy Goods Till: ${body.paybill_till}`);
     }
+    if ((body.paybill_account || body.paybill_till) && body.paybill_name) {
+      txt += center(`(${body.paybill_name})`);
+    }
     txt += center('SALES RECEIPT');
     txt += div + '\n';
     txt += `Receipt: ${receiptNumber}\n`;

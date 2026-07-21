@@ -136,6 +136,7 @@ export default function ReceiptView() {
         "",
       paybill_account: sale.shopId?.paybill_account || primaryShop?.paybill_account || "",
       paybill_till: sale.shopId?.paybill_till || primaryShop?.paybill_till || "",
+      paybill_name: sale.shopId?.paybill_name || primaryShop?.paybill_name || "",
       currency: sale.shopId?.currency || primaryShop?.currency || "KES",
     },
   };
@@ -158,6 +159,7 @@ export default function ReceiptView() {
     shopEmail: saleData.shop.receiptemail || "",
     paybill_account: saleData.shop.paybill_account || "",
     paybill_till: saleData.shop.paybill_till || "",
+    paybill_name: saleData.shop.paybill_name || "",
     receiptNumber: saleData.receiptNo?.toString(),
     date: `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
     currency,
@@ -202,6 +204,7 @@ ${saleData.shop.contact ? `<div class="center small">Tel: ${saleData.shop.contac
 ${saleData.shop.receiptemail ? `<div class="center small">${saleData.shop.receiptemail}</div>` : ""}
 ${saleData.shop.paybill_account ? `<div class="center small">Paybill: ${saleData.shop.paybill_account}${saleData.shop.paybill_till ? ` / Acc: ${saleData.shop.paybill_till}` : ""}</div>` : ""}
 ${!saleData.shop.paybill_account && saleData.shop.paybill_till ? `<div class="center small">Buy Goods: ${saleData.shop.paybill_till}</div>` : ""}
+${(saleData.shop.paybill_account || saleData.shop.paybill_till) && saleData.shop.paybill_name ? `<div class="center" style="font-size:10px">(${saleData.shop.paybill_name})</div>` : ""}
 <hr class="divider">
 <div class="center bold" style="letter-spacing:2px">SALES RECEIPT</div>
 <hr class="divider">
@@ -515,6 +518,9 @@ ${saleData.items.map((item: any) =>
                   <div className="text-xs text-gray-600">
                     Buy Goods: {saleData.shop.paybill_till}
                   </div>
+                )}
+                {(saleData.shop.paybill_account || saleData.shop.paybill_till) && saleData.shop.paybill_name && (
+                  <div className="text-[10px] text-gray-500" data-testid="text-paybill-name">({saleData.shop.paybill_name})</div>
                 )}
               </div>
 

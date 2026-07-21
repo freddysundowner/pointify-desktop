@@ -87,6 +87,7 @@ export default function ReceiptModal({
     shopEmail: (primaryShop as any)?.email_receipt || primaryShop?.receiptemail || '',
     paybill_account: primaryShop?.paybill_account || '',
     paybill_till: primaryShop?.paybill_till || '',
+    paybill_name: primaryShop?.paybill_name || '',
     receiptNumber: transaction?.id?.toString() ?? '',
     date: transactionDate.toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric',
@@ -368,6 +369,9 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
                   {primaryShop?.paybill_account ? `Paybill: ${primaryShop.paybill_account}` : `Buy Goods: ${primaryShop.paybill_till}`}
                   {primaryShop?.paybill_account && primaryShop?.paybill_till && ` · Acc: ${primaryShop.paybill_till}`}
                 </p>
+              )}
+              {(primaryShop?.paybill_account || primaryShop?.paybill_till) && primaryShop?.paybill_name && (
+                <p className="text-[10px] text-gray-400" data-testid="text-paybill-name">({primaryShop.paybill_name})</p>
               )}
             </div>
 

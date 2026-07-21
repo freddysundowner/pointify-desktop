@@ -101,6 +101,7 @@ export default function ShopDetails() {
     contact: "",
     paybill_till: "",
     paybill_account: "",
+    paybill_name: "",
     mpesa_require_validation: true,
     address_receipt: "",
   });
@@ -178,6 +179,7 @@ export default function ShopDetails() {
         contact: shop.contact || "",
         paybill_till: shop.paybill_till || "",
         paybill_account: shop.paybill_account || "",
+        paybill_name: (shop as any).paybill_name || "",
         mpesa_require_validation: shop.mpesa_require_validation !== false,
         address_receipt: shop.address_receipt || "",
       });
@@ -300,6 +302,7 @@ export default function ShopDetails() {
     contact: data.contact,
     paybill_till: data.paybill_till,
     paybill_account: data.paybill_account,
+    paybill_name: data.paybill_name,
     mpesa_require_validation: data.mpesa_require_validation,
     address_receipt: data.address_receipt,
   });
@@ -354,6 +357,7 @@ export default function ShopDetails() {
       contact: formData.contact,
       paybill_till: formData.paybill_till,
       paybill_account: formData.paybill_account,
+      paybill_name: formData.paybill_name,
       mpesa_require_validation: formData.mpesa_require_validation,
       address_receipt: formData.address_receipt,
     };
@@ -696,6 +700,17 @@ export default function ShopDetails() {
                         data-testid="input-paybill-account"
                       />
                       <p className="text-[11px] text-gray-500">Leave blank if you're using a Till number.</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-600">Account Display Name</Label>
+                      <Input
+                        value={formData.paybill_name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, paybill_name: e.target.value }))}
+                        placeholder="e.g. Riverside Cosmetics"
+                        className="h-9 text-sm"
+                        data-testid="input-paybill-name"
+                      />
+                      <p className="text-[11px] text-gray-500">Optional. Shown in brackets below the account number on receipts.</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
