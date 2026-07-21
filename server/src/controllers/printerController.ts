@@ -246,6 +246,8 @@ export function formatReceiptText(body: any, width?: number): string {
 
     txt += center(shopName || 'Business Name');
     if (shopAddress) txt += center(shopAddress);
+    if (body.shopContact) txt += center(`Tel: ${body.shopContact}`);
+    if (body.shopEmail) txt += center(String(body.shopEmail));
     if (body.paybill_account) {
       txt += center(`Paybill: ${body.paybill_account}`);
       if (body.paybill_till) txt += center(`Account: ${body.paybill_till}`);

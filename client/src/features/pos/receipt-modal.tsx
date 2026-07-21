@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import type { Transaction, CartItem } from "@shared/schema";
 import { jsPDF } from 'jspdf';
 import { useToast } from "@/hooks/use-toast";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS } from "@/lib/api-config";
 import { useEffect } from "react";
 import { usbPrinter } from "@/lib/usb-printer";
 import { tryAgentPrintReceipt } from "@/lib/print-agent";
+import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
+import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
+import { offlineStorage } from "@/lib/offline-storage";
 
 interface ReceiptModalProps {
   isOpen: boolean;
@@ -26,7 +31,39 @@ export default function ReceiptModal({
 
   const adminData = localStorage.getItem('adminData');
   const admin = adminData ? JSON.parse(adminData) : null;
-  const primaryShop = admin?.primaryShop;
+  const token = localStorage.getItem('token');
+
+  // Resolve the ACTIVE shop the same way the rest of POS does (see pos.tsx /
+  // checkout-modal): selected shop (Redux) → attendant's shop → admin fields.
+  // admin.primaryShop may be a different branch, so per-shop receipt settings
+  // (paybill, contact, receipt email) must come from the resolved shop.
+  const { attendant, token: attendantToken } = useAttendantAuth();
+  const selectedShopId = useSelector((state: RootState) => state.shop.selectedShopId);
+  const attendantShopId =
+    typeof attendant?.shopId === 'object' ? (attendant?.shopId as any)?._id : attendant?.shopId;
+  const primaryShopId =
+    typeof admin?.primaryShop === 'object' ? admin?.primaryShop?._id : admin?.primaryShop;
+  const shopId =
+    selectedShopId || attendantShopId || admin?.shopId || admin?.shop || primaryShopId;
+
+  const { data: activeShop } = useQuery<any>({
+    queryKey: ['shop', shopId],
+    queryFn: async () => {
+      try {
+        const res = await apiCall(API_ENDPOINTS.shop.getShopById(shopId as string));
+        const data = await res.json();
+        offlineStorage.saveSetting(`shop:${shopId}`, data).catch(() => {});
+        return data;
+      } catch (err) {
+        const cached = await offlineStorage.getSetting(`shop:${shopId}`).catch(() => null);
+        if (cached) return cached;
+        throw err;
+      }
+    },
+    enabled: !!shopId && !!(token || attendantToken),
+  });
+
+  const primaryShop = activeShop || (typeof admin?.primaryShop === 'object' ? admin?.primaryShop : null);
   const attendantName = admin?.attendantId?.username || admin?.username || 'Staff';
   const items = (transaction?.items as CartItem[]) || [];
   const transactionDate = new Date();
@@ -46,6 +83,10 @@ export default function ReceiptModal({
   const getPrintData = () => ({
     shopName: primaryShop?.name || 'Business Name',
     shopAddress: primaryShop?.address || '',
+    shopContact: primaryShop?.contact || '',
+    shopEmail: (primaryShop as any)?.email_receipt || primaryShop?.receiptemail || '',
+    paybill_account: primaryShop?.paybill_account || '',
+    paybill_till: primaryShop?.paybill_till || '',
     receiptNumber: transaction?.id?.toString() ?? '',
     date: transactionDate.toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric',

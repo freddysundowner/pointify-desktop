@@ -154,6 +154,10 @@ export default function ReceiptView() {
   const getPrintData = () => ({
     shopName: saleData.shop.name,
     shopAddress: saleData.shop.address,
+    shopContact: saleData.shop.contact || "",
+    shopEmail: saleData.shop.receiptemail || "",
+    paybill_account: saleData.shop.paybill_account || "",
+    paybill_till: saleData.shop.paybill_till || "",
     receiptNumber: saleData.receiptNo?.toString(),
     date: `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
     currency,
