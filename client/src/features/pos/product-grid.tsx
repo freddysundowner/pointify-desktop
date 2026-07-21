@@ -12,6 +12,7 @@ import { useCartContext } from "@/contexts/CartContext";
 import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { usbPrinter } from "@/lib/usb-printer";
+import { tryAgentPrintKitchen } from "@/lib/print-agent";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useProducts } from "@/contexts/ProductsContext";
@@ -1495,6 +1496,20 @@ export default function ProductGrid({
       const statusRes = await fetch('/api/printer/status');
       const status = statusRes.ok ? await statusRes.json() : null;
       if (!status?.initialized) return;
+
+      // Network (TCP) kitchen printer: print through the local print agent.
+      // Falls through to browser print if the agent isn't running.
+      if (status?.config?.type === 'TCP') {
+        try {
+          const handled = await tryAgentPrintKitchen(status.config, ticket);
+          if (handled) {
+            toast({ title: "Order Sent to Kitchen", description: `Order #${ticket.orderNumber} printed.` });
+            return;
+          }
+        } catch (agentErr: any) {
+          toast({ title: "Kitchen Print Failed", description: agentErr?.message || "Could not reach the kitchen printer. Opening browser print instead.", variant: "destructive" });
+        }
+      }
 
       if (status?.config?.type === 'WEBUSB') {
         if (!usbPrinter.isConnected()) await usbPrinter.reconnect();

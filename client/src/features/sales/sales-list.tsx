@@ -88,6 +88,7 @@ import "jspdf-autotable";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
+import { tryAgentPrintKitchen } from "@/lib/print-agent";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 
 function SalesList() {
@@ -449,6 +450,36 @@ function SalesList() {
     if (!res.ok) return;
     const data = await res.json();
     const ticketDate = new Date(data.saleDate || data.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // Network (TCP) kitchen printer: print through the local print agent.
+    // Falls back to browser print if the agent isn't running.
+    try {
+      const statusRes = await fetch("/api/printer/status");
+      const status = statusRes.ok ? await statusRes.json() : null;
+      if (status?.config?.type === "TCP") {
+        try {
+          const handled = await tryAgentPrintKitchen(status.config, {
+            shopName: data.shopId?.name || "",
+            orderNumber: String(data.receiptNo),
+            date: ticketDate,
+            customerName: data.customerId?.name || undefined,
+            attendant: data.attendantId?.username || undefined,
+            items: (data.items || []).map((item: any) => ({
+              name: item.product?.name || "",
+              quantity: item.quantity,
+              note: item.salesnote || undefined,
+            })),
+          });
+          if (handled) {
+            toast({ title: "Kitchen Order Printed", description: `Order #${data.receiptNo} sent to the kitchen printer.` });
+            return;
+          }
+        } catch (agentErr: any) {
+          toast({ title: "Kitchen Print Failed", description: agentErr?.message || "Could not reach the kitchen printer. Opening browser print instead.", variant: "destructive" });
+        }
+      }
+    } catch { /* fall through to browser print */ }
+
     const html = `<!DOCTYPE html><html><head><title>Kitchen Order #${data.receiptNo}</title>
 <style>body{font-family:monospace;font-size:14px;width:280px;margin:0 auto;padding:8px}.center{text-align:center}.bold{font-weight:bold}hr{border:none;border-top:1px dashed #000}.item{font-size:18px;font-weight:bold;margin:6px 0}@media print{body{width:100%}}</style>
 </head><body>

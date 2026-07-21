@@ -92,6 +92,62 @@ export async function tryAgentPrintReceipt(
   return true;
 }
 
+export interface KitchenTicketData {
+  shopName: string;
+  orderNumber: string;
+  date: string;
+  customerName?: string;
+  attendant?: string;
+  note?: string;
+  items: { name: string; quantity: number; note?: string }[];
+}
+
+/** Plain-text kitchen order ticket (items + quantities only, no prices). */
+export function formatKitchenTicketText(t: KitchenTicketData, width = 32): string {
+  const w = width || 32;
+  const center = (s: string) =>
+    " ".repeat(Math.max(0, Math.floor((w - s.length) / 2))) + s + "\n";
+  const div = "-".repeat(w) + "\n";
+
+  let txt = "";
+  txt += center("*** KITCHEN ORDER ***");
+  if (t.shopName) txt += center(t.shopName);
+  txt += div;
+  txt += `ORDER #: ${t.orderNumber}\n`;
+  txt += `Time:    ${t.date}\n`;
+  if (t.customerName) txt += `Customer:${t.customerName}\n`;
+  if (t.attendant) txt += `Waiter:  ${t.attendant}\n`;
+  txt += div;
+  for (const item of t.items) {
+    txt += `${item.quantity} x ${item.name}\n`;
+    if (item.note) txt += `    ${item.note}\n`;
+  }
+  if (t.note) {
+    txt += div;
+    txt += `Note: ${t.note}\n`;
+  }
+  txt += div;
+  return txt;
+}
+
+/**
+ * Try to print a kitchen ticket through the local agent (TCP printers only).
+ * Returns true if handled; false if the agent isn't running or the printer
+ * isn't a network printer — caller should fall back to browser/USB print.
+ * Throws if the agent IS running but the print itself failed.
+ */
+export async function tryAgentPrintKitchen(
+  printerConfig: { type?: string; interface?: string; port?: number; width?: number } | null | undefined,
+  ticket: KitchenTicketData,
+): Promise<boolean> {
+  if (printerConfig?.type !== "TCP") return false;
+  const target = parseTcpTarget(printerConfig);
+  if (!target) return false;
+  if (!(await agentAvailable())) return false;
+  await agentPrintText(target, formatKitchenTicketText(ticket, printerConfig.width));
+  return true;
+}
+
 /** Print pre-formatted receipt text via the agent. */
 export async function agentPrintText(
   target: AgentPrinterTarget,
