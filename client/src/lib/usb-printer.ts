@@ -38,6 +38,8 @@ export interface ReceiptPrintData {
   splitPayment?: { cash?: number; mpesa?: number; bank?: number };
   extraCharge?: { label: string; amount: number };
   mpesaRef?: string;
+  showPaymentMethod?: boolean;
+  footerText?: string;
 }
 
 function pad(left: string, right: string, w = WIDTH): string {
@@ -241,22 +243,35 @@ class USBThermalPrinter {
     cmd(GS,  0x21, 0x00);
     cmd(ESC, 0x45, 0x00);
 
-    // Payment
-    if (data.paymentMethod === 'split' && data.splitPayment) {
-      txt('Payment: Split'); nl();
-      if (data.splitPayment.cash)  { txt(pad('  Cash:',  `${data.currency} ${Number(data.splitPayment.cash).toFixed(2)}`)); nl(); }
-      if (data.splitPayment.mpesa) { txt(pad('  M-Pesa:', `${data.currency} ${Number(data.splitPayment.mpesa).toFixed(2)}`)); nl(); }
-      if (data.splitPayment.bank)  { txt(pad('  Bank:',  `${data.currency} ${Number(data.splitPayment.bank).toFixed(2)}`)); nl(); }
-    } else {
-      txt(pad('Payment:', data.paymentMethod)); nl();
+    // Payment (skipped when the shop turns "show payment method" off)
+    if (data.showPaymentMethod !== false) {
+      if (data.paymentMethod === 'split' && data.splitPayment) {
+        txt('Payment: Split'); nl();
+        if (data.splitPayment.cash)  { txt(pad('  Cash:',  `${data.currency} ${Number(data.splitPayment.cash).toFixed(2)}`)); nl(); }
+        if (data.splitPayment.mpesa) { txt(pad('  M-Pesa:', `${data.currency} ${Number(data.splitPayment.mpesa).toFixed(2)}`)); nl(); }
+        if (data.splitPayment.bank)  { txt(pad('  Bank:',  `${data.currency} ${Number(data.splitPayment.bank).toFixed(2)}`)); nl(); }
+      } else {
+        txt(pad('Payment:', data.paymentMethod)); nl();
+      }
+      if (data.mpesaRef) { txt(pad('M-Pesa Ref:', data.mpesaRef)); nl(); }
     }
-    if (data.mpesaRef) { txt(pad('M-Pesa Ref:', data.mpesaRef)); nl(); }
 
     divider();
 
-    // Footer
+    // Footer (custom per-shop message, wrapped to paper width)
     cmd(ESC, 0x61, 0x01);
-    txt(center('Thank you for your business!')); nl();
+    const footerMsg = (data.footerText || '').trim() || 'Thank you for your business!';
+    const words = footerMsg.split(/\s+/);
+    let line = '';
+    for (const word of words) {
+      if ((line + ' ' + word).trim().length > WIDTH) {
+        txt(center(line.trim())); nl();
+        line = word;
+      } else {
+        line = (line + ' ' + word).trim();
+      }
+    }
+    if (line) { txt(center(line)); nl(); }
     nl(); nl(); nl();
 
     // Cut

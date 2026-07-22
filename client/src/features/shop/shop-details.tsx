@@ -104,6 +104,8 @@ export default function ShopDetails() {
     paybill_name: "",
     mpesa_require_validation: true,
     address_receipt: "",
+    receipt_show_payment: true,
+    receipt_footer: "",
   });
 
   // Fetch categories from API
@@ -182,6 +184,8 @@ export default function ShopDetails() {
         paybill_name: (shop as any).paybill_name || "",
         mpesa_require_validation: shop.mpesa_require_validation !== false,
         address_receipt: shop.address_receipt || "",
+        receipt_show_payment: (shop as any).receipt_show_payment !== false,
+        receipt_footer: (shop as any).receipt_footer || "",
       });
     }
   }, [shop]);
@@ -305,6 +309,8 @@ export default function ShopDetails() {
     paybill_name: data.paybill_name,
     mpesa_require_validation: data.mpesa_require_validation,
     address_receipt: data.address_receipt,
+    receipt_show_payment: data.receipt_show_payment,
+    receipt_footer: data.receipt_footer,
   });
 
   // Guard against saving before a valid shop has loaded. Without this, an
@@ -360,6 +366,8 @@ export default function ShopDetails() {
       paybill_name: formData.paybill_name,
       mpesa_require_validation: formData.mpesa_require_validation,
       address_receipt: formData.address_receipt,
+      receipt_show_payment: formData.receipt_show_payment,
+      receipt_footer: formData.receipt_footer,
     };
     
     console.log('Saving shop data:', updateData);
@@ -790,6 +798,30 @@ export default function ShopDetails() {
                       <Label className="text-xs font-medium text-gray-600">Receipt Address</Label>
                       <Input value={formData.address_receipt} onChange={(e) => setFormData(prev => ({ ...prev, address_receipt: e.target.value }))} placeholder="Address shown on receipts" className="h-9 text-sm" />
                     </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs font-medium text-gray-600">Receipt Footer Message</Label>
+                      <Input
+                        value={formData.receipt_footer}
+                        onChange={(e) => setFormData(prev => ({ ...prev, receipt_footer: e.target.value }))}
+                        placeholder="Thank you for your business!"
+                        className="h-9 text-sm"
+                        data-testid="input-receipt-footer"
+                      />
+                      <p className="text-[11px] text-gray-500">Shown at the bottom of every receipt. Leave blank for the default message.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div className="pr-3">
+                      <p className="text-sm font-medium text-gray-800">Show payment method on receipts</p>
+                      <p className="text-[11px] text-gray-500">
+                        On: printed receipts show how the customer paid (cash, M-Pesa, split, etc). Off: the payment line is left off the receipt.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.receipt_show_payment}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, receipt_show_payment: checked }))}
+                      data-testid="switch-receipt-show-payment"
+                    />
                   </div>
                 </CardContent>
               </Card>

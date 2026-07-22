@@ -88,6 +88,8 @@ export default function ReceiptModal({
     paybill_account: primaryShop?.paybill_account || '',
     paybill_till: primaryShop?.paybill_till || '',
     paybill_name: primaryShop?.paybill_name || '',
+    showPaymentMethod: primaryShop?.receipt_show_payment !== false,
+    footerText: primaryShop?.receipt_footer || '',
     receiptNumber: transaction?.id?.toString() ?? '',
     date: transactionDate.toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric',
@@ -145,10 +147,10 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
 <div class="row"><span>Tax</span><span>${cur} ${Number(transaction?.tax).toFixed(2)}</span></div>
 ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} ${extraCharge.amount.toFixed(2)}</span></div>` : ''}
 <div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction?.total).toFixed(2)}</span></div>
-<div class="row"><span>Payment</span><span>${transaction?.paymentMethod}</span></div>
-${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ? `<div class="row"><span>M-Pesa Ref</span><span>${(transaction as any).mpesaTransId}</span></div>` : ''}
+${primaryShop?.receipt_show_payment !== false ? `<div class="row"><span>Payment</span><span>${transaction?.paymentMethod}</span></div>` : ''}
+${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ? `<div class="row"><span>M-Pesa Ref</span><span>${(transaction as any).mpesaTransId}</span></div>` : ''}
 <hr/>
-<div class="center">Thank you for your business!</div>
+<div class="center">${primaryShop?.receipt_footer || 'Thank you for your business!'}</div>
 </body></html>`;
     const w = window.open('', '_blank', 'width=400,height=600');
     if (!w) return;
@@ -182,6 +184,7 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
             paymentMethod: data.paymentMethod, customerName: data.customerName,
             attendant: data.attendant, splitPayment: data.splitPayment,
             extraCharge: data.extraCharge, mpesaRef: data.mpesaRef,
+            showPaymentMethod: data.showPaymentMethod, footerText: data.footerText,
           });
           toast({ title: "Receipt Printed", description: "Sent to USB printer" });
         } catch (usbErr: any) {
@@ -435,8 +438,8 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
                 <span className="text-primary">{currency} {Number(transaction.total).toFixed(2)}</span>
               </div>
 
-              {/* Payment method */}
-              {transaction.paymentMethod !== 'split' ? (
+              {/* Payment method (hidden when the shop turns it off) */}
+              {primaryShop?.receipt_show_payment === false ? null : transaction.paymentMethod !== 'split' ? (
                 <div className="flex justify-between text-gray-500 text-[11px] pt-0.5">
                   <span>Payment</span>
                   <span className="capitalize font-medium">{transaction.paymentMethod}</span>
@@ -465,7 +468,7 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
                 </div>
               )}
 
-              {transaction.paymentMethod === 'mpesa' && (transaction as any).mpesaTransId && (
+              {primaryShop?.receipt_show_payment !== false && transaction.paymentMethod === 'mpesa' && (transaction as any).mpesaTransId && (
                 <div className="flex justify-between text-gray-500 text-[11px] pt-0.5">
                   <span>M-Pesa Ref</span>
                   <span className="font-mono font-medium">{(transaction as any).mpesaTransId}</span>
@@ -475,7 +478,7 @@ ${transaction?.paymentMethod === 'mpesa' && (transaction as any)?.mpesaTransId ?
 
             {/* Footer */}
             <div className="bg-gray-50 px-3 py-2 text-center border-t border-gray-200">
-              <p className="text-[11px] text-gray-400">Thank you for your business!</p>
+              <p className="text-[11px] text-gray-400">{primaryShop?.receipt_footer || 'Thank you for your business!'}</p>
             </div>
           </div>
         </div>

@@ -137,6 +137,9 @@ export default function ReceiptView() {
       paybill_account: sale.shopId?.paybill_account || primaryShop?.paybill_account || "",
       paybill_till: sale.shopId?.paybill_till || primaryShop?.paybill_till || "",
       paybill_name: sale.shopId?.paybill_name || primaryShop?.paybill_name || "",
+      receipt_show_payment:
+        (sale.shopId?.receipt_show_payment ?? primaryShop?.receipt_show_payment) !== false,
+      receipt_footer: sale.shopId?.receipt_footer || primaryShop?.receipt_footer || "",
       currency: sale.shopId?.currency || primaryShop?.currency || "KES",
     },
   };
@@ -160,6 +163,8 @@ export default function ReceiptView() {
     paybill_account: saleData.shop.paybill_account || "",
     paybill_till: saleData.shop.paybill_till || "",
     paybill_name: saleData.shop.paybill_name || "",
+    showPaymentMethod: saleData.shop.receipt_show_payment !== false,
+    footerText: saleData.shop.receipt_footer || "",
     receiptNumber: saleData.receiptNo?.toString(),
     date: `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
     currency,
@@ -239,13 +244,13 @@ ${saleData.extraChargesTotal > 0 ? `<div class="row"><span>${saleData.extraCharg
 <hr class="divider">
 <div class="total-row"><span>TOTAL</span><span>${fmt(effectiveTotal)}</span></div>
 <hr class="divider">
-<div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
+${saleData.shop.receipt_show_payment !== false ? `<div class="row"><span>Payment:</span><span>${saleData.paymentTag.toUpperCase()}</span></div>
 ${saleData.paymentTag === "split" ? `
 ${saleData.amountPaid > 0 ? `<div class="row" style="padding-left:8px"><span>Cash:</span><span>${fmt(saleData.amountPaid)}</span></div>` : ""}
 ${saleData.mpesaTotal > 0 ? `<div class="row" style="padding-left:8px"><span>M-Pesa:</span><span>${fmt(saleData.mpesaTotal)}</span></div>` : ""}
 ${saleData.bankTotal > 0 ? `<div class="row" style="padding-left:8px"><span>Bank:</span><span>${fmt(saleData.bankTotal)}</span></div>` : ""}
 ` : ""}
-${saleData.paymentTag === "mpesa" && saleData.mpesaTransId ? `<div class="row"><span>M-Pesa Ref:</span><span>${saleData.mpesaTransId}</span></div>` : ""}
+${saleData.paymentTag === "mpesa" && saleData.mpesaTransId ? `<div class="row"><span>M-Pesa Ref:</span><span>${saleData.mpesaTransId}</span></div>` : ""}` : ""}
 ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETED" ? `<div class="row" style="font-weight:bold;color:#c00"><span>Balance Due:</span><span>${fmt(saleData.outstandingBalance)}</span></div>` : ""}
 <div class="row"><span>Status:</span><span>${saleData.status}</span></div>
 <hr class="divider">
@@ -254,7 +259,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
     ${saleData.status.toUpperCase() === "COMPLETED" ? "PAID" : "UNPAID"}
   </div>
 </div>
-<div class="center small" style="margin-top:12px">Thank you for your business!</div>
+<div class="center small" style="margin-top:12px">${saleData.shop.receipt_footer || "Thank you for your business!"}</div>
 <div class="center" style="font-size:10px;color:#aaa;margin-top:4px">store.pointifypos.com</div>
 </div></body></html>`;
 
@@ -651,27 +656,31 @@ ${saleData.items.map((item: any) =>
 
               <Dashes />
 
-              {/* Payment */}
+              {/* Payment (hidden when the shop turns it off) */}
               <div className="text-xs space-y-1 mb-2">
-                <ReceiptRow label="Payment" value={saleData.paymentTag.toUpperCase()} />
-                {isSplit && (
+                {saleData.shop.receipt_show_payment !== false && (
                   <>
-                    {saleData.amountPaid > 0 && (
-                      <ReceiptRow label="  Cash" value={fmt(saleData.amountPaid)} />
+                    <ReceiptRow label="Payment" value={saleData.paymentTag.toUpperCase()} />
+                    {isSplit && (
+                      <>
+                        {saleData.amountPaid > 0 && (
+                          <ReceiptRow label="  Cash" value={fmt(saleData.amountPaid)} />
+                        )}
+                        {saleData.mpesaTotal > 0 && (
+                          <ReceiptRow label="  M-Pesa" value={fmt(saleData.mpesaTotal)} />
+                        )}
+                        {saleData.bankTotal > 0 && (
+                          <ReceiptRow label="  Bank" value={fmt(saleData.bankTotal)} />
+                        )}
+                      </>
                     )}
-                    {saleData.mpesaTotal > 0 && (
-                      <ReceiptRow label="  M-Pesa" value={fmt(saleData.mpesaTotal)} />
+                    {!isSplit && saleData.paymentTag === "mpesa" && saleData.mpesaTransId && (
+                      <ReceiptRow label="M-Pesa Ref" value={saleData.mpesaTransId} />
                     )}
-                    {saleData.bankTotal > 0 && (
-                      <ReceiptRow label="  Bank" value={fmt(saleData.bankTotal)} />
+                    {!isSplit && saleData.paymentTag === "bank" && saleData.bankTransId && (
+                      <ReceiptRow label="Bank Ref" value={saleData.bankTransId} />
                     )}
                   </>
-                )}
-                {!isSplit && saleData.paymentTag === "mpesa" && saleData.mpesaTransId && (
-                  <ReceiptRow label="M-Pesa Ref" value={saleData.mpesaTransId} />
-                )}
-                {!isSplit && saleData.paymentTag === "bank" && saleData.bankTransId && (
-                  <ReceiptRow label="Bank Ref" value={saleData.bankTransId} />
                 )}
                 {saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETED" && (
                   <ReceiptRow
@@ -701,7 +710,7 @@ ${saleData.items.map((item: any) =>
 
               {/* Footer */}
               <div className="text-center mt-3 space-y-0.5">
-                <div className="text-xs text-gray-600">Thank you for your business!</div>
+                <div className="text-xs text-gray-600">{saleData.shop.receipt_footer || "Thank you for your business!"}</div>
                 <div className="text-xs text-gray-400">store.pointifypos.com</div>
               </div>
             </div>

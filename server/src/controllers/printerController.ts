@@ -284,19 +284,41 @@ export function formatReceiptText(body: any, width?: number): string {
     if (extraCharge) txt += lr(`${extraCharge.label}:`, `${cur} ${Number(extraCharge.amount).toFixed(2)}`);
     txt += lr('TOTAL:', `${cur} ${Number(total).toFixed(2)}`);
 
-    if (paymentMethod === 'split' && splitPayment) {
-      txt += '\nPayment:\n';
-      if (splitPayment.cash  > 0) txt += `  Cash:   ${cur} ${Number(splitPayment.cash).toFixed(2)}\n`;
-      if (splitPayment.mpesa > 0) txt += `  M-Pesa: ${cur} ${Number(splitPayment.mpesa).toFixed(2)}\n`;
-      if (splitPayment.bank  > 0) txt += `  Bank:   ${cur} ${Number(splitPayment.bank).toFixed(2)}\n`;
-    } else {
-      txt += `\nPayment: ${paymentMethod}\n`;
+    // Per-shop setting: hide the payment method line entirely when the shop
+    // has turned "Show payment method on receipts" off.
+    const showPayment = body.showPaymentMethod !== false;
+    if (showPayment) {
+      if (paymentMethod === 'split' && splitPayment) {
+        txt += '\nPayment:\n';
+        if (splitPayment.cash  > 0) txt += `  Cash:   ${cur} ${Number(splitPayment.cash).toFixed(2)}\n`;
+        if (splitPayment.mpesa > 0) txt += `  M-Pesa: ${cur} ${Number(splitPayment.mpesa).toFixed(2)}\n`;
+        if (splitPayment.bank  > 0) txt += `  Bank:   ${cur} ${Number(splitPayment.bank).toFixed(2)}\n`;
+      } else {
+        txt += `\nPayment: ${paymentMethod}\n`;
+      }
+      if (mpesaRef) txt += `M-Pesa Ref: ${mpesaRef}\n`;
     }
-    if (mpesaRef) txt += `M-Pesa Ref: ${mpesaRef}\n`;
 
     txt += '\n';
-    txt += center('Thank you for your business!');
-    txt += center('Visit us again soon');
+    // Per-shop footer message (falls back to the default).
+    const footer = String(body.footerText || '').trim();
+    if (footer) {
+      // Wrap long footers to the paper width.
+      const words = footer.split(/\s+/);
+      let line = '';
+      for (const word of words) {
+        if ((line + ' ' + word).trim().length > w) {
+          txt += center(line.trim());
+          line = word;
+        } else {
+          line = (line + ' ' + word).trim();
+        }
+      }
+      if (line) txt += center(line);
+    } else {
+      txt += center('Thank you for your business!');
+      txt += center('Visit us again soon');
+    }
     txt += '\n\n\n\n';
 
   return txt;
