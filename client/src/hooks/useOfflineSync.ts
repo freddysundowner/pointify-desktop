@@ -59,6 +59,9 @@ const ENDPOINTS: Record<string, string> = {
   product: '/api/product',
   product_update: '/api/product',
   customer: '/api/customers',
+  expense: '/api/expenses',
+  // customer_update is resolved per-item (PUT /api/customers/:id) in syncNow.
+  customer_update: '/api/customers',
 };
 
 // Offline-created customers/items get a placeholder id until they sync.
@@ -176,6 +179,22 @@ export function useOfflineSync() {
         // dependency synced. If a placeholder is still unresolved, defer the sale
         // (retry next pass) rather than POST an id the server can't resolve.
         let payload = item.data;
+        let requestEndpoint: string = endpoint;
+        let requestMethod = 'POST';
+        if (item.type === 'customer_update') {
+          // Edits replay as PUT against the (possibly remapped) customer id.
+          const cid = resolveId(item.data?._id);
+          if (!cid || isTempId(cid)) {
+            // The customer this edit targets hasn't been created on the server
+            // yet — defer until its create syncs and the id is remapped.
+            console.warn('Deferring customer edit; customer not synced yet:', item.id);
+            await offlineStorage.markSyncFailed(item.id);
+            continue;
+          }
+          requestEndpoint = `/api/customers/${cid}`;
+          requestMethod = 'PUT';
+          payload = { ...item.data, _id: cid };
+        }
         if (item.type === 'transaction') {
           payload = { ...item.data };
           if (payload.customerId) payload.customerId = resolveId(payload.customerId);
@@ -205,8 +224,8 @@ export function useOfflineSync() {
         }
 
         try {
-          const res = await apiCall(endpoint, {
-            method: 'POST',
+          const res = await apiCall(requestEndpoint, {
+            method: requestMethod,
             body: JSON.stringify(payload),
           });
 

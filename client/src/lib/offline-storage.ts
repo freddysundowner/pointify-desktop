@@ -57,7 +57,7 @@ interface POSDatabase extends DBSchema {
     key: string;
     value: {
       id: string;
-      type: 'transaction' | 'customer' | 'product' | 'product_update';
+      type: 'transaction' | 'customer' | 'customer_update' | 'product' | 'product_update' | 'expense';
       data: any;
       timestamp: number;
       retries: number;
@@ -244,7 +244,7 @@ class OfflineStorage {
   }
 
   // Sync queue operations
-  async addToSyncQueue(type: 'transaction' | 'customer' | 'product' | 'product_update', data: any): Promise<void> {
+  async addToSyncQueue(type: 'transaction' | 'customer' | 'customer_update' | 'product' | 'product_update' | 'expense', data: any): Promise<void> {
     const db = await this.ensureDb();
 
     const syncItem = {

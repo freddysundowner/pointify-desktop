@@ -22,6 +22,8 @@ import type { RootState } from '@/store/store';
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { apiRequest } from "@/lib/queryClient";
+import { offlineStorage } from "@/lib/offline-storage";
+import { isNetworkError } from "@/lib/api-config";
 import { format } from "date-fns";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { ArrowLeft } from "lucide-react";
@@ -220,10 +222,17 @@ export default function Expenses() {
         autoSave: data.autoSave
       };
       
-      const response = await apiRequest('POST', '/api/expenses', expenseData);
-      return response.json();
+      try {
+        const response = await apiRequest('POST', '/api/expenses', expenseData);
+        return await response.json();
+      } catch (err) {
+        // Transport failure only — queue the expense for sync on reconnect.
+        if ((err as any)?.status !== undefined || !isNetworkError(err)) throw err;
+        await offlineStorage.addToSyncQueue('expense', expenseData);
+        return { _offline: true };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       // Invalidate both expenses list and statistics cache
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['expense-stats'] });
@@ -243,8 +252,10 @@ export default function Expenses() {
         recurringPeriod: ''
       });
       toast({
-        title: "Success",
-        description: "Expense created successfully",
+        title: result?._offline ? "Saved offline" : "Success",
+        description: result?._offline
+          ? "Expense saved on this device — it will sync when the connection returns."
+          : "Expense created successfully",
       });
     },
     onError: (error: any) => {

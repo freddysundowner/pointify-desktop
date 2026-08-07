@@ -150,6 +150,22 @@ export async function verifyOfflineCredential(
   return timingSafeEqual(candidate, record.verifier) ? record : null;
 }
 
+// Verify a PIN-only offline login (restaurant tills). PIN credentials are
+// saved by the quick-PIN keypad after a successful ONLINE pin login, marked
+// with extra.pinAuth. Since the attendant only enters a PIN (no identifier),
+// scan this device's cached PIN credentials for a match.
+export async function verifyOfflinePinCredential(pin: string): Promise<OfflineCredential | null> {
+  if (!cryptoAvailable() || !pin) return null;
+  const records = await offlineStorage.getAllCredentials();
+  for (const record of records) {
+    if (record.role !== 'attendant' || !record.extra?.pinAuth) continue;
+    if (record.updatedAt && Date.now() - record.updatedAt > CREDENTIAL_MAX_AGE_MS) continue;
+    const candidate = await deriveVerifier(pin, record.salt);
+    if (timingSafeEqual(candidate, record.verifier)) return record;
+  }
+  return null;
+}
+
 export async function hasOfflineCredential(
   role: 'admin' | 'attendant',
   identifier: string,

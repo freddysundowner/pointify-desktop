@@ -11,6 +11,7 @@
 - [Offline per-user scoping](offline-per-user-scoping.md) — per-identity IndexedDB (`pos-offline-db::role:id`), scope recomputed per call; auth vault stays global; queue items owner-stamped.
 - [Offline dependency remap](offline-dependency-remap.md) — offline-created customers/items get temp_ ids; sync creates them first, captures real id into idMap, remaps/defers sales. M-Pesa stays online-only.
 - [Checkout shared payment state](checkout-shared-payment-state.md) — checkout-modal reuses one cashReceived for cash + split; clear it on method switch and bound-check split in canComplete, or stale cash completes a sale.
+- [Offline read/write fallbacks](offline-read-write-fallbacks.md) — fallbacks fire only when err.status is undefined AND isNetworkError; offline reads need staleTime 0 + refetchOnReconnect; queue type union lives in two places.
 - [Offline login fallback gating](offline-login-fallback.md) — offline credential fallback must fire ONLY on transport failure, never after the server returned an HTTP response, or a changed password still logs in.
 - [Barcode scanning](barcode-scanning.md) — scanner = keyboard+Enter; handle Enter before empty-results guard, match exact barcode, no single-result fallback for numeric codes; persistence needs upstream to store/return `barcode`.
 - [Sales report HTTP caching](sales-report-http-caching.md) — report endpoint returns 304; default fetcher serves stale per-filter data. Use a no-store queryFn + staleTime 0 for filter-sensitive queries.

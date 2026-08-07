@@ -87,7 +87,9 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { rawApiFetch } from "@/lib/api-config";
+import { rawApiFetch, isNetworkError } from "@/lib/api-config";
+import { offlineStorage } from "@/lib/offline-storage";
+import { WifiOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Sale } from "@shared/schema";
@@ -270,8 +272,39 @@ function SalesList() {
     refetch,
   } = useQuery({
     queryKey: [`/api/sales/filter?${queryParams}`],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", `/api/sales/filter?${queryParams}`);
+        return await res.json();
+      } catch (err) {
+        // Transport failure only — a real server rejection still surfaces as
+        // an error (err.status is set whenever an HTTP response came back).
+        if ((err as any)?.status !== undefined || !isNetworkError(err)) throw err;
+        // Fall back to sales made on this device (queued for sync).
+        const txns = await offlineStorage.getTransactions();
+        const local = txns
+          .filter((t: any) => !shopId || !t.shopId || t.shopId === shopId)
+          .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
+          .map((t: any) => ({
+            _id: t.id,
+            receiptNo: "Offline sale",
+            customerId: { name: t.customerName || "Walk-in" },
+            totalAmount: t.total || 0,
+            createdAt: new Date(t.timestamp || Date.now()).toISOString(),
+            status: t.syncStatus === "synced" ? "cashed" : "pending sync",
+            paymentTag: t.paymentMethod || "cash",
+            items: t.items || [],
+          }));
+        return { data: local, count: local.length, totalPages: 1, __offline: true };
+      }
+    },
     enabled: queryEnabled,
+    // Offline fallback data must never be treated as fresh once the
+    // connection returns — refetch immediately on reconnect/mount.
+    staleTime: 0,
+    refetchOnReconnect: 'always',
   });
+  const isOfflineData = !!(salesResponse as any)?.__offline;
 
   // Build query parameters for sales report analysis.
   // Mirrors the same paymentTag/status mapping used by the list filter so
@@ -1243,6 +1276,12 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
     <DashboardLayout title="Sales Reports">
       <div className="w-full">
         <div className="space-y-2">
+          {isOfflineData && (
+            <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-800">
+              <WifiOff className="h-4 w-4 shrink-0" />
+              You're offline — showing sales made on this device that are waiting to sync. Full history returns with the connection.
+            </div>
+          )}
           <PageHeader
             title="Sales Reports"
             subtitle={!startDate && !endDate ? "Showing all sales transactions" : startDate === endDate ? `Transactions for ${new Date(startDate).toLocaleDateString()}` : `${new Date(startDate).toLocaleDateString()} – ${new Date(endDate).toLocaleDateString()}`}

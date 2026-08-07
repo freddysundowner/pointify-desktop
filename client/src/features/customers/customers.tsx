@@ -14,6 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { offlineStorage } from '@/lib/offline-storage';
+import { isNetworkError } from '@/lib/api-config';
+import { WifiOff } from 'lucide-react';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { useAuth } from '@/features/auth/useAuth';
 import { useSelector } from "react-redux";
@@ -83,9 +86,29 @@ export default function Customers() {
         adminid: currentAdminId
       });
       
-      const response = await apiRequest('GET', `/api/customers?${params.toString()}`);
-      const data = await response.json();
-      return data;
+      try {
+        const response = await apiRequest('GET', `/api/customers?${params.toString()}`);
+        const data = await response.json();
+        // Refresh the on-device copy so the list survives an outage.
+        const list = Array.isArray(data) ? data : data?.customers || data?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          offlineStorage.saveCustomers(list).catch(() => {});
+        }
+        return data;
+      } catch (err) {
+        // Only fall back to the cached copy on a transport failure — a real
+        // server response (401/500/...) must surface as an error, not stale
+        // data. err.status is set whenever an HTTP response came back.
+        if ((err as any)?.status !== undefined || !isNetworkError(err)) throw err;
+        const cached = await offlineStorage.getCustomers();
+        // Scope to the active shop so one shop's customers never leak into
+        // another shop's offline view.
+        const scoped = cached.filter((c: any) => {
+          const cs = typeof c?.shopId === 'object' ? c?.shopId?._id : c?.shopId;
+          return !shopId || !cs || cs === shopId;
+        });
+        return { customers: scoped, __offline: true };
+      }
     },
     enabled: !!shopId && !!currentAdminId && 
              (userType === "admin" ? !!admin && !!token : userType === "attendant" ? !!attendant && isAttendantAuth : false),
@@ -98,6 +121,7 @@ export default function Customers() {
   const customers = Array.isArray(customersResponse) 
     ? customersResponse 
     : customersResponse?.customers || customersResponse?.data || [];
+  const isOfflineData = !Array.isArray(customersResponse) && !!(customersResponse as any)?.__offline;
 
   if (customers.length > 0) {
   }
@@ -144,17 +168,29 @@ export default function Customers() {
         adminid: currentAdminId
       };
 
-      const response = await apiRequest('POST', '/api/customers', customerData);
-      return response.json();
+      try {
+        const response = await apiRequest('POST', '/api/customers', customerData);
+        return await response.json();
+      } catch (err) {
+        // Transport failure only — queue for sync like POS-created customers.
+        if ((err as any)?.status !== undefined || !isNetworkError(err)) throw err;
+        const tempId = `temp_cust_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+        const tempCustomer = { _id: tempId, tempId, ...customerData, phone: customerData.phonenumber, createdOffline: true };
+        await offlineStorage.saveCustomers([tempCustomer]);
+        await offlineStorage.addToSyncQueue('customer', { ...customerData, tempId });
+        return { ...tempCustomer, _offline: true };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customer-analysis'] });
       setIsCreateDialogOpen(false);
       setNewCustomer({ name: '', email: '', phone: '', address: '', wallet: 0 });
       toast({
-        title: "Success",
-        description: "Customer created successfully",
+        title: result?._offline ? "Saved offline" : "Success",
+        description: result?._offline
+          ? "Customer saved on this device — it will sync when the connection returns."
+          : "Customer created successfully",
       });
     },
     onError: (error: any) => {
@@ -169,18 +205,28 @@ export default function Customers() {
   // Update customer mutation
   const updateCustomerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('PUT', `/api/customers/${data._id}`, {
-        body: JSON.stringify(data)
-      });
-      return response.json();
+      try {
+        // NOTE: pass the object directly — apiRequest JSON-encodes it. The old
+        // code wrapped it in { body: ... }, sending the wrong payload shape.
+        const response = await apiRequest('PUT', `/api/customers/${data._id}`, data);
+        return await response.json();
+      } catch (err) {
+        if ((err as any)?.status !== undefined || !isNetworkError(err)) throw err;
+        // Update the on-device copy and queue the edit for replay.
+        await offlineStorage.saveCustomers([{ ...data, editedOffline: true }]);
+        await offlineStorage.addToSyncQueue('customer_update', data);
+        return { ...data, _offline: true };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customer-analysis'] });
       setEditingCustomer(null);
       toast({
-        title: "Success",
-        description: "Customer updated successfully",
+        title: result?._offline ? "Saved offline" : "Success",
+        description: result?._offline
+          ? "Edit saved on this device — it will sync when the connection returns."
+          : "Customer updated successfully",
       });
     },
     onError: (error: any) => {
@@ -255,6 +301,12 @@ export default function Customers() {
   return (
     <DashboardLayout>
       <div className="space-y-3 sm:space-y-5">
+        {isOfflineData && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-800">
+            <WifiOff className="h-4 w-4 shrink-0" />
+            You're offline — showing customers saved on this device. Changes are unavailable until the connection returns.
+          </div>
+        )}
         <PageHeader
           title="Customers"
           onBack={() => window.history.back()}

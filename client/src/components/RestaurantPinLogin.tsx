@@ -5,6 +5,7 @@ import { Delete } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { rawApiFetch } from '@/lib/api-config';
+import { saveOfflineCredential, verifyOfflinePinCredential, isNetworkError } from '@/lib/offline-auth';
 
 const PIN_LENGTH = 5;
 
@@ -27,12 +28,23 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
 
   const loginMutation = useMutation({
     mutationFn: async (pinValue: string) => {
-      const response = await rawApiFetch('/api/attendant/login/pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: pinValue }),
-        auth: 'none',
-      });
+      let response: Response;
+      try {
+        response = await rawApiFetch('/api/attendant/login/pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: pinValue }),
+          auth: 'none',
+        });
+      } catch (err) {
+        // Transport failure only (server unreachable) — verify the PIN against
+        // this device's cached credential so the till still opens mid-outage.
+        // A real server rejection below stays final.
+        if (!isNetworkError(err)) throw err;
+        const cred = await verifyOfflinePinCredential(pinValue);
+        if (!cred) throw new Error('offline-no-credential');
+        return { attendant: cred.profile, token: cred.token, shopData: cred.shopData, _offline: true };
+      }
       if (!response.ok) {
         // Whatever went wrong server-side (bad PIN, endpoint issue, etc.) —
         // surface it to the attendant as a simple "wrong PIN" message only.
@@ -40,15 +52,36 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
       }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, pinValue) => {
       login(data.attendant, data.token, data?.shopData || {});
+      if (!data._offline) {
+        // Cache a salted PIN verifier so this attendant can open the till
+        // during an internet outage (best effort — never blocks login).
+        saveOfflineCredential({
+          role: 'attendant',
+          identifier: String(data.attendant?.uniqueDigits ?? data.attendant?._id ?? ''),
+          password: pinValue,
+          token: data.token,
+          profile: data.attendant,
+          shopData: data?.shopData,
+          extra: { pinAuth: true },
+        }).catch(() => {});
+      }
       toast({ title: 'Welcome back', description: data.attendant.username });
       const hasCanSell = data.attendant.permissions?.some((p: any) => p.key === 'pos' && p.value?.includes('can_sell'));
       sessionStorage.setItem('attendantLoginRedirect', 'true');
       setLocation(hasCanSell ? '/attendant/pos' : '/attendant/dashboard');
     },
-    onError: () => {
-      toast({ title: 'Wrong PIN', description: 'Please try again.', variant: 'destructive' });
+    onError: (err: any) => {
+      if (err?.message === 'offline-no-credential') {
+        toast({
+          title: "You're offline",
+          description: 'This PIN has no saved login on this till. Connect to the internet once to sign in, then offline unlock will work.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Wrong PIN', description: 'Please try again.', variant: 'destructive' });
+      }
       setPin('');
     },
   });

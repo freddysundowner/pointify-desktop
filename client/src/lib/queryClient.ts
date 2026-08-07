@@ -26,7 +26,12 @@ export function parseApiError(status: number, rawBody: string): string {
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(parseApiError(res.status, text || res.statusText));
+    const err = new Error(parseApiError(res.status, text || res.statusText));
+    // Mark that the server DID respond, so offline fallbacks can distinguish a
+    // real rejection (401/500/...) from a transport failure — even when the
+    // browser's navigator.onLine flag is unreliable.
+    (err as any).status = res.status;
+    throw err;
   }
 }
 
