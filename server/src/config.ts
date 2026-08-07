@@ -313,6 +313,38 @@ export async function makePointifyRequest(
   }
 }
 
+// Binary-capable variant of makePointifyRequest: returns the raw Response so
+// callers can stream file downloads (Excel/PDF exports). Reuses the same
+// base-URL resolution, per-attempt timeouts, and online circuit breaker —
+// during an outage a download fails fast instead of hanging.
+export async function makePointifyBinaryRequest(
+  endpoint: string,
+  options: PointifyRequestOptions = {}
+): Promise<Response> {
+  const headers = normalizeHeaders(options.headers);
+
+  const attempt = (base: string, timeoutMs: number) =>
+    fetchWithTimeout(`${base}${endpoint}`, { ...options, headers }, timeoutMs);
+
+  // Recently-failed online upstream: skip straight to the local source when a
+  // genuinely different one exists (same rule as JSON reads).
+  if (!isWriteMethod(options) && isOnlineCircuitOpen()) {
+    return attempt(POINTIFY_API_BASE, LOCAL_REQUEST_TIMEOUT_MS);
+  }
+
+  try {
+    const response = await attempt(POINTIFY_ONLINE_API_BASE, ONLINE_REQUEST_TIMEOUT_MS);
+    resetOnlineCircuit(); // reached the upstream — heal the circuit
+    return response;
+  } catch (onlineError) {
+    tripOnlineCircuit();
+    if (hasDistinctLocalSource) {
+      return attempt(POINTIFY_API_BASE, LOCAL_REQUEST_TIMEOUT_MS);
+    }
+    throw onlineError;
+  }
+}
+
 // Fallback for offline or multi-failure
 const gracefulFallback = (endpoint: string): PointifyResponse => {
   if (endpoint.includes('/auth/admin/')) return null;

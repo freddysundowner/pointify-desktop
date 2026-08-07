@@ -74,7 +74,6 @@ export default defineConfig({
           if (!id.includes('node_modules')) return;
           if (id.includes('/jspdf') || id.includes('/html2canvas') || id.includes('/dompurify') || id.includes('/canvg')) return 'pdf-vendor';
           if (id.includes('/xlsx')) return 'xlsx-vendor';
-          if (id.includes('/pdfjs-dist')) return 'pdfjs-vendor';
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'react-vendor';
           if (id.includes('/@radix-ui/')) return 'radix-vendor';
         },

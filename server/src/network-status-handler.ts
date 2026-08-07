@@ -35,52 +35,21 @@ export function clearAdminId() {
   cachedAdminId = null;
 }
 
-/**
- * Server-side data sync was an Electron-only feature. In the web build there
- * is no local database to sync, so this is a no-op kept for call-site
- * compatibility (login flow, network reconnect, write interceptor).
- */
-async function performDataSync(_force = false) {
-  return;
-}
-
-// Initialize network status monitoring
-
-// Listen for offline event
+// Network status monitoring: switch the proxy's API mode on connectivity
+// changes. (Server-side data sync was an Electron-only feature and has been
+// removed — the browser client handles its own offline sync via IndexedDB.)
 networkMonitor.on('offline', () => {
   console.log('Network is offline');
   setGlobalApiMode('offline');
   setInternetAvailable(false);
-  handleOfflineStatus();
 });
 
-// Listen for online event
 networkMonitor.on('online', () => {
   console.log('Network is back online');
   setInternetAvailable(true);
   setGlobalApiMode('online');
-  performDataSync();
-  handleOnlineStatus();
 });
 
-// Listen for status changes
-networkMonitor.on('statusChange', (status, previousStatus) => {
-  handleStatusChange(status, previousStatus);
-});
-
-// Custom offline handler
-async function handleOfflineStatus() {
-}
-
-// Custom online handler
-async function handleOnlineStatus() {
-  console.log('handleOnlineStatus');
-}
-
-// Custom status change handler
-function handleStatusChange(status: string, _previousStatus: string) {
+networkMonitor.on('statusChange', (status: string) => {
   setGlobalApiMode(status as any);
-}
-
-// Export functions if needed elsewhere
-export { handleOfflineStatus, handleOnlineStatus, handleStatusChange, performDataSync };
+});

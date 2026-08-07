@@ -1,5 +1,5 @@
 // Firebase Admin SDK setup for uploading product images to Firebase Storage.
-// Credentials come from Replit Secrets — never hardcode them here.
+// Credentials come from environment variables — never hardcode them here.
 import admin from "firebase-admin";
 
 // NOTE: these are read lazily (inside functions below), never at module load

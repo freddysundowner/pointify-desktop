@@ -129,16 +129,12 @@ export default function CategoriesPage() {
       return;
     }
     setIsSaving(true);
-    let ok = 0;
-    let failed = 0;
-    for (const shopId of targets) {
-      try {
-        await createCategoryInShop(name, shopId);
-        ok++;
-      } catch {
-        failed++;
-      }
-    }
+    // Independent per-shop creates — run them in parallel instead of one by one.
+    const results = await Promise.allSettled(
+      targets.map((shopId) => createCategoryInShop(name, shopId)),
+    );
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.length - ok;
     setIsSaving(false);
     if (failed === 0) {
       toast({ title: "Category added", description: `"${name}" added to ${ok} shop${ok !== 1 ? "s" : ""}.` });
@@ -167,22 +163,15 @@ export default function CategoriesPage() {
       return;
     }
     setIsAssigning(true);
-    let failed = 0;
-    for (const shopId of toAdd) {
-      try {
-        await createCategoryInShop(assignGroup.name, shopId);
-      } catch {
-        failed++;
-      }
-    }
-    for (const doc of toRemove) {
-      try {
+    // Adds and removals are independent of each other — run them all in parallel.
+    const results = await Promise.allSettled([
+      ...toAdd.map((shopId) => createCategoryInShop(assignGroup.name, shopId)),
+      ...toRemove.map(async (doc) => {
         const resp = await apiCall(`/api/product/category/${doc._id}`, { method: "DELETE" });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      } catch {
-        failed++;
-      }
-    }
+      }),
+    ]);
+    const failed = results.filter((r) => r.status === "rejected").length;
     setIsAssigning(false);
     setAssignGroup(null);
     if (failed === 0) {

@@ -327,16 +327,12 @@ function SalesList() {
     // enabled: !!shopId
   });
 
-  // Refresh both the sales list and summary stats whenever the user navigates to this page
-  useEffect(() => {
-    const isSalesPage = location === "/sales" || location === "/attendant/sales";
-    if (isSalesPage) {
-      refetch();
-      refetchReport();
-    }
-  }, [location]);
+  // Note: no navigation-effect refetch here — both queries use staleTime 0 /
+  // refetch-on-mount, so mounting this page already fetches fresh data once.
+  // A manual refetch on navigation doubled every request.
 
-  // Also refresh on window focus (e.g. switching browser tabs back)
+  // Refresh on window focus (e.g. switching browser tabs back) — the global
+  // query client has refetchOnWindowFocus disabled, so this is the only path.
   useEffect(() => {
     const handleFocus = () => {
       if (location === "/sales" || location === "/attendant/sales") {

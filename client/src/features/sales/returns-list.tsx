@@ -152,12 +152,8 @@ function ReturnsList() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [location, refetch]);
 
-  // Refresh data when navigating to returns page
-  useEffect(() => {
-    if (location === '/returns') {
-      refetch();
-    }
-  }, [location, refetch]);
+  // Note: no navigation-effect refetch — mounting the page already fetches
+  // fresh data; a manual refetch on navigation doubled every request.
 
   // API now returns paginated structure with data and pagination metadata
   const returnsData = (returnsResponse as any)?.data || [];

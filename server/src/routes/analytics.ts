@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { makePointifyRequest ,POINTIFY_API_BASE} from "../config.js";
+import { makePointifyRequest, makePointifyBinaryRequest } from "../config.js";
 
 // Authentication middleware to extract token from Authorization header
 const extractToken = (req: any) => {
@@ -254,41 +254,10 @@ export function registerAnalyticsRoutes(app: Express) {
 
       const queryParams = new URLSearchParams(req.query as any);
       const endpoint = `/analysis/pdf/download/file?${queryParams.toString()}`;
-      
-      // Direct fetch to handle binary data properly  
-      const url = `${POINTIFY_API_BASE}${endpoint}`;
-      
-      console.log('Downloading Excel from:', url);
-      console.log('Using token:', token ? 'present' : 'missing');
-      
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('External API response status:', response.status);
-      console.log('External API response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch from Pointify API: ${response.status} ${response.statusText}`);
-      }
-
-      // Get the binary data as a buffer
-      const buffer = await response.arrayBuffer();
-      
-      // Set appropriate headers for Excel file download
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename="stock_report.xlsx"');
-      res.setHeader('Content-Length', buffer.byteLength.toString());
-      
-      // Send the binary data
-      res.send(Buffer.from(buffer));
+      await streamReportDownload(endpoint, token, res);
     } catch (error) {
-      console.error('Error downloading Excel file:', error);
-      res.status(500).json({ error: "Failed to download stock report" });
+      console.error('Error downloading report file');
+      res.status(502).json({ error: "Report download failed — the reporting service is unreachable. Try again shortly." });
     }
   });
 
@@ -331,41 +300,39 @@ export function registerAnalyticsRoutes(app: Express) {
 
       const queryParams = new URLSearchParams(req.query as any);
       const endpoint = `/analysis/pdf/download/file?${queryParams.toString()}`;
-      
-      // Direct fetch to handle binary data properly  
-      const url = `${POINTIFY_API_BASE}${endpoint}`;
-      
-      console.log('Downloading Excel from:', url);
-      console.log('Using token:', token ? 'present' : 'missing');
-      
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('External API response status:', response.status);
-      console.log('External API response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch from Pointify API: ${response.status} ${response.statusText}`);
-      }
-
-      // Get the binary data as a buffer
-      const buffer = await response.arrayBuffer();
-      
-      // Set appropriate headers for Excel file download
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename="stock_report.xlsx"');
-      res.setHeader('Content-Length', buffer.byteLength.toString());
-      
-      // Send the binary data
-      res.send(Buffer.from(buffer));
+      await streamReportDownload(endpoint, token, res);
     } catch (error) {
-      console.error('Error downloading Excel file:', error);
-      res.status(500).json({ error: "Failed to download stock report" });
+      console.error('Error downloading report file');
+      res.status(502).json({ error: "Report download failed — the reporting service is unreachable. Try again shortly." });
     }
   });
+}
+
+// Shared binary download path: goes through the central upstream client so
+// exports get the same base-URL fallback, timeout, and circuit-breaker
+// behavior as every other route (fail fast during an outage, no hanging).
+async function streamReportDownload(endpoint: string, token: string, res: any) {
+  const response = await makePointifyBinaryRequest(endpoint, {
+    method: "GET",
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    res.status(response.status === 404 ? 404 : 502).json({
+      error: `Report download failed (upstream returned ${response.status}).`,
+    });
+    return;
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  // Preserve the upstream content type when provided; default to Excel.
+  const contentType = response.headers.get('content-type')
+    || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const disposition = response.headers.get('content-disposition')
+    || 'attachment; filename="stock_report.xlsx"';
+
+  res.setHeader('Content-Type', contentType);
+  res.setHeader('Content-Disposition', disposition);
+  res.setHeader('Content-Length', buffer.byteLength.toString());
+  res.send(buffer);
 }

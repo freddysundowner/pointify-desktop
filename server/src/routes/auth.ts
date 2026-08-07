@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { makePointifyRequest, setGlobalApiMode } from "../config.js";
-import { setAdminId, clearAdminId, performDataSync, } from "../network-status-handler.js";
+import { setAdminId, clearAdminId } from "../network-status-handler.js";
 
 export function registerAuthRoutes(app: Express) {
   // =============================================================================
@@ -141,7 +141,6 @@ app.post("/api/business/register", async (req, res) => {
       if (data && data._id) {
         setGlobalApiMode(data?.status);
         setAdminId(data);
-        await performDataSync();
       }
 
       // The makePointifyRequest now returns null for auth failures instead of throwing errors

@@ -1312,10 +1312,17 @@ export default function ProductGrid({
     // Check shop batch tracking setting
     const shouldTrackBatches = Boolean(shopData?.trackbatches);
 
+    // Index products once so each cart line is an O(1) lookup instead of a
+    // full scan of the catalog per item.
+    const productById = new Map<string, any>();
+    for (const p of allProducts) {
+      if (p._id) productById.set(String(p._id), p);
+      if ((p as any).id) productById.set(String((p as any).id), p);
+    }
+
     const transactionData = {
       products: cartItems.map(item => {
-        // Find the product data for logging
-        const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+        const productData = productById.get(String(item.id));
         
         
         return {

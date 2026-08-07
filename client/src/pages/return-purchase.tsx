@@ -78,18 +78,21 @@ export default function ReturnPurchase() {
   // Update returnItems when originalPurchase data is loaded
   useEffect(() => {
     if (originalPurchase?.items && products.length > 0) {
+      // Index products by name/title once — avoids a full catalog scan per item.
+      const productByName = new Map<string, any>();
+      for (const p of products) {
+        if (p.name) productByName.set(p.name, p);
+        if ((p as any).title) productByName.set((p as any).title, p);
+      }
 
       setReturnItems(
         originalPurchase.items.map((item: any) => {
           // Try to find product ID by matching product name
           let productId = item.product?._id || item.productId;
-          
-          if (!productId && item.productName) {
-            const matchedProduct = products.find(p => 
-              (p.name === item.productName) || (p.title === item.productName)
-            );
-            productId = matchedProduct?._id || matchedProduct?.id;
 
+          if (!productId && item.productName) {
+            const matchedProduct = productByName.get(item.productName);
+            productId = matchedProduct?._id || matchedProduct?.id;
           }
 
           return {

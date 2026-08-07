@@ -133,10 +133,14 @@ export default function CreatePurchase() {
       // Extract attendant ID properly
       // const attendantId = (admin?.attendantId as any)?._id || admin?.attendantId || admin?._id || null;
 
-      // Map items to Pointify format
+      // Map items to Pointify format — index products by name once instead of
+      // scanning the whole catalog per line.
+      const productByName = new Map<string, any>();
+      for (const p of products as any[]) {
+        productByName.set(p.name || p.title, p);
+      }
       const purchaseItems = validItems.map(item => {
-        // Find the product to get its ID
-        const product = products.find((p: any) => (p.name || p.title) === item.productName);
+        const product = productByName.get(item.productName);
         return {
           product: product?._id || null,
           quantity: item.quantity,

@@ -57,7 +57,9 @@ export default function OrdersPage() {
   const [saleType, setSaleType] = useState<"Retail" | "Wholesale" | "Dealer">("Retail");
 
   const { data: allorders, isLoading: summaryLoading,refetch } = useQuery({
-    queryKey: ["/api/product-summary", primaryShopData?.shopId,],
+    // statusFilter is part of the key so a filter change fetches once via the
+    // cache — no manual refetch effect needed.
+    queryKey: ["/api/product-summary", primaryShopData?.shopId, statusFilter],
     queryFn: async () => {
       const response = await apiCall(`/api/sales/shop/onlineorders/${primaryShopData?.shopId}?status=${statusFilter}`, {
         method: "GET",
@@ -70,10 +72,6 @@ export default function OrdersPage() {
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
-
-  useEffect(() => {
-    refetch();
-  }, [statusFilter,refetch]);
 
 
   const formatDate = (dateString: string) => {
