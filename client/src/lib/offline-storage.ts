@@ -1,4 +1,15 @@
 // Offline Storage Layer for POS System
+//
+// Multi-user isolation: on shared tills, several attendants (and the admin) use
+// the same browser. All cached data (products, customers, transactions, the
+// sync queue, settings/idMap) therefore lives in a PER-IDENTITY IndexedDB
+// database — `pos-offline-db::admin:<id>` / `pos-offline-db::attendant:<id>` —
+// derived from whoever is currently signed in. Switching users switches the
+// database, so one account can never see (or sync under) another account's
+// data. The offline credential vault is the one intentional exception: it is a
+// separate GLOBAL database, because it must be readable before anyone is
+// logged in (that's what offline login checks against) and it only stores
+// salted verifiers, never another user's business data.
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 // Define the database schema
@@ -12,6 +23,7 @@ interface POSDatabase extends DBSchema {
       'by-category': string;
     };
   };
+
   customers: {
     key: string;
     value: any;
@@ -20,6 +32,7 @@ interface POSDatabase extends DBSchema {
       'by-email': string;
     };
   };
+
   transactions: {
     key: string;
     value: any;
@@ -29,10 +42,12 @@ interface POSDatabase extends DBSchema {
       'by-sync-status': string;
     };
   };
+
   settings: {
     key: string;
     value: any;
   };
+
   sync_queue: {
     key: string;
     value: {
@@ -47,29 +62,22 @@ interface POSDatabase extends DBSchema {
       // abandoned one (crash/reload) and only quarantine expired claims.
       claimedBy?: string;
       claimedAt?: number;
+      /** Scope id of the identity that queued this item (defense-in-depth). */
+      owner?: string;
     };
     indexes: {
       'by-type': string;
       'by-status': string;
     };
   };
-  auth: {
-    key: string;
-    value: {
-      id: string;
-      role: 'admin' | 'attendant';
-      identifier: string;
-      salt: string;
-      verifier: string;
-      token: string;
-      profile: any;
-      shopData?: any;
-      extra?: any;
-      updatedAt: number;
-    };
-  };
 }
 
+interface AuthVaultDatabase extends DBSchema {
+  auth: {
+    key: string;
+    value: OfflineCredential;
+  };
+}
 export interface OfflineCredential {
   id: string;
   role: 'admin' | 'attendant';
@@ -83,6 +91,8 @@ export interface OfflineCredential {
   updatedAt: number;
 }
 
+const LEGACY_DB_NAME = 'pos-offline-db';
+
 // Identifies this page load (tab/session) as the owner of in-flight sync
 // claims. A reload gets a fresh id, so claims from a previous life are never
 // mistaken for our own live requests.
@@ -94,68 +104,20 @@ export const SYNC_CLAIM_LEASE_MS = 2 * 60 * 1000;
 
 class OfflineStorage {
   private db: IDBPDatabase<POSDatabase> | null = null;
-  private dbName = 'pos-offline-db';
-  private version = 2;
+
+  private version = 1;
 
   async init(): Promise<void> {
-    try {
-      this.db = await openDB<POSDatabase>(this.dbName, this.version, {
-        upgrade(db) {
-          // Products store
-          if (!db.objectStoreNames.contains('products')) {
-            const productsStore = db.createObjectStore('products', { keyPath: '_id' });
-            productsStore.createIndex('by-name', 'name');
-            productsStore.createIndex('by-barcode', 'barcode');
-            productsStore.createIndex('by-category', 'category');
-          }
-
-          // Customers store
-          if (!db.objectStoreNames.contains('customers')) {
-            const customersStore = db.createObjectStore('customers', { keyPath: '_id' });
-            customersStore.createIndex('by-phone', 'phone');
-            customersStore.createIndex('by-email', 'email');
-          }
-
-          // Transactions store
-          if (!db.objectStoreNames.contains('transactions')) {
-            const transactionsStore = db.createObjectStore('transactions', { keyPath: 'id' });
-            transactionsStore.createIndex('by-date', 'timestamp');
-            transactionsStore.createIndex('by-status', 'status');
-            transactionsStore.createIndex('by-sync-status', 'syncStatus');
-          }
-
-          // Settings store
-          if (!db.objectStoreNames.contains('settings')) {
-            db.createObjectStore('settings', { keyPath: 'key' });
-          }
-
-          // Sync queue store
-          if (!db.objectStoreNames.contains('sync_queue')) {
-            const syncStore = db.createObjectStore('sync_queue', { keyPath: 'id' });
-            syncStore.createIndex('by-type', 'type');
-            syncStore.createIndex('by-status', 'status');
-          }
-
-          // Offline auth credential vault (v2)
-          if (!db.objectStoreNames.contains('auth')) {
-            db.createObjectStore('auth', { keyPath: 'id' });
-          }
-        },
-      });
-      console.log('Offline database initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize offline database:', error);
-      throw error;
-    }
+    await this.ensureDb();
   }
 
   // Products operations
   async saveProducts(products: any[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const tx = this.db.transaction('products', 'readwrite');
+    const db = await this.ensureDb();
+
+    const tx = db.transaction('products', 'readwrite');
     const store = tx.objectStore('products');
-    
+
     for (const product of products) {
       await store.put({
         ...product,
@@ -163,24 +125,24 @@ class OfflineStorage {
         syncStatus: 'synced'
       });
     }
-    
+
     await tx.done;
     await this.touchLastSync();
     console.log(`Saved ${products.length} products to offline storage`);
   }
 
   async getProducts(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAll('products');
+    const db = await this.ensureDb();
+    return await db.getAll('products');
   }
 
   async searchProducts(query: string): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const products = await this.db.getAll('products');
+    const db = await this.ensureDb();
+
+    const products = await db.getAll('products');
     const searchTerm = query.toLowerCase();
-    
-    return products.filter(product => 
+
+    return products.filter(product =>
       product.name?.toLowerCase().includes(searchTerm) ||
       product.barcode?.toLowerCase().includes(searchTerm) ||
       product.category?.toLowerCase().includes(searchTerm)
@@ -188,19 +150,19 @@ class OfflineStorage {
   }
 
   async getProductByBarcode(barcode: string): Promise<any | null> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const products = await this.db.getAllFromIndex('products', 'by-barcode', barcode);
+    const db = await this.ensureDb();
+
+    const products = await db.getAllFromIndex('products', 'by-barcode', barcode);
     return products.length > 0 ? products[0] : null;
   }
 
   // Customers operations
   async saveCustomers(customers: any[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const tx = this.db.transaction('customers', 'readwrite');
+    const db = await this.ensureDb();
+
+    const tx = db.transaction('customers', 'readwrite');
     const store = tx.objectStore('customers');
-    
+
     for (const customer of customers) {
       await store.put({
         ...customer,
@@ -208,24 +170,24 @@ class OfflineStorage {
         syncStatus: 'synced'
       });
     }
-    
+
     await tx.done;
     await this.touchLastSync();
     console.log(`Saved ${customers.length} customers to offline storage`);
   }
 
   async getCustomers(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAll('customers');
+    const db = await this.ensureDb();
+    return await db.getAll('customers');
   }
 
   async searchCustomers(query: string): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const customers = await this.db.getAll('customers');
+    const db = await this.ensureDb();
+
+    const customers = await db.getAll('customers');
     const searchTerm = query.toLowerCase();
-    
-    return customers.filter(customer => 
+
+    return customers.filter(customer =>
       customer.name?.toLowerCase().includes(searchTerm) ||
       customer.phone?.includes(query) ||
       customer.email?.toLowerCase().includes(searchTerm)
@@ -234,7 +196,7 @@ class OfflineStorage {
 
   // Transactions operations
   async saveTransaction(transaction: any, forceQueue = false): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = await this.ensureDb();
 
     // Queue for replay whenever the sale didn't reach the server: either the
     // device is offline OR the request failed at the transport layer while the
@@ -251,7 +213,7 @@ class OfflineStorage {
       createdOffline: !navigator.onLine
     };
 
-    await this.db.put('transactions', offlineTransaction);
+    await db.put('transactions', offlineTransaction);
 
     if (queueForSync) {
       await this.addToSyncQueue('transaction', offlineTransaction);
@@ -261,18 +223,18 @@ class OfflineStorage {
   }
 
   async getTransactions(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAll('transactions');
+    const db = await this.ensureDb();
+    return await db.getAll('transactions');
   }
 
   async getPendingTransactions(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAllFromIndex('transactions', 'by-sync-status', 'pending');
+    const db = await this.ensureDb();
+    return await db.getAllFromIndex('transactions', 'by-sync-status', 'pending');
   }
 
   // Sync queue operations
   async addToSyncQueue(type: 'transaction' | 'customer' | 'product' | 'product_update', data: any): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = await this.ensureDb();
 
     const syncItem = {
       id: `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -280,7 +242,11 @@ class OfflineStorage {
       data,
       timestamp: Date.now(),
       retries: 0,
-      status: 'pending' as const
+      status: 'pending' as const,
+      // Stamp the creator's identity. The per-scope database already isolates
+      // queues, but this lets the flush loop verify (defense-in-depth) that an
+      // item is never replayed under a different account's token.
+      owner: getActiveScopeId(),
     };
 
     // Dedupe by the sale's stable client idempotency key so the same
@@ -294,7 +260,7 @@ class OfflineStorage {
     // 'completed'), and 'failed' is parked for manual review — re-adding it
     // would duplicate the same sale.
     const clientRef = data?.clientRef;
-    const tx = this.db.transaction('sync_queue', 'readwrite');
+    const tx = db.transaction('sync_queue', 'readwrite');
     if (clientRef) {
       const existing = await tx.store.getAll();
       if (existing.some((q: any) => q?.data?.clientRef === clientRef)) {
@@ -309,23 +275,23 @@ class OfflineStorage {
   }
 
   async getSyncQueue(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAllFromIndex('sync_queue', 'by-status', 'pending');
+    const db = await this.ensureDb();
+    return await db.getAllFromIndex('sync_queue', 'by-status', 'pending');
   }
 
   // Items parked as 'failed' after exhausting their retries. These are no longer
   // picked up by the automatic flush, so the review panel surfaces them for a
   // manual retry or discard.
   async getFailedSyncItems(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    return await this.db.getAllFromIndex('sync_queue', 'by-status', 'failed');
+    const db = await this.ensureDb();
+    return await db.getAllFromIndex('sync_queue', 'by-status', 'failed');
   }
 
   // Everything still in the queue (pending, mid-flight, or failed) so the review
   // panel can show the cashier exactly what is waiting and what got stuck.
   async getQueuedItems(): Promise<any[]> {
-    if (!this.db) throw new Error('Database not initialized');
-    const all = await this.db.getAll('sync_queue');
+    const db = await this.ensureDb();
+    const all = await db.getAll('sync_queue');
     return all
       .filter((item: any) => ['pending', 'syncing', 'failed'].includes(item.status))
       .sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -334,19 +300,19 @@ class OfflineStorage {
   // Re-arm a parked 'failed' item for the next flush by resetting its attempt
   // counter and status back to 'pending'.
   async retrySyncItem(syncId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    const item = await this.db.get('sync_queue', syncId);
+    const db = await this.ensureDb();
+    const item = await db.get('sync_queue', syncId);
     if (item) {
       item.status = 'pending';
       item.retries = 0;
-      await this.db.put('sync_queue', item);
+      await db.put('sync_queue', item);
     }
   }
 
   // Permanently drop a queued item the cashier decides not to recover.
   async discardSyncItem(syncId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.delete('sync_queue', syncId);
+    const db = await this.ensureDb();
+    await db.delete('sync_queue', syncId);
   }
 
   // Claim an item before POSTing it: an atomic compare-and-set inside a single
@@ -411,12 +377,12 @@ class OfflineStorage {
   }
 
   async markSyncComplete(syncId: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const item = await this.db.get('sync_queue', syncId);
+    const db = await this.ensureDb();
+
+    const item = await db.get('sync_queue', syncId);
     if (item) {
       item.status = 'synced';
-      await this.db.put('sync_queue', item);
+      await db.put('sync_queue', item);
     }
   }
 
@@ -424,59 +390,98 @@ class OfflineStorage {
   // until it exhausts maxRetries, after which it parks as 'failed' so a single
   // poison item can't block the queue forever.
   async markSyncFailed(syncId: string, maxRetries = 5): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = await this.ensureDb();
 
-    const item = await this.db.get('sync_queue', syncId);
+    const item = await db.get('sync_queue', syncId);
     if (item) {
       item.retries += 1;
       item.status = item.retries >= maxRetries ? 'failed' : 'pending';
-      await this.db.put('sync_queue', item);
+      await db.put('sync_queue', item);
     }
   }
 
-  // Offline auth credential vault operations
+  /**
+   * Open (or reuse) the database for the CURRENT identity. The scope is
+   * recomputed on every call, so the first storage operation after a
+   * login/logout/user-switch automatically lands in the right database —
+   * no explicit wiring in the auth flows required.
+   */
   private async ensureDb(): Promise<IDBPDatabase<POSDatabase>> {
-    if (!this.db) {
-      await this.init();
+    const scope = getActiveScopeId();
+
+    if (this.db && this.currentScope === scope) return this.db;
+
+    // Scope changed (user switched) — wait out any in-flight open, then close.
+    if (this.openPromise) {
+      try { await this.openPromise; } catch { /* ignore */ }
     }
-    if (!this.db) throw new Error('Database not initialized');
-    return this.db;
+    if (this.db && this.currentScope !== scope) {
+      try { this.db.close(); } catch { /* ignore */ }
+      this.db = null;
+    }
+    if (this.db) return this.db;
+
+    this.currentScope = scope;
+    const dbName = `${LEGACY_DB_NAME}::${scope}`;
+    this.openPromise = openDB<POSDatabase>(dbName, this.version, {
+      upgrade(db) {
+        upgradePosDb(db);
+      },
+    });
+
+    try {
+      const db = await this.openPromise;
+      // A concurrent call may have switched scope again while we were opening.
+      if (this.currentScope !== scope) {
+        try { db.close(); } catch { /* ignore */ }
+        return this.ensureDb();
+      }
+      this.db = db;
+      console.log('Offline database initialized for scope:', scope);
+      return db;
+    } catch (error) {
+      console.error('Failed to initialize offline database:', error);
+      throw error;
+    } finally {
+      this.openPromise = null;
+    }
   }
 
   async saveCredential(credential: OfflineCredential): Promise<void> {
-    const db = await this.ensureDb();
+    const db = await this.ensureAuthDb();
     await db.put('auth', credential);
     console.log('Saved offline credential for', credential.role, credential.identifier);
   }
 
   async getCredential(role: 'admin' | 'attendant', identifier: string): Promise<OfflineCredential | null> {
-    const db = await this.ensureDb();
+    const db = await this.ensureAuthDb();
     const id = `${role}:${identifier.trim().toLowerCase()}`;
     const record = await db.get('auth', id);
     return (record as OfflineCredential) || null;
   }
 
   async getAllCredentials(): Promise<OfflineCredential[]> {
-    const db = await this.ensureDb();
+    const db = await this.ensureAuthDb();
     return (await db.getAll('auth')) as OfflineCredential[];
   }
 
   // Settings operations
   async saveSetting(key: string, value: any): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    await this.db.put('settings', { key, value, lastUpdated: Date.now() });
+    const db = await this.ensureDb();
+    await db.put('settings', { key, value, lastUpdated: Date.now() });
   }
 
   async getSetting(key: string): Promise<any> {
-    if (!this.db) throw new Error('Database not initialized');
-    const setting = await this.db.get('settings', key);
+    const db = await this.ensureDb();
+    const setting = await db.get('settings', key);
     return setting?.value;
   }
 
   // Temp->real id map. When an offline-created customer or custom item finally
   // syncs, the server assigns it a real _id. We persist that mapping so a queued
   // sale that still references the temp id can be remapped before it's replayed —
-  // even across separate sync passes / app restarts.
+  // even across separate sync passes / app restarts. Scoped per identity like
+  // everything else in the settings store.
   async getIdMap(): Promise<Record<string, string>> {
     try {
       const map = await this.getSetting('idMap');
@@ -496,13 +501,17 @@ class OfflineStorage {
   // Drop a temp placeholder record once its real counterpart exists, so it stops
   // showing as a duplicate in pickers.
   async removeCustomer(id: string): Promise<void> {
-    if (!this.db) return;
-    try { await this.db.delete('customers', id); } catch { /* ignore */ }
+    try {
+      const db = await this.ensureDb();
+      await db.delete('customers', id);
+    } catch { /* ignore */ }
   }
 
   async removeProduct(id: string): Promise<void> {
-    if (!this.db) return;
-    try { await this.db.delete('products', id); } catch { /* ignore */ }
+    try {
+      const db = await this.ensureDb();
+      await db.delete('products', id);
+    } catch { /* ignore */ }
   }
 
   // Records the moment fresh data was last pulled from the server, so the UI can
@@ -528,24 +537,24 @@ class OfflineStorage {
 
   // Utility methods
   async clearAllData(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
-    
+    const db = await this.ensureDb();
+
     const stores = ['products', 'customers', 'transactions', 'settings', 'sync_queue'];
     for (const storeName of stores) {
-      await this.db.clear(storeName as any);
+      await db.clear(storeName as any);
     }
-    
-    console.log('All offline data cleared');
+
+    console.log('All offline data cleared for scope:', this.currentScope);
   }
 
   async getStorageInfo(): Promise<any> {
-    if (!this.db) throw new Error('Database not initialized');
-    
-    const productsCount = (await this.db.getAll('products')).length;
-    const customersCount = (await this.db.getAll('customers')).length;
-    const transactionsCount = (await this.db.getAll('transactions')).length;
+    const db = await this.ensureDb();
+
+    const productsCount = (await db.getAll('products')).length;
+    const customersCount = (await db.getAll('customers')).length;
+    const transactionsCount = (await db.getAll('transactions')).length;
     const pendingSyncCount = (await this.getSyncQueue()).length;
-    
+
     return {
       products: productsCount,
       customers: customersCount,
@@ -553,6 +562,63 @@ class OfflineStorage {
       pendingSync: pendingSyncCount,
       lastUpdated: new Date().toISOString()
     };
+  }
+
+  private currentScope: string | null = null;
+
+  private openPromise: Promise<IDBPDatabase<POSDatabase>> | null = null;
+
+  private authDb: IDBPDatabase<AuthVaultDatabase> | null = null;
+
+  private authOpenPromise: Promise<IDBPDatabase<AuthVaultDatabase>> | null = null;
+
+  // Offline auth credential vault operations.
+  //
+  // Deliberately GLOBAL (not per-identity): offline login has to verify a
+  // password before any identity is active. Records are keyed per account
+  // (`role:identifier`) and contain only that account's salted verifier +
+  // profile — no other user's business data.
+  private async ensureAuthDb(): Promise<IDBPDatabase<AuthVaultDatabase>> {
+    if (this.authDb) return this.authDb;
+    if (this.authOpenPromise) return this.authOpenPromise;
+
+    this.authOpenPromise = (async () => {
+      const db = await openDB<AuthVaultDatabase>(AUTH_DB_NAME, 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('auth')) {
+            db.createObjectStore('auth', { keyPath: 'id' });
+          }
+        },
+      });
+
+      // One-time migration: earlier versions kept credentials inside the shared
+      // legacy database. Copy them over so previously-registered accounts can
+      // still log in offline after this upgrade.
+      try {
+        if ((await db.getAll('auth')).length === 0) {
+          const legacy = await openDB(LEGACY_DB_NAME);
+          if (legacy.objectStoreNames.contains('auth' as never)) {
+            const records = await (legacy as any).getAll('auth');
+            for (const record of records || []) {
+              await db.put('auth', record as OfflineCredential);
+            }
+            if (records?.length) {
+              console.log(`Migrated ${records.length} offline credential(s) to the auth vault`);
+            }
+          }
+          legacy.close();
+        }
+      } catch { /* legacy db missing or unreadable — nothing to migrate */ }
+
+      this.authDb = db;
+      return db;
+    })();
+
+    try {
+      return await this.authOpenPromise;
+    } finally {
+      this.authOpenPromise = null;
+    }
   }
 }
 
@@ -563,3 +629,64 @@ export const offlineStorage = new OfflineStorage();
 offlineStorage.init().catch(console.error);
 
 export default offlineStorage;
+
+function upgradePosDb(db: IDBPDatabase<POSDatabase>) {
+  if (!db.objectStoreNames.contains('products')) {
+    const productsStore = db.createObjectStore('products', { keyPath: '_id' });
+    productsStore.createIndex('by-name', 'name');
+    productsStore.createIndex('by-barcode', 'barcode');
+    productsStore.createIndex('by-category', 'category');
+  }
+  if (!db.objectStoreNames.contains('customers')) {
+    const customersStore = db.createObjectStore('customers', { keyPath: '_id' });
+    customersStore.createIndex('by-phone', 'phone');
+    customersStore.createIndex('by-email', 'email');
+  }
+  if (!db.objectStoreNames.contains('transactions')) {
+    const transactionsStore = db.createObjectStore('transactions', { keyPath: 'id' });
+    transactionsStore.createIndex('by-date', 'timestamp');
+    transactionsStore.createIndex('by-status', 'status');
+    transactionsStore.createIndex('by-sync-status', 'syncStatus');
+  }
+  if (!db.objectStoreNames.contains('settings')) {
+    db.createObjectStore('settings', { keyPath: 'key' });
+  }
+  if (!db.objectStoreNames.contains('sync_queue')) {
+    const syncStore = db.createObjectStore('sync_queue', { keyPath: 'id' });
+    syncStore.createIndex('by-type', 'type');
+    syncStore.createIndex('by-status', 'status');
+  }
+}
+
+const AUTH_DB_NAME = 'pos-offline-auth';
+
+/**
+ * Resolve which identity's offline data should be visible right now.
+ * Precedence deliberately mirrors apiCall's Authorization header logic
+ * (authToken first, then attendantToken) so queued items in the active scope
+ * always replay under the token that belongs to their creator.
+ */
+export function getActiveScopeId(): string {
+  try {
+    if (localStorage.getItem('authToken')) {
+      const admin = JSON.parse(localStorage.getItem('adminData') || 'null');
+      const id = admin?._id || admin?.id;
+      if (id) return `admin:${id}`;
+      // Token present but profile not stored yet — derive the id from the JWT
+      // so we still get a stable per-user scope instead of a shared one.
+      try {
+        const payload = JSON.parse(atob((localStorage.getItem('authToken') || '').split('.')[1]));
+        const jwtId = payload?.id || payload?._id;
+        if (jwtId) return `admin:${jwtId}`;
+      } catch { /* fall through */ }
+      return 'admin:unknown';
+    }
+    if (localStorage.getItem('attendantToken')) {
+      const attendant = JSON.parse(localStorage.getItem('attendantData') || 'null');
+      const id = attendant?.attendantId || attendant?._id || attendant?.id;
+      if (id) return `attendant:${id}`;
+      return 'attendant:unknown';
+    }
+  } catch { /* corrupted localStorage — treat as signed out */ }
+  return 'anon';
+}

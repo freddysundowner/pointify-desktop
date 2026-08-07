@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { offlineStorage } from '@/lib/offline-storage';
+import { offlineStorage, getActiveScopeId } from '@/lib/offline-storage';
 import { apiCall } from '@/lib/api-config';
 import { queryClient } from '@/lib/queryClient';
 
@@ -74,7 +74,18 @@ export function useOfflineSync() {
       const idMap: Record<string, string> = await offlineStorage.getIdMap().catch(() => ({}));
       const resolveId = (id: any) => (isTempId(id) && idMap[id] ? idMap[id] : id);
 
+      // The offline database is already scoped per identity, so everything in
+      // this queue should belong to the active user. This guard is
+      // defense-in-depth: never replay an item stamped with a different
+      // account's identity under the current token — leave it pending for its
+      // owner's next session instead.
+      const activeScope = getActiveScopeId();
+
       for (const item of queue) {
+        if ((item as any).owner && (item as any).owner !== activeScope) {
+          console.warn('Skipping sync item owned by another account:', item.id);
+          continue;
+        }
         const endpoint = ENDPOINTS[item.type];
         if (!endpoint) {
           // Unknown type — quarantine it (park as 'failed' + visible in the

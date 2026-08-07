@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing, setLocked } from '@/store/slices/attendantSlice';
 import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
 import { verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
+import { queryClient } from '@/lib/queryClient';
 
 interface AttendantData {
   _id: string;
@@ -91,6 +92,11 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
   };
 
   const login = (attendantData: AttendantData, authToken: string, shopData: any) => {
+    // Shared tills: drop any in-memory server data cached by the previous
+    // user so one attendant never sees another's customers/products/reports.
+    // (Offline IndexedDB data is already isolated per identity by
+    // offline-storage's per-scope databases.)
+    queryClient.clear();
     dispatch(setAttendant({ attendant: attendantData, token: authToken,shopData }));
     localStorage.setItem('attendantData', JSON.stringify(attendantData));
     localStorage.setItem('shopData', JSON.stringify(shopData));
@@ -99,6 +105,8 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
   };
 
   const logout = () => {
+    // Clear cached server data so the next user on this till starts fresh.
+    queryClient.clear();
     dispatch(clearAttendant());
     localStorage.removeItem('attendantData');
     localStorage.removeItem('attendantToken');
