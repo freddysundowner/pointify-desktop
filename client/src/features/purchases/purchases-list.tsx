@@ -61,6 +61,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useAuth } from "@/features/auth/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
 import type { Purchase, PurchaseItem } from "@shared/schema";
 import PurchaseOrderDialog from "./purchase-order-dialog";
@@ -130,7 +131,7 @@ export default function PurchasesList() {
     queryKey: ["/api/suppliers", shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const response = await fetch(`/api/suppliers?shopId=${shopId}`);
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "none" });
       if (!response.ok) throw new Error("Failed to fetch suppliers");
       return response.json();
     },
@@ -143,8 +144,9 @@ export default function PurchasesList() {
     queryKey: ["/api/attendants/shop/filter", shopId],
     queryFn: async () => {
       if (!shopId || !showAttendantFilter) return [];
-      const response = await fetch(
+      const response = await rawApiFetch(
         `/api/attendants/shop/filter?shopId=${shopId}`,
+        { auth: "none" },
       );
       if (!response.ok) throw new Error("Failed to fetch attendants");
       return response.json();
@@ -215,13 +217,14 @@ export default function PurchasesList() {
       const queryParams = buildQueryParams();
       // Add timestamp to force cache busting
       const timestamp = Date.now();
-      const response = await fetch(
+      const response = await rawApiFetch(
         `/api/purchases?${queryParams}&_t=${timestamp}`,
         {
           headers: {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
+          auth: "none",
         },
       );
       if (!response.ok) throw new Error("Failed to fetch purchases");
@@ -282,13 +285,14 @@ export default function PurchasesList() {
 
       // Add timestamp to force cache busting
       const timestamp = Date.now();
-      const response = await fetch(
+      const response = await rawApiFetch(
         `/api/analysis/report/purchases?${params}&_t=${timestamp}`,
         {
           headers: {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
+          auth: "none",
         },
       );
       if (!response.ok) throw new Error("Failed to fetch analytics");
@@ -303,8 +307,9 @@ export default function PurchasesList() {
   // Delete purchase mutation
   const deletePurchaseMutation = useMutation({
     mutationFn: async (purchaseId: string) => {
-      const response = await fetch(`/api/purchases/${purchaseId}`, {
+      const response = await rawApiFetch(`/api/purchases/${purchaseId}`, {
         method: "DELETE",
+        auth: "none",
       });
       if (!response.ok) throw new Error("Failed to delete purchase");
       return response.json();

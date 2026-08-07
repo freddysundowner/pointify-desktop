@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Transaction, CartItem } from "@shared/schema";
 import { jsPDF } from 'jspdf';
 import { useToast } from "@/hooks/use-toast";
-import { apiCall, API_ENDPOINTS } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS, rawApiFetch } from "@/lib/api-config";
 import { useEffect } from "react";
 import { usbPrinter } from "@/lib/usb-printer";
 import { tryAgentPrintReceipt } from "@/lib/print-agent";
@@ -165,7 +165,7 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
       : getPrintData();
 
     try {
-      const statusRes = await fetch('/api/printer/status');
+      const statusRes = await rawApiFetch('/api/printer/status', { auth: 'none' });
       const status = statusRes.ok ? await statusRes.json() : null;
       if (!status?.initialized) return;
 

@@ -21,6 +21,7 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { apiRequest } from '@/lib/queryClient';
+import { rawApiFetch } from '@/lib/api-config';
 import { useAuth } from '@/features/auth/useAuth';
 import { DateTime } from '@/components/date-time';
 
@@ -95,7 +96,7 @@ export default function Attendants() {
     queryKey: ['/api/admin/permissions'],
     queryFn: () => {
       const token = localStorage.getItem('authToken');
-      return fetch(`/api/admin/permissions`, {
+      return rawApiFetch(`/api/admin/permissions`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -131,7 +132,7 @@ export default function Attendants() {
     : undefined;
   const { data: editingAttendantShop } = useQuery({
     queryKey: ['/api/shop', editingAttendantShopId],
-    queryFn: () => fetch(`/api/shop/${editingAttendantShopId}`).then(res => res.ok ? res.json() : null),
+    queryFn: () => rawApiFetch(`/api/shop/${editingAttendantShopId}`, { auth: 'none' }).then(res => res.ok ? res.json() : null),
     enabled: isPermissionsDialogOpen && !!editingAttendantShopId,
   });
   const isRestaurantShop = !!editingAttendantShop?.isRestaurant;
@@ -196,7 +197,7 @@ export default function Attendants() {
     queryFn: () => {
       const token = localStorage.getItem('authToken');
       const params = new URLSearchParams({ shopId: currentShopId! });
-      return fetch(`/api/attendants/shop/filter?${params.toString()}`, {
+      return rawApiFetch(`/api/attendants/shop/filter?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

@@ -12,7 +12,7 @@ import { Calendar, Search, RefreshCw, ArrowLeft, Download, Eye } from "lucide-re
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, rawApiFetch } from "@/lib/api-config";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useLocation } from "wouter";
 import { useCurrency } from "@/utils";
@@ -125,7 +125,7 @@ export default function PurchaseReturns() {
     queryKey: ['/api/suppliers', shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const response = await fetch(`/api/suppliers?shopId=${shopId}`, {
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, {
         headers: {
           'Authorization': `Bearer ${admin ? localStorage.getItem('authToken') : localStorage.getItem('attendantToken')}`
         }

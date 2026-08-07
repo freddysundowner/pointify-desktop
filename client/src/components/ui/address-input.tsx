@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
+import { rawApiFetch } from "@/lib/api-config";
 
 interface PlaceDetails {
   address: string;
@@ -41,7 +42,7 @@ export default function AddressInput({
   const [apiKey, setApiKey] = useState<string | null>('AIzaSyAhhiH3PrL9td9IGJWfpK3CXnU3gtsIYHY');
 
   useEffect(() => {
-    fetch('/api/config')
+    rawApiFetch('/api/config', { auth: 'none' })
       .then(res => res.json())
       .then(config => {
         console.log('Fetched config:', config);

@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { apiCall, fetchProductCategories } from "@/lib/api-config";
+import { apiCall, fetchProductCategories, rawApiFetch } from "@/lib/api-config";
 import { Link, useLocation } from "wouter";
 import { useShop } from "@/features/shop/useShop";
 import { useAuth } from "@/features/auth/useAuth";
@@ -380,7 +380,7 @@ export default function StockProducts() {
       // Get auth token from localStorage
       const token = localStorage.getItem("authToken");
 
-      const response = await fetch(url, {
+      const response = await rawApiFetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -476,7 +476,7 @@ export default function StockProducts() {
       console.log("Downloading stock data for:", type);
       console.log("Download URL:", url);
       
-      const response = await fetch(url, {
+      const response = await rawApiFetch(url, {
         method: "GET",
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
@@ -576,13 +576,12 @@ export default function StockProducts() {
         before: selectedProduct.quantity || 0,
       };
 
-      const token = localStorage.getItem('authToken') || localStorage.getItem('attendantToken');
-      const response = await fetch(`/api/product/adjust/${selectedProduct._id}`, {
+      const response = await rawApiFetch(`/api/product/adjust/${selectedProduct._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        auth: 'admin-first',
         body: JSON.stringify(payload),
       });
 

@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CreditCard, ChevronRight } from "lucide-react";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import { useLocation } from "wouter";
+import { rawApiFetch } from "@/lib/api-config";
 
 const fmt = (val: number) =>
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(val ?? 0);
@@ -115,14 +116,12 @@ export default function SalesReportPage() {
       // conditional caching (returns 304), which can otherwise make the browser
       // reuse a previously-selected attendant's numbers when you switch back.
       // `cache: "no-store"` + staleTime 0 guarantees the filter re-runs.
-      const token =
-        localStorage.getItem("attendantToken") || localStorage.getItem("authToken");
-      const res = await fetch(url as string, {
+      const res = await rawApiFetch(url as string, {
         credentials: "include",
         cache: "no-store",
+        auth: "attendant-first",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
       if (!res.ok) throw new Error(`Request failed (${res.status}).`);

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, Smartphone, RefreshCw, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrency } from '@/utils';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface PaymentWaitingProps {
   subscriptionId: string;
@@ -77,11 +78,12 @@ export default function PaymentWaiting() {
     
     try {
       // First get subscription details to extract shop information
-      const subscriptionResponse = await fetch(`/api/subscriptions/${subscriptionId}`, {
+      const subscriptionResponse = await rawApiFetch(`/api/subscriptions/${subscriptionId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        auth: 'none'
       });
 
       if (!subscriptionResponse.ok) {
@@ -100,12 +102,13 @@ export default function PaymentWaiting() {
 
       console.log('Confirming payment with payload:', confirmPayload);
 
-      const confirmResponse = await fetch('/api/payment/confirm', {
+      const confirmResponse = await rawApiFetch('/api/payment/confirm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(confirmPayload)
+        body: JSON.stringify(confirmPayload),
+        auth: 'none'
       });
 
       if (!confirmResponse.ok) {
@@ -197,12 +200,13 @@ export default function PaymentWaiting() {
 
       console.log('Resending push notification with payload:', resendPayload);
 
-      const response = await fetch('/api/payment/resend', {
+      const response = await rawApiFetch('/api/payment/resend', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(resendPayload)
+        body: JSON.stringify(resendPayload),
+        auth: 'none'
       });
 
       if (!response.ok) {

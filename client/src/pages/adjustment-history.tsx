@@ -12,6 +12,7 @@ import { ChevronLeft, Calendar, SlidersHorizontal, RefreshCw, Download, Trending
 import { useToast } from "@/hooks/use-toast";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { rawApiFetch } from "@/lib/api-config";
 
 export default function AdjustmentHistoryPage() {
   const [location, setLocation] = useLocation();
@@ -60,9 +61,7 @@ export default function AdjustmentHistoryPage() {
 
   const fetchProduct = async () => {
     try {
-      const res = await fetch(`/api/product/${productId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('attendantToken')}` }
-      });
+      const res = await rawApiFetch(`/api/product/${productId}`, { auth: 'admin-first' });
       if (res.ok) setProduct(await res.json());
     } catch (e) { console.error('Error fetching product:', e); }
   };
@@ -74,9 +73,7 @@ export default function AdjustmentHistoryPage() {
       const endDate = toDate || new Date().toISOString().split('T')[0];
       const startDate = fromDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const params = new URLSearchParams({ shopId, fromDate: startDate, toDate: endDate, page: "1", limit: "100", ...(filterType !== "all" && { type: filterType }) });
-      const res = await fetch(`/api/product/adjust/history/${productId}?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('attendantToken')}` }
-      });
+      const res = await rawApiFetch(`/api/product/adjust/history/${productId}?${params}`, { auth: 'admin-first' });
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       let historyData = data.data || data.adjustments || data || [];

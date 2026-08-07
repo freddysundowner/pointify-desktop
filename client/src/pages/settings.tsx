@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, rawApiFetch } from "@/lib/api-config";
 
 export default function SettingsPage() {
   const { admin } = useAuth();
@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const { data: settingsData, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['settings', admin?._id],
     queryFn: async () => {
-      const response = await fetch(`/api/settings?adminId=${admin?._id}`);
+      const response = await rawApiFetch(`/api/settings?adminId=${admin?._id}`, { auth: 'none' });
       const data = await response.json();
       return data;
     },
@@ -72,7 +72,7 @@ export default function SettingsPage() {
   // Update settings mutation
   const updateSettingsMutation = useMutation({
     mutationFn: async (settings: { apiMode: 'online' | 'offline' | 'hybrid', syncInterval: number, autoPrint: boolean }) => {
-      const response = await fetch('/api/settings', {
+      const response = await rawApiFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -80,7 +80,8 @@ export default function SettingsPage() {
           apiMode: settings.apiMode,
           syncInterval: settings.syncInterval,
           autoPrint: settings.autoPrint
-        })
+        }),
+        auth: 'none'
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to update settings');

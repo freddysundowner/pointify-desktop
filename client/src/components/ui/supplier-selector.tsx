@@ -8,6 +8,7 @@ import { Checkbox } from "./checkbox";
 import { useAuth } from "../../features/auth/useAuth";
 import { useToast } from "../../hooks/use-toast";
 import { apiRequest } from "../../lib/queryClient";
+import { rawApiFetch } from "../../lib/api-config";
 
 interface SupplierSelectorProps {
   selectedSuppliers: string[];
@@ -55,12 +56,13 @@ export default function SupplierSelector({
   // Create supplier mutation
   const createSupplierMutation = useMutation({
     mutationFn: async (supplierData: { name: string; shopId: string; phoneNumber: string }) => {
-      const response = await fetch(`/api/supplier`, {
+      const response = await rawApiFetch(`/api/supplier`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(supplierData)
+        body: JSON.stringify(supplierData),
+        auth: 'none',
       });
       
       if (!response.ok) {

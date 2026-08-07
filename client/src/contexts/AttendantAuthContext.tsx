@@ -6,6 +6,7 @@ import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
 import { verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
 import { announcePendingOfflineSales } from '@/hooks/useOfflineSync';
 import { queryClient } from '@/lib/queryClient';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface AttendantData {
   _id: string;
@@ -142,10 +143,11 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     }
     let response: Response;
     try {
-      response = await fetch('/api/auth/attendant/login', {
+      response = await rawApiFetch('/api/auth/attendant/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uniqueDigits: attendant.uniqueDigits, password }),
+        auth: 'none',
       });
     } catch (err) {
       // Transport failure (server unreachable): verify against the cached
@@ -198,7 +200,7 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
         ...(shopId ? { shopId } : {}),
         ...(attendant.adminId ? { adminId: attendant.adminId } : {}),
       });
-      const response = await fetch(`/api/auth/attendant/verify?${params.toString()}`, {
+      const response = await rawApiFetch(`/api/auth/attendant/verify?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

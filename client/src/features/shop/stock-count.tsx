@@ -13,6 +13,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { useLocation } from "wouter";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -68,7 +69,7 @@ export default function StockCount() {
           shopid: shopId,
         });
 
-        const response = await fetch(`/api/v2/products/list?${params.toString()}`, {
+        const response = await rawApiFetch(`/api/v2/products/list?${params.toString()}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

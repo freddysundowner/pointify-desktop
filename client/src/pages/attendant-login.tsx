@@ -11,6 +11,7 @@ import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { saveOfflineCredential, verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
 import RestaurantPinLogin from '@/components/RestaurantPinLogin';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface AttendantLoginForm {
   uniqueDigits: string;
@@ -35,10 +36,11 @@ function AttendantLoginContent() {
     mutationFn: async (data: AttendantLoginForm) => {
       let response: Response;
       try {
-        response = await fetch('/api/auth/attendant/login', {
+        response = await rawApiFetch('/api/auth/attendant/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
+          auth: 'none',
         });
       } catch (err) {
         // Transport failure (server unreachable): fall back to verifying the

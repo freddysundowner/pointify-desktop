@@ -13,6 +13,7 @@ import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { queryClient } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import type { Sale, SaleItem } from "@shared/schema";
 
 
@@ -171,13 +172,10 @@ export default function ReturnSale() {
 
     try {
       console.log("Processing return with payload:", returnPayload);
-      const authToken = localStorage.getItem('authToken');
-      const attendantToken = localStorage.getItem('attendantToken');
-      const token = authToken || attendantToken;
-      
-      const response = await fetch('/api/salereturns', {
+      const response = await rawApiFetch('/api/salereturns', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        auth: 'admin-first',
         credentials: 'include',
         body: JSON.stringify(returnPayload)
       });

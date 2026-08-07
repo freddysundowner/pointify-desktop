@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { rawApiFetch } from "@/lib/api-config";
 
 interface SupplierSelectorProps {
   value: string;
@@ -23,7 +24,7 @@ export default function SupplierSelector({
         adminId: adminId || "",
       });
       
-      const response = await fetch(`/api/suppliers?${params.toString()}`, {
+      const response = await rawApiFetch(`/api/suppliers?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
         },

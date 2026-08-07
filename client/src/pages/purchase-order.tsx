@@ -19,6 +19,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import DashboardLayout from '@/components/layout/dashboard-layout';
 import { useCurrency } from '@/utils';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface Product {
   _id?: string;
@@ -88,12 +89,13 @@ export default function PurchaseOrderPage() {
   // Create purchase mutation
   const createPurchaseMutation = useMutation({
     mutationFn: async (purchaseData: any) => {
-      const response = await fetch('/api/purchases', {
+      const response = await rawApiFetch('/api/purchases', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(purchaseData),
+        auth: 'none',
       });
 
       if (!response.ok) {

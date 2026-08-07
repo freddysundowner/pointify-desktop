@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { rawApiFetch } from "./api-config";
 
 // Turn a raw error response body into a human-friendly message.
 // The proxy/backend returns errors as JSON like
@@ -34,26 +35,19 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  // Check for both admin and attendant tokens
-  const adminToken = localStorage.getItem("authToken");
-  const attendantToken = localStorage.getItem("attendantToken");
-  const token = attendantToken || adminToken;
-  
   const headers: Record<string, string> = {};
-  
+
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
-  const res = await fetch(url, {
+  // React Query layer historically prefers the attendant token.
+  const res = await rawApiFetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    auth: "attendant-first",
   });
 
   await throwIfResNotOk(res);
@@ -66,22 +60,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // Check for both admin and attendant tokens
-    const adminToken = localStorage.getItem("authToken");
-    const attendantToken = localStorage.getItem("attendantToken");
-    const token = attendantToken || adminToken;
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const res = await fetch(queryKey[0] as string, {
+    const res = await rawApiFetch(queryKey[0] as string, {
       credentials: "include",
-      headers
+      headers: { "Content-Type": "application/json" },
+      auth: "attendant-first",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

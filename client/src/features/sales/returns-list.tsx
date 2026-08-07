@@ -20,6 +20,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useSelector } from "react-redux";
+import { rawApiFetch } from "@/lib/api-config";
 import type { RootState } from "@/store";
 
 function ReturnsList() {
@@ -217,11 +218,12 @@ function ReturnsList() {
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/salereturns/${returnToDelete.id}`, {
+      const response = await rawApiFetch(`/api/salereturns/${returnToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
       });
 
       if (!response.ok) {

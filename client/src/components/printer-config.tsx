@@ -9,6 +9,7 @@ import { Printer, Settings, TestTube, CheckCircle, XCircle, RefreshCw, Wifi, Usb
 import { useToast } from "@/hooks/use-toast";
 import { usbPrinter } from "@/lib/usb-printer";
 import { agentAvailable, agentTestPrint, parseTcpTarget } from "@/lib/print-agent";
+import { rawApiFetch } from "@/lib/api-config";
 
 interface PrinterConfig {
   type: 'TCP' | 'USB' | 'SERIAL' | 'SYSTEM' | 'BROWSER' | 'WEBUSB';
@@ -87,7 +88,7 @@ export function PrinterConfigDialog() {
 
   const loadPrinterStatus = async () => {
     try {
-      const res = await fetch('/api/printer/status');
+      const res = await rawApiFetch('/api/printer/status', { auth: 'none' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setStatus(data);
@@ -100,7 +101,7 @@ export function PrinterConfigDialog() {
   const discoverPrinters = async () => {
     setIsDiscovering(true);
     try {
-      const res = await fetch('/api/printers');
+      const res = await rawApiFetch('/api/printers', { auth: 'none' });
       const data = await res.json();
       setAvailablePrinters(data.printers || []);
     } catch {
@@ -113,10 +114,11 @@ export function PrinterConfigDialog() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/printer/initialize', {
+      const res = await rawApiFetch('/api/printer/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
+        auth: 'none',
       });
       const data = await res.json();
       if (data.success) {
@@ -207,7 +209,7 @@ export function PrinterConfigDialog() {
         }
         setAgentConnected(false);
       }
-      const res = await fetch('/api/printer/test', { method: 'POST' });
+      const res = await rawApiFetch('/api/printer/test', { method: 'POST', auth: 'none' });
       const data = await res.json();
       if (data.success) {
         toast({ title: "Test Successful", description: "Test print sent successfully" });

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/useAuth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 
 export default function EditProfilePage() {
   const [location, setLocation] = useLocation();
@@ -42,7 +43,7 @@ export default function EditProfilePage() {
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: any) => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/auth/admin/${admin?._id}`, {
+      const response = await rawApiFetch(`/api/auth/admin/${admin?._id}`, {
         method: 'PUT',
         body: JSON.stringify(profileData),
         headers: {
@@ -128,7 +129,7 @@ export default function EditProfilePage() {
         password: passwordChangeData.newPassword
       };
       
-      const response = await fetch(`/api/auth/admin/${admin?._id}`, {
+      const response = await rawApiFetch(`/api/auth/admin/${admin?._id}`, {
         method: 'PUT',
         body: JSON.stringify(fullUpdateData),
         headers: {

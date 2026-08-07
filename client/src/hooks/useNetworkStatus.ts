@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { rawApiFetch } from '@/lib/api-config';
 
 export type NetworkStatus = 'online' | 'offline';
 
@@ -53,9 +54,10 @@ export function useNetworkStatus() {
 
   const checkNetwork = async () => {
     try {
-      const response = await fetch('/api/network/check', {
+      const response = await rawApiFetch('/api/network/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        auth: 'none', // connectivity ping — no token needed
       });
       if (response.ok) {
         const data: NetworkStatusResponse = await response.json();

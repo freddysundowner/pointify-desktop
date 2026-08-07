@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useRoute, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/features/auth/useAuth";
-import { apiCall } from "@/lib/api-config";
+import { apiCall, rawApiFetch } from "@/lib/api-config";
 import { toast } from "@/hooks/use-toast";
 import { tryAgentPrintReceipt, tryAgentPrintKitchen } from "@/lib/print-agent";
 
@@ -48,7 +48,7 @@ export default function ReceiptView() {
 
     const fetchSaleData = async () => {
       try {
-        const response = await fetch(`/api/sales/single/receipt/${saleId}`, {
+        const response = await rawApiFetch(`/api/sales/single/receipt/${saleId}`, {
           method: "GET",
           headers: { Authorization: `Bearer ${localStorage.getItem("authToken")}` },
           credentials: "include",
@@ -271,7 +271,7 @@ ${saleData.outstandingBalance > 0 && saleData.status.toUpperCase() !== "COMPLETE
     // Network (TCP) kitchen printer: print through the local print agent.
     // Falls back to browser print if the agent isn't running.
     try {
-      const statusRes = await fetch("/api/printer/status");
+      const statusRes = await rawApiFetch("/api/printer/status", { auth: "none" });
       const status = statusRes.ok ? await statusRes.json() : null;
       if (status?.config?.type === "TCP") {
         try {
@@ -342,7 +342,7 @@ ${saleData.items.map((item: any) =>
       // Network (TCP) printers: print through the local print agent, since
       // the cloud server can't reach a printer on the shop's own network.
       try {
-        const statusRes = await fetch("/api/printer/status");
+        const statusRes = await rawApiFetch("/api/printer/status", { auth: "none" });
         const status = statusRes.ok ? await statusRes.json() : null;
         if (status?.config?.type === "TCP") {
           const handled = await tryAgentPrintReceipt(status.config, getPrintData());

@@ -18,6 +18,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
@@ -105,7 +106,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
     queryFn: async () => {
       const shopId = getShopId();
       if (!shopId) return [];
-      const response = await fetch(`/api/suppliers?shopId=${shopId}`);
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "none" });
       if (!response.ok) throw new Error("Failed to fetch suppliers");
       return response.json();
     },
@@ -167,10 +168,11 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
   // Create purchase order mutation
   const createPurchaseMutation = useMutation({
     mutationFn: async (purchaseData: any) => {
-      const response = await fetch("/api/purchases", {
+      const response = await rawApiFetch("/api/purchases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(purchaseData)
+        body: JSON.stringify(purchaseData),
+        auth: "none"
       });
       if (!response.ok) throw new Error("Failed to create purchase order");
       return response.json();

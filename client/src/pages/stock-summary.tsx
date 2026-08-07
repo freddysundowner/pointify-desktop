@@ -6,6 +6,7 @@ import { TrendingUp, Package, AlertTriangle, DollarSign, BarChart3, ArrowLeft, D
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useLocation } from "wouter";
@@ -27,18 +28,13 @@ export default function StockSummary() {
   const { data: stockData, isLoading, error } = useQuery({
     queryKey: ["/api/analysis/stockanalysis", shopId],
     queryFn: async () => {
-      // Get the appropriate token for admin or attendant
-      const adminToken = localStorage.getItem("authToken");
-      const attendantToken = localStorage.getItem("attendantToken");
-      const token = attendantToken || adminToken;
-      
-      const response = await fetch(`/api/analysis/stockanalysis?shopid=${shopId}`, {
+      const response = await rawApiFetch(`/api/analysis/stockanalysis?shopid=${shopId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
         credentials: "include",
+        auth: "attendant-first",
       });
 
       if (!response.ok) {
@@ -121,19 +117,14 @@ export default function StockSummary() {
   // Download functions
   const downloadStockData = async (type: 'lowstock' | 'outofstock') => {
     try {
-      const adminToken = localStorage.getItem("authToken");
-      const attendantToken = localStorage.getItem("attendantToken");
-      const token = attendantToken || adminToken;
-      
       // Call the API that returns Excel file directly
       const downloadUrl = `/api/analysis/pdf/download/?shopid=${shopId}`;
       
-      const response = await fetch(downloadUrl, {
+      const response = await rawApiFetch(downloadUrl, {
         method: "GET",
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
+        headers: {},
         credentials: "include",
+        auth: "attendant-first",
       });
 
       if (!response.ok) {

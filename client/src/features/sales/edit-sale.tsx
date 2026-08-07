@@ -12,6 +12,7 @@ import { useRoute } from "wouter";
 import { useState, useEffect } from "react";
 import type { Sale, SaleItem } from "@shared/schema";
 import { useCurrency } from "@/utils";
+import { rawApiFetch } from "@/lib/api-config";
 
 export default function EditSale() {
   // Try both admin and attendant routes
@@ -43,7 +44,7 @@ export default function EditSale() {
       }
       
       try {
-        const response = await fetch(`/api/sales/single/receipt/${params.id}`, {
+        const response = await rawApiFetch(`/api/sales/single/receipt/${params.id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

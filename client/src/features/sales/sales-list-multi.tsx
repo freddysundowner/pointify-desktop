@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Sale, SaleItem } from "@shared/schema";
 import { tryAgentPrintKitchen } from "@/lib/print-agent";
+import { rawApiFetch } from "@/lib/api-config";
 import { toast } from "@/hooks/use-toast";
 
 // Dummy sales data with multi-item support - replace with your external API data
@@ -249,8 +250,7 @@ export default function SalesListMulti() {
   };
 
   const handleKitchenPrint = async (sale: Sale) => {
-    const token = localStorage.getItem("authToken") || localStorage.getItem("attendantToken");
-    const res = await fetch(`/api/sales/${sale.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await rawApiFetch(`/api/sales/${sale.id}`, { auth: "admin-first" });
     if (!res.ok) return;
     const data = await res.json();
     const ticketDate = new Date(data.saleDate || data.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -258,7 +258,7 @@ export default function SalesListMulti() {
     // Network (TCP) kitchen printer: print through the local print agent.
     // Falls back to browser print if the agent isn't running.
     try {
-      const statusRes = await fetch("/api/printer/status");
+      const statusRes = await rawApiFetch("/api/printer/status", { auth: "none" });
       const status = statusRes.ok ? await statusRes.json() : null;
       if (status?.config?.type === "TCP") {
         try {

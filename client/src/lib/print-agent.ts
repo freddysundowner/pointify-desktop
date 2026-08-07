@@ -6,6 +6,8 @@
  * agent, and the agent can reach the printer.
  */
 
+import { rawApiFetch } from "./api-config";
+
 const AGENT_URL = "http://localhost:9105";
 
 /** Optional shared secret matching the agent's AGENT_TOKEN env var. */
@@ -79,10 +81,11 @@ export async function tryAgentPrintReceipt(
   if (!(await agentAvailable())) return false;
 
   // Format the receipt on our server (single source of receipt layout)
-  const res = await fetch("/api/printer/format", {
+  const res = await rawApiFetch("/api/printer/format", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...printData, width: printerConfig.width }),
+    auth: "none", // formatting endpoint never required a token
   });
   const data = await res.json();
   if (!res.ok || !data.success || !data.text) {

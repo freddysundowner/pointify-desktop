@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrency } from "@/utils";
 
@@ -46,12 +47,13 @@ export default function PurchasePaymentPage() {
 
   const paymentMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/purchases/${id}/payment`, {
+      const response = await rawApiFetch(`/api/purchases/${id}/payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
+        auth: "none",
       });
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);

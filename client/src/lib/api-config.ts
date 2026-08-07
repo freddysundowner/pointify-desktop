@@ -105,15 +105,9 @@ export const fetchProductCategories = async (
     admin: adminId || "",
   });
 
-  const token =
-    localStorage.getItem("authToken") || localStorage.getItem("attendantToken");
-  const response = await fetch(
+  const response = await rawApiFetch(
     `${API_ENDPOINTS.products.categories}?${params.toString()}`,
-    {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    },
+    { auth: "admin-first" },
   );
 
   if (!response.ok) {
@@ -128,6 +122,98 @@ export const fetchProductCategories = async (
 export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
   return params ? `${endpoint}?${params.toString()}` : endpoint;
 };
+
+// ---------------------------------------------------------------------------
+// Canonical API transport — ALL backend (/api) calls must go through here.
+//
+// Layers:
+//   rawApiFetch  — the single low-level transport. Attaches the right auth
+//                  token, optional timeout. Returns the raw Response and never
+//                  throws on HTTP error statuses — callers own error semantics.
+//                  Use this when migrating former raw fetch('/api/...') sites
+//                  so their behavior is preserved exactly.
+//   apiCall      — high-level wrapper (admin-first token, 20s timeout,
+//                  no-cache headers, 401 redirect handling). Returns Response.
+//   apiRequest / getQueryFn (in lib/queryClient.ts) — React Query layer;
+//                  attendant-first token, delegates transport to rawApiFetch.
+//
+// Token precedence differs on purpose and must not be "unified": apiCall
+// historically prefers the admin token, while the React Query layer prefers
+// the attendant token. Both behaviors are load-bearing on shared tills.
+// ---------------------------------------------------------------------------
+
+export type TokenPreference = "admin-first" | "attendant-first" | "none";
+
+// Selects the bearer token exactly the way each legacy pattern did.
+export const getAuthToken = (
+  preference: TokenPreference = "admin-first",
+): string | null => {
+  if (preference === "none") return null;
+  const adminToken = localStorage.getItem("authToken");
+  const attendantToken = localStorage.getItem("attendantToken");
+  return preference === "attendant-first"
+    ? attendantToken || adminToken
+    : adminToken || attendantToken;
+};
+
+export interface RawApiOptions extends RequestInit {
+  /** Which stored token to attach. Default "admin-first" (apiCall's rule).
+   *  An explicit Authorization header in `headers` always wins. */
+  auth?: TokenPreference;
+  /** Abort the request after this many ms. 0 (default) = no timeout.
+   *  Ignored when the caller passes its own `signal`. */
+  timeoutMs?: number;
+}
+
+/**
+ * The single transport for backend calls. Does NOT throw on non-2xx —
+ * callers keep their own `response.ok` / parsing semantics (this is what
+ * makes migrating former raw fetch sites behavior-preserving).
+ * Network/transport failures reject with the browser's native error, which
+ * `isNetworkError` recognizes.
+ */
+export async function rawApiFetch(
+  endpoint: string,
+  options: RawApiOptions = {},
+): Promise<Response> {
+  const { auth = "admin-first", timeoutMs = 0, headers, signal, ...init } = options;
+
+  const mergedHeaders: Record<string, string> = {};
+  if (headers) {
+    // Normalize whatever HeadersInit shape the caller used.
+    new Headers(headers).forEach((v, k) => {
+      mergedHeaders[k] = v;
+    });
+  }
+  const hasExplicitAuth = Object.keys(mergedHeaders).some(
+    (k) => k.toLowerCase() === "authorization",
+  );
+  if (!hasExplicitAuth) {
+    const token = getAuthToken(auth);
+    if (token) mergedHeaders["Authorization"] = `Bearer ${token}`;
+  }
+
+  let effectiveSignal = signal;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  if (timeoutMs > 0 && !signal) {
+    const controller = new AbortController();
+    timeoutId = setTimeout(
+      () => controller.abort(`Request timeout after ${timeoutMs / 1000} seconds`),
+      timeoutMs,
+    );
+    effectiveSignal = controller.signal;
+  }
+
+  try {
+    return await fetch(endpoint, {
+      ...init,
+      headers: mergedHeaders,
+      ...(effectiveSignal ? { signal: effectiveSignal } : {}),
+    });
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 // Detects whether an error (or the current device state) means we're offline /
 // the server is unreachable, as opposed to a real server-side rejection. Used so
@@ -156,39 +242,28 @@ export const isNetworkError = (error: any): boolean => {
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   
   const url = buildApiUrl(endpoint, );
-  
-  // Get auth token from localStorage - check both admin and attendant tokens
-  const adminToken = localStorage.getItem('authToken');
-  const attendantToken = localStorage.getItem('attendantToken');
-  const token = adminToken || attendantToken;
-  
-  console.log('API Call:', endpoint, 'with token:', !!token, 'admin:', !!adminToken, 'attendant:', !!attendantToken);
-  
+
   const defaultHeaders = {
     "Content-Type": "application/json",
     "Cache-Control": "no-cache, no-store, must-revalidate",
     "Pragma": "no-cache",
     "Expires": "0",
-    ...(token && { "Authorization": `Bearer ${token}` }),
   };
-  
+
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort('Request timeout after 20 seconds');
-    }, 20000); // 20 second timeout
-     
-    const response = await fetch(url, {
+    const response = await rawApiFetch(url, {
       ...options,
       headers: {
         ...defaultHeaders,
         ...options.headers,
       },
-      signal: controller.signal,
+      // Legacy apiCall always enforced its own 20s timeout signal, replacing
+      // any caller-supplied signal — preserve that exactly.
+      signal: undefined,
+      auth: "admin-first",
+      timeoutMs: 20000,
       credentials: "include", // Include cookies for session management
     });
-    
-    clearTimeout(timeoutId);
     
     if (!response.ok) {
       // Try to get the error message from the response body

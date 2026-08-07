@@ -28,4 +28,5 @@
 - [Cart quantity increment bug](cart-quantity-increment-bug.md) — useCart addToCart found existingItem via `_id||id` but updated via `id` only (usually undefined) — silently no-opped for ALL items, not just services.
 - [Receipt print channels](receipt-print-channels.md) — receipt settings must hit all 4 render paths (server text, browser HTML, on-screen JSX, WebUSB ESC/POS) or one silently keeps the old layout.
 - [Attendant shopData timing gap](attendant-shopdata-timing.md) — attendant.shopData is unpopulated right after login (only merged on refresh); read `shopData` from useAttendantAuth() instead.
+- [Canonical API transport](canonical-api-transport.md) — all /api client calls via rawApiFetch; dual token precedence (apiCall admin-first, React Query attendant-first) is intentional; former no-token sites need auth:'none'.
 - [Local print agent](local-print-agent.md) — cloud server can't reach shop-LAN printers; TCP printing goes browser → localhost:9105 agent; needs PNA header; always fall back to browser print.

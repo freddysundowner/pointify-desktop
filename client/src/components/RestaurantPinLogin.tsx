@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Delete } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
+import { rawApiFetch } from '@/lib/api-config';
 
 const PIN_LENGTH = 5;
 
@@ -26,10 +27,11 @@ export default function RestaurantPinLogin({ onUsePasswordInstead }: RestaurantP
 
   const loginMutation = useMutation({
     mutationFn: async (pinValue: string) => {
-      const response = await fetch('/api/attendant/login/pin', {
+      const response = await rawApiFetch('/api/attendant/login/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: pinValue }),
+        auth: 'none',
       });
       if (!response.ok) {
         // Whatever went wrong server-side (bad PIN, endpoint issue, etc.) —

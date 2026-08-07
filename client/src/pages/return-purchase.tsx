@@ -20,6 +20,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useProducts } from "@/contexts/ProductsContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { DateTime } from "@/components/date-time";
 
 interface ReturnItem {
@@ -171,7 +172,7 @@ export default function ReturnPurchase() {
         ? localStorage.getItem('attendantToken') 
         : localStorage.getItem('authToken');
 
-      const response = await fetch('/api/purchasereturns', {
+      const response = await rawApiFetch('/api/purchasereturns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

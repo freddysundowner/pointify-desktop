@@ -18,6 +18,7 @@ import { useNavigationRoute } from '@/lib/navigation-utils';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { usePrimaryShop } from '@/hooks/usePrimaryShop';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface NetProfitData {
   creditTotals: number;
@@ -111,7 +112,7 @@ export default function ProfitAnalysis() {
     queryFn: async () => {
       const p = new URLSearchParams({ shopId: effectiveShopId || '', fromDate: from, toDate: to });
       const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
-      const res = await fetch(`/api/analysis/profit?${p}`, {
+      const res = await rawApiFetch(`/api/analysis/profit?${p}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to fetch profit data');

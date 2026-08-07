@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/dashboard-layout';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface CashFlowEntry {
   _id: string;
@@ -261,7 +262,7 @@ export default function CashFlow() {
   const { data: shopsData } = useQuery({
     queryKey: ["shops", admin?._id],
     queryFn: async () => {
-      const response = await fetch(`/api/shop/admin/${admin?._id}`, {
+      const response = await rawApiFetch(`/api/shop/admin/${admin?._id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -308,11 +309,12 @@ export default function CashFlow() {
         params.append('attendantId', attendant._id);
       }
       
-      const response = await fetch(`/api/cashflow?${params.toString()}`, {
+      const response = await rawApiFetch(`/api/cashflow?${params.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
       });
       
       if (!response.ok) {
@@ -330,11 +332,12 @@ export default function CashFlow() {
   // Create cashflow transaction mutation
   const createTransactionMutation = useMutation({
     mutationFn: async (payload: { name: string; amount: number; category: string; attendantId: string; shopId: string }) => {
-      const response = await fetch('/api/cashflow', {
+      const response = await rawApiFetch('/api/cashflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
         body: JSON.stringify(payload),
       });
       
@@ -368,11 +371,12 @@ export default function CashFlow() {
   const { data: cashflowCategories = [] } = useQuery({
     queryKey: ['/api/cashflow-categories', effectiveShopId],
     queryFn: async () => {
-      const response = await fetch(`/api/cashflow-categories?shop=${effectiveShopId}`, {
+      const response = await rawApiFetch(`/api/cashflow-categories?shop=${effectiveShopId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
       });
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -587,11 +591,12 @@ export default function CashFlow() {
 
       console.log('Submitting cashflow transaction:', payload);
 
-      const response = await fetch('/api/cashflow', {
+      const response = await rawApiFetch('/api/cashflow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
         body: JSON.stringify(payload)
       });
 

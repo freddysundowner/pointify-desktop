@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCartContext } from "@/contexts/CartContext";
-import { apiCall, API_ENDPOINTS, isNetworkError } from "@/lib/api-config";
+import { apiCall, API_ENDPOINTS, isNetworkError, rawApiFetch } from "@/lib/api-config";
 import { offlineStorage } from "@/lib/offline-storage";
 import { usbPrinter } from "@/lib/usb-printer";
 import { tryAgentPrintKitchen } from "@/lib/print-agent";
@@ -226,11 +226,8 @@ export default function ProductGrid({
   const { data: shopAccompaniments } = useQuery({
     queryKey: ["accompaniment-shop", shopId],
     queryFn: async () => {
-      const token =
-        localStorage.getItem("authToken") ||
-        localStorage.getItem("attendantToken");
-      const res = await fetch(`/api/accompaniment/shop/${shopId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await rawApiFetch(`/api/accompaniment/shop/${shopId}`, {
+        auth: "admin-first",
       });
       if (!res.ok) return [];
       return res.json();
@@ -1493,7 +1490,7 @@ export default function ProductGrid({
     };
 
     try {
-      const statusRes = await fetch('/api/printer/status');
+      const statusRes = await rawApiFetch('/api/printer/status', { auth: 'none' });
       const status = statusRes.ok ? await statusRes.json() : null;
       if (!status?.initialized) return;
 

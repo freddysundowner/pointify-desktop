@@ -80,6 +80,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { rawApiFetch } from "@/lib/api-config";
 import { useLocation } from "wouter";
 import { useNavigationRoute } from "@/lib/navigation-utils";
 import type { Sale } from "@shared/schema";
@@ -445,8 +446,7 @@ function SalesList() {
   };
 
   const handleKitchenPrint = async (sale: any) => {
-    const token = localStorage.getItem("authToken") || localStorage.getItem("attendantToken");
-    const res = await fetch(`/api/sales/${sale.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await rawApiFetch(`/api/sales/${sale.id}`, { auth: "admin-first" });
     if (!res.ok) return;
     const data = await res.json();
     const ticketDate = new Date(data.saleDate || data.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -454,7 +454,7 @@ function SalesList() {
     // Network (TCP) kitchen printer: print through the local print agent.
     // Falls back to browser print if the agent isn't running.
     try {
-      const statusRes = await fetch("/api/printer/status");
+      const statusRes = await rawApiFetch("/api/printer/status", { auth: "none" });
       const status = statusRes.ok ? await statusRes.json() : null;
       if (status?.config?.type === "TCP") {
         try {
@@ -507,7 +507,7 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch(`/api/sales/${saleToDelete.id}`, {
+      const response = await rawApiFetch(`/api/sales/${saleToDelete.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -558,7 +558,7 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
     if (!saleToComplete) return;
     setIsCompleting(true);
     try {
-      const response = await fetch(`/api/sales/${saleToComplete.id}`, {
+      const response = await rawApiFetch(`/api/sales/${saleToComplete.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -610,7 +610,7 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
     if (!saleToPayDebt) return;
     setIsPayingDebt(true);
     try {
-      const response = await fetch(`/api/sales/${saleToPayDebt.id}`, {
+      const response = await rawApiFetch(`/api/sales/${saleToPayDebt.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -954,9 +954,10 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       const shop: any =
         originalSale && typeof originalSale.shopId === "object" ? originalSale.shopId : {};
 
-      const response = await fetch("/api/sales/email-receipt", {
+      const response = await rawApiFetch("/api/sales/email-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        auth: "none",
         body: JSON.stringify({
           toEmail: invoiceEmail.trim(),
           receiptHtml: buildInvoiceEmailHtml(invoiceSale),
@@ -1032,9 +1033,10 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       const originalSale = Array.isArray(salesData)
         ? salesData.find((s: any) => s?._id === quotationSale?.id)
         : null;
-      await fetch("/api/sales/email-receipt", {
+      await rawApiFetch("/api/sales/email-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        auth: "none",
         body: JSON.stringify({
           toEmail: quotationEmail.trim(),
           receiptHtml: buildInvoiceEmailHtml(quotationSale),

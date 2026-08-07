@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { rawApiFetch } from '@/lib/api-config';
 
 interface AttendantData {
   _id: string;
@@ -100,7 +101,7 @@ function AttendantDashboardContent() {
       if (attendant?.shopId) {
         try {
           const shopId = typeof attendant.shopId === 'object' ? attendant.shopId._id : attendant.shopId;
-          const response = await fetch(`/api/shop/${shopId}`);
+          const response = await rawApiFetch(`/api/shop/${shopId}`, { auth: 'none' });
           if (response.ok) {
             const shopData = await response.json();
             setShopName(shopData.name || 'Unknown Shop');

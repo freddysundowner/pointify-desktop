@@ -7,7 +7,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Plus, X, Package } from "lucide-react";
 import { offlineStorage } from "@/lib/offline-storage";
 import { parseApiError } from "@/lib/queryClient";
-import { fetchProductCategories } from "@/lib/api-config";
+import { fetchProductCategories, rawApiFetch } from "@/lib/api-config";
 import AccompanimentGroupsEditor from "@/components/ui/accompaniment-groups-editor";
 import type { AccompanimentGroup } from "@/types/accompaniments";
 
@@ -166,7 +166,7 @@ export default function ProductForm() {
   const { data: existingAccompaniments } = useQuery({
     queryKey: ["accompaniment", productId, shopId],
     queryFn: async () => {
-      const res = await fetch(
+      const res = await rawApiFetch(
         `/api/accompaniment/${productId}?shopId=${shopId}`,
         {
           headers: {
@@ -462,7 +462,7 @@ export default function ProductForm() {
   const uploadProductImage = async (savedProductId: string, file: File) => {
     const body = new FormData();
     body.append("image", file);
-    const response = await fetch(`/api/product/${savedProductId}/image`, {
+    const response = await rawApiFetch(`/api/product/${savedProductId}/image`, {
       method: "POST",
       body,
       headers: {
@@ -522,7 +522,7 @@ export default function ProductForm() {
       };
 
 
-      const response = await fetch(endpoint, {
+      const response = await rawApiFetch(endpoint, {
         method,
         body: JSON.stringify(payload),
         headers: {
@@ -558,7 +558,7 @@ export default function ProductForm() {
       // Save accompaniment groups for restaurant-mode products
       if (shopData?.isRestaurant && shopId && savedProductId) {
         try {
-          await fetch(`/api/accompaniment/${savedProductId}`, {
+          await rawApiFetch(`/api/accompaniment/${savedProductId}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
@@ -627,7 +627,7 @@ export default function ProductForm() {
         shop: shopId || "",
         admin: adminId || "",
       });
-      const response = await fetch(`/api/product/category?${createParams.toString()}`, {
+      const response = await rawApiFetch(`/api/product/category?${createParams.toString()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

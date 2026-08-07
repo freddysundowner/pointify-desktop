@@ -25,6 +25,7 @@ import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { DateTime } from "@/components/date-time";
+import { rawApiFetch } from "@/lib/api-config";
 
 // Elapsed-time badge: green while fresh, amber once it's been waiting a
 // while, red once it's been sitting long enough to need attention.
@@ -112,11 +113,9 @@ export default function PendingOrders() {
       if (startDate) params.append("start", startDate);
       if (endDate) params.append("end", endDate);
 
-      const res = await fetch(`/api/sales/filter?${params.toString()}`, {
+      const res = await rawApiFetch(`/api/sales/filter?${params.toString()}`, {
         cache: "no-store",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("attendantToken") || localStorage.getItem("authToken")}`,
-        },
+        auth: "attendant-first",
       });
       if (!res.ok) throw new Error("Failed to load pending orders");
       return res.json();
@@ -184,12 +183,12 @@ export default function PendingOrders() {
     if (!orderToComplete) return;
     setIsCompleting(true);
     try {
-      const res = await fetch(`/api/sales/${orderToComplete.id}`, {
+      const res = await rawApiFetch(`/api/sales/${orderToComplete.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("attendantToken") || localStorage.getItem("authToken")}`,
         },
+        auth: "attendant-first",
         body: JSON.stringify({
           status: "cashed",
           paymentTag: paymentMethod,

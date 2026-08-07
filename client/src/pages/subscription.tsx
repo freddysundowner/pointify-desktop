@@ -9,6 +9,7 @@ import { X, Check, Store, Clock, Users, Zap, Crown, Star, ArrowLeft, Phone, Cred
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { useLocation, useParams } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { rawApiFetch } from "@/lib/api-config";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-KE', {
@@ -77,7 +78,7 @@ export default function SubscriptionPage() {
   // Fetch packages from API
   const { data: packagesData, isLoading: isLoadingPackages, error: packagesError, refetch: refetchPackages } = useQuery({
     queryKey: ['/api/packages', resolvedUserId],
-    queryFn: () => fetch(`/api/packages?page=1&limit=20&id=${resolvedUserId}`).then(res => res.json()),
+    queryFn: () => rawApiFetch(`/api/packages?page=1&limit=20&id=${resolvedUserId}`, { auth: 'none' }).then(res => res.json()),
   });
 
   // Fetch real shops data from API
@@ -85,7 +86,7 @@ export default function SubscriptionPage() {
     queryKey: ['/api/shop/admin', resolvedUserId],
     queryFn: () => {
       if (!resolvedUserId) return Promise.resolve([]);
-      return fetch(`/api/shop/admin/${resolvedUserId}`).then(res => res.json());
+      return rawApiFetch(`/api/shop/admin/${resolvedUserId}`, { auth: 'none' }).then(res => res.json());
     },
     enabled: !!resolvedUserId,
   });
@@ -271,12 +272,13 @@ export default function SubscriptionPage() {
 
       console.log('Creating subscription:', subscriptionPayload);
 
-      const response = await fetch(`/api/subscriptions/${resolvedUserId}`, {
+      const response = await rawApiFetch(`/api/subscriptions/${resolvedUserId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(subscriptionPayload),
+        auth: 'none',
       });
 
       if (!response.ok) {

@@ -17,6 +17,7 @@ import DashboardLayout from '@/components/layout/dashboard-layout';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { apiRequest } from '@/lib/queryClient';
+import { rawApiFetch } from '@/lib/api-config';
 import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
 import { DateTime } from "@/components/date-time";
@@ -76,11 +77,12 @@ export default function CashflowCategories() {
   const { data: categories = [], isLoading, error } = useQuery({
     queryKey: ['/api/cashflow-categories', effectiveShopId],
     queryFn: async () => {
-      const response = await fetch(`/api/cashflow-categories?shop=${effectiveShopId}`, {
+      const response = await rawApiFetch(`/api/cashflow-categories?shop=${effectiveShopId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        auth: 'none',
       });
       if (!response.ok) {
         throw new Error('Failed to fetch categories');

@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/contexts/ProductsContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useCurrency } from "@/utils";
+import { rawApiFetch } from "@/lib/api-config";
 
 export default function PurchaseEditPage() {
   const [, setLocation] = useLocation();
@@ -48,7 +49,7 @@ export default function PurchaseEditPage() {
     queryKey: ["/api/suppliers", shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const response = await fetch(`/api/suppliers?shopId=${shopId}`);
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: 'none' });
       if (!response.ok) throw new Error('Failed to fetch suppliers');
       return response.json();
     },
@@ -76,12 +77,13 @@ export default function PurchaseEditPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/purchases/${id}`, {
+      const response = await rawApiFetch(`/api/purchases/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
+        auth: "none",
       });
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);

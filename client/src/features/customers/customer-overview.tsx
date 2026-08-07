@@ -19,7 +19,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { useAuth } from '@/features/auth/useAuth';
 import { useAttendantAuth } from '@/contexts/AttendantAuthContext';
-import { apiCall } from '@/lib/api-config';
+import { apiCall, rawApiFetch } from '@/lib/api-config';
 import { apiRequest } from '@/lib/queryClient';
 import { useNavigationRoute } from '@/lib/navigation-utils';
 import { DateTime } from "@/components/date-time";
@@ -423,7 +423,7 @@ export default function CustomerOverview() {
       console.log('PaymentTag parameter included:', params.get('paymentTag'));
       
       const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
-      const response = await fetch(url, {
+      const response = await rawApiFetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -461,7 +461,7 @@ export default function CustomerOverview() {
       const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
       const url = `/api/customers/payments/${customerId}?type=${statementFilter}`;
       
-      const response = await fetch(url, {
+      const response = await rawApiFetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -704,7 +704,7 @@ export default function CustomerOverview() {
       };
 
       const token = localStorage.getItem("token") || localStorage.getItem("attendantToken");
-      const response = await fetch(`/api/customers/${customerId}`, {
+      const response = await rawApiFetch(`/api/customers/${customerId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

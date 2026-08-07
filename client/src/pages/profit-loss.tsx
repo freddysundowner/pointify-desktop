@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useLocation } from "wouter";
+import { rawApiFetch } from "@/lib/api-config";
 
 interface ProfitLossData {
   creditTotals: number;
@@ -78,7 +79,7 @@ export default function ProfitLossPage() {
         shopId: effectiveShopId || "",
         adminId: effectiveAdminId || "",
       });
-      const response = await fetch(`/api/attendants/shop/filter?${params}`);
+      const response = await rawApiFetch(`/api/attendants/shop/filter?${params}`, { auth: 'none' });
       if (!response.ok) {
         throw new Error("Failed to fetch attendants");
       }
