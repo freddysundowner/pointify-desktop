@@ -125,6 +125,30 @@ describe('rawApiFetch auth', () => {
     const headers = new Headers(lastInit().headers);
     expect(headers.get('content-type')).toBe('application/json');
   });
+
+  it('preserves headers passed as a Headers instance (incl. explicit auth)', async () => {
+    store.set('authToken', 'admin-t');
+    const h = new Headers();
+    h.set('Authorization', 'Bearer explicit-t');
+    h.set('X-Custom', 'yes');
+    await rawApiFetch('/api/x', { headers: h });
+    const sent = new Headers(lastInit().headers);
+    expect(sent.get('authorization')).toBe('Bearer explicit-t');
+    expect(sent.get('x-custom')).toBe('yes');
+  });
+
+  it('preserves headers passed as a tuple array (incl. explicit auth)', async () => {
+    store.set('authToken', 'admin-t');
+    await rawApiFetch('/api/x', {
+      headers: [
+        ['Authorization', 'Bearer tuple-t'],
+        ['X-Other', 'ok'],
+      ],
+    });
+    const sent = new Headers(lastInit().headers);
+    expect(sent.get('authorization')).toBe('Bearer tuple-t');
+    expect(sent.get('x-other')).toBe('ok');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -148,22 +172,30 @@ describe('rawApiFetch response semantics', () => {
 // rawApiFetch — timeout behavior
 // ---------------------------------------------------------------------------
 describe('rawApiFetch timeout', () => {
-  it('aborts the request after timeoutMs', async () => {
-    vi.useFakeTimers();
+  // Real fetch rejects with the signal's ACTUAL abort reason — reproduce that
+  // exactly instead of fabricating an error shape.
+  const rejectWithRealAbortReason = () => {
     fetchMock.mockImplementation((_url: string, init: RequestInit) => {
       return new Promise((_resolve, reject) => {
         init.signal!.addEventListener('abort', () => {
-          const e = new Error('The operation was aborted');
-          e.name = 'AbortError';
-          reject(e);
+          reject((init.signal as AbortSignal).reason);
         });
       });
     });
+  };
+
+  it('aborts the request after timeoutMs with a proper AbortError reason', async () => {
+    vi.useFakeTimers();
+    rejectWithRealAbortReason();
     const p = rawApiFetch('/api/slow', { timeoutMs: 5000 });
     const guarded = p.catch((e) => e);
     await vi.advanceTimersByTimeAsync(5001);
     const err = await guarded;
+    // The production abort reason must be a real AbortError, not a string.
+    expect(err).not.toBeTypeOf('string');
     expect(err.name).toBe('AbortError');
+    // And offline detection must recognize it.
+    expect(isNetworkError(err)).toBe(true);
   });
 
   it('passes no signal when timeoutMs is 0 (default)', async () => {
@@ -212,10 +244,26 @@ describe('apiCall', () => {
     await expect(apiCall('/api/x')).rejects.toThrow('Price too low');
   });
 
-  it('maps AbortError to a "not responding" timeout message', async () => {
-    const abortErr = new Error('aborted');
-    abortErr.name = 'AbortError';
-    fetchMock.mockRejectedValue(abortErr);
+  it('maps a REAL 20s timeout to "Request timeout. The server is not responding."', async () => {
+    vi.useFakeTimers();
+    // Reject with the signal's actual abort reason, like real fetch does.
+    fetchMock.mockImplementation((_url: string, init: RequestInit) => {
+      return new Promise((_resolve, reject) => {
+        init.signal!.addEventListener('abort', () => {
+          reject((init.signal as AbortSignal).reason);
+        });
+      });
+    });
+    const guarded = apiCall('/api/slow').catch((e) => e);
+    await vi.advanceTimersByTimeAsync(20001);
+    const err = await guarded;
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe('Request timeout. The server is not responding.');
+    expect(isNetworkError(err)).toBe(true);
+  });
+
+  it('maps a string abort rejection to the timeout message too', async () => {
+    fetchMock.mockRejectedValue('Request timeout after 20 seconds');
     await expect(apiCall('/api/x')).rejects.toThrow(/not responding/i);
   });
 
@@ -246,6 +294,14 @@ describe('isNetworkError', () => {
     const e = new Error('whatever');
     e.name = 'AbortError';
     expect(isNetworkError(e)).toBe(true);
+  });
+
+  it('matches a plain-string timeout abort reason', () => {
+    expect(isNetworkError('Request timeout after 20 seconds')).toBe(true);
+  });
+
+  it('does NOT match an arbitrary string error', () => {
+    expect(isNetworkError('Selling price must be greater than buying price')).toBe(false);
   });
 
   it('returns true when the device reports offline, regardless of error', () => {

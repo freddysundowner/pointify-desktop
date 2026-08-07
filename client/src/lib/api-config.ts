@@ -198,7 +198,18 @@ export async function rawApiFetch(
   if (timeoutMs > 0 && !signal) {
     const controller = new AbortController();
     timeoutId = setTimeout(
-      () => controller.abort(`Request timeout after ${timeoutMs / 1000} seconds`),
+      // Abort with a proper AbortError. Aborting with a plain string would make
+      // standards-compliant fetch reject with that raw string (no .name), which
+      // breaks apiCall's timeout mapping and isNetworkError's offline detection.
+      () =>
+        controller.abort(
+          typeof DOMException !== "undefined"
+            ? new DOMException(
+                `Request timeout after ${timeoutMs / 1000} seconds`,
+                "AbortError",
+              )
+            : undefined,
+        ),
       timeoutMs,
     );
     effectiveSignal = controller.signal;
@@ -222,8 +233,11 @@ export async function rawApiFetch(
 export const isNetworkError = (error: any): boolean => {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
   if (!error) return false;
-  if (error.name === "AbortError") return true;
-  const msg = String(error.message || "").toLowerCase();
+  if (error?.name === "AbortError") return true;
+  // Abort reasons can be plain strings — read the message off either shape.
+  const msg = String(
+    typeof error === "string" ? error : error.message || "",
+  ).toLowerCase();
   // Match only true transport failures (the messages apiCall/apiRequest throw on
   // a dropped connection, plus the browser's native fetch errors). Deliberately
   // NOT a bare "network" substring — a real server validation error whose text
@@ -333,14 +347,17 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     }
     
     return response;
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timeout. The server is not responding.`);
-      }
-      if (error.message.includes('fetch') || error.message.includes('NetworkError')) {
-        throw new Error(`Unable to connect to server. Please verify the server is running.`);
-      }
+  } catch (error: any) {
+    // Fetch may reject with a non-Error abort reason (e.g. a string or
+    // DOMException) — don't gate on `instanceof Error`.
+    const name = error?.name;
+    const message =
+      typeof error === 'string' ? error : String(error?.message ?? '');
+    if (name === 'AbortError' || /request timeout/i.test(message)) {
+      throw new Error(`Request timeout. The server is not responding.`);
+    }
+    if (message.includes('fetch') || message.includes('NetworkError')) {
+      throw new Error(`Unable to connect to server. Please verify the server is running.`);
     }
     throw error;
   }
