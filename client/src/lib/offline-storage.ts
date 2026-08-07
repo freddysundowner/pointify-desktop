@@ -42,6 +42,11 @@ interface POSDatabase extends DBSchema {
       timestamp: number;
       retries: number;
       status: 'pending' | 'syncing' | 'synced' | 'failed';
+      // In-flight claim bookkeeping: which session claimed it and when, so a
+      // concurrent flush (another tab) can tell an active claim from an
+      // abandoned one (crash/reload) and only quarantine expired claims.
+      claimedBy?: string;
+      claimedAt?: number;
     };
     indexes: {
       'by-type': string;
@@ -77,6 +82,15 @@ export interface OfflineCredential {
   extra?: any;
   updatedAt: number;
 }
+
+// Identifies this page load (tab/session) as the owner of in-flight sync
+// claims. A reload gets a fresh id, so claims from a previous life are never
+// mistaken for our own live requests.
+export const SYNC_SESSION_ID = `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+// How long an in-flight claim is trusted before another session may treat it
+// as abandoned. Must comfortably exceed the longest plausible POST round-trip.
+export const SYNC_CLAIM_LEASE_MS = 2 * 60 * 1000;
 
 class OfflineStorage {
   private db: IDBPDatabase<POSDatabase> | null = null;
@@ -260,17 +274,6 @@ class OfflineStorage {
   async addToSyncQueue(type: 'transaction' | 'customer' | 'product' | 'product_update', data: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
-    // Dedupe by the sale's stable client idempotency key so the same transaction
-    // can't be queued twice (e.g. a double-tap or a retry that re-enters here).
-    const clientRef = data?.clientRef;
-    if (clientRef) {
-      const existing = await this.db.getAll('sync_queue');
-      if (existing.some((q: any) => q?.data?.clientRef === clientRef && q.status !== 'completed')) {
-        console.log('Skipping duplicate sync item for clientRef:', clientRef);
-        return;
-      }
-    }
-
     const syncItem = {
       id: `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type,
@@ -279,8 +282,29 @@ class OfflineStorage {
       retries: 0,
       status: 'pending' as const
     };
-    
-    await this.db.put('sync_queue', syncItem);
+
+    // Dedupe by the sale's stable client idempotency key so the same
+    // transaction can't be queued twice (double-tap, retry re-entry, or two
+    // concurrent calls). The check and the insert run inside ONE readwrite
+    // transaction: IndexedDB serializes readwrite transactions on the store,
+    // so two racing enqueues of the same clientRef can't both observe an
+    // empty queue — exactly one row wins. Any existing entry with the same
+    // clientRef blocks re-enqueue: 'pending'/'syncing' would double-post,
+    // 'synced' already posted (the terminal status is 'synced', not
+    // 'completed'), and 'failed' is parked for manual review — re-adding it
+    // would duplicate the same sale.
+    const clientRef = data?.clientRef;
+    const tx = this.db.transaction('sync_queue', 'readwrite');
+    if (clientRef) {
+      const existing = await tx.store.getAll();
+      if (existing.some((q: any) => q?.data?.clientRef === clientRef)) {
+        await tx.done;
+        console.log('Skipping duplicate sync item for clientRef:', clientRef);
+        return;
+      }
+    }
+    await tx.store.put(syncItem);
+    await tx.done;
     console.log('Added item to sync queue:', syncItem.id);
   }
 
@@ -323,6 +347,67 @@ class OfflineStorage {
   async discardSyncItem(syncId: string): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     await this.db.delete('sync_queue', syncId);
+  }
+
+  // Claim an item before POSTing it: an atomic compare-and-set inside a single
+  // IndexedDB readwrite transaction. Readwrite transactions on the same store
+  // serialize, so if two flushes (e.g. two open tabs) race on the same item,
+  // exactly one sees 'pending' and wins; the other observes 'syncing' and
+  // backs off. The claim records the owning session and a lease timestamp so
+  // an abandoned claim (crash/reload) can later be told apart from a live one.
+  async claimSyncItem(syncId: string): Promise<boolean> {
+    if (!this.db) throw new Error('Database not initialized');
+    const tx = this.db.transaction('sync_queue', 'readwrite');
+    const item = await tx.store.get(syncId);
+    if (!item || item.status !== 'pending') {
+      await tx.done;
+      return false;
+    }
+    item.status = 'syncing';
+    item.claimedBy = SYNC_SESSION_ID;
+    item.claimedAt = Date.now();
+    await tx.store.put(item);
+    await tx.done;
+    return true;
+  }
+
+  // Items left in 'syncing' whose claim lease has EXPIRED are ambiguous — the
+  // POST may or may not have reached the server before the claiming session
+  // died. Park them as 'failed' so they surface in the review panel for a
+  // human decision instead of being auto-replayed. Fresh claims held by
+  // another live session are left alone (its request may still be in flight).
+  // Runs as one readwrite transaction so it can't race a concurrent claim.
+  async quarantineStaleInFlight(leaseMs = SYNC_CLAIM_LEASE_MS): Promise<number> {
+    if (!this.db) throw new Error('Database not initialized');
+    const now = Date.now();
+    const tx = this.db.transaction('sync_queue', 'readwrite');
+    const inFlight = await tx.store.index('by-status').getAll('syncing');
+    let parked = 0;
+    for (const item of inFlight) {
+      const claimedAt = item.claimedAt ?? 0;
+      const expired = now - claimedAt > leaseMs;
+      // Own-session 'syncing' items at flush start are also stale: syncNow is
+      // serialized per session, so nothing of ours can legitimately be in
+      // flight when a new flush begins.
+      if (expired || item.claimedBy === SYNC_SESSION_ID) {
+        item.status = 'failed';
+        await tx.store.put(item);
+        parked++;
+      }
+    }
+    await tx.done;
+    return parked;
+  }
+
+  // Park an item as 'failed' immediately (no retries left), for cases where an
+  // automatic retry could duplicate a server record.
+  async parkSyncItem(syncId: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    const item = await this.db.get('sync_queue', syncId);
+    if (item) {
+      item.status = 'failed';
+      await this.db.put('sync_queue', item);
+    }
   }
 
   async markSyncComplete(syncId: string): Promise<void> {

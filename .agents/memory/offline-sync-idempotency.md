@@ -48,6 +48,23 @@ needs the upstream Pointify backend team + a live offline-reconnect test (no
 creds available here to run it). Don't add a proxy-level in-memory dedupe —
 autoscale is multi-instance + restarts, so it'd be unreliable security theater.
 
+# Sync queue duplicate-prevention decisions
+
+**Why:** an offline sale replayed twice double-charges; an ambiguous in-flight
+request (crash/reload mid-POST) may or may not have landed server-side.
+
+**How to apply:** keep these invariants when touching sync code:
+- Claiming an item before POST must be an atomic compare-and-set inside ONE
+  IndexedDB readwrite transaction (separate get+put lets two tabs both win).
+- In-flight claims carry an owner session id + lease timestamp; only EXPIRED
+  or own-session leftovers may be quarantined — a fresh foreign claim is a
+  live request in another tab, never park it.
+- Ambiguous in-flight items go to manual review ('failed'), never auto-replay.
+- A create that succeeded but whose response id can't be parsed must be parked,
+  not retried — a retry duplicates the server record.
+- Concurrency behavior is covered by tests in
+  `client/src/lib/__tests__/offline-sync-claim.test.ts` (vitest + fake-indexeddb).
+
 # Sync queue retry semantics
 
 `markSyncFailed` keeps an item `status:'pending'` (retryable) until `retries >= 5`,

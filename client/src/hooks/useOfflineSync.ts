@@ -55,6 +55,14 @@ export function useOfflineSync() {
     let syncedAny = false;
 
     try {
+      // Items stranded in 'syncing' by a crash/reload are ambiguous — the POST
+      // may or may not have landed. Park them for manual review instead of
+      // auto-replaying (which could double-post a sale).
+      const stranded = await offlineStorage.quarantineStaleInFlight();
+      if (stranded > 0) {
+        console.warn(`Parked ${stranded} in-flight sync item(s) from a previous session for review`);
+      }
+
       const queue = await offlineStorage.getSyncQueue();
       if (queue.length === 0) {
         return;
@@ -105,6 +113,14 @@ export function useOfflineSync() {
           }
         }
 
+        // Claim the item (pending -> syncing) before POSTing. If the claim
+        // fails, another flush already owns it — skip to avoid a double post.
+        const claimed = await offlineStorage.claimSyncItem(item.id).catch(() => false);
+        if (!claimed) {
+          console.warn('Sync item already claimed elsewhere, skipping:', item.id);
+          continue;
+        }
+
         try {
           const res = await apiCall(endpoint, {
             method: 'POST',
@@ -121,12 +137,12 @@ export function useOfflineSync() {
             } catch { /* response body not JSON — fall through to the no-id guard */ }
 
             if (!realId) {
-              // The POST appeared to succeed but we couldn't find the new id in
-              // the response. Don't mark complete — otherwise any sale that
-              // depends on this temp id would defer forever. Retry instead so a
-              // later pass (or a manual review) can resolve it.
-              console.warn('Synced customer/product but no real id in response; will retry:', item.id);
-              await offlineStorage.markSyncFailed(item.id);
+              // The POST succeeded but we couldn't find the new id in the
+              // response. Retrying would create a duplicate server record, so
+              // park it for manual review instead. Don't mark complete either —
+              // any sale depending on this temp id would defer forever.
+              console.warn('Created on server but no real id in response; parking for review:', item.id);
+              await offlineStorage.parkSyncItem(item.id);
               continue;
             }
 
