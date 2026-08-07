@@ -10,7 +10,7 @@
 // separate GLOBAL database, because it must be readable before anyone is
 // logged in (that's what offline login checks against) and it only stores
 // salted verifiers, never another user's business data.
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { openDB, deleteDB, DBSchema, IDBPDatabase } from 'idb';
 
 // Define the database schema
 interface POSDatabase extends DBSchema {
@@ -64,6 +64,12 @@ interface POSDatabase extends DBSchema {
       claimedAt?: number;
       /** Scope id of the identity that queued this item (defense-in-depth). */
       owner?: string;
+      /**
+       * Set when the item was rescued from the pre-isolation shared database.
+       * Lets the review panel explain why an unfamiliar sale appeared, and why
+       * it needs a manual retry (it is never auto-replayed).
+       */
+      recoveredFromLegacy?: boolean;
     };
     indexes: {
       'by-type': string;
@@ -447,6 +453,130 @@ class OfflineStorage {
     }
   }
 
+  /**
+   * Rescue offline sales stranded in the pre-isolation SHARED database.
+   *
+   * Before per-identity scoping, all queued sales lived in `pos-offline-db`.
+   * That database is intentionally never reopened for business data, so any
+   * sync-queue items still sitting there at upgrade time would never replay.
+   * This copies them into the CURRENT identity's queue, parked as 'failed'
+   * (never auto-replayed under an arbitrary token — the signed-in user must
+   * explicitly retry or discard each one in the review panel), then removes
+   * them from the legacy queue. Once the legacy queue holds nothing
+   * recoverable, the whole legacy database is deleted.
+   *
+   * Returns the number of items imported. Safe to call repeatedly: it
+   * no-ops when signed out, dedupes by item id and clientRef, and exits
+   * early once the legacy database is gone.
+   */
+  async recoverLegacyQueue(): Promise<number> {
+    const scope = getActiveScopeId();
+    // Never import while signed out — the items must be claimed by a real
+    // identity so retries run under a token that belongs to someone.
+    if (scope === 'anon') return 0;
+
+    // Don't create the legacy db just by probing for it, where the browser
+    // lets us check first.
+    if (!(await legacyDbExists())) return 0;
+
+    let legacy: IDBPDatabase | null = null;
+    try {
+      legacy = await openDB(LEGACY_DB_NAME);
+
+      // Credential safety gate: ALL legacy offline-login credentials must be
+      // merged into the auth vault before this database may be deleted —
+      // otherwise accounts that only registered pre-upgrade lose offline
+      // login forever. If the merge cannot be confirmed, recovery of queue
+      // items still proceeds but deletion is skipped for a later attempt.
+      let credentialsSafe = false;
+      try {
+        const vault = await this.ensureAuthDb();
+        await mergeLegacyCredentials(legacy, vault);
+        credentialsSafe = true;
+      } catch (err: any) {
+        console.warn('Legacy credential merge failed; keeping legacy database:', err?.message || err);
+      }
+
+      if (!legacy.objectStoreNames.contains('sync_queue')) {
+        // No queue store: either an empty shell (possibly one we just
+        // created by opening) or a pre-upgrade schema without a queue.
+        // Nothing recoverable, so it can go — but only once credentials are
+        // confirmed safe (a storeless shell has none to lose).
+        const empty = legacy.objectStoreNames.length === 0;
+        legacy.close();
+        legacy = null;
+        if (empty || credentialsSafe) await deleteDB(LEGACY_DB_NAME).catch(() => {});
+        return 0;
+      }
+
+      const all: any[] = await legacy.getAll('sync_queue');
+      const recoverable = (all || []).filter((i) =>
+        ['pending', 'syncing', 'failed'].includes(i?.status)
+      );
+
+      let imported = 0;
+      if (recoverable.length > 0) {
+        const db = await this.ensureDb();
+        const tx = db.transaction('sync_queue', 'readwrite');
+        const existing = await tx.store.getAll();
+        const seenIds = new Set(existing.map((e: any) => e.id));
+        const seenRefs = new Set(
+          existing.map((e: any) => e?.data?.clientRef).filter(Boolean)
+        );
+        for (const item of recoverable) {
+          const ref = item?.data?.clientRef;
+          if (seenIds.has(item.id) || (ref && seenRefs.has(ref))) continue;
+          await tx.store.put({
+            ...item,
+            // Parked for manual review: the review panel is the only path
+            // back to the server for these, under the claimer's own token.
+            status: 'failed' as const,
+            claimedBy: undefined,
+            claimedAt: undefined,
+            owner: scope,
+            recoveredFromLegacy: true,
+          });
+          seenIds.add(item.id);
+          if (ref) seenRefs.add(ref);
+          imported++;
+        }
+        await tx.done;
+
+        // Only after the copy committed, drop the items from the legacy
+        // queue. If we crash between the two steps, the dedupe above makes
+        // a re-run harmless.
+        const ltx = legacy.transaction('sync_queue', 'readwrite');
+        for (const item of recoverable) {
+          await ltx.store.delete(item.id);
+        }
+        await ltx.done;
+      }
+
+      // If nothing recoverable remains AND the credential merge committed,
+      // the legacy database has served its purpose — delete it entirely.
+      const remaining: any[] = await legacy.getAll('sync_queue');
+      const stillRecoverable = (remaining || []).some((i) =>
+        ['pending', 'syncing', 'failed'].includes(i?.status)
+      );
+      legacy.close();
+      legacy = null;
+      if (!stillRecoverable && credentialsSafe) {
+        await deleteDB(LEGACY_DB_NAME).catch(() => {});
+        console.log('Legacy offline database cleaned up');
+      }
+
+      if (imported > 0) {
+        console.log(`Recovered ${imported} stranded sync item(s) from the legacy offline database`);
+      }
+      return imported;
+    } catch (err: any) {
+      console.warn('Legacy queue recovery failed:', err?.message || err);
+      return 0;
+    } finally {
+      try { legacy?.close(); } catch { /* ignore */ }
+    }
+  }
+
   async saveCredential(credential: OfflineCredential): Promise<void> {
     const db = await this.ensureAuthDb();
     await db.put('auth', credential);
@@ -591,22 +721,19 @@ class OfflineStorage {
         },
       });
 
-      // One-time migration: earlier versions kept credentials inside the shared
-      // legacy database. Copy them over so previously-registered accounts can
-      // still log in offline after this upgrade.
+      // Migration: earlier versions kept credentials inside the shared legacy
+      // database. MERGE any records the vault doesn't already have (a newer
+      // vault record always wins), so previously-registered accounts can still
+      // log in offline after this upgrade — even if some accounts have already
+      // re-registered in the new vault.
       try {
-        if ((await db.getAll('auth')).length === 0) {
+        if (await legacyDbExists()) {
           const legacy = await openDB(LEGACY_DB_NAME);
-          if (legacy.objectStoreNames.contains('auth' as never)) {
-            const records = await (legacy as any).getAll('auth');
-            for (const record of records || []) {
-              await db.put('auth', record as OfflineCredential);
-            }
-            if (records?.length) {
-              console.log(`Migrated ${records.length} offline credential(s) to the auth vault`);
-            }
+          try {
+            await mergeLegacyCredentials(legacy, db);
+          } finally {
+            legacy.close();
           }
-          legacy.close();
         }
       } catch { /* legacy db missing or unreadable — nothing to migrate */ }
 
@@ -659,6 +786,49 @@ function upgradePosDb(db: IDBPDatabase<POSDatabase>) {
 }
 
 const AUTH_DB_NAME = 'pos-offline-auth';
+
+/**
+ * Check whether the legacy shared database still exists WITHOUT creating it
+ * (opening a non-existent IndexedDB database creates it as a side effect).
+ * Returns true when enumeration is unsupported, so callers fall back to
+ * open-and-inspect.
+ */
+async function legacyDbExists(): Promise<boolean> {
+  try {
+    if (typeof indexedDB.databases === 'function') {
+      const dbs = await indexedDB.databases();
+      return dbs.some((d) => d.name === LEGACY_DB_NAME);
+    }
+  } catch { /* enumeration failed — assume it might exist */ }
+  return true;
+}
+
+/**
+ * Copy offline-login credentials from the legacy shared database into the
+ * auth vault, WITHOUT overwriting vault records that are newer (an account
+ * that re-registered post-upgrade keeps its fresh verifier). Must complete
+ * before the legacy database may be deleted, or accounts that only ever
+ * registered pre-upgrade would silently lose offline login.
+ */
+async function mergeLegacyCredentials(
+  legacy: IDBPDatabase,
+  vault: IDBPDatabase<AuthVaultDatabase>
+): Promise<number> {
+  if (!legacy.objectStoreNames.contains('auth')) return 0;
+  const records: OfflineCredential[] = (await legacy.getAll('auth')) || [];
+  let merged = 0;
+  for (const record of records) {
+    if (!record?.id) continue;
+    const existing = await vault.get('auth', record.id);
+    if (existing && (existing.updatedAt ?? 0) >= (record.updatedAt ?? 0)) continue;
+    await vault.put('auth', record);
+    merged++;
+  }
+  if (merged > 0) {
+    console.log(`Migrated ${merged} offline credential(s) to the auth vault`);
+  }
+  return merged;
+}
 
 /**
  * Resolve which identity's offline data should be visible right now.

@@ -13,3 +13,6 @@ Offline IndexedDB data is isolated per identity: each admin/attendant gets its o
 - Sync-queue items are stamped with `owner` scope; the flush loop skips mismatched owners (defense-in-depth).
 - The legacy shared `pos-offline-db` is never reopened for business data (only credentials were migrated out of it once); anything left there is intentionally orphaned.
 - Attendant login/logout must `queryClient.clear()` (admin login already did) so in-memory React Query data doesn't leak across users.
+
+## Legacy shared-db recovery safety rule
+Rescued pre-isolation queue items are always parked for manual review under the signed-in user — never auto-replayed under an arbitrary token. The legacy shared db may only be deleted after ALL of its offline-login credentials have been merged (not just when the vault was empty) — a partial vault must not gate the migration, or pre-upgrade-only accounts lose offline login forever.

@@ -114,7 +114,16 @@ export function SyncReviewPanel({
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3 w-3 shrink-0" />
             <span data-testid={`text-sync-time-${item.id}`}>{formatTime(itemTimestamp(item))}</span>
-            {isFailed && (
+            {isFailed && item.recoveredFromLegacy && (
+              <span
+                className="ml-1 inline-flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400"
+                data-testid={`text-sync-recovered-${item.id}`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                Recovered from before the update — retry to send, or discard
+              </span>
+            )}
+            {isFailed && !item.recoveredFromLegacy && (
               <span className="ml-1 inline-flex items-center gap-1 font-medium text-red-600 dark:text-red-400">
                 <AlertTriangle className="h-3 w-3" />
                 Failed after {item.retries} attempt{item.retries !== 1 ? 's' : ''}

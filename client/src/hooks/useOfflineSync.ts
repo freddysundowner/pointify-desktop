@@ -72,6 +72,7 @@ export interface QueuedSyncItem {
   timestamp: number;
   retries: number;
   status: 'pending' | 'syncing' | 'synced' | 'failed';
+  recoveredFromLegacy?: boolean;
 }
 
 export function useOfflineSync() {
@@ -96,6 +97,26 @@ export function useOfflineSync() {
       return 0;
     }
   }, []);
+
+  // Rescue sales stranded in the pre-isolation shared database. Attempted once
+  // per signed-in identity per page load: at mount (if already signed in) and
+  // again on each poll tick, so a user who signs in after the app loaded still
+  // picks up their recovery pass. The storage routine itself is idempotent and
+  // exits early once the legacy database is gone.
+  const legacyRecoveredFor = useRef<string | null>(null);
+  const maybeRecoverLegacy = useCallback(async () => {
+    const scope = getActiveScopeId();
+    if (scope === 'anon' || legacyRecoveredFor.current === scope) return;
+    legacyRecoveredFor.current = scope;
+    try {
+      const recovered = await offlineStorage.recoverLegacyQueue();
+      if (recovered > 0) {
+        await checkPending();
+      }
+    } catch (err: any) {
+      console.warn('Legacy offline data recovery failed:', err?.message || err);
+    }
+  }, [checkPending]);
 
   const syncNow = useCallback(async () => {
     if (syncInProgress.current) return;
@@ -274,7 +295,7 @@ export function useOfflineSync() {
   }, [checkPending]);
 
   useEffect(() => {
-    checkPending();
+    maybeRecoverLegacy().finally(() => checkPending());
 
     // Give the network a moment to stabilize after reconnect before flushing.
     const handleOnline = () => {
@@ -293,6 +314,7 @@ export function useOfflineSync() {
     window.addEventListener(OFFLINE_FLUSH_EVENT, handleFlushRequest);
     // Periodic flush also acts as backoff for items left 'pending' after a failure.
     const interval = setInterval(() => {
+      maybeRecoverLegacy();
       checkPending();
       if (typeof navigator === 'undefined' || navigator.onLine) {
         syncNow();
@@ -304,7 +326,7 @@ export function useOfflineSync() {
       window.removeEventListener(OFFLINE_FLUSH_EVENT, handleFlushRequest);
       clearInterval(interval);
     };
-  }, [checkPending, syncNow]);
+  }, [checkPending, syncNow, maybeRecoverLegacy]);
 
   return {
     pendingCount,
