@@ -83,7 +83,7 @@ export default function PaymentWaiting() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none'
+        auth: 'none' // deliberate: payment polling must work while subscription is expired / pre-login
       });
 
       if (!subscriptionResponse.ok) {
@@ -108,7 +108,7 @@ export default function PaymentWaiting() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(confirmPayload),
-        auth: 'none'
+        auth: 'none' // deliberate: payment polling must work while subscription is expired / pre-login
       });
 
       if (!confirmResponse.ok) {
@@ -206,7 +206,7 @@ export default function PaymentWaiting() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(resendPayload),
-        auth: 'none'
+        auth: 'none' // deliberate: payment polling must work while subscription is expired / pre-login
       });
 
       if (!response.ok) {

@@ -314,7 +314,7 @@ export default function CashFlow() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
       });
       
       if (!response.ok) {
@@ -337,7 +337,7 @@ export default function CashFlow() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
         body: JSON.stringify(payload),
       });
       
@@ -376,7 +376,7 @@ export default function CashFlow() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
       });
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -596,7 +596,7 @@ export default function CashFlow() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
         body: JSON.stringify(payload)
       });
 

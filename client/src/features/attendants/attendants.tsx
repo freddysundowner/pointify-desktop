@@ -132,7 +132,7 @@ export default function Attendants() {
     : undefined;
   const { data: editingAttendantShop } = useQuery({
     queryKey: ['/api/shop', editingAttendantShopId],
-    queryFn: () => rawApiFetch(`/api/shop/${editingAttendantShopId}`, { auth: 'none' }).then(res => res.ok ? res.json() : null),
+    queryFn: () => rawApiFetch(`/api/shop/${editingAttendantShopId}`, { auth: 'admin-first' }).then(res => res.ok ? res.json() : null),
     enabled: isPermissionsDialogOpen && !!editingAttendantShopId,
   });
   const isRestaurantShop = !!editingAttendantShop?.isRestaurant;

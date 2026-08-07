@@ -24,9 +24,26 @@ import { registerPaymentRoutes } from "./payments.js";
 import { registerSyncRoutes } from "./sync.js";
 import { registerAccompanimentRoutes } from "./accompaniments.js";
 import { registerBookingRoutes } from "./bookings.js";
+import { requireAuth } from "../middleware/require-auth.js";
 
 
 export function registerAllRoutes(app: Express) {
+  // Auth gates for route families that were historically unauthenticated
+  // pass-throughs. Mounted before the route modules so they run first.
+  // Deliberately NOT gated: login/register, attendant PIN login, /api/config,
+  // network/health pings, printer routes (local hardware, used pre-auth on
+  // the till), packages (public pricing), and payment confirmation polling
+  // (/api/payment/*, /api/subscriptions GET happens while a subscription is
+  // expired or during onboarding).
+  app.use("/api/suppliers", requireAuth);
+  app.use("/api/supplier", requireAuth); // legacy supplier endpoints in products.ts
+  app.use("/api/purchases", requireAuth);
+  app.use("/api/purchasereturns", requireAuth);
+  app.use("/api/cashflow", requireAuth);
+  app.use("/api/cashflow-categories", requireAuth);
+  app.use("/api/settings", requireAuth);
+  app.use("/api/sales/email-receipt", requireAuth); // local email handler had no check
+
   // Register all route modules
   registerAuthRoutes(app);
   registerProductRoutes(app);

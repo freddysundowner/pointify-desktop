@@ -30,7 +30,7 @@ export default function CreatePurchase() {
   const { data: suppliersResponse, isLoading: suppliersLoading } = useQuery({
     queryKey: ['/api/suppliers', shopId],
     queryFn: async () => {
-      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: 'none' });
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: 'admin-first' });
       if (!response.ok) throw new Error('Failed to fetch suppliers');
       return response.json();
     },
@@ -166,7 +166,7 @@ export default function CreatePurchase() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        auth: 'none'
+        auth: 'admin-first'
       });
 
       if (response.ok) {

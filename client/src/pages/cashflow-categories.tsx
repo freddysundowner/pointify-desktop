@@ -82,7 +82,7 @@ export default function CashflowCategories() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
       });
       if (!response.ok) {
         throw new Error('Failed to fetch categories');

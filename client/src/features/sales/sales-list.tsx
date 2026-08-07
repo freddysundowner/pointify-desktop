@@ -957,7 +957,7 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       const response = await rawApiFetch("/api/sales/email-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        auth: "none",
+        auth: "admin-first",
         body: JSON.stringify({
           toEmail: invoiceEmail.trim(),
           receiptHtml: buildInvoiceEmailHtml(invoiceSale),
@@ -1036,7 +1036,7 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       await rawApiFetch("/api/sales/email-receipt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        auth: "none",
+        auth: "admin-first",
         body: JSON.stringify({
           toEmail: quotationEmail.trim(),
           receiptHtml: buildInvoiceEmailHtml(quotationSale),

@@ -62,7 +62,7 @@ export default function SupplierSelector({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(supplierData),
-        auth: 'none',
+        auth: 'admin-first',
       });
       
       if (!response.ok) {

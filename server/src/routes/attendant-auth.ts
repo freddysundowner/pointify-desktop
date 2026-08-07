@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { makePointifyRequest } from '../config.js';
+import { mintAttendantToken, verifyAttendantToken } from '../lib/attendant-token.js';
 
 export function registerAttendantAuthRoutes(app: Express) {
   // Attendant login endpoint
@@ -61,14 +62,15 @@ export function registerAttendantAuthRoutes(app: Express) {
 
       // Skip API calls that cause errors - proceed directly to token generation
 
-      // Generate a simple token (in production, use proper JWT with secret)
-      const token = Buffer.from(JSON.stringify({
+      // Server-signed, expiry-bound token (HMAC with SESSION_SECRET) — the
+      // proxy auth gate verifies this locally, so it must be unforgeable.
+      const token = mintAttendantToken({
         attendantId: attendant._id,
         shopId: attendant.shopId,
         adminId: attendant.adminId,
         permissions: attendant.permissions || [],
         loginTime: new Date().toISOString()
-      })).toString('base64');
+      });
 
       // Return success response
       res.json({
@@ -164,7 +166,16 @@ export function registerAttendantAuthRoutes(app: Express) {
           status: attendant?.status || 'active'
         },
         shopData: attendant?.shopId,
-        token: loginResponse.token
+        // Mint our own signed token instead of passing through the upstream
+        // JWT — the proxy can't check the upstream signature, but it CAN
+        // verify its own HMAC locally (and offline).
+        token: mintAttendantToken({
+          attendantId: attendant._id,
+          shopId: attendant?.shopId?._id || attendant?.shopId,
+          adminId: attendant.adminId,
+          permissions: attendant.permissions || [],
+          loginTime: new Date().toISOString()
+        })
       });
 
     } catch (error: any) {
@@ -224,8 +235,8 @@ export function registerAttendantAuthRoutes(app: Express) {
       //    character after JSON". We can't decode that token ourselves, so fall
       //    back to the attendantId the client already has from its stored
       //    attendant profile (sent as a query param) instead of failing the refresh.
-      let decoded: any;
-      try {
+      let decoded: any = verifyAttendantToken(token); // current signed shape
+      if (!decoded) try {
         decoded = JSON.parse(Buffer.from(token, 'base64').toString());
         if (!decoded || typeof decoded !== 'object' || !decoded.attendantId) {
           throw new Error('Decoded token missing attendantId');

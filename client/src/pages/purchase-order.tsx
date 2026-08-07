@@ -95,7 +95,7 @@ export default function PurchaseOrderPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(purchaseData),
-        auth: 'none',
+        auth: 'admin-first',
       });
 
       if (!response.ok) {

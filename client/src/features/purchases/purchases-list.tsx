@@ -131,7 +131,7 @@ export default function PurchasesList() {
     queryKey: ["/api/suppliers", shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "none" });
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "admin-first" });
       if (!response.ok) throw new Error("Failed to fetch suppliers");
       return response.json();
     },
@@ -146,7 +146,7 @@ export default function PurchasesList() {
       if (!shopId || !showAttendantFilter) return [];
       const response = await rawApiFetch(
         `/api/attendants/shop/filter?shopId=${shopId}`,
-        { auth: "none" },
+        { auth: "admin-first" },
       );
       if (!response.ok) throw new Error("Failed to fetch attendants");
       return response.json();
@@ -224,7 +224,7 @@ export default function PurchasesList() {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
-          auth: "none",
+          auth: "admin-first",
         },
       );
       if (!response.ok) throw new Error("Failed to fetch purchases");
@@ -292,7 +292,7 @@ export default function PurchasesList() {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
-          auth: "none",
+          auth: "admin-first",
         },
       );
       if (!response.ok) throw new Error("Failed to fetch analytics");
@@ -309,7 +309,7 @@ export default function PurchasesList() {
     mutationFn: async (purchaseId: string) => {
       const response = await rawApiFetch(`/api/purchases/${purchaseId}`, {
         method: "DELETE",
-        auth: "none",
+        auth: "admin-first",
       });
       if (!response.ok) throw new Error("Failed to delete purchase");
       return response.json();

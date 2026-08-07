@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const { data: settingsData, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['settings', admin?._id],
     queryFn: async () => {
-      const response = await rawApiFetch(`/api/settings?adminId=${admin?._id}`, { auth: 'none' });
+      const response = await rawApiFetch(`/api/settings?adminId=${admin?._id}`, { auth: 'admin-first' });
       const data = await response.json();
       return data;
     },
@@ -81,7 +81,7 @@ export default function SettingsPage() {
           syncInterval: settings.syncInterval,
           autoPrint: settings.autoPrint
         }),
-        auth: 'none'
+        auth: 'admin-first'
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Failed to update settings');

@@ -42,7 +42,7 @@ export default function AddressInput({
   const [apiKey, setApiKey] = useState<string | null>('AIzaSyAhhiH3PrL9td9IGJWfpK3CXnU3gtsIYHY');
 
   useEffect(() => {
-    rawApiFetch('/api/config', { auth: 'none' })
+    rawApiFetch('/api/config', { auth: 'none' }) // deliberate: public app config, needed pre-login
       .then(res => res.json())
       .then(config => {
         console.log('Fetched config:', config);

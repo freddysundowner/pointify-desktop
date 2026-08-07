@@ -49,7 +49,7 @@ export default function PurchaseEditPage() {
     queryKey: ["/api/suppliers", shopId],
     queryFn: async () => {
       if (!shopId) return [];
-      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: 'none' });
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: 'admin-first' });
       if (!response.ok) throw new Error('Failed to fetch suppliers');
       return response.json();
     },
@@ -83,7 +83,7 @@ export default function PurchaseEditPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        auth: "none",
+        auth: "admin-first",
       });
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);

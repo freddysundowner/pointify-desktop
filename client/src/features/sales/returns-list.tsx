@@ -223,7 +223,7 @@ function ReturnsList() {
         headers: {
           'Content-Type': 'application/json',
         },
-        auth: 'none',
+        auth: 'admin-first',
       });
 
       if (!response.ok) {

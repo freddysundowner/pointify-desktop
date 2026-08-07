@@ -53,7 +53,7 @@ export default function PurchasePaymentPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        auth: "none",
+        auth: "admin-first",
       });
       if (!response.ok) {
         throw new Error(`${response.status}: ${response.statusText}`);

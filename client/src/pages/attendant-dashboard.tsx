@@ -101,7 +101,7 @@ function AttendantDashboardContent() {
       if (attendant?.shopId) {
         try {
           const shopId = typeof attendant.shopId === 'object' ? attendant.shopId._id : attendant.shopId;
-          const response = await rawApiFetch(`/api/shop/${shopId}`, { auth: 'none' });
+          const response = await rawApiFetch(`/api/shop/${shopId}`, { auth: 'attendant-first' });
           if (response.ok) {
             const shopData = await response.json();
             setShopName(shopData.name || 'Unknown Shop');

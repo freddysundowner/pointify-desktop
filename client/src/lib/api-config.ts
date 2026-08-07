@@ -142,6 +142,12 @@ export const buildApiUrl = (endpoint: string, params?: URLSearchParams) => {
 // the attendant token. Both behaviors are load-bearing on shared tills.
 // ---------------------------------------------------------------------------
 
+// "none" is reserved for endpoints that genuinely must work without a login:
+// login/register, connectivity pings, public /api/config, local printer
+// routes, and payment-confirmation polling (which runs while a subscription
+// is expired). All data endpoints must pass "admin-first" or
+// "attendant-first" — the server proxy now rejects tokenless requests to
+// suppliers, purchases, cashflow, cashflow-categories and settings routes.
 export type TokenPreference = "admin-first" | "attendant-first" | "none";
 
 // Selects the bearer token exactly the way each legacy pattern did.

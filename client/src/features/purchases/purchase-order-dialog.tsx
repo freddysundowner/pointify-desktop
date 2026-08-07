@@ -106,7 +106,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
     queryFn: async () => {
       const shopId = getShopId();
       if (!shopId) return [];
-      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "none" });
+      const response = await rawApiFetch(`/api/suppliers?shopId=${shopId}`, { auth: "admin-first" });
       if (!response.ok) throw new Error("Failed to fetch suppliers");
       return response.json();
     },
@@ -172,7 +172,7 @@ export default function PurchaseOrderDialog({ isOpen, onClose, onSuccess }: Purc
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(purchaseData),
-        auth: "none"
+        auth: "admin-first"
       });
       if (!response.ok) throw new Error("Failed to create purchase order");
       return response.json();

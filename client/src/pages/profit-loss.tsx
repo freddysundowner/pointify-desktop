@@ -79,7 +79,7 @@ export default function ProfitLossPage() {
         shopId: effectiveShopId || "",
         adminId: effectiveAdminId || "",
       });
-      const response = await rawApiFetch(`/api/attendants/shop/filter?${params}`, { auth: 'none' });
+      const response = await rawApiFetch(`/api/attendants/shop/filter?${params}`, { auth: 'admin-first' });
       if (!response.ok) {
         throw new Error("Failed to fetch attendants");
       }
