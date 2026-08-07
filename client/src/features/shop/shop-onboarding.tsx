@@ -103,7 +103,6 @@ export default function ShopOnboarding() {
       });
       
       const newShop = await response.json();
-      console.log('Shop creation response:', newShop);
 
       // Update admin with new primary shop
       if (newShop && newShop._id && admin) {

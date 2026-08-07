@@ -107,7 +107,6 @@ export default function Attendants() {
           return res.json();
         })
         .then(data => {
-          console.log('Admin permissions response:', data);
           const list = Array.isArray(data) ? data : data.permissions || [];
           // The main backend's permission template doesn't include the
           // standalone Room Bookings group yet — add it here so shop owners

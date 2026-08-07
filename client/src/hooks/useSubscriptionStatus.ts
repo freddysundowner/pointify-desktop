@@ -68,18 +68,11 @@ export const useSubscriptionStatus = (): SubscriptionStatus => {
     const currentSubscription = currentShop?.subscription;
 
     // Debug subscription validation
-    console.log('=== SUBSCRIPTION DEBUG ===');
-    console.log('Selected Shop ID:', selectedShopId);
-    console.log('Shops API Error:', shopsError);
-    console.log('Shops Loading:', shopsLoading);
-    console.log('Current Shop:', currentShop);
-    console.log('Current Subscription:', currentSubscription);
 
     // Only check by date - no status field validation
     if (currentSubscription?.endDate) {
       const daysRemaining = calculateDaysRemaining(currentSubscription.endDate);
       const isExpired = daysRemaining !== null ? daysRemaining <= 0 : false;
-      console.log(`📅 Subscription check by date only: ${daysRemaining} days remaining, expired: ${isExpired}`);
       
       return {
         isExpired,
@@ -91,7 +84,6 @@ export const useSubscriptionStatus = (): SubscriptionStatus => {
     // Fallback to primary shop subscription from localStorage - date only
     const fallbackSubscription = adminData?.primaryShop?.subscription;
     if (fallbackSubscription?.endDate) {
-      console.log('🔄 Using fallback subscription from localStorage - date only');
       
       const daysRemaining = calculateDaysRemaining(fallbackSubscription.endDate);
       const isExpired = daysRemaining !== null ? daysRemaining <= 0 : false;
@@ -105,7 +97,6 @@ export const useSubscriptionStatus = (): SubscriptionStatus => {
 
     // If we're still loading or have an error, assume valid to avoid blocking UI
     if (shopsLoading || shopsError) {
-      console.log('⏳ API loading/error - assuming valid subscription to avoid blocking UI');
       return {
         isExpired: false,
         daysRemaining: null,
@@ -114,7 +105,6 @@ export const useSubscriptionStatus = (): SubscriptionStatus => {
     }
 
     // Final fallback: No subscription data found
-    console.log('❌ No subscription data found - marking as expired');
     return {
       isExpired: true,
       daysRemaining: null,

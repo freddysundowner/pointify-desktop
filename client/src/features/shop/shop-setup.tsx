@@ -104,7 +104,6 @@ export default function ShopSetup() {
         body: JSON.stringify(shopData),
       });
 
-      console.log('Shop creation response:', response);
 
       // The API call completed without throwing an error, meaning shop was created
       // Backend logs confirm successful creation with full shop details

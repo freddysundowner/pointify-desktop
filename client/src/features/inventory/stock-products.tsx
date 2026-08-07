@@ -337,23 +337,17 @@ export default function StockProducts() {
       });
 
       const url = `/api/v2/products/list?${params.toString()}`;
-      console.log("Making API call to:", url);
 
       const response = await apiCall(url, {
         method: "GET",
       });
 
       const data = await response.json();
-      console.log("Raw API response:", data);
       
       // Debug: Check reorder levels
-      console.log("=== REORDER LEVEL ANALYSIS ===");
       const productsWithReorder = data.data.filter(p => p.reorderLevel && p.reorderLevel > 0);
-      console.log("Products with reorder level > 0:", productsWithReorder.length);
       productsWithReorder.forEach(p => {
-        console.log(`${p.name}: quantity=${p.quantity || 0}, reorderLevel=${p.reorderLevel}, virtual=${p.virtual}`);
       });
-      console.log("===============================");
       
       return data;
     },
@@ -372,10 +366,6 @@ export default function StockProducts() {
       const warehouse = true;
       const url = `/api/analysis/stockanalysis/?shopid=${effectiveShopId}&warehouse=${warehouse}&totalstock=true`;
       
-      console.log("=== STOCK ANALYSIS QUERY TRIGGERED ===");
-      console.log("Query URL:", url);
-      console.log("Effective Shop ID:", effectiveShopId);
-      console.log("=====================================");
 
       // Get auth token from localStorage
       const token = localStorage.getItem("authToken");
@@ -394,11 +384,6 @@ export default function StockProducts() {
       }
 
       const stockData = await response.json();
-      console.log("=== STOCK ANALYSIS API DATA ===");
-      console.log("Stock Analysis Response:", stockData);
-      console.log("Low Stock Count:", stockData?.lowstock);
-      console.log("Out of Stock Count:", stockData?.outofstock);
-      console.log("================================");
       
       return stockData;
     },
@@ -445,17 +430,6 @@ export default function StockProducts() {
   // Products are already filtered by the API based on stock status
   const filteredProducts = products;
 
-  console.log("Product processing:", {
-    productsData,
-    extractedProducts: products,
-    count: products.length,
-    isLoading,
-    error: error?.message,
-    enabled: !!admin?._id && !!effectiveShopId,
-    adminId: admin?._id,
-    effectiveShopId,
-  });
-
   // Use authentic API pagination data
   const totalProducts = productsData?.count || 0;
   const totalPages = productsData?.totalPages || 1;
@@ -473,8 +447,6 @@ export default function StockProducts() {
       const token = localStorage.getItem("authToken");
       const url = `/api/analysis/pdf/download/file?shopid=${effectiveShopId}`;
       
-      console.log("Downloading stock data for:", type);
-      console.log("Download URL:", url);
       
       const response = await rawApiFetch(url, {
         method: "GET",

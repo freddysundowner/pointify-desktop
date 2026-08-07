@@ -171,7 +171,6 @@ export default function ReturnSale() {
     };
 
     try {
-      console.log("Processing return with payload:", returnPayload);
       const response = await rawApiFetch('/api/salereturns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

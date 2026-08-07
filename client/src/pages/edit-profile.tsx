@@ -79,7 +79,6 @@ export default function EditProfilePage() {
   // Populate form with actual admin data when available
   useEffect(() => {
     if (admin) {
-      console.log('Admin data for profile:', admin);
       // Split username into first and last name if no separate fields exist
       const nameParts = admin.username?.split(' ') || [''];
       setFormData({

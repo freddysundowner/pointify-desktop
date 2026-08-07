@@ -162,10 +162,8 @@ export default function ReturnPurchase() {
       deleteReceipt: false,
       invoiceType: ''
     };
-    console.log(returnPayload)
 
     try {
-      console.log("Processing purchase return with payload:", returnPayload);
       
       // Use appropriate token based on user type
       const token = attendant 
@@ -184,7 +182,6 @@ export default function ReturnPurchase() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Purchase return processed successfully:', result);
         
         // Show success notification
         toast({

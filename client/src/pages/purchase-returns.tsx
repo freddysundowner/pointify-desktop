@@ -95,7 +95,6 @@ export default function PurchaseReturns() {
       
       // Handle the nested structure: {data: [], meta: {total, page, limit, pages}}
       if (response && response.data && Array.isArray(response.data)) {
-        console.log('Nested response with', response.data.length, 'items, total:', response.meta?.total);
         return { 
           returns: response.data, 
           total: response.meta?.total || response.data.length 
@@ -104,11 +103,9 @@ export default function PurchaseReturns() {
       
       // Handle direct array response (fallback)
       if (Array.isArray(response)) {
-        console.log('Array response with', response.length, 'items');
         return { returns: response, total: response.length };
       }
       
-      console.log('Object response:', response);
       return (response as PurchaseReturnsResponse) || { returns: [], total: 0 };
     },
     enabled: !!shopId,

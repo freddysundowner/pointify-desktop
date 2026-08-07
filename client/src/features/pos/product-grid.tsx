@@ -821,7 +821,6 @@ export default function ProductGrid({
       return data;
     },
     onSuccess: (response: any, variables: any) => {
-      console.log("Transaction successful:", response);
       
       // Invalidate all sales-related queries to refresh dashboard and sales lists
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -1318,7 +1317,6 @@ export default function ProductGrid({
         // Find the product data for logging
         const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
         
-        console.log(`Product ${item.name}: productId=${item.id}, inventoryId=${(productData as any)?.inventoryId}, availableQty=${(productData as any)?.quantity}`);
         
         return {
           product: item.id,

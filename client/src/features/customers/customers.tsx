@@ -99,12 +99,7 @@ export default function Customers() {
     ? customersResponse 
     : customersResponse?.customers || customersResponse?.data || [];
 
-  console.log('=== CUSTOMERS DEBUG ===');
-  console.log('Raw customersResponse:', customersResponse);
-  console.log('Processed customers array:', customers);
-  console.log('Array length:', customers.length);
   if (customers.length > 0) {
-    console.log('First customer:', customers[0]);
   }
 
   // Fetch customer analysis data
@@ -119,7 +114,6 @@ export default function Customers() {
       
       const response = await apiRequest('GET', `/api/customers/analysis/${shopId}?${params.toString()}`);
       const data = await response.json();
-      console.log('Customer Analysis Data:', data);
       return data;
     },
     enabled: !!shopId && !!currentAdminId && 
@@ -150,18 +144,6 @@ export default function Customers() {
         adminid: currentAdminId
       };
 
-      console.log('Customer Creation Debug:', {
-        userType,
-        shopId,
-        currentAdminId,
-        primaryShopId,
-        adminId: adminId,
-        selectedShopId,
-        attendantExists: !!attendant,
-        adminExists: !!admin
-      });
-      console.log('Frontend: Sending customer data:', customerData);
-      
       const response = await apiRequest('POST', '/api/customers', customerData);
       return response.json();
     },

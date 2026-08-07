@@ -82,7 +82,6 @@ export const useAuthProvider = (): AuthContextType => {
 
       dispatch(setCurrency(rawAdminData?.primaryShop?.currency || 'KES'));
       await checkAndTriggerAutoSync();
-      console.log("Fetched admin data:", rawAdminData);
       if (!rawAdminData?._id) {
         dispatch(setCurrency(rawAdminData?.primaryShop?.currency || 'KES'));
         
@@ -179,9 +178,7 @@ export const useAuthProvider = (): AuthContextType => {
         // Extract admin data from JWT token
         try {
           const tokenPayload = JSON.parse(atob(storedToken.split('.')[1]));
-          console.log("Token payload:", tokenPayload);
           const adminId = tokenPayload.id || tokenPayload._id;
-          console.log("Admin ID from token:", adminId);
           
           if (adminId) {
             try {
@@ -200,7 +197,6 @@ export const useAuthProvider = (): AuthContextType => {
           }
         } catch (e) {
           console.error("Could not decode JWT token:", e);
-          console.log("Stored token:", storedToken);
           logout();
           return;
         }
@@ -224,8 +220,6 @@ export const useAuthProvider = (): AuthContextType => {
     // changed/disabled password could still be accepted from the cached verifier.
     let serverResponded = false;
     try {
-      console.log("Login attempt:", { email, password: password.length + " chars" });
-      
       // Clear React Query cache before login to ensure fresh data
       queryClient.clear();
       
@@ -239,7 +233,6 @@ export const useAuthProvider = (): AuthContextType => {
       
       const data = await response.json();
       serverResponded = true;
-      console.log("Login response:", data);
 
       if (data && data.token && data.userdata) {
         setToken(data.token);
@@ -344,7 +337,6 @@ export const useAuthProvider = (): AuthContextType => {
             });
             
             const syncResult = await syncResponse.json();
-            console.log('Automatic sync completed:', syncResult);
             
             // Invalidate all queries to refresh with synced data
             queryClient.invalidateQueries();

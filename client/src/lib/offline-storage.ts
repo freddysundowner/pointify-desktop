@@ -12,6 +12,11 @@
 // salted verifiers, never another user's business data.
 import { openDB, deleteDB, DBSchema, IDBPDatabase } from 'idb';
 
+// Routine storage diagnostics are dev-only so production consoles stay quiet.
+const debugLog: (...args: any[]) => void = (import.meta as any).env?.DEV
+  ? console.log.bind(console)
+  : () => {};
+
 // Define the database schema
 interface POSDatabase extends DBSchema {
   products: {
@@ -134,7 +139,7 @@ class OfflineStorage {
 
     await tx.done;
     await this.touchLastSync();
-    console.log(`Saved ${products.length} products to offline storage`);
+    debugLog(`Saved ${products.length} products to offline storage`);
   }
 
   async getProducts(): Promise<any[]> {
@@ -179,7 +184,7 @@ class OfflineStorage {
 
     await tx.done;
     await this.touchLastSync();
-    console.log(`Saved ${customers.length} customers to offline storage`);
+    debugLog(`Saved ${customers.length} customers to offline storage`);
   }
 
   async getCustomers(): Promise<any[]> {
@@ -225,7 +230,7 @@ class OfflineStorage {
       await this.addToSyncQueue('transaction', offlineTransaction);
     }
 
-    console.log('Transaction saved to offline storage:', offlineTransaction.id);
+    debugLog('Transaction saved to offline storage:', offlineTransaction.id);
   }
 
   async getTransactions(): Promise<any[]> {
@@ -271,13 +276,13 @@ class OfflineStorage {
       const existing = await tx.store.getAll();
       if (existing.some((q: any) => q?.data?.clientRef === clientRef)) {
         await tx.done;
-        console.log('Skipping duplicate sync item for clientRef:', clientRef);
+        debugLog('Skipping duplicate sync item for clientRef:', clientRef);
         return;
       }
     }
     await tx.store.put(syncItem);
     await tx.done;
-    console.log('Added item to sync queue:', syncItem.id);
+    debugLog('Added item to sync queue:', syncItem.id);
   }
 
   async getSyncQueue(): Promise<any[]> {
@@ -443,7 +448,7 @@ class OfflineStorage {
         return this.ensureDb();
       }
       this.db = db;
-      console.log('Offline database initialized for scope:', scope);
+      debugLog('Offline database initialized for scope:', scope);
       return db;
     } catch (error) {
       console.error('Failed to initialize offline database:', error);
@@ -562,11 +567,11 @@ class OfflineStorage {
       legacy = null;
       if (!stillRecoverable && credentialsSafe) {
         await deleteDB(LEGACY_DB_NAME).catch(() => {});
-        console.log('Legacy offline database cleaned up');
+        debugLog('Legacy offline database cleaned up');
       }
 
       if (imported > 0) {
-        console.log(`Recovered ${imported} stranded sync item(s) from the legacy offline database`);
+        debugLog(`Recovered ${imported} stranded sync item(s) from the legacy offline database`);
       }
       return imported;
     } catch (err: any) {
@@ -580,7 +585,7 @@ class OfflineStorage {
   async saveCredential(credential: OfflineCredential): Promise<void> {
     const db = await this.ensureAuthDb();
     await db.put('auth', credential);
-    console.log('Saved offline credential for', credential.role, credential.identifier);
+    debugLog('Saved offline credential');
   }
 
   async getCredential(role: 'admin' | 'attendant', identifier: string): Promise<OfflineCredential | null> {
@@ -674,7 +679,7 @@ class OfflineStorage {
       await db.clear(storeName as any);
     }
 
-    console.log('All offline data cleared for scope:', this.currentScope);
+    debugLog('All offline data cleared for scope:', this.currentScope);
   }
 
   async getStorageInfo(): Promise<any> {
@@ -825,7 +830,7 @@ async function mergeLegacyCredentials(
     merged++;
   }
   if (merged > 0) {
-    console.log(`Migrated ${merged} offline credential(s) to the auth vault`);
+    debugLog(`Migrated ${merged} offline credential(s) to the auth vault`);
   }
   return merged;
 }

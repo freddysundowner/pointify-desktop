@@ -589,7 +589,6 @@ export default function CashFlow() {
         shopId: shopId
       };
 
-      console.log('Submitting cashflow transaction:', payload);
 
       const response = await rawApiFetch('/api/cashflow', {
         method: 'POST',

@@ -58,7 +58,6 @@ export default function Shops() {
         method: "GET",
       });
       const data = await response.json();
-      console.log("Shops API Response:", data);
       return Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
     },
     enabled: !!admin?._id,

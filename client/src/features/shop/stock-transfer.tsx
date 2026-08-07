@@ -135,7 +135,6 @@ export default function StockTransfer() {
         }
         
         const data = await response.json();
-        console.log('Shop products response:', data);
         const shopProducts = Array.isArray(data) ? data : (data?.data || []);
         console.log(`Shop ${formData.fromShopId} has ${shopProducts.length} products`);
         

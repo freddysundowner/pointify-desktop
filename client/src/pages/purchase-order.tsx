@@ -216,7 +216,6 @@ export default function PurchaseOrderPage() {
 
     const effectiveShopId = getEffectiveShopId();
     // Ensure attendantId is a string, not an object
-    console.log('Debug - attendantId:', attendantId, 'adminId:', adminId, 'typeof adminId:', typeof adminId);
     
     // Force to string in all cases
     let effectiveAttendantId = '';
@@ -227,7 +226,6 @@ export default function PurchaseOrderPage() {
       effectiveAttendantId = typeof adminId === 'object' ? (adminId as any)?._id || '' : String(adminId);
     }
     
-    console.log('Debug - effectiveAttendantId:', effectiveAttendantId, 'typeof:', typeof effectiveAttendantId);
 
     const purchaseData = {
       purchase: {
@@ -249,7 +247,6 @@ export default function PurchaseOrderPage() {
       useWarehouse: true,
     };
 
-    console.log('Purchase creation payload:', JSON.stringify(purchaseData, null, 2));
     createPurchaseMutation.mutate(purchaseData);
   };
 

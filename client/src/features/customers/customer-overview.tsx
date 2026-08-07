@@ -324,19 +324,12 @@ export default function CustomerOverview() {
   useEffect(() => {
     const customerData = (window as any).__customerData;
     if (customerData && customerData._id === customerId) {
-      console.log('Using passed customer data:', customerData);
       setPassedCustomerData(customerData);
       // Clear the data after use
       delete (window as any).__customerData;
     }
   }, [customerId]);
   
-  console.log('=== CUSTOMER OVERVIEW PAGE LOADED ===');
-  console.log('Wouter Location:', location);
-  console.log('Window Search:', window.location.search);
-  console.log('Extracted Customer ID:', customerId);
-  console.log('Passed Customer Data:', passedCustomerData);
-  console.log('Selected Shop ID:', selectedShopId);
   
   // If no customer ID, log error
   if (!customerId) {
@@ -345,18 +338,14 @@ export default function CustomerOverview() {
   }
   
   if (customerId && !selectedShopId) {
-    console.log('Customer ID found but waiting for shop ID from Redux state...');
   }
   
   if (customerId && selectedShopId) {
-    console.log('Both customer ID and shop ID available - sales query should execute');
   }
   
   // Effect to log when shop state changes
   useEffect(() => {
-    console.log('Shop state changed:', selectedShopId);
     if (customerId && selectedShopId) {
-      console.log('Ready to fetch customer sales data');
     }
   }, [selectedShopId, customerId]);
   
@@ -379,17 +368,10 @@ export default function CustomerOverview() {
     typeof (admin as any)?.shopId === 'object' ? (admin as any)?.shopId?._id : (admin as any)?.shopId;
   const effectiveShopId = selectedShopId || attendantShopId || adminShopId || (admin as any)?.primaryShop;
   
-  console.log('Shop ID calculation:', {
-    selectedShopId,
-    effectiveShopId,
-    willUseEffectiveId: effectiveShopId
-  });
-  
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ['/api/sales/filter', customerId, effectiveShopId, salesFilter],
     enabled: !!customerId, // Only need customer ID
     queryFn: async () => {
-      console.log('Sales query function called with:', { customerId, effectiveShopId, salesFilter });
       
       if (!customerId) {
         console.error('Cannot fetch sales: No customer ID available');
@@ -415,12 +397,6 @@ export default function CustomerOverview() {
       }
       
       const url = `/api/sales/filter?${params.toString()}`;
-      console.log('=== CUSTOMER OVERVIEW SALES API CALL ===');
-      console.log('Customer sales API call:', url);
-      console.log('Customer ID:', customerId);
-      console.log('Effective Shop ID:', effectiveShopId);
-      console.log('Selected Shop ID from Redux:', selectedShopId);
-      console.log('PaymentTag parameter included:', params.get('paymentTag'));
       
       const token = localStorage.getItem('token') || localStorage.getItem('attendantToken');
       const response = await rawApiFetch(url, {
@@ -438,9 +414,6 @@ export default function CustomerOverview() {
       }
       
       const result = await response.json();
-      console.log('Raw API response:', result);
-      console.log('Response type:', typeof result);
-      console.log('Response has data property:', !!result.data);
       
       return result;
 
@@ -474,7 +447,6 @@ export default function CustomerOverview() {
       }
       
       const result = await response.json();
-      console.log('Customer payments response:', result);
       
       return result;
     },
@@ -518,16 +490,6 @@ export default function CustomerOverview() {
         attendantId: attendantId
       };
 
-      console.log('=== DEBT PAYMENT DATA ===');
-      console.log('Customer ID:', customerId);
-      console.log('Current wallet:', currentWallet);
-      console.log('Payment amount entered:', paymentData.amount);
-      console.log('Setting wallet to payment amount:', newWalletBalance);
-      console.log('Effective Shop ID:', effectiveShopId);
-      console.log('User type:', attendantData ? 'ATTENDANT' : 'ADMIN');
-      console.log('Attendant ID:', attendantId);
-      console.log('Update data:', updateData);
-      console.log('==========================');
 
       // Create a timeout promise to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {

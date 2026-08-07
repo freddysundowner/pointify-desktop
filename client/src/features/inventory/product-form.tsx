@@ -676,8 +676,6 @@ export default function ProductForm() {
   };
 
   const onSubmit = (data: ProductFormData) => {
-    console.log("Form submission attempted with data:", data);
-    console.log("Form errors:", form.formState.errors);
     mutation.mutate(data);
   };
 

@@ -407,7 +407,6 @@ export default function ShopDetails() {
 
   const handleDeleteShop = () => {
     console.log('=== DELETE SHOP DEBUG ===');
-    console.log('Admin data:', admin);
     console.log('Primary shop:', admin?.primaryShop);
     console.log('Current shop ID:', id);
     console.log('Admin exists:', !!admin);

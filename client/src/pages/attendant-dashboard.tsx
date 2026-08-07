@@ -66,7 +66,6 @@ function AttendantDashboardContent() {
       const isDirectDashboardAccess = !sessionStorage.getItem('attendantNavigatedToDashboard');
       
       if (hasCanSell && (wasRedirectedFromLogin || isDirectDashboardAccess)) {
-        console.log('Attendant has can_sell permission - redirecting to POS (initial access)');
         sessionStorage.removeItem('attendantLoginRedirect');
         sessionStorage.setItem('attendantNavigatedToDashboard', 'true');
         setLocation('/attendant/pos');
@@ -110,11 +109,6 @@ function AttendantDashboardContent() {
 
             // Store complete shop data with subscription info for permission checks
             localStorage.setItem('currentShopData', JSON.stringify(shopData));
-            console.log('Cached shop subscription data for attendant permissions:', {
-              shopId: shopData._id,
-              subscriptionStatus: shopData.subscription?.status,
-              subscriptionEndDate: shopData.subscription?.endDate
-            });
           } else {
             setShopName('Unknown Shop');
           }
@@ -197,18 +191,11 @@ function AttendantDashboardContent() {
   }
 
   // Debug: Log attendant permissions
-  console.log('=== ATTENDANT PERMISSIONS DEBUG ===');
-  console.log('Attendant data:', attendant);
-  console.log('Attendant permissions:', attendant.permissions);
   
   // Check subscription status from usePermissions hook  
   const permissionsHook = usePermissions();
   const isSubscriptionExpired = permissionsHook.canAccessRoute ? false : true; // Simplified check
-  console.log('Subscription expired:', isSubscriptionExpired);
   
-  console.log('POS can_sell permission:', hasAttendantPermission('pos', 'can_sell'));
-  console.log('Sales view_sales permission:', hasAttendantPermission('sales', 'view_sales'));
-  console.log('Stocks view_products permission:', hasAttendantPermission('stocks', 'view_products'));
 
   const actionGroups = [
     {

@@ -132,15 +132,10 @@ export default function PurchasePaymentPage() {
     const admin = adminData ? JSON.parse(adminData) : null;
     const attendantId = admin?.attendantId;
 
-    console.log('Admin data:', adminData);
-    console.log('Extracted attendantId:', attendantId);
-
     const paymentPayload = {
       amount: paymentData.amount,
       attendantId: attendantId
     };
-
-    console.log('Payment payload:', paymentPayload);
     paymentMutation.mutate(paymentPayload);
   };
 

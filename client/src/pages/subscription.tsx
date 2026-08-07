@@ -270,7 +270,6 @@ export default function SubscriptionPage() {
         amount: selectedPlan.price
       };
 
-      console.log('Creating subscription:', subscriptionPayload);
 
       const response = await rawApiFetch(`/api/subscriptions/${resolvedUserId}`, {
         method: 'POST',
@@ -287,7 +286,6 @@ export default function SubscriptionPage() {
       }
 
       const subscriptionData = await response.json();
-      console.log('Subscription created successfully:', subscriptionData);
 
       // Handle different response scenarios
       if (subscriptionData.subscriptionid) {

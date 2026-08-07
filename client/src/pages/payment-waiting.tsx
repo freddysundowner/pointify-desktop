@@ -91,7 +91,6 @@ export default function PaymentWaiting() {
       }
 
       const subscriptionData = await subscriptionResponse.json();
-      console.log('Subscription data:', subscriptionData);
 
       // Confirm payment using the new endpoint
       const confirmPayload = {
@@ -100,7 +99,6 @@ export default function PaymentWaiting() {
         shops: subscriptionData.shops || [subscriptionData.shop] // Array of shop IDs
       };
 
-      console.log('Confirming payment with payload:', confirmPayload);
 
       const confirmResponse = await rawApiFetch('/api/payment/confirm', {
         method: 'POST',
@@ -116,7 +114,6 @@ export default function PaymentWaiting() {
       }
 
       const confirmResult = await confirmResponse.json();
-      console.log('Payment confirmation result:', confirmResult);
 
       // Check if payment confirmation was successful
       if (confirmResult.status === true || confirmResult.paid === true || confirmResult.success === true) {
@@ -178,7 +175,6 @@ export default function PaymentWaiting() {
   };
 
   const resendPushNotification = async () => {
-    console.log('Resend validation check:', { subscriptionId, phoneNumber, amount });
     
     if (!subscriptionId || !phoneNumber) {
       toast({
@@ -198,7 +194,6 @@ export default function PaymentWaiting() {
         amount: amount || 0  // Ensure amount is never undefined
       };
 
-      console.log('Resending push notification with payload:', resendPayload);
 
       const response = await rawApiFetch('/api/payment/resend', {
         method: 'POST',
@@ -214,13 +209,11 @@ export default function PaymentWaiting() {
       }
 
       const result = await response.json();
-      console.log('Resend result:', result);
 
       if (result.status === true || result.success === true) {
         // Update subscription ID if a new one was created
         if (result.newSubscriptionId) {
           localStorage.setItem('pendingSubscriptionId', result.newSubscriptionId);
-          console.log('Updated subscription ID to:', result.newSubscriptionId);
         }
         
         toast({
