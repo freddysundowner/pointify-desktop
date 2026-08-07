@@ -72,6 +72,11 @@ if ('serviceWorker' in navigator) {
   setTimeout(() => splash.remove(), 370);
 };
 
+// Safety net: never let the splash spin forever. If the auth check hangs
+// (unreachable server, stalled request), dismiss it after 10s so the user
+// sees the app's own UI/error state instead of an endless spinner.
+setTimeout(() => (window as any).__hideSplash?.(), 10000);
+
 const root = createRoot(document.getElementById("root")!);
 root.render(
   <Provider store={store}>
