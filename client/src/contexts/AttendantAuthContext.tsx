@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing, setLocked } from '@/store/slices/attendantSlice';
 import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
 import { verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
+import { announcePendingOfflineSales } from '@/hooks/useOfflineSync';
 import { queryClient } from '@/lib/queryClient';
 
 interface AttendantData {
@@ -102,6 +103,12 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     localStorage.setItem('shopData', JSON.stringify(shopData));
     localStorage.setItem('attendantToken', authToken);
     localStorage.removeItem('attendantLocked');
+    // With per-user offline storage, sales this attendant queued in an earlier
+    // session can only sync while they're signed in. Tell them anything is
+    // still waiting and kick off an immediate flush. Fire-and-forget: must
+    // never block or fail the login. Runs after the token is stored so the
+    // offline scope resolves to this attendant.
+    announcePendingOfflineSales();
   };
 
   const logout = () => {

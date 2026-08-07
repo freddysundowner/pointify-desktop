@@ -2,6 +2,57 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { offlineStorage, getActiveScopeId } from '@/lib/offline-storage';
 import { apiCall } from '@/lib/api-config';
 import { queryClient } from '@/lib/queryClient';
+import { toast } from '@/hooks/use-toast';
+
+// Fired right after a login so the mounted sync hook flushes immediately
+// instead of waiting for the 30s periodic timer.
+export const OFFLINE_FLUSH_EVENT = 'offline-sync:flush';
+
+/**
+ * Called right after a successful login (admin or attendant). Checks the
+ * signed-in user's own offline queue and, if anything is still waiting to
+ * send, shows a brief notice with the count and asks the mounted sync hook
+ * to flush right away (when online).
+ *
+ * Safe to fire-and-forget: any failure here must never block the login flow.
+ */
+export async function announcePendingOfflineSales() {
+  try {
+    // offlineStorage re-resolves the active identity scope on every call, so
+    // this reads the queue belonging to the user who just signed in.
+    const scope = getActiveScopeId();
+    const items = (await offlineStorage.getQueuedItems()) as QueuedSyncItem[];
+    const waiting = items.filter(
+      (i) =>
+        (i.status === 'pending' || i.status === 'syncing') &&
+        (!(i as any).owner || (i as any).owner === scope),
+    );
+
+    if (waiting.length > 0) {
+      const sales = waiting.filter((i) => i.type === 'transaction').length;
+      const title =
+        sales > 0
+          ? `${sales} offline sale${sales === 1 ? '' : 's'} waiting to send`
+          : `${waiting.length} offline change${waiting.length === 1 ? '' : 's'} waiting to send`;
+      toast({
+        title,
+        description:
+          typeof navigator !== 'undefined' && navigator.onLine === false
+            ? "They'll be sent automatically once you're back online."
+            : 'Sending them now…',
+        duration: 8000,
+      });
+    }
+
+    // Ask the mounted sync hook to flush right away (it no-ops while offline).
+    // Small delay so the post-login UI (and the hook) has a moment to mount.
+    if (waiting.length > 0 && typeof window !== 'undefined') {
+      setTimeout(() => window.dispatchEvent(new Event(OFFLINE_FLUSH_EVENT)), 1000);
+    }
+  } catch (err: any) {
+    console.warn('Could not check pending offline sales after login:', err?.message || err);
+  }
+}
 
 const ENDPOINTS: Record<string, string> = {
   transaction: '/api/sales',
@@ -230,7 +281,16 @@ export function useOfflineSync() {
       setTimeout(() => syncNow(), 1500);
     };
 
+    // Post-login immediate flush request (see announcePendingOfflineSales).
+    const handleFlushRequest = () => {
+      checkPending();
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        syncNow();
+      }
+    };
+
     window.addEventListener('online', handleOnline);
+    window.addEventListener(OFFLINE_FLUSH_EVENT, handleFlushRequest);
     // Periodic flush also acts as backoff for items left 'pending' after a failure.
     const interval = setInterval(() => {
       checkPending();
@@ -241,6 +301,7 @@ export function useOfflineSync() {
 
     return () => {
       window.removeEventListener('online', handleOnline);
+      window.removeEventListener(OFFLINE_FLUSH_EVENT, handleFlushRequest);
       clearInterval(interval);
     };
   }, [checkPending, syncNow]);

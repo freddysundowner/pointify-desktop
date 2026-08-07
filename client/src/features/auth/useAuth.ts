@@ -10,6 +10,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useAppDispatch } from "@/store/hooks";
 import { setCurrency } from "@/store/slices/defaultCurrencySlicce";
 import { saveOfflineCredential, verifyOfflineCredential, isNetworkError } from "@/lib/offline-auth";
+import { announcePendingOfflineSales } from "@/hooks/useOfflineSync";
 
 interface Admin {
   _id: string;
@@ -279,6 +280,10 @@ export const useAuthProvider = (): AuthContextType => {
 
         // Check if automatic sync is needed after login
         // await checkAndTriggerAutoSync();
+
+        // Surface any offline sales queued in an earlier session and try to
+        // flush them right away. Fire-and-forget so login is never blocked.
+        announcePendingOfflineSales();
         
       } else {
         // Use the actual API error message if available
@@ -304,6 +309,9 @@ export const useAuthProvider = (): AuthContextType => {
             dispatch(setCurrency(credential.extra.defaultCurrency));
           }
           setServerError(null);
+          // Offline login: still tell them about queued sales (the flush
+          // itself will wait until connectivity returns).
+          announcePendingOfflineSales();
           return;
         }
         throw new Error("You're offline and we couldn't verify these details. Connect to the internet to sign in for the first time on this device.");
