@@ -86,4 +86,4 @@ POINTIFY_OFFLINE_API_URL = "https://staging.pointifypos.com"
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 180000
