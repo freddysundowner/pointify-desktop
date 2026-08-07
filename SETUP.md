@@ -104,6 +104,90 @@ If you need the IP address later, on the server till:
 
 ---
 
+## Letting staff connect without memorising an IP address
+
+By default the server till gets a different IP address each time the router reboots.  
+Choose **one** of the two options below to make the address permanent and easy to remember.
+
+---
+
+### Option A — Reserve a static IP on the server till (recommended)
+
+A static IP means the server till always appears at the same address — no hosts-file changes needed on other tills.
+
+**On the server till:**
+
+1. Press **Windows + R**, type `ncpa.cpl`, press **Enter**
+2. Right-click the active network adapter (usually **Ethernet** or **Wi-Fi**) → **Properties**
+3. Select **Internet Protocol Version 4 (TCP/IPv4)** → **Properties**
+4. Choose **Use the following IP address** and fill in:
+
+   | Field | Example value | Notes |
+   |---|---|---|
+   | IP address | `192.168.1.200` | Pick a number above 100 to avoid conflicts with router DHCP |
+   | Subnet mask | `255.255.255.0` | Copy what `ipconfig` showed before you changed anything |
+   | Default gateway | `192.168.1.1` | Your router's IP — check the label on the router or run `ipconfig` |
+
+5. Set **Preferred DNS server** to the same value as the default gateway (e.g. `192.168.1.1`)
+6. Click **OK** → **Close**
+
+> **Tip:** Write the chosen IP on a label stuck to the server till, e.g. `POS server: 192.168.1.200`
+
+**On every other till**, staff now always navigate to (substituting your chosen IP):
+
+```
+http://192.168.1.200:3000
+```
+
+Bookmark this in Chrome so staff never have to type it again.
+
+---
+
+### Option B — Use a friendly name instead of an IP (`http://pos-server`)
+
+This requires a one-time edit on **each** client till but lets staff use a name rather than a number.
+
+**On the server till:** first follow Option A above so the IP doesn't change.
+
+**On each client till (repeat for every other device):**
+
+1. Press **Windows + R**, type `notepad`, press **Ctrl+Shift+Enter** (runs Notepad as Administrator)
+2. In Notepad: **File → Open**, navigate to:
+   ```
+   C:\Windows\System32\drivers\etc\hosts
+   ```
+   Change the file-type filter from *Text Documents* to **All Files** so the `hosts` file appears
+3. Add a new line at the bottom (replace `192.168.1.200` with your actual server IP from Option A):
+   ```
+   192.168.1.200   pos-server
+   ```
+4. Save and close
+
+Staff can now reach the POS at:
+
+```
+http://pos-server:3000
+```
+
+Bookmark this URL in Chrome on each till.
+
+> **Note:** The `hosts` file edit only affects that one PC. Repeat steps 1–4 on every client till.
+
+---
+
+### Which option should I use?
+
+| | Option A only | Option A + Option B |
+|---|---|---|
+| Staff type | `http://192.168.1.200:3000` (once, then bookmark) | `http://pos-server:3000` (once, then bookmark) |
+| Extra setup per client till | None | ~2 minutes (hosts file edit) |
+| Works if IP changes? | No — that's why you set a static IP first | No — both depend on the static IP |
+| **Recommended for most shops** | ✅ Yes | Optional — nice if staff prefer a name |
+
+**Bottom line:** Do Option A. Once you bookmark the URL, staff never type it again. Add Option B only if you'd prefer a name over a number.
+
+---
+
 ## Offline mode
 
 When the internet is unavailable:
