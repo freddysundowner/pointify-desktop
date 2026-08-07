@@ -410,24 +410,39 @@ export default function ProductGrid({
   const handleCompletePaymentRef = useRef<(() => void) | null>(null);
   const resetPaymentDialogRef    = useRef<(() => void) | null>(null);
   const isFinalizingRef          = useRef(false);
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const shortcutStateRef = useRef({
     cartItems,
     showPaymentDialog,
     selectedPaymentMethod,
     totals,
     mpesaLookupOpen,
+    showShortcutHelp,
   });
 
   // Keep shortcut state ref current every render (no extra effect needed)
-  shortcutStateRef.current = { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen };
+  shortcutStateRef.current = { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen, showShortcutHelp };
 
   // ── Keyboard shortcuts (registered once, reads state via refs) ────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-      const { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen } = shortcutStateRef.current;
+      const { cartItems, showPaymentDialog, selectedPaymentMethod, totals, mpesaLookupOpen, showShortcutHelp } = shortcutStateRef.current;
       const meta = e.metaKey || e.ctrlKey;
+
+      // "?" → toggle the shortcut cheat sheet (never while typing)
+      if (e.key === "?" && !inInput && !meta) {
+        e.preventDefault();
+        setShowShortcutHelp(v => !v);
+        return;
+      }
+
+      // Escape → close the cheat sheet first if it's open
+      if (e.key === "Escape" && showShortcutHelp) {
+        setShowShortcutHelp(false);
+        return;
+      }
 
       // F2 or Cmd/Ctrl+P → open payment dialog
       if (e.key === "F2" || (meta && e.key === "p")) {
@@ -2031,6 +2046,14 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                       <span>{label}</span>
                     </span>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowShortcutHelp(true)}
+                    title="Keyboard shortcuts (?)"
+                    className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                  >
+                    ?
+                  </button>
                 </div>
               );
             })()}
@@ -4216,6 +4239,43 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               {isCreatingCustomItem ? 'Adding...' : 'Add'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Keyboard shortcut cheat sheet — toggled with "?" */}
+      <Dialog open={showShortcutHelp} onOpenChange={setShowShortcutHelp}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Keyboard shortcuts</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
+            const rows: { keys: string[]; label: string }[] = [
+              { keys: isMac ? ["⌘P", "F2"] : ["F2", "Ctrl+P"], label: "Open checkout / payment" },
+              { keys: isMac ? ["⌘K", "/", "F3"] : ["F3", "/", "Ctrl+K"], label: "Focus product search" },
+              { keys: isMac ? ["⌘⌫", "F4"] : ["F4", "Ctrl+⌫"], label: "Clear cart" },
+              { keys: ["Esc"], label: "Close payment dialog / this help" },
+              { keys: ["Enter"], label: "Complete payment (dialog open)" },
+              { keys: ["C", "W", "S", "M", "B", "D", "R"], label: "Pick payment method (dialog open)" },
+              { keys: ["1", "2", "3", "4"], label: "Cash preset amounts (cash selected)" },
+              { keys: ["↑", "↓", "Enter"], label: "Navigate & pick search results" },
+              { keys: ["?"], label: "Show / hide this cheat sheet" },
+            ];
+            return (
+              <div className="space-y-2">
+                {rows.map(({ keys, label }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 text-sm">
+                    <span className="text-gray-600">{label}</span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      {keys.map(k => (
+                        <kbd key={k} className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs font-mono text-gray-700">{k}</kbd>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

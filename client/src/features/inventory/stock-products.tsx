@@ -19,6 +19,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -1062,8 +1068,44 @@ export default function StockProducts() {
                 const categoryName = (product as any).productCategoryId?.name || product.category || "";
                 const qtyColor = isVirtual ? "text-gray-400" : isOutOfStock ? "text-red-500" : isLowStock ? "text-amber-500" : "text-green-600";
                 const rowBg = isSelected ? "bg-purple-50" : isOutOfStock ? "bg-red-50/40" : isLowStock ? "bg-amber-50/40" : "";
+                // Shared action items — rendered in both the "⋮" dropdown and the
+                // right-click context menu so the two stay in sync.
+                const renderProductActionItems = (Item: any) => (
+                  <>
+                    {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
+                      <Item onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
+                        <History className="h-4 w-4 mr-2" />Product History
+                      </Item>
+                    )}
+                    {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
+                      <Item onClick={() => {
+                        (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
+                        setLocation(`${editProductRoute}/${product._id}`);
+                      }}>
+                        <Edit className="h-4 w-4 mr-2" />Edit
+                      </Item>
+                    )}
+                    {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
+                      <Item onClick={() => openAdjustDialog(product)}>
+                        <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
+                      </Item>
+                    )}
+                    {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
+                      <Item onClick={() => openHistoryDialog(product)}>
+                        <FileText className="h-4 w-4 mr-2" />Adjustment History
+                      </Item>
+                    )}
+                    {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
+                      <Item className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
+                        <Trash2 className="h-4 w-4 mr-2" />Delete
+                      </Item>
+                    )}
+                  </>
+                );
                 return (
-                  <div key={product._id} className={`flex items-center px-3 py-2.5 gap-2 ${rowBg}`}>
+                  <ContextMenu key={product._id}>
+                    <ContextMenuTrigger asChild>
+                  <div className={`flex items-center px-3 py-2.5 gap-2 ${rowBg}`}>
                     {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
                       <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(product._id)} className="shrink-0" />
                     )}
@@ -1093,37 +1135,15 @@ export default function StockProducts() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
-                        {(hasPermission("inventory_history") || hasAttendantPermission("products", "view_history")) && (
-                          <DropdownMenuItem onClick={() => setLocation(`${productHistoryRoute}/${product._id}/history`)}>
-                            <History className="h-4 w-4 mr-2" />Product History
-                          </DropdownMenuItem>
-                        )}
-                        {(hasPermission("inventory_edit") || hasAttendantPermission("products", "edit")) && (
-                          <DropdownMenuItem onClick={() => {
-                            (window as any).productEditData = { bundleItems: (product as any).bundleItems || (product as any).items || [], productData: product, passedBundleItems: true };
-                            setLocation(`${editProductRoute}/${product._id}`);
-                          }}>
-                            <Edit className="h-4 w-4 mr-2" />Edit
-                          </DropdownMenuItem>
-                        )}
-                        {!isVirtual && (hasPermission("inventory_adjust") || hasAttendantPermission("products", "adjust_stock")) && (
-                          <DropdownMenuItem onClick={() => openAdjustDialog(product)}>
-                            <TrendingUp className="h-4 w-4 mr-2" />Adjust Stock
-                          </DropdownMenuItem>
-                        )}
-                        {!isVirtual && (hasPermission("inventory_history") || hasAttendantPermission("products", "view_adjustment_history")) && (
-                          <DropdownMenuItem onClick={() => openHistoryDialog(product)}>
-                            <FileText className="h-4 w-4 mr-2" />Adjustment History
-                          </DropdownMenuItem>
-                        )}
-                        {(hasPermission("inventory_delete") || hasAttendantPermission("products", "delete")) && (
-                          <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setSingleDeleteProduct(product)}>
-                            <Trash2 className="h-4 w-4 mr-2" />Delete
-                          </DropdownMenuItem>
-                        )}
+                        {renderProductActionItems(DropdownMenuItem)}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="w-52">
+                      {renderProductActionItems(ContextMenuItem)}
+                    </ContextMenuContent>
+                  </ContextMenu>
                 );
               })}
             </div>

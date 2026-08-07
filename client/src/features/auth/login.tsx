@@ -1,11 +1,19 @@
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { User, UserCheck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { loadBusinessLogin, loadAttendantLogin } from "@/App";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const isMobile = useIsMobile();
+
+  // Preload both login page chunks so tapping either button feels instant.
+  useEffect(() => {
+    loadBusinessLogin().catch(() => {});
+    loadAttendantLogin().catch(() => {});
+  }, []);
 
   if (!isMobile) {
     return (

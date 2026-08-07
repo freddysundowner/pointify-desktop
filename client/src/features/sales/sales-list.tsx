@@ -70,6 +70,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
@@ -1182,6 +1189,56 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
     }
   };
 
+  // Shared action items for a sale row — rendered inside both the "…" dropdown
+  // and the right-click context menu so the two stay in sync.
+  const renderSaleActionItems = (sale: any, Item: any, Separator: any) => (
+    <>
+      <Item onClick={() => handleViewSale(sale)}>
+        <Eye className="mr-2 h-4 w-4" />View Receipt
+      </Item>
+      <Item onClick={() => handleKitchenPrint(sale)}>
+        <UtensilsCrossed className="mr-2 h-4 w-4" />Kitchen Receipt
+      </Item>
+      <Item onClick={() => openQuotationDialog(sale)}>
+        <FileText className="mr-2 h-4 w-4" />Quotation
+      </Item>
+      {sale.status === "hold" && (
+        <Item onClick={() => openInvoiceDialog(sale)}>
+          <Receipt className="mr-2 h-4 w-4" />Invoice
+        </Item>
+      )}
+      {sale.status === "hold" && (
+        <>
+          <Separator />
+          <Item onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
+            <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
+          </Item>
+        </>
+      )}
+      {sale.paymentTag === "credit" && (
+        <>
+          <Separator />
+          <Item onClick={() => handlePayDebt(sale)} className="text-blue-600 focus:text-blue-600">
+            <CreditCard className="mr-2 h-4 w-4" />Pay Credit
+          </Item>
+        </>
+      )}
+      {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
+        <Item onClick={() => handleReturnSale(sale)}>
+          <RefreshCw className="mr-2 h-4 w-4" />Return Sale
+        </Item>
+      )}
+      {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
+        <>
+          <Separator />
+          <Item onClick={() => handleDeleteSale(sale)} className="text-red-600 focus:text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />Delete Sale
+          </Item>
+        </>
+      )}
+    </>
+  );
+
   return (
     <DashboardLayout title="Sales Reports">
       <div className="w-full">
@@ -1518,7 +1575,9 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
                   {/* ── Mobile card list ── */}
                   <div className="lg:hidden divide-y divide-gray-100">
                     {paginatedData.map((sale: any) => (
-                      <div key={sale.id} className="flex items-start gap-2 px-3 py-2">
+                      <ContextMenu key={sale.id}>
+                        <ContextMenuTrigger asChild>
+                      <div className="flex items-start gap-2 px-3 py-2">
                         {/* Main info — tappable */}
                         <button
                           className="flex-1 min-w-0 text-left"
@@ -1570,52 +1629,15 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewSale(sale)}>
-                              <Eye className="mr-2 h-4 w-4" />View Receipt
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleKitchenPrint(sale)}>
-                              <UtensilsCrossed className="mr-2 h-4 w-4" />Kitchen Receipt
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
-                              <FileText className="mr-2 h-4 w-4" />Quotation
-                            </DropdownMenuItem>
-                            {sale.status === "hold" && (
-                              <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}>
-                                <Receipt className="mr-2 h-4 w-4" />Invoice
-                              </DropdownMenuItem>
-                            )}
-                            {sale.status === "hold" && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
-                                  <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {sale.paymentTag === "credit" && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handlePayDebt(sale)} className="text-blue-600 focus:text-blue-600">
-                                  <CreditCard className="mr-2 h-4 w-4" />Pay Credit
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
-                              <DropdownMenuItem onClick={() => handleReturnSale(sale)}>
-                                <RefreshCw className="mr-2 h-4 w-4" />Return Sale
-                              </DropdownMenuItem>
-                            )}
-                            {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600 focus:text-red-600">
-                                  <Trash2 className="mr-2 h-4 w-4" />Delete Sale
-                                </DropdownMenuItem>
-                              </>
-                            )}
+                            {renderSaleActionItems(sale, DropdownMenuItem, DropdownMenuSeparator)}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-52">
+                          {renderSaleActionItems(sale, ContextMenuItem, ContextMenuSeparator)}
+                        </ContextMenuContent>
+                      </ContextMenu>
                     ))}
                   </div>
 
@@ -1638,7 +1660,9 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
                       </thead>
                       <tbody>
                         {paginatedData.map((sale: any) => (
-                          <tr key={sale.id} className="border-b hover:bg-gray-50">
+                          <ContextMenu key={sale.id}>
+                            <ContextMenuTrigger asChild>
+                          <tr className="border-b hover:bg-gray-50">
                             <td className="py-2 px-3 text-sm font-mono">
                               <button onClick={() => handleViewSale(sale)} className="font-semibold hover:text-blue-600 hover:underline">
                                 #{sale.receiptNo}
@@ -1669,53 +1693,16 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleViewSale(sale)}>
-                                    <Eye className="mr-2 h-4 w-4" />View Receipt
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleKitchenPrint(sale)}>
-                                    <UtensilsCrossed className="mr-2 h-4 w-4" />Kitchen Receipt
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openQuotationDialog(sale)}>
-                                    <FileText className="mr-2 h-4 w-4" />Quotation
-                                  </DropdownMenuItem>
-                                  {sale.status === "hold" && (
-                                    <DropdownMenuItem onClick={() => openInvoiceDialog(sale)}>
-                                      <Receipt className="mr-2 h-4 w-4" />Invoice
-                                    </DropdownMenuItem>
-                                  )}
-                                  {sale.status === "hold" && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
-                                        <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  {sale.paymentTag === "credit" && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handlePayDebt(sale)} className="text-blue-600 focus:text-blue-600">
-                                        <CreditCard className="mr-2 h-4 w-4" />Pay Credit
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  {sale.status !== "hold" && (userType === 'admin' || hasAttendantPermission('sales', 'return')) && (
-                                    <DropdownMenuItem onClick={() => handleReturnSale(sale)}>
-                                      <RefreshCw className="mr-2 h-4 w-4" />Return Sale
-                                    </DropdownMenuItem>
-                                  )}
-                                  {(userType === 'admin' || hasAttendantPermission('sales', 'delete')) && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDeleteSale(sale)} className="text-red-600 focus:text-red-600">
-                                        <Trash2 className="mr-2 h-4 w-4" />Delete Sale
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
+                                  {renderSaleActionItems(sale, DropdownMenuItem, DropdownMenuSeparator)}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </td>
                           </tr>
+                            </ContextMenuTrigger>
+                            <ContextMenuContent className="w-52">
+                              {renderSaleActionItems(sale, ContextMenuItem, ContextMenuSeparator)}
+                            </ContextMenuContent>
+                          </ContextMenu>
                         ))}
                       </tbody>
                     </table>

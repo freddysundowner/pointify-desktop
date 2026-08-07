@@ -23,8 +23,13 @@ import NotFound from "@/pages/not-found";
 // import() becomes its own chunk, fetched only when its route is first visited.
 const POS = lazy(() => import("@/features/pos/pos"));
 const BusinessDashboard = lazy(() => import("@/features/dashboard/business-dashboard"));
+// Exported loaders so other screens (e.g. the role picker) can preload these
+// chunks before navigation — the bundler caches the promise, so the later
+// lazy() render reuses the already-fetched chunk.
+export const loadBusinessLogin = () => import("@/features/auth/business-login");
+export const loadAttendantLogin = () => import("@/pages/attendant-login");
 const Login = lazy(() => import("@/features/auth/login"));
-const BusinessLogin = lazy(() => import("@/features/auth/business-login"));
+const BusinessLogin = lazy(loadBusinessLogin);
 const Signup = lazy(() => import("@/features/auth/signup"));
 const ForgotPassword = lazy(() => import("@/features/auth/forgot-password"));
 const ResetPassword = lazy(() => import("@/features/auth/reset-password"));
@@ -102,7 +107,7 @@ const PurchaseEditPage = lazy(() => import("@/pages/purchase-edit"));
 const SupplierHistoryPage = lazy(() => import("@/pages/supplier-history"));
 const BulkCreateProducts = lazy(() => import("@/pages/bulk-create-products"));
 const ImportProductsPage = lazy(() => import("@/pages/import-products"));
-const AttendantLogin = lazy(() => import("@/pages/attendant-login"));
+const AttendantLogin = lazy(loadAttendantLogin);
 const AttendantDashboard = lazy(() => import("@/pages/attendant-dashboard"));
 
 // Recovers from transient "Failed to fetch dynamically imported module" errors
