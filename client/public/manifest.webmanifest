@@ -5,7 +5,8 @@
   "theme_color": "#9333ea",
   "background_color": "#9333ea",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
   "scope": "/",
   "start_url": "/",
   "icons": [

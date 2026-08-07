@@ -487,7 +487,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
 
         {/* Desktop Header — only shown on dashboard, so non-dashboard pages don't get two headers */}
         {!isAttendantRoute && (isDashboard || location === "/" || location === dashboardRoute) && (
-          <div className="hidden lg:block sticky top-0 z-20 bg-white shadow-sm border-b">
+          <div className="hidden lg:block sticky top-[var(--titlebar-h)] z-20 bg-white shadow-sm border-b">
             <div className="flex items-center justify-between px-4 h-16">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -579,7 +579,7 @@ export default function DashboardLayout({ children, title, isDashboard = false }
 
         {/* Mobile back header for inner pages that have no back button of their own */}
         {innerBack && (
-          <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 shadow-sm">
+          <div className="lg:hidden sticky top-[var(--titlebar-h)] z-20 bg-white border-b border-gray-100 shadow-sm">
             <div className="flex items-center gap-2 px-2 h-12">
               <button
                 onClick={() => goBack(setLocation, innerBack.href)}
