@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setAttendant, updateAttendant, clearAttendant, setLoading, setRefreshing, setLocked } from '@/store/slices/attendantSlice';
 import { setCurrency } from '@/store/slices/defaultCurrencySlicce';
+import { verifyOfflineCredential, isNetworkError } from '@/lib/offline-auth';
 
 interface AttendantData {
   _id: string;
@@ -124,11 +125,36 @@ export const AttendantAuthProvider = ({ children }: AttendantAuthProviderProps) 
     if (!attendant) {
       throw new Error('No active session to unlock');
     }
-    const response = await fetch('/api/auth/attendant/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uniqueDigits: attendant.uniqueDigits, password }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/auth/attendant/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uniqueDigits: attendant.uniqueDigits, password }),
+      });
+    } catch (err) {
+      // Transport failure (server unreachable): verify against the cached
+      // salted verifier so an attendant isn't locked out mid-shift during an
+      // internet outage. This branch is ONLY reached when no HTTP response
+      // came back — a server rejection below stays final.
+      if (isNetworkError(err)) {
+        const credential = await verifyOfflineCredential(
+          'attendant',
+          String(attendant.uniqueDigits),
+          password,
+        );
+        // Only the same attendant's own credentials may unlock their session.
+        if (credential && credential.profile?._id === attendant._id) {
+          dispatch(setLocked(false));
+          localStorage.removeItem('attendantLocked');
+          return;
+        }
+        throw new Error(
+          "You're offline and we couldn't verify your password. Reconnect to the internet to unlock.",
+        );
+      }
+      throw err;
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(data.error || 'Incorrect password');
