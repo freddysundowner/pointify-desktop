@@ -10,5 +10,6 @@
 /final
 .env
 .env.*
+!.env.example
 server/.env
 client/.env
