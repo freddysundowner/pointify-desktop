@@ -333,6 +333,13 @@ function AppContent() {
           </AttendantRoute>
         )}
       </Route>
+      <Route path="/attendant/sales/delete/:id">
+        {() => (
+          <AttendantRoute>
+            <DeleteSale />
+          </AttendantRoute>
+        )}
+      </Route>
       <Route path="/attendant/customers">
         {() => (
           <AttendantRoute>

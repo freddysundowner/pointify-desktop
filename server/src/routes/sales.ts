@@ -293,11 +293,26 @@ export function registerSalesRoutes(app: Express) {
       const saleId = req.params.id;
       console.log("Deleting sale:", saleId);
 
-      const data = await makePointifyRequest(`/sales/void/sale/${saleId}`, {
+      // Forward the audit context (reason / deletedBy) supplied by the client
+      // so the upstream void endpoint can record who voided the sale and why.
+      const data: any = await makePointifyRequest(`/sales/void/sale/${saleId}`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        ...(req.body && Object.keys(req.body).length > 0
+          ? { body: JSON.stringify(req.body) }
+          : {}),
       });
-      
+
+      // A write must never silently report success when upstream rejected it.
+      if (data && data.success === false) {
+        const statusCode = data.httpStatus || 502;
+        console.error("Sale void rejected by upstream:", JSON.stringify(data));
+        return res.status(statusCode).json({
+          error: data.error || data.message || "Failed to delete sale",
+          details: data,
+        });
+      }
+
       res.json(data);
     } catch (error: any) {
       console.error("Sales delete error:", error);
@@ -501,12 +516,22 @@ export function registerSalesRoutes(app: Express) {
       }
 
       const { id } = req.params;
-      const data = await makePointifyRequest(`/sales/${id}`, {
+      const data: any = await makePointifyRequest(`/sales/${id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(req.body)
       });
-      
+
+      // A write must never silently report success when upstream rejected it.
+      if (data && data.success === false) {
+        const statusCode = data.httpStatus || 502;
+        console.error("Sale update rejected by upstream:", JSON.stringify(data));
+        return res.status(statusCode).json({
+          error: data.error || data.message || "Failed to update sales transaction",
+          details: data,
+        });
+      }
+
       res.json(data);
     } catch (error: any) {
       res.status(500).json({ error: "Failed to update sales transaction" });

@@ -5,14 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/layout/page-header";
 import { useRoute } from "wouter";
 import { useState, useEffect } from "react";
-import type { Sale, SaleItem } from "@shared/schema";
 import { useCurrency } from "@/utils";
 import { rawApiFetch } from "@/lib/api-config";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function EditSale() {
   // Try both admin and attendant routes
@@ -25,12 +26,18 @@ export default function EditSale() {
   
   const [originalSale, setOriginalSale] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-    const currency = useCurrency();
+  const [isSaving, setIsSaving] = useState(false);
+  const currency = useCurrency();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Try to get data from navigation state first
+    // Navigation state is only trusted when it is the SAME sale the route
+    // identifies — stale or manipulated history state must never let this
+    // screen display (or later overwrite) a different sale.
     const navigationState = (window.history.state?.saleData as any);
-    if (navigationState) {
+    const navStateId = navigationState?._id || navigationState?.id;
+    if (navigationState && params?.id && String(navStateId) === String(params.id)) {
       setOriginalSale(navigationState);
       setIsLoading(false);
       return;
@@ -46,18 +53,26 @@ export default function EditSale() {
       try {
         const response = await rawApiFetch(`/api/sales/single/receipt/${params.id}`, {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          headers: { 'Content-Type': 'application/json' },
+          auth: 'attendant-first',
         });
         
         if (response.ok) {
           const data = await response.json();
           setOriginalSale(data);
+        } else {
+          toast({
+            title: "Could not load sale",
+            description: `The sale could not be retrieved (${response.status}).`,
+            variant: "destructive",
+          });
         }
-      } catch (error) {
-        console.error('Error fetching sale data:', error);
+      } catch (error: any) {
+        toast({
+          title: "Could not load sale",
+          description: error?.message || "Check your connection and try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -135,43 +150,113 @@ export default function EditSale() {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const addItem = () => {
-    setItems([...items, {
-      productName: "",
-      quantity: 1,
-      unitPrice: 0,
-      totalPrice: 0
-    }]);
-  };
+  const handleSave = async () => {
+    if (isSaving) return;
 
-  const handleSave = () => {
-    const updatedSale: Sale = {
-      ...originalSale,
-      customerName,
-      items,
-      totalAmount: calculateTotal(),
-      status,
-      saleDate
-    };
-    
-    console.log("Saving updated sale:", updatedSale);
-    // TODO: Implement API call to update sale
-    
-    // Navigate back to sales list
-    window.history.back();
+    if (items.length === 0) {
+      toast({
+        title: "Nothing to save",
+        description: "A sale must have at least one item.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // The upstream update endpoint edits items by product ID and re-validates
+    // stock/prices — free-text items that don't reference an existing product
+    // cannot be persisted through this screen.
+    const invalidItem = items.find((item) => !(item.product?._id || item.product));
+    if (invalidItem) {
+      toast({
+        title: "Cannot save new items here",
+        description:
+          "Only items already on the sale can be edited. To add a new product to a sale, create it through the POS.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const asId = (v: any) => (typeof v === "object" && v !== null ? v._id : v);
+      const payload = {
+        products: items.map((item) => ({
+          product: item.product?._id || item.product,
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
+          lineDiscount: Number(item.lineDiscount) || 0,
+        })),
+        shopId: asId(originalSale.shopId),
+        customerId: asId(originalSale.customerId),
+        attendantId: asId(originalSale.attendantId),
+        paymentType: originalSale.paymentType,
+        totalDiscount: originalSale.totalDiscount || 0,
+        payments: originalSale.payments,
+        status,
+        amountPaid: originalSale.amountPaid,
+      };
+
+      // The route param is the authoritative target; fall back to whichever id
+      // shape the sale object carries (navigation state may pass `id`, the
+      // API returns `_id`).
+      const saleId = params?.id || originalSale._id || originalSale.id;
+      const response = await rawApiFetch(`/api/sales/${saleId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        auth: "attendant-first",
+      });
+
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        /* non-JSON body */
+      }
+
+      // Reject both HTTP errors and upstream-rejection envelopes — a write must
+      // never be reported as successful unless upstream accepted it.
+      if (!response.ok || data?.success === false) {
+        throw new Error(
+          data?.error || data?.message || `Failed to update sale (${response.status})`,
+        );
+      }
+
+      toast({
+        title: "Sale updated",
+        description: data?.message || "The sale was updated successfully.",
+      });
+
+      // Sales list/report queries use dynamic query-string keys — invalidate by prefix.
+      queryClient.invalidateQueries({
+        predicate: (q) =>
+          String(q.queryKey[0] ?? "").startsWith("/api/sales") ||
+          String(q.queryKey[0] ?? "").startsWith("/api/analysis/report/sales"),
+      });
+
+      window.history.back();
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error?.message || "Could not update the sale. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <DashboardLayout title={`Edit Sale #${originalSale._id}`}>
+    <DashboardLayout title={`Edit Sale #${originalSale.receiptNo || originalSale._id || originalSale.id}`}>
       <div className="p-6 w-full">
         <PageHeader
-          title={`Edit Sale #${originalSale._id}`}
+          title={`Edit Sale #${originalSale.receiptNo || originalSale._id || originalSale.id}`}
           subtitle="Modify sale details and items"
           onBack={() => window.history.back()}
           actions={<>
-            <Button size="sm" onClick={handleSave}>
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
               <Save className="mr-2 h-4 w-4" />
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </>}
         />
@@ -184,24 +269,17 @@ export default function EditSale() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Customer and date are shown for context only — the sales
+                    update endpoint does not support changing them, so they are
+                    read-only to avoid edits that would silently not persist. */}
                 <div>
-                  <Label htmlFor="customer">Customer Name</Label>
-                  <Input
-                    id="customer"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                  />
+                  <Label htmlFor="customer">Customer</Label>
+                  <Input id="customer" value={customerName} readOnly disabled />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="date">Sale Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={saleDate}
-                    onChange={(e) => setSaleDate(e.target.value)}
-                  />
+                  <Input id="date" type="date" value={saleDate} readOnly disabled />
                 </div>
                 
                 <div>
@@ -224,13 +302,9 @@ export default function EditSale() {
           {/* Items */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Items</CardTitle>
-                <Button onClick={addItem} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-              </div>
+              {/* Adding new items is not supported by the update endpoint —
+                  new products must be sold through the POS. */}
+              <CardTitle>Items</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -238,16 +312,14 @@ export default function EditSale() {
                   <div key={index} className="border rounded-lg p-4">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                       <div className="md:col-span-2">
-                        <Label htmlFor={`product-${index}`}>Product Name</Label>
+                        <Label htmlFor={`product-${index}`}>Product</Label>
+                        {/* Read-only: the update endpoint identifies items by
+                            product ID — renaming here could not persist. */}
                         <Input
                           id={`product-${index}`}
                           value={item.product?.name || item.productName || ''}
-                          onChange={(e) => {
-                            const newItems = [...items];
-                            newItems[index].productName = e.target.value;
-                            setItems(newItems);
-                          }}
-                          placeholder="Enter product name"
+                          readOnly
+                          disabled
                         />
                       </div>
                       
@@ -293,7 +365,7 @@ export default function EditSale() {
                 
                 {items.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No items added yet. Click "Add Item" to get started.
+                    This sale has no items.
                   </div>
                 )}
               </div>
