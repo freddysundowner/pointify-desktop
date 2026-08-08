@@ -21,6 +21,12 @@ jobs:
         with:
           node-version: '20'
 
+      # Lock files were generated inside Replit and contain package-firewall.replit.local URLs.
+      # Override the registry globally so all npm installs use the public registry instead.
+      - name: Use public npm registry
+        shell: bash
+        run: npm config set registry https://registry.npmjs.org
+
       - name: Install root dependencies (provides esbuild)
         shell: bash
         run: npm install
@@ -122,6 +128,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      # Lock files were generated inside Replit and contain package-firewall.replit.local URLs.
+      # Override the registry globally so all npm installs use the public registry instead.
+      - name: Use public npm registry
+        run: npm config set registry https://registry.npmjs.org
 
       - name: Install root dependencies (provides esbuild)
         run: npm install
