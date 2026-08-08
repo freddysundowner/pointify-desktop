@@ -12,6 +12,12 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
+    env:
+      # Force all npm installs to use the public registry.
+      # Lock files were generated inside Replit and have resolved URLs pointing to
+      # package-firewall.replit.local — an address unreachable outside Replit.
+      # NPM_CONFIG_REGISTRY overrides resolved URLs and beats every other npm config.
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,6 +127,8 @@ jobs:
   # ─────────────────────────────────────────────────────────────
   build-mac:
     runs-on: macos-latest
+    env:
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org
     steps:
       - name: Checkout
         uses: actions/checkout@v4
