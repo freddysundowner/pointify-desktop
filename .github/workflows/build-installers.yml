@@ -21,11 +21,12 @@ jobs:
         with:
           node-version: '20'
 
-      # Lock files were generated inside Replit and contain package-firewall.replit.local URLs.
-      # Override the registry globally so all npm installs use the public registry instead.
-      - name: Use public npm registry
+      # Lock files were generated inside Replit and point to package-firewall.replit.local,
+      # an address that only exists inside Replit. Delete them so npm re-resolves all
+      # packages from the public registry on this runner.
+      - name: Remove Replit-internal lock files
         shell: bash
-        run: npm config set registry https://registry.npmjs.org
+        run: rm -f package-lock.json server/package-lock.json client/package-lock.json
 
       - name: Install root dependencies (provides esbuild)
         shell: bash
@@ -129,10 +130,11 @@ jobs:
         with:
           node-version: '20'
 
-      # Lock files were generated inside Replit and contain package-firewall.replit.local URLs.
-      # Override the registry globally so all npm installs use the public registry instead.
-      - name: Use public npm registry
-        run: npm config set registry https://registry.npmjs.org
+      # Lock files were generated inside Replit and point to package-firewall.replit.local,
+      # an address that only exists inside Replit. Delete them so npm re-resolves all
+      # packages from the public registry on this runner.
+      - name: Remove Replit-internal lock files
+        run: rm -f package-lock.json server/package-lock.json client/package-lock.json
 
       - name: Install root dependencies (provides esbuild)
         run: npm install
