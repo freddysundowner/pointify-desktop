@@ -114,3 +114,10 @@ id = "g3vjvhSqb3KrRXIHf4SG0"
 uri = "file://pointify-print-agent-windows.zip"
 type = "unspecified"
 title = "Pointify Print Agent (Windows, runs hidden)"
+
+[[outputs]]
+id = "4Bd-o7Z8VxNNcsrJx6jwF"
+uri = "file://dist/PointifyPOS-Windows.zip"
+type = "unspecified"
+title = "Pointify POS — Windows Package"
+description = "Self-contained package. Extract on any Windows PC and double-click 'Start Pointify POS.bat'. No installs needed."

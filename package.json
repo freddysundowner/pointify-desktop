@@ -9,6 +9,7 @@
     "build:all": "npm run build:client && npm run build:server",
     "build": "npm run build:all",
     "start": "node server/dist/index.cjs",
+    "build:windows": "bash scripts/build-windows-package.sh",
     "clean": "rm -rf client/dist server/dist"
   },
   "devDependencies": {
