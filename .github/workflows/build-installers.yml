@@ -1,0 +1,196 @@
+name: Build Installers
+
+on:
+  # Run manually from the Actions tab on GitHub
+  workflow_dispatch:
+  # Run automatically when you push a version tag (e.g. git tag v1.0.0 && git push --tags)
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Windows — builds PointifyPOS-Setup.exe
+  # ─────────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build client
+        shell: bash
+        run: cd client && npm install --legacy-peer-deps && npm run build
+
+      - name: Build server (bundled, firebase-admin external)
+        shell: bash
+        run: |
+          npm install
+          node_modules/.bin/esbuild server/src/index.ts \
+            --bundle --platform=node --target=node18 --format=cjs \
+            --outfile=server/dist/index.cjs \
+            '--external:firebase-admin' \
+            '--external:@firebase/*' \
+            '--external:@google-cloud/*' \
+            '--external:google-gax' \
+            '--external:@grpc/*' \
+            '--external:protobufjs' \
+            '--external:google-auth-library' \
+            '--external:gcp-metadata' \
+            '--external:@opentelemetry/*' \
+            '--external:fast-xml-parser' \
+            '--external:jose' \
+            '--external:multer'
+
+      - name: Install server production dependencies
+        shell: bash
+        run: cd server && npm install --omit=dev
+
+      - name: Download bundled node.exe (Windows x64)
+        shell: bash
+        run: |
+          curl -L -o /tmp/node-win.zip \
+            "https://nodejs.org/dist/v20.19.3/node-v20.19.3-win-x64.zip"
+          unzip -j /tmp/node-win.zip "node-v20.19.3-win-x64/node.exe" \
+            -d installer/package/
+
+      - name: Assemble installer package
+        shell: bash
+        run: |
+          PKG=installer/package
+          mkdir -p $PKG/server/dist $PKG/server/node_modules $PKG/client
+
+          # Generate a unique SESSION_SECRET for this build
+          SECRET=$(openssl rand -hex 32)
+
+          # .env
+          cat > $PKG/.env << EOF
+          SESSION_SECRET=${SECRET}
+          PORT=3000
+          POINTIFY_API_URL=https://api.pointifypos.com
+          POINTIFY_OFFLINE_API_URL=https://api.pointifypos.com
+          NODE_ENV=production
+          EOF
+
+          cp .env.example            $PKG/
+          cp server/dist/index.cjs   $PKG/server/dist/
+          cp server/package.json     $PKG/server/
+          cp "Start Pointify POS.bat" $PKG/
+          cp run-background.vbs      $PKG/
+          cp setup-autostart.bat     $PKG/
+          cp SETUP.md                $PKG/README.txt
+
+          # Copy only external node_modules (firebase-admin ecosystem)
+          for pkg in firebase-admin @firebase @google-cloud google-gax @grpc \
+                     protobufjs google-auth-library gcp-metadata @opentelemetry \
+                     fast-xml-parser jose multer; do
+            [ -d "server/node_modules/$pkg" ] && \
+              cp -r "server/node_modules/$pkg" "$PKG/server/node_modules/"
+          done
+
+          cp -r client/dist $PKG/client/dist
+
+      - name: Install NSIS
+        run: choco install nsis --yes --no-progress
+
+      - name: Compile NSIS installer
+        shell: bash
+        run: |
+          cd installer
+          "/c/Program Files (x86)/NSIS/makensis.exe" windows.nsi
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: PointifyPOS-Windows-Setup
+          path: installer/PointifyPOS-Setup.exe
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────
+  # macOS — builds PointifyPOS.dmg
+  # ─────────────────────────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build and assemble Mac package
+        run: bash scripts/build-mac-package.sh
+
+      - name: Create DMG
+        run: |
+          # Create a clean DMG with a symlink to /Applications for easy install
+          mkdir -p /tmp/dmg-src
+          cp -r dist/PointifyPOS-Mac /tmp/dmg-src/"Pointify POS"
+          ln -s /Applications /tmp/dmg-src/Applications
+
+          hdiutil create \
+            -volname "Pointify POS" \
+            -srcfolder /tmp/dmg-src \
+            -ov \
+            -format UDZO \
+            -o dist/PointifyPOS.dmg
+
+      - name: Upload Mac DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: PointifyPOS-Mac-DMG
+          path: dist/PointifyPOS.dmg
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────
+  # Release — attaches both installers to a GitHub Release
+  # Runs only when triggered by a version tag (e.g. v1.2.0)
+  # ─────────────────────────────────────────────────────────────
+  release:
+    needs: [build-windows, build-mac]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows installer
+        uses: actions/download-artifact@v4
+        with:
+          name: PointifyPOS-Windows-Setup
+
+      - name: Download Mac DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: PointifyPOS-Mac-DMG
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Pointify POS ${{ github.ref_name }}"
+          body: |
+            ## Pointify POS ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File | Notes |
+            |---|---|---|
+            | Windows | `PointifyPOS-Setup.exe` | Run as Administrator |
+            | macOS | `PointifyPOS.dmg` | Open and drag to Applications folder |
+
+            ### What's included
+            - Node.js runtime bundled — no separate install needed
+            - Works on any Windows 10/11 PC or macOS 12+ (Intel & Apple Silicon)
+            - Other tills connect via browser on the same network
+
+            See `README.txt` inside the installer for full setup instructions.
+          files: |
+            PointifyPOS-Setup.exe
+            PointifyPOS.dmg
+          draft: false
+          prerelease: false
