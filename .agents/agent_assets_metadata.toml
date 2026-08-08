@@ -37,3 +37,10 @@ uri = "file://dist/PointifyPOS-Windows.zip"
 type = "unspecified"
 title = "Pointify POS — Windows Package (updated)"
 description = "Includes auto-start setup. No Node.js install needed."
+
+[[outputs]]
+id = "7QQ5PG6_JvPpvSQ1fRADV"
+uri = "file://dist/PointifyPOS-Mac.zip"
+type = "unspecified"
+title = "Pointify POS — Mac Package"
+description = "Works on Intel and Apple Silicon Macs. No Node.js install needed."

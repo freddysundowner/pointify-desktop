@@ -10,6 +10,7 @@
     "build": "npm run build:all",
     "start": "node server/dist/index.cjs",
     "build:windows": "bash scripts/build-windows-package.sh",
+    "build:mac": "bash scripts/build-mac-package.sh",
     "clean": "rm -rf client/dist server/dist"
   },
   "devDependencies": {
