@@ -43,12 +43,14 @@ Create a folder on the server till, e.g. `C:\PointifyPOS\`, and copy these into 
 ```
 C:\PointifyPOS\
   ├── server\
-  │   ├── dist\          ← built server (from Replit: server/dist/)
-  │   └── package.json   ← needed to install runtime dependencies
+  │   ├── dist\               ← built server (from Replit: server/dist/)
+  │   └── package.json        ← needed to install runtime dependencies
   ├── client\
-  │   └── dist\          ← built frontend (from Replit: client/dist/)
+  │   └── dist\               ← built frontend (from Replit: client/dist/)
   ├── .env.example
-  └── start-server.bat
+  ├── ecosystem.config.js     ← PM2 process config (auto-start)
+  ├── setup-autostart.bat     ← run once to register auto-start
+  └── start-server.bat        ← manual start (fallback)
 ```
 
 > **Tip:** You can use a USB drive, shared folder, or any file transfer method.
@@ -67,9 +69,9 @@ C:\PointifyPOS\
 
 3. Save the file
 
-### Step 5 — Start the server
+### Step 5 — Start the server manually (first-time test)
 
-Double-click **`start-server.bat`**.
+Double-click **`start-server.bat`** to verify everything works before enabling auto-start.
 
 On the **first run**, the script will automatically install the server's runtime dependencies (requires internet). This only happens once.
 
@@ -77,7 +79,44 @@ A console window will open showing:
 - The IP address(es) other tills should use
 - Confirmation that the server is running
 
-> **Keep this window open** while the till is in use. Closing it stops the server.
+Once you can see the login screen from another device, press **Ctrl+C** and close the window — then continue to Step 6.
+
+> If you skip auto-start (Step 6), you must keep this window open while the till is in use. Closing it stops the server.
+
+---
+
+### Step 6 — Set up auto-start (recommended)
+
+This makes the POS server start automatically every time Windows boots — **no console window, no login required**. It uses Windows Task Scheduler with a system-level boot task.
+
+1. Right-click **`setup-autostart.bat`** and choose **Run as administrator**
+2. The script will:
+   - Install **PM2** (a background Node.js process manager)
+   - Start the POS server under PM2 and save its state
+   - Generate **`pm2-autostart.bat`** with the full paths needed by Windows
+   - Register a **Windows Task Scheduler** task (`PointifyPOS`) that runs at system startup as the SYSTEM account — before any user logs in
+3. When you see **SUCCESS**, the setup is complete
+
+To confirm the task was registered: press **Windows + R**, type `taskschd.msc`, and look for **PointifyPOS** in the Task Scheduler Library.
+
+**Managing the server after auto-start is set up:**
+
+Open any Command Prompt and use these commands:
+
+| Command | What it does |
+|---|---|
+| `pm2 list` | Show whether the server is running |
+| `pm2 logs pointify-pos` | View live server logs |
+| `pm2 restart pointify-pos` | Restart the server (e.g. after copying new files) |
+| `pm2 stop pointify-pos` | Stop the server |
+| `pm2 start ecosystem.config.js` | Start the server again after a manual stop |
+
+**To remove auto-start** (if you no longer want it):
+```
+schtasks /delete /tn "PointifyPOS" /f
+```
+
+> **Note:** You only need to run `setup-autostart.bat` once. After that, use the `pm2` commands above for day-to-day management.
 
 ---
 
@@ -203,18 +242,33 @@ When the internet is unavailable:
 | Problem | Solution |
 |---|---|
 | Other tills can't connect | Allow port 3000 through Windows Firewall: Control Panel → Windows Defender Firewall → Advanced Settings → Inbound Rules → New Rule → Port → TCP → 3000 → Allow |
-| "node is not recognised" | Node.js isn't installed or wasn't added to PATH — reinstall from nodejs.org and restart |
+| "node is not recognised" | Node.js isn't installed or wasn't added to PATH — reinstall from nodejs.org and restart the PC |
 | Server won't start | Make sure `.env` exists in the same folder as `start-server.bat` |
 | "Cannot find module" errors | Delete `server\node_modules` and run `start-server.bat` again to reinstall |
 | "client/dist not found" | Rebuild on Replit (`npm run build`) and copy `client/dist/` again |
+| `pm2` command not found | PM2 isn't installed — run `setup-autostart.bat` as Administrator |
+| Server doesn't start after reboot | Open Command Prompt and run `pm2 list`; if empty, check the task ran: open Task Scheduler (`taskschd.msc`) → find **PointifyPOS** → right-click → **Run** |
+| `setup-autostart.bat` says "Run as administrator" | Right-click the file → **Run as administrator** |
+| Task Scheduler task missing | Re-run `setup-autostart.bat` as Administrator to recreate it |
 
 ---
 
 ## Updating the app
 
-1. On Replit, make changes and run `npm run build`
-2. Stop the server (close the console window or press Ctrl+C)
-3. Copy the new `server/dist/` and `client/dist/` folders to the server till (overwrite)
-4. Start the server again with `start-server.bat`
+### If you set up auto-start (PM2)
 
-> Dependencies only need reinstalling if `server/package.json` changed — the script handles this automatically on first run.
+1. On Replit, make changes and run `npm run build`
+2. Copy the new `server/dist/` and `client/dist/` folders to the server till (overwrite existing files)
+3. Open Command Prompt and run:
+   ```
+   pm2 restart pointify-pos
+   ```
+
+### If you are using the manual start (start-server.bat)
+
+1. On Replit, make changes and run `npm run build`
+2. Stop the server (close the console window or press **Ctrl+C**)
+3. Copy the new `server/dist/` and `client/dist/` folders to the server till (overwrite)
+4. Start the server again with **`start-server.bat`**
+
+> Dependencies only need reinstalling if `server/package.json` changed — `start-server.bat` handles this automatically on first run.
