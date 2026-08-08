@@ -21,18 +21,19 @@ jobs:
         with:
           node-version: '20'
 
-      # Install root deps so esbuild is available
-      - name: Install root dependencies
+      - name: Install root dependencies (provides esbuild)
         shell: bash
         run: npm install
 
-      # Build the React frontend
+      - name: Install server dependencies (needed before bundling)
+        shell: bash
+        run: cd server && npm install
+
       - name: Build client
         shell: bash
         run: cd client && npm install --legacy-peer-deps && npm run build
 
-      # Bundle the server into a single .cjs file (firebase-admin kept external)
-      - name: Build server bundle
+      - name: Bundle server with esbuild
         shell: bash
         run: |
           node_modules/.bin/esbuild server/src/index.ts \
@@ -54,115 +55,52 @@ jobs:
             --external:jose \
             --external:multer
 
-      # Install only production server deps (firebase-admin ecosystem)
-      - name: Install server production dependencies
+      - name: Trim server to production dependencies only
         shell: bash
         run: cd server && npm install --omit=dev
 
-      # Download portable node.exe so users need nothing installed
-      - name: Download node.exe (Windows x64)
+      - name: Download bundled node.exe
         shell: bash
         run: |
           curl -fL -o /tmp/node-win.zip \
             "https://nodejs.org/dist/v20.19.3/node-v20.19.3-win-x64.zip"
+          mkdir -p installer/package
           unzip -j /tmp/node-win.zip \
             "node-v20.19.3-win-x64/node.exe" \
             -d installer/package/
 
-      # Assemble everything the installer will package
       - name: Assemble installer package
         shell: bash
         run: |
           PKG="installer/package"
           mkdir -p "$PKG/server/dist" "$PKG/server/node_modules" "$PKG/client/dist"
 
-          # Built server
-          cp server/dist/index.cjs "$PKG/server/dist/"
-          cp server/package.json   "$PKG/server/"
+          cp server/dist/index.cjs  "$PKG/server/dist/"
+          cp server/package.json    "$PKG/server/"
+          cp -r client/dist/.       "$PKG/client/dist/"
 
-          # Built frontend
-          cp -r client/dist/. "$PKG/client/dist/"
-
-          # External node_modules (firebase-admin ecosystem only)
-          for pkg in firebase-admin @firebase @google-cloud google-gax @grpc \
+          # Copy only the external packages (firebase-admin ecosystem)
+          for mod in firebase-admin @firebase @google-cloud google-gax @grpc \
                      protobufjs google-auth-library gcp-metadata @opentelemetry \
                      fast-xml-parser jose multer; do
-            [ -d "server/node_modules/$pkg" ] && \
-              cp -r "server/node_modules/$pkg" "$PKG/server/node_modules/"
+            [ -d "server/node_modules/$mod" ] && \
+              cp -r "server/node_modules/$mod" "$PKG/server/node_modules/" || true
           done
 
-          # .env with fresh SESSION_SECRET
-          SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-          cat > "$PKG/.env" << EOF
-          SESSION_SECRET=${SECRET}
-          PORT=3000
-          POINTIFY_API_URL=https://api.pointifypos.com
-          POINTIFY_OFFLINE_API_URL=https://api.pointifypos.com
-          NODE_ENV=production
-          EOF
+          # Generate a fresh SESSION_SECRET for this build
+          SECRET=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")
+          printf "SESSION_SECRET=%s\nPORT=3000\nPOINTIFY_API_URL=https://api.pointifypos.com\nPOINTIFY_OFFLINE_API_URL=https://api.pointifypos.com\nNODE_ENV=production\n" "$SECRET" > "$PKG/.env"
 
-          # Start script that uses bundled node.exe
-          cat > "$PKG/Start Pointify POS.bat" << 'BAT'
-          @echo off
-          setlocal enabledelayedexpansion
-          title Pointify POS Server
+          # Copy pre-made launcher scripts from repo
+          cp scripts/windows/start.bat       "$PKG/Start Pointify POS.bat"
+          cp run-background.vbs              "$PKG/run-background.vbs"
+          cp setup-autostart.bat             "$PKG/setup-autostart.bat"
+          cp SETUP.md                        "$PKG/README.txt"
 
-          if not exist "%~dp0.env" (
-              echo ERROR: .env file not found.
-              pause & exit /b 1
-          )
-
-          for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
-              set "ln=%%A"
-              if not "!ln:~0,1!"=="#" if not "%%A"=="" set "%%A=%%B"
-          )
-
-          echo.
-          echo  ============================================
-          echo   Pointify POS  ^|  Port %PORT%
-          echo  ============================================
-          echo   Other tills: open a browser and go to
-          for /f "tokens=2 delims=:" %%I in ('ipconfig ^| findstr /R "IPv4"') do (
-              set "ip=%%I"
-              set "ip=!ip: =!"
-              if not "!ip!"=="127.0.0.1" echo     http://!ip!:%PORT%
-          )
-          echo  ============================================
-          echo   Keep this window open. Press Ctrl+C to stop.
-          echo.
-
-          "%~dp0node.exe" "%~dp0server\dist\index.cjs"
-          pause
-          BAT
-
-          # Silent background launcher (VBScript — no console window)
-          cat > "$PKG/run-background.vbs" << 'VBS'
-          Set WshShell = CreateObject("WScript.Shell")
-          scriptDir = Left(WScript.ScriptFullName, InStrRev(WScript.ScriptFullName, "\"))
-          WshShell.Run Chr(34) & scriptDir & "node.exe" & Chr(34) & _
-            " " & Chr(34) & scriptDir & "server\dist\index.cjs" & Chr(34), 0, False
-          VBS
-
-          # Auto-start via Task Scheduler
-          cat > "$PKG/setup-autostart.bat" << 'AUTO'
-          @echo off
-          set "DIR=%~dp0"
-          set "DIR=%DIR:~0,-1%"
-          echo Registering Pointify POS to start at boot...
-          schtasks /delete /tn "PointifyPOS" /f >nul 2>&1
-          schtasks /create /tn "PointifyPOS" /tr "wscript.exe \"%DIR%\run-background.vbs\"" /sc ONSTART /delay 0000:30 /ru SYSTEM /f
-          echo Done! Pointify POS will now start automatically at boot.
-          pause
-          AUTO
-
-          cp SETUP.md "$PKG/README.txt"
-
-      # NSIS is pre-installed on windows-latest
       - name: Compile NSIS installer
         shell: cmd
         run: |
-          cd installer
-          "C:\Program Files (x86)\NSIS\makensis.exe" windows.nsi
+          "C:\Program Files (x86)\NSIS\makensis.exe" installer\windows.nsi
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
@@ -185,16 +123,16 @@ jobs:
         with:
           node-version: '20'
 
-      # Install root deps so esbuild is available
-      - name: Install root dependencies
+      - name: Install root dependencies (provides esbuild)
         run: npm install
 
-      # Build the React frontend
+      - name: Install server dependencies (needed before bundling)
+        run: cd server && npm install
+
       - name: Build client
         run: cd client && npm install --legacy-peer-deps && npm run build
 
-      # Bundle server
-      - name: Build server bundle
+      - name: Bundle server with esbuild
         run: |
           node_modules/.bin/esbuild server/src/index.ts \
             --bundle \
@@ -215,110 +153,51 @@ jobs:
             '--external:jose' \
             '--external:multer'
 
-      # Install only production server deps
-      - name: Install server production dependencies
+      - name: Trim server to production dependencies only
         run: cd server && npm install --omit=dev
 
-      # Download both Mac node binaries (Intel + Apple Silicon)
-      - name: Download Node.js binaries for macOS
+      - name: Download Node.js binaries for macOS (Intel + Apple Silicon)
         run: |
           NODE_VER="20.19.3"
+          mkdir -p dist/PointifyPOS-Mac
           for ARCH in x64 arm64; do
             TAR="node-v${NODE_VER}-darwin-${ARCH}.tar.gz"
+            echo "Downloading node-${ARCH}..."
             curl -fL -o "/tmp/${TAR}" "https://nodejs.org/dist/v${NODE_VER}/${TAR}"
-            tar -xzf "/tmp/${TAR}" -C /tmp \
-              "node-v${NODE_VER}-darwin-${ARCH}/bin/node" 2>/dev/null
-            mkdir -p dist/PointifyPOS-Mac
+            tar -xzf "/tmp/${TAR}" \
+              -C /tmp \
+              "node-v${NODE_VER}-darwin-${ARCH}/bin/node"
             cp "/tmp/node-v${NODE_VER}-darwin-${ARCH}/bin/node" \
                "dist/PointifyPOS-Mac/node-${ARCH}"
             chmod +x "dist/PointifyPOS-Mac/node-${ARCH}"
+            echo "node-${ARCH}: $(du -sh dist/PointifyPOS-Mac/node-${ARCH} | cut -f1)"
           done
 
-      # Assemble the Mac package folder
       - name: Assemble Mac package
         run: |
           PKG="dist/PointifyPOS-Mac"
           mkdir -p "$PKG/server/dist" "$PKG/server/node_modules" "$PKG/client/dist"
 
-          cp server/dist/index.cjs "$PKG/server/dist/"
-          cp server/package.json   "$PKG/server/"
-          cp -r client/dist/.      "$PKG/client/dist/"
+          cp server/dist/index.cjs  "$PKG/server/dist/"
+          cp server/package.json    "$PKG/server/"
+          cp -r client/dist/.       "$PKG/client/dist/"
 
-          for pkg in firebase-admin @firebase @google-cloud google-gax @grpc \
+          for mod in firebase-admin @firebase @google-cloud google-gax @grpc \
                      protobufjs google-auth-library gcp-metadata @opentelemetry \
                      fast-xml-parser jose multer; do
-            [ -d "server/node_modules/$pkg" ] && \
-              cp -r "server/node_modules/$pkg" "$PKG/server/node_modules/"
+            [ -d "server/node_modules/$mod" ] && \
+              cp -r "server/node_modules/$mod" "$PKG/server/node_modules/" || true
           done
 
-          SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
-          cat > "$PKG/.env" << EOF
-          SESSION_SECRET=${SECRET}
-          PORT=3000
-          POINTIFY_API_URL=https://api.pointifypos.com
-          POINTIFY_OFFLINE_API_URL=https://api.pointifypos.com
-          NODE_ENV=production
-          EOF
+          SECRET=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")
+          printf "SESSION_SECRET=%s\nPORT=3000\nPOINTIFY_API_URL=https://api.pointifypos.com\nPOINTIFY_OFFLINE_API_URL=https://api.pointifypos.com\nNODE_ENV=production\n" "$SECRET" > "$PKG/.env"
 
-          cat > "$PKG/Start Pointify POS.command" << 'CMD'
-          #!/bin/bash
-          cd "$(dirname "$0")"
-          [ ! -f ".env" ] && echo "ERROR: .env not found" && exit 1
-          set -a; source .env; set +a
-          NODE="./node-$(uname -m | sed 's/x86_64/x64/')"
-          echo ""
-          echo "  ============================================"
-          echo "   Pointify POS  |  Port $PORT"
-          echo "  ============================================"
-          echo "   Other tills: open a browser and go to"
-          ifconfig | grep "inet " | grep -v "127.0.0.1" | \
-            awk -v p="$PORT" '{print "     http://" $2 ":" p}'
-          echo "  ============================================"
-          echo "   Keep this window open. Press Ctrl+C to stop."
-          echo ""
-          "$NODE" server/dist/index.cjs
-          read -p "Server stopped. Press Enter to close..."
-          CMD
-          chmod +x "$PKG/Start Pointify POS.command"
+          # Copy pre-made launcher scripts from repo
+          cp scripts/mac/start.command    "$PKG/Start Pointify POS.command"
+          cp scripts/mac/setup-autostart.sh "$PKG/setup-autostart.sh"
+          cp SETUP.md                       "$PKG/README.txt"
+          chmod +x "$PKG/Start Pointify POS.command" "$PKG/setup-autostart.sh"
 
-          cat > "$PKG/setup-autostart.sh" << 'AUTO'
-          #!/bin/bash
-          cd "$(dirname "$0")"
-          INSTALL_DIR="$(pwd)"
-          set -a; source "$INSTALL_DIR/.env"; set +a
-          NODE="$INSTALL_DIR/node-$(uname -m | sed 's/x86_64/x64/')"
-          LABEL="com.pointifypos.server"
-          PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
-          cat > "$PLIST" << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>Label</key><string>${LABEL}</string>
-            <key>ProgramArguments</key>
-            <array><string>${NODE}</string><string>${INSTALL_DIR}/server/dist/index.cjs</string></array>
-            <key>WorkingDirectory</key><string>${INSTALL_DIR}</string>
-            <key>EnvironmentVariables</key>
-            <dict>
-              <key>NODE_ENV</key><string>production</string>
-              <key>PORT</key><string>${PORT}</string>
-              <key>SESSION_SECRET</key><string>${SESSION_SECRET}</string>
-              <key>POINTIFY_API_URL</key><string>${POINTIFY_API_URL}</string>
-            </dict>
-            <key>RunAtLoad</key><true/>
-            <key>KeepAlive</key><true/>
-            <key>StandardOutPath</key><string>/tmp/pointifypos.log</string>
-            <key>StandardErrorPath</key><string>/tmp/pointifypos-error.log</string>
-          </dict></plist>
-          PLIST
-          launchctl unload "$PLIST" 2>/dev/null || true
-          launchctl load "$PLIST"
-          echo "Auto-start registered. POS is now running in the background."
-          AUTO
-          chmod +x "$PKG/setup-autostart.sh"
-
-          cp SETUP.md "$PKG/README.txt"
-
-      # Create the DMG with a drag-to-Applications layout
       - name: Create DMG
         run: |
           mkdir -p /tmp/dmg-staging
@@ -342,8 +221,7 @@ jobs:
           retention-days: 30
 
   # ─────────────────────────────────────────────────────────────
-  # Release — attaches both files to a GitHub Release
-  # Only runs when triggered by a version tag (e.g. v1.0.0)
+  # Release — only runs when you push a version tag (e.g. v1.0.0)
   # ─────────────────────────────────────────────────────────────
   release:
     needs: [build-windows, build-mac]
@@ -372,10 +250,9 @@ jobs:
             | Platform | File | Notes |
             |---|---|---|
             | Windows | `PointifyPOS-Setup.exe` | Run installer as Administrator |
-            | macOS | `PointifyPOS.dmg` | Open → drag Pointify POS to Applications |
+            | macOS | `PointifyPOS.dmg` | Open → drag to Applications |
 
-            No separate Node.js install needed on either platform.
-            Other tills connect via browser on the same network.
+            No separate Node.js install needed. Other tills connect via browser on the same network.
           files: |
             PointifyPOS-Setup.exe
             PointifyPOS.dmg
