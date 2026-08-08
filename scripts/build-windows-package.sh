@@ -148,7 +148,9 @@ echo.
 pause
 BATEOF
 
-cp SETUP.md "$PACKAGE_DIR/README.txt"
+cp SETUP.md              "$PACKAGE_DIR/README.txt"
+cp setup-autostart.bat   "$PACKAGE_DIR/"
+cp run-background.vbs    "$PACKAGE_DIR/"
 
 # ── 7. Zip ─────────────────────────────────────────────────────
 rm -f "$ZIP_OUT"
