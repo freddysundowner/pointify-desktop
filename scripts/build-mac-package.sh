@@ -23,12 +23,13 @@ echo ""
 
 # ── 1. Build client ────────────────────────────────────────────
 echo "[1/6] Building client..."
-(cd client && npm install --legacy-peer-deps --silent && npm run build --silent)
+(cd client && npm install --legacy-peer-deps && ./node_modules/.bin/vite build)
 echo "   ✓ Client built ($(du -sh client/dist | cut -f1))"
 
 # ── 2. Build server (bundle everything except firebase-admin) ──
 echo "[2/6] Building server..."
-cd "$ROOT_DIR/server" && npm install 2>&1 | tail -3; cd "$ROOT_DIR"
+npm install
+cd "$ROOT_DIR/server" && npm install; cd "$ROOT_DIR"
 
 "$ESBUILD" server/src/index.ts \
   --bundle \
