@@ -2,6 +2,10 @@
 setlocal enabledelayedexpansion
 title Pointify POS Server
 
+:: Set working directory to the package root so process.cwd() resolves
+:: client/dist, uploads/, etc. correctly regardless of where this bat was launched.
+cd /d "%~dp0"
+
 if not exist "%~dp0.env" (
     echo ERROR: .env file not found next to this script.
     pause & exit /b 1

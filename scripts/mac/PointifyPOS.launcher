@@ -47,6 +47,9 @@ fi
 
 echo "Starting server..." >> "$LOG_FILE"
 
+# cd into the bundle so process.cwd() resolves client/dist and uploads correctly
+cd "$BUNDLE"
+
 # Start server — redirect output to log file
 "$NODE" "$BUNDLE/server/dist/index.cjs" >> "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
