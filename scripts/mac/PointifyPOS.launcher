@@ -37,15 +37,14 @@ if [ ! -f "$NODE" ]; then
   exit 1
 fi
 
-# If server is already running just open the browser
-if curl -s --max-time 1 "http://localhost:${PORT}/health" >/dev/null 2>&1 || \
-   curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1; then
-  echo "Server already running — opening browser" >> "$LOG_FILE"
-  open "http://localhost:${PORT}"
-  exit 0
-fi
-
 echo "Starting server..." >> "$LOG_FILE"
+
+# Always kill any existing server process so a stale/old version can't
+# block the new one from starting (port 3000 would appear "already open"
+# and the launcher would skip starting — the most common cause of
+# "Cannot GET /" after an update).
+pkill -f "server/dist/index.cjs" 2>/dev/null || true
+sleep 0.5
 
 # Tell the server exactly where to find static files and uploads —
 # process.cwd() is unreliable inside a .app bundle.
