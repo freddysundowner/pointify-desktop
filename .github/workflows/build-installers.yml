@@ -92,13 +92,8 @@ jobs:
           cp server/package.json    "$PKG/server/"
           cp -r client/dist/.       "$PKG/client/dist/"
 
-          # Copy only the external packages (firebase-admin ecosystem)
-          for mod in firebase-admin @firebase @google-cloud google-gax @grpc \
-                     protobufjs google-auth-library gcp-metadata @opentelemetry \
-                     fast-xml-parser jose multer; do
-            [ -d "server/node_modules/$mod" ] && \
-              cp -r "server/node_modules/$mod" "$PKG/server/node_modules/" || true
-          done
+          # Copy all production node_modules so no transitive dep is missed
+          cp -r server/node_modules/. "$PKG/server/node_modules/"
 
           # Generate a fresh SESSION_SECRET for this build
           SECRET=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")
@@ -224,12 +219,8 @@ jobs:
           cp server/package.json   "$CONTENTS/server/"
           cp -r client/dist/.      "$CONTENTS/client/dist/"
 
-          for mod in firebase-admin @firebase @google-cloud google-gax @grpc \
-                     protobufjs google-auth-library gcp-metadata @opentelemetry \
-                     fast-xml-parser jose multer; do
-            [ -d "server/node_modules/$mod" ] && \
-              cp -r "server/node_modules/$mod" "$CONTENTS/server/node_modules/" || true
-          done
+          # Copy all production node_modules so no transitive dep is missed
+          cp -r server/node_modules/. "$CONTENTS/server/node_modules/"
 
           # .env with a fresh SESSION_SECRET (lives inside the bundle;
           # users can edit via right-click → Show Package Contents → Contents/.env)
