@@ -47,7 +47,12 @@ fi
 
 echo "Starting server..." >> "$LOG_FILE"
 
-# cd into the bundle so process.cwd() resolves client/dist and uploads correctly
+# Tell the server exactly where to find static files and uploads —
+# process.cwd() is unreliable inside a .app bundle.
+export STATIC_DIR="$BUNDLE/client/dist"
+export UPLOADS_DIR="$BUNDLE/uploads"
+mkdir -p "$UPLOADS_DIR"
+
 cd "$BUNDLE"
 
 # Start server — redirect output to log file

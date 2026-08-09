@@ -6,6 +6,11 @@ title Pointify POS Server
 :: client/dist, uploads/, etc. correctly regardless of where this bat was launched.
 cd /d "%~dp0"
 
+:: Tell the server exactly where static files and uploads live.
+set "STATIC_DIR=%~dp0client\dist"
+set "UPLOADS_DIR=%~dp0uploads"
+if not exist "%UPLOADS_DIR%" mkdir "%UPLOADS_DIR%"
+
 if not exist "%~dp0.env" (
     echo ERROR: .env file not found next to this script.
     pause & exit /b 1
