@@ -1,0 +1,36 @@
+#!/bin/bash
+# This is the executable inside Pointify POS.app/Contents/MacOS/
+# Double-clicking the .app runs this script.
+BUNDLE="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="$BUNDLE/.env"
+
+[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a
+PORT="${PORT:-3000}"
+
+# Pick the right Node binary for this Mac
+if [ "$(uname -m)" = "arm64" ]; then
+  NODE="$BUNDLE/node-arm64"
+else
+  NODE="$BUNDLE/node-x64"
+fi
+
+# If server is already running just open the browser
+if curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1; then
+  open "http://localhost:${PORT}"
+  exit 0
+fi
+
+# Start server silently in the background
+"$NODE" "$BUNDLE/server/dist/index.cjs" &
+
+# Wait up to 10 s for server to be ready
+for i in $(seq 1 20); do
+  sleep 0.5
+  curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1 && break
+done
+
+# Open the POS in the default browser
+open "http://localhost:${PORT}"
+
+# Keep the process alive so the app remains in the Dock
+wait

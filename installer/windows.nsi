@@ -59,16 +59,16 @@ Section "Pointify POS" SecMain
   SetOutPath "$INSTDIR\client\dist"
   File /r "package\client\dist\"
 
-  ; Desktop shortcut → Start Pointify POS.bat (shows IP on screen)
+  ; Desktop shortcut — launches silently via VBScript, opens browser automatically
   CreateShortcut "$DESKTOP\Pointify POS.lnk" \
-    "$INSTDIR\Start Pointify POS.bat" "" "$INSTDIR\node.exe" 0 \
-    SW_SHOWMINIMIZED "" "Start Pointify POS server"
+    "$SYSDIR\wscript.exe" '"$INSTDIR\run-background.vbs"' \
+    "$INSTDIR\node.exe" 0 SW_SHOWNORMAL "" "Start Pointify POS"
 
   ; Start Menu
   CreateDirectory "$SMPROGRAMS\Pointify POS"
-  CreateShortcut "$SMPROGRAMS\Pointify POS\Start Pointify POS.lnk" \
-    "$INSTDIR\Start Pointify POS.bat" "" "$INSTDIR\node.exe" 0 \
-    SW_SHOWMINIMIZED "" "Start Pointify POS server"
+  CreateShortcut "$SMPROGRAMS\Pointify POS\Pointify POS.lnk" \
+    "$SYSDIR\wscript.exe" '"$INSTDIR\run-background.vbs"' \
+    "$INSTDIR\node.exe" 0 SW_SHOWNORMAL "" "Start Pointify POS"
   CreateShortcut "$SMPROGRAMS\Pointify POS\Setup Auto-start.lnk" \
     "$INSTDIR\setup-autostart.bat" "" "" 0 "" "" \
     "Run once to start POS automatically at boot"

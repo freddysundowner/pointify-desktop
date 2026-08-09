@@ -196,35 +196,51 @@ jobs:
             echo "node-${ARCH}: $(du -sh dist/PointifyPOS-Mac/node-${ARCH} | cut -f1)"
           done
 
-      - name: Assemble Mac package
+      - name: Assemble Mac .app bundle
         run: |
-          PKG="dist/PointifyPOS-Mac"
-          mkdir -p "$PKG/server/dist" "$PKG/server/node_modules" "$PKG/client/dist"
+          # Build a proper macOS .app bundle so users see a real app icon
+          # and can double-click it like any other Mac application.
+          APP="dist/Pointify POS.app"
+          CONTENTS="$APP/Contents"
+          mkdir -p "$CONTENTS/MacOS" \
+                   "$CONTENTS/server/dist" \
+                   "$CONTENTS/server/node_modules" \
+                   "$CONTENTS/client/dist"
 
-          cp server/dist/index.cjs  "$PKG/server/dist/"
-          cp server/package.json    "$PKG/server/"
-          cp -r client/dist/.       "$PKG/client/dist/"
+          # App metadata
+          cp scripts/mac/Info.plist "$CONTENTS/Info.plist"
+
+          # Launcher executable (the script macOS runs when the app opens)
+          cp scripts/mac/PointifyPOS.launcher "$CONTENTS/MacOS/PointifyPOS"
+          chmod +x "$CONTENTS/MacOS/PointifyPOS"
+
+          # Node binaries (Intel + Apple Silicon — launcher picks the right one)
+          cp dist/PointifyPOS-Mac/node-x64   "$CONTENTS/node-x64"
+          cp dist/PointifyPOS-Mac/node-arm64 "$CONTENTS/node-arm64"
+          chmod +x "$CONTENTS/node-x64" "$CONTENTS/node-arm64"
+
+          # Server bundle and its external modules
+          cp server/dist/index.cjs "$CONTENTS/server/dist/"
+          cp server/package.json   "$CONTENTS/server/"
+          cp -r client/dist/.      "$CONTENTS/client/dist/"
 
           for mod in firebase-admin @firebase @google-cloud google-gax @grpc \
                      protobufjs google-auth-library gcp-metadata @opentelemetry \
                      fast-xml-parser jose multer; do
             [ -d "server/node_modules/$mod" ] && \
-              cp -r "server/node_modules/$mod" "$PKG/server/node_modules/" || true
+              cp -r "server/node_modules/$mod" "$CONTENTS/server/node_modules/" || true
           done
 
+          # .env with a fresh SESSION_SECRET (lives inside the bundle;
+          # users can edit via right-click → Show Package Contents → Contents/.env)
           SECRET=$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")
-          printf "SESSION_SECRET=%s\nPORT=3000\nPOINTIFY_API_URL=https://api.pointifypos.com\nPOINTIFY_OFFLINE_API_URL=https://api.pointifypos.com\nNODE_ENV=production\n" "$SECRET" > "$PKG/.env"
-
-          # Copy pre-made launcher scripts from repo
-          cp scripts/mac/start.command    "$PKG/Start Pointify POS.command"
-          cp scripts/mac/setup-autostart.sh "$PKG/setup-autostart.sh"
-          cp SETUP.md                       "$PKG/README.txt"
-          chmod +x "$PKG/Start Pointify POS.command" "$PKG/setup-autostart.sh"
+          printf "SESSION_SECRET=%s\nPORT=3000\nPOINTIFY_API_URL=https://api.pointifypos.com\nPOINTIFY_OFFLINE_API_URL=https://api.pointifypos.com\nNODE_ENV=production\n" "$SECRET" > "$CONTENTS/.env"
 
       - name: Create DMG
         run: |
+          # Stage: app bundle + drag-to-Applications shortcut
           mkdir -p /tmp/dmg-staging
-          cp -r dist/PointifyPOS-Mac /tmp/dmg-staging/"Pointify POS"
+          cp -r "dist/Pointify POS.app" "/tmp/dmg-staging/Pointify POS.app"
           ln -s /Applications /tmp/dmg-staging/Applications
 
           hdiutil create \
