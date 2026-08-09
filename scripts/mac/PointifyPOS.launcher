@@ -1,36 +1,84 @@
 #!/bin/bash
-# This is the executable inside Pointify POS.app/Contents/MacOS/
-# Double-clicking the .app runs this script.
+# Pointify POS — macOS app launcher
+# Lives at: Pointify POS.app/Contents/MacOS/PointifyPOS
+
 BUNDLE="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$BUNDLE/.env"
+LOG_DIR="$HOME/Library/Logs/PointifyPOS"
+LOG_FILE="$LOG_DIR/server.log"
 
-[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a
+mkdir -p "$LOG_DIR"
+echo "=== Pointify POS started $(date) ===" >> "$LOG_FILE"
+echo "Bundle: $BUNDLE" >> "$LOG_FILE"
+
+# Load .env
+if [ -f "$ENV_FILE" ]; then
+  set -a; source "$ENV_FILE"; set +a
+  echo "Loaded .env" >> "$LOG_FILE"
+else
+  echo "WARNING: .env not found at $ENV_FILE" >> "$LOG_FILE"
+fi
+
 PORT="${PORT:-3000}"
 
-# Pick the right Node binary for this Mac
+# Pick the right Node binary
 if [ "$(uname -m)" = "arm64" ]; then
   NODE="$BUNDLE/node-arm64"
 else
   NODE="$BUNDLE/node-x64"
 fi
 
+echo "Node: $NODE" >> "$LOG_FILE"
+echo "Port: $PORT" >> "$LOG_FILE"
+
+# Verify the node binary exists
+if [ ! -f "$NODE" ]; then
+  osascript -e "display alert \"Pointify POS — Setup Error\" message \"Node binary not found at: $NODE\nPlease reinstall Pointify POS.\" as critical"
+  exit 1
+fi
+
 # If server is already running just open the browser
-if curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1; then
+if curl -s --max-time 1 "http://localhost:${PORT}/health" >/dev/null 2>&1 || \
+   curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1; then
+  echo "Server already running — opening browser" >> "$LOG_FILE"
   open "http://localhost:${PORT}"
   exit 0
 fi
 
-# Start server silently in the background
-"$NODE" "$BUNDLE/server/dist/index.cjs" &
+echo "Starting server..." >> "$LOG_FILE"
 
-# Wait up to 10 s for server to be ready
-for i in $(seq 1 20); do
+# Start server — redirect output to log file
+"$NODE" "$BUNDLE/server/dist/index.cjs" >> "$LOG_FILE" 2>&1 &
+SERVER_PID=$!
+echo "Server PID: $SERVER_PID" >> "$LOG_FILE"
+
+# Wait up to 20 seconds for the server to be ready
+READY=0
+for i in $(seq 1 40); do
   sleep 0.5
-  curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1 && break
+
+  # Check the process is still alive
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "ERROR: Server process died (PID $SERVER_PID)" >> "$LOG_FILE"
+    osascript -e "display alert \"Pointify POS — Server Error\" message \"The server failed to start. Check the log for details:\n$LOG_FILE\" as critical buttons {\"Open Log\", \"Cancel\"} default button \"Open Log\"" | grep -q "Open Log" && open "$LOG_FILE"
+    exit 1
+  fi
+
+  if curl -s --max-time 1 "http://localhost:${PORT}" >/dev/null 2>&1; then
+    READY=1
+    break
+  fi
 done
 
-# Open the POS in the default browser
+if [ "$READY" -eq 0 ]; then
+  echo "ERROR: Server did not respond within 20 seconds" >> "$LOG_FILE"
+  osascript -e "display alert \"Pointify POS — Timeout\" message \"Server started but is not responding on port $PORT.\nCheck the log: $LOG_FILE\" as critical buttons {\"Open Log\", \"Cancel\"} default button \"Open Log\"" | grep -q "Open Log" && open "$LOG_FILE"
+  exit 1
+fi
+
+echo "Server ready — opening browser" >> "$LOG_FILE"
 open "http://localhost:${PORT}"
 
-# Keep the process alive so the app remains in the Dock
-wait
+# Keep the process alive so the app stays in the Dock
+wait "$SERVER_PID"
+echo "Server stopped" >> "$LOG_FILE"
