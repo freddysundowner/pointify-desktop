@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { apiCall, rawApiFetch } from "@/lib/api-config";
 import { toast } from "@/hooks/use-toast";
 import { tryAgentPrintReceipt, tryAgentPrintKitchen } from "@/lib/print-agent";
+import { usbPrinter } from "@/lib/usb-printer";
 
 export default function ReceiptView() {
   const [adminMatch, adminParams] = useRoute("/receipt/:id");
@@ -344,6 +345,47 @@ ${saleData.items.map((item: any) =>
       try {
         const statusRes = await rawApiFetch("/api/printer/status", { auth: "none" });
         const status = statusRes.ok ? await statusRes.json() : null;
+
+        // USB (WebUSB) printers: print directly from the browser — the
+        // server can't reach a printer plugged into the cashier's computer.
+        if (status?.config?.type === "WEBUSB") {
+          if (!usbPrinter.isConnected()) await usbPrinter.reconnect();
+          if (!usbPrinter.isConnected()) {
+            toast({
+              title: "USB Printer Not Connected",
+              description: "Reconnect the USB printer from the POS page, or use the browser print dialog.",
+              variant: "destructive",
+            });
+            openReceiptWindow(true);
+            return;
+          }
+          try {
+            const data = getPrintData();
+            await usbPrinter.printReceipt({
+              shopName: data.shopName, shopAddress: data.shopAddress,
+              receiptNumber: data.receiptNumber || "", date: data.date, currency: data.currency,
+              items: data.items,
+              subtotal: data.subtotal, tax: data.tax, total: data.total,
+              paymentMethod: data.paymentMethod, customerName: data.customerName,
+              attendant: data.attendant,
+              splitPayment: data.splitPayment || undefined,
+              extraCharge: data.extraCharge, mpesaRef: data.mpesaRef,
+              showPaymentMethod: data.showPaymentMethod, footerText: data.footerText,
+            } as any);
+            toast({ title: "Receipt Printed", description: "Sent to USB printer" });
+          } catch (usbErr: any) {
+            toast({ title: "USB Print Failed", description: usbErr.message, variant: "destructive" });
+            openReceiptWindow(true);
+          }
+          return;
+        }
+
+        // BROWSER mode: just open the print dialog.
+        if (status?.config?.type === "BROWSER") {
+          openReceiptWindow(true);
+          return;
+        }
+
         if (status?.config?.type === "TCP") {
           const handled = await tryAgentPrintReceipt(status.config, getPrintData());
           if (handled) {
