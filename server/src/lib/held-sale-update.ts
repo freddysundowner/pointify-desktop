@@ -111,18 +111,25 @@ const normalizedItems = (value: any): Array<Record<string, string>> | null => {
   if (!Array.isArray(value)) return null;
 
   return value
-    .map((item) => ({
-      product: getEntityId(item?.product ?? item?.productId),
-      inventory: getEntityId(item?.inventory ?? item?.inventoryId),
-      attendantId: getEntityId(item?.attendantId ?? item?.attendant),
-      quantity: normalizedNumber(item?.quantity),
-      unitPrice: normalizedNumber(item?.unitPrice ?? item?.price),
-      tax: normalizedNumber(item?.tax),
-      lineDiscount: normalizedNumber(
-        item?.lineDiscount ?? item?.discount ?? 0,
-      ),
-      salesnote: normalizedText(item?.salesnote),
-    }))
+    .map((item) => {
+      const normalized: Record<string, string> = {
+        product: getEntityId(item?.product ?? item?.productId),
+        attendantId: getEntityId(item?.attendantId ?? item?.attendant),
+        quantity: normalizedNumber(item?.quantity),
+        unitPrice: normalizedNumber(item?.unitPrice ?? item?.price),
+        tax: normalizedNumber(item?.tax),
+        lineDiscount: normalizedNumber(
+          item?.lineDiscount ?? item?.discount ?? 0,
+        ),
+        salesnote: normalizedText(item?.salesnote),
+      };
+      // Pointify's update endpoint does not accept inventory for legacy sales.
+      // Preserve and compare it only for callers that explicitly send it.
+      if (item?.inventory !== undefined || item?.inventoryId !== undefined) {
+        normalized.inventory = getEntityId(item?.inventory ?? item?.inventoryId);
+      }
+      return normalized;
+    })
     .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 };
 
@@ -361,6 +368,7 @@ export function verifyPersistedHeldSaleUpdate({
     ];
     for (let index = 0; index < requestedItems.length; index += 1) {
       for (const field of itemFields) {
+        if (!(field in requestedItems[index])) continue;
         if (requestedItems[index][field] !== persistedItems[index][field]) {
           mismatches.push(`items.${field}`);
         }

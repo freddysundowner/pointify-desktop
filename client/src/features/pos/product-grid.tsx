@@ -1407,22 +1407,27 @@ export default function ProductGrid({
     const transactionData = {
       products: cartItems.map(item => {
         const productData = productById.get(String(item.id));
-        
-        
-        return {
+        const productLine: Record<string, any> = {
           product: item.id,
           quantity: parseFloat(item.quantity.toString()),
           unitPrice: parseFloat(item.price.toString()),
           tax: parseFloat((item.price * (taxRate / 100)).toString()),
           attendantId: attendantId,
-          inventory:
-            (item as any).inventory ||
-            (productData as any)?.inventoryId ||
-            item.id,
           lineDiscount: parseFloat(((item.discount || 0) * item.quantity).toString()),
           createdAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
           salesnote: (item as any).accompaniments || '',  // accompaniment choices per item
         };
+        // Pointify's established sale-update contract derives inventory from
+        // the existing sale/product. Sending this create-only field for a
+        // resumed legacy hold makes the upstream omit it on readback and can
+        // falsely reject an otherwise successful update.
+        if (!resumedHeldSale) {
+          productLine.inventory =
+            (item as any).inventory ||
+            (productData as any)?.inventoryId ||
+            item.id;
+        }
+        return productLine;
       }),
       shopId: shopId || "",
       attendantId: attendantId,

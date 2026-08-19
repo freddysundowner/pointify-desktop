@@ -217,6 +217,26 @@ test("uses the verified sale attendant when legacy line items omit attendantId",
   assert.deepStrictEqual(result, { ok: true });
 });
 
+test("does not require inventory when a legacy update omits that unsupported field", () => {
+  const legacySale = {
+    ...persistedSale,
+    updatedAt: undefined,
+    items: [{ ...persistedSale.items[0], inventory: undefined }],
+  };
+  const updateWithoutInventory = {
+    ...updateBody,
+    products: updateBody.products.map(({ inventory, ...item }) => item),
+  };
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    updateBody: updateWithoutInventory,
+    persistedSale: legacySale,
+  });
+
+  assert.deepStrictEqual(result, { ok: true });
+});
+
 test("rejects a changed revision when status or line content did not persist", () => {
   const result = verifyPersistedHeldSaleUpdate({
     saleId: "sale-1",
