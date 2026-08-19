@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert";
 import {
+  addHeldSaleRevision,
+  buildHeldSaleRevision,
   extractSaleRecord,
   verifyPersistedHeldSaleUpdate,
   withSaleUpdateLock,
@@ -96,6 +98,34 @@ test("extractSaleRecord unwraps supported upstream response shapes", () => {
   assert.strictEqual(extractSaleRecord({ success: false }), null);
 });
 
+test("legacy revision enrichment preserves every supported response envelope", () => {
+  const legacySale = { ...persistedSale, updatedAt: undefined };
+  const envelopes = [
+    { payload: { sale: legacySale, message: "ok" }, keyPath: ["sale"] },
+    {
+      payload: { updatedSale: legacySale, message: "ok" },
+      keyPath: ["updatedSale"],
+    },
+    {
+      payload: { data: { sale: legacySale }, message: "ok" },
+      keyPath: ["data", "sale"],
+    },
+    { payload: { data: legacySale, message: "ok" }, keyPath: ["data"] },
+    { payload: legacySale, keyPath: [] },
+  ];
+
+  for (const { payload, keyPath } of envelopes) {
+    const enriched = addHeldSaleRevision(payload);
+    const sale = keyPath.reduce((value, key) => value[key], enriched);
+
+    assert.ok(sale.heldSaleRevision);
+    assert.strictEqual(sale._id, legacySale._id);
+    if (keyPath.length > 0) {
+      assert.strictEqual(enriched.message, "ok");
+    }
+  }
+});
+
 test("accepts a fresh persisted sale that matches the requested update", () => {
   assert.deepStrictEqual(
     verifyPersistedHeldSaleUpdate({
@@ -120,6 +150,73 @@ test("rejects an acknowledgement followed by the unchanged old revision", () => 
   if (!result.ok) assert.ok(result.mismatches.includes("revision"));
 });
 
+test("allows a legacy sale without updatedAt when its verified content matches", () => {
+  const legacySale = { ...persistedSale, updatedAt: undefined };
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    updateBody,
+    persistedSale: legacySale,
+  });
+
+  assert.deepStrictEqual(result, { ok: true });
+});
+
+test("legacy revision tokens change when the held sale changes before saving", () => {
+  const legacySale = { ...persistedSale, updatedAt: undefined };
+  const openedRevision = buildHeldSaleRevision(legacySale);
+  const changedRevision = buildHeldSaleRevision({
+    ...legacySale,
+    items: [{ ...legacySale.items[0], quantity: 3 }],
+  });
+
+  assert.notStrictEqual(openedRevision, changedRevision);
+});
+
+test("treats omitted legacy zero values as equivalent to explicit zeroes", () => {
+  const zeroUpdate = {
+    ...updateBody,
+    products: [{ ...updateBody.products[0], tax: 0 }],
+    saleDiscount: 0,
+    mpesaTotal: 0,
+    bankTotal: 0,
+    outstandingBalance: 0,
+  };
+  const legacySale = {
+    ...persistedSale,
+    updatedAt: undefined,
+    items: [{ ...persistedSale.items[0], tax: undefined }],
+    saleDiscount: undefined,
+    mpesaNewTotal: undefined,
+    bankTotal: undefined,
+    outstandingBalance: undefined,
+  };
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    updateBody: zeroUpdate,
+    persistedSale: legacySale,
+  });
+
+  assert.deepStrictEqual(result, { ok: true });
+});
+
+test("uses the verified sale attendant when legacy line items omit attendantId", () => {
+  const legacySale = {
+    ...persistedSale,
+    updatedAt: undefined,
+    items: [{ ...persistedSale.items[0], attendantId: undefined }],
+  };
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    updateBody,
+    persistedSale: legacySale,
+  });
+
+  assert.deepStrictEqual(result, { ok: true });
+});
+
 test("rejects a changed revision when status or line content did not persist", () => {
   const result = verifyPersistedHeldSaleUpdate({
     saleId: "sale-1",
@@ -135,7 +232,7 @@ test("rejects a changed revision when status or line content did not persist", (
   assert.strictEqual(result.ok, false);
   if (!result.ok) {
     assert.ok(result.mismatches.includes("status"));
-    assert.ok(result.mismatches.includes("items"));
+    assert.ok(result.mismatches.includes("items.quantity"));
   }
 });
 

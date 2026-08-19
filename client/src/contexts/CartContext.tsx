@@ -10,6 +10,7 @@ export interface ResumedHeldSale {
   orderId?: string | null;
   clientRef?: string;
   createdAt?: string;
+  heldSaleRevision?: string;
   extraCharges?: Array<{ name?: string; amount?: number }>;
   extraChargesTotal?: number;
   salesnote?: string;

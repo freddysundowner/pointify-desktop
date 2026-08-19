@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 type SaleRecord = Record<string, any>;
 
 export type HeldSaleVerification =
@@ -73,6 +75,9 @@ const normalizedLowerText = (value: any): string =>
   normalizedText(value).toLowerCase();
 
 const normalizedNumber = (value: any): string => {
+  if (value === null || value === undefined || value === "") {
+    return (0).toFixed(6);
+  }
   const number = Number(value);
   return Number.isFinite(number) ? number.toFixed(6) : "NaN";
 };
@@ -122,6 +127,83 @@ const normalizedItems = (value: any): Array<Record<string, string>> | null => {
 };
 
 /**
+ * Legacy Pointify sales can omit updatedAt entirely. For those records the
+ * proxy issues a deterministic revision token based on every sale field that
+ * the resumed POS flow can persist. It is a stale-write guard, not a substitute
+ * for an atomic upstream compare-and-set.
+ */
+export function buildHeldSaleRevision(sale: SaleRecord): string {
+  const revisionContent = {
+    id: getEntityId(sale?._id || sale?.id),
+    status: normalizedLowerText(sale?.status),
+    shopId: getEntityId(firstDefined(sale, ["shopId", "shop"])),
+    attendantId: getEntityId(firstDefined(sale, ["attendantId", "attendant"])),
+    customerId: getEntityId(firstDefined(sale, ["customerId", "customer"])),
+    saleType: normalizedLowerText(sale?.saleType),
+    paymentType: normalizedLowerText(sale?.paymentType),
+    paymentTag: normalizedLowerText(sale?.paymentTag),
+    clientRef: normalizedText(sale?.clientRef),
+    orderId: normalizedText(sale?.orderId),
+    dueDate: normalizedText(sale?.duedate),
+    salesnote: normalizedText(sale?.salesnote),
+    mpesaTransId: normalizedText(
+      firstDefined(sale, ["mpesaTransId", "mpesatransid"]),
+    ),
+    bankTransId: normalizedText(
+      firstDefined(sale, ["bankTransId", "banktransid"]),
+    ),
+    createdAt: normalizedDate(sale?.createdAt),
+    totaltax: normalizedNumber(sale?.totaltax),
+    totalDiscount: normalizedNumber(sale?.totalDiscount),
+    saleDiscount: normalizedNumber(sale?.saleDiscount),
+    extraChargesTotal: normalizedNumber(sale?.extraChargesTotal),
+    amountPaid: normalizedNumber(sale?.amountPaid),
+    outstandingBalance: normalizedNumber(sale?.outstandingBalance),
+    mpesaTotal: normalizedNumber(
+      firstDefined(sale, ["mpesaTotal", "mpesaNewTotal", "mpesatotal"]),
+    ),
+    bankTotal: normalizedNumber(firstDefined(sale, ["bankTotal", "banktotal"])),
+    extraCharges: normalizedExtraCharges(sale?.extraCharges),
+    items: normalizedItems(sale?.items ?? sale?.products) || [],
+  };
+
+  return createHash("sha256")
+    .update(JSON.stringify(revisionContent))
+    .digest("base64url");
+}
+
+export function addHeldSaleRevision(payload: any): any {
+  const sale = extractSaleRecord(payload);
+  if (
+    !sale ||
+    !getEntityId(sale._id || sale.id) ||
+    sale.updatedAt ||
+    sale.heldSaleRevision
+  ) {
+    return payload;
+  }
+
+  const enrichedSale = {
+    ...sale,
+    heldSaleRevision: buildHeldSaleRevision(sale),
+  };
+
+  if (payload?.sale === sale) {
+    return { ...payload, sale: enrichedSale };
+  }
+  if (payload?.updatedSale === sale) {
+    return { ...payload, updatedSale: enrichedSale };
+  }
+  if (payload?.data?.sale === sale) {
+    return { ...payload, data: { ...payload.data, sale: enrichedSale } };
+  }
+  if (payload?.data === sale) {
+    return { ...payload, data: enrichedSale };
+  }
+  return enrichedSale;
+}
+
+/**
  * Confirms that a fresh authoritative read reflects the requested held-sale
  * update. False negatives intentionally keep the cart open; false positives
  * could discard cashier edits, so all critical persisted fields are checked.
@@ -129,11 +211,13 @@ const normalizedItems = (value: any): Array<Record<string, string>> | null => {
 export function verifyPersistedHeldSaleUpdate({
   saleId,
   expectedUpdatedAt,
+  expectedHeldSaleRevision,
   updateBody,
   persistedSale,
 }: {
   saleId: string;
-  expectedUpdatedAt: string;
+  expectedUpdatedAt?: string | null;
+  expectedHeldSaleRevision?: string | null;
   updateBody: SaleRecord;
   persistedSale: SaleRecord;
 }): HeldSaleVerification {
@@ -144,10 +228,14 @@ export function verifyPersistedHeldSaleUpdate({
     mismatches.push("sale id");
   }
 
-  if (
-    !persistedSale?.updatedAt ||
-    String(persistedSale.updatedAt) === String(expectedUpdatedAt)
-  ) {
+  if (expectedUpdatedAt) {
+    if (
+      !persistedSale?.updatedAt ||
+      String(persistedSale.updatedAt) === String(expectedUpdatedAt)
+    ) {
+      mismatches.push("revision");
+    }
+  } else if (!expectedHeldSaleRevision) {
     mismatches.push("revision");
   }
 
@@ -257,12 +345,27 @@ export function verifyPersistedHeldSaleUpdate({
   const persistedItems = normalizedItems(
     persistedSale.items ?? persistedSale.products,
   );
-  if (
-    requestedItems === null ||
-    persistedItems === null ||
-    JSON.stringify(requestedItems) !== JSON.stringify(persistedItems)
-  ) {
+  if (requestedItems === null || persistedItems === null) {
     mismatches.push("items");
+  } else if (requestedItems.length !== persistedItems.length) {
+    mismatches.push("items.length");
+  } else {
+    const itemFields = [
+      "product",
+      "inventory",
+      "quantity",
+      "unitPrice",
+      "tax",
+      "lineDiscount",
+      "salesnote",
+    ];
+    for (let index = 0; index < requestedItems.length; index += 1) {
+      for (const field of itemFields) {
+        if (requestedItems[index][field] !== persistedItems[index][field]) {
+          mismatches.push(`items.${field}`);
+        }
+      }
+    }
   }
 
   return mismatches.length > 0

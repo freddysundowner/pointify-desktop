@@ -493,11 +493,11 @@ function SalesList() {
   };
 
   const openHeldSaleInPos = (sale: ResumedHeldSale) => {
-    if (!sale.updatedAt) {
+    if (!sale.updatedAt && !sale.heldSaleRevision) {
       toast({
         title: "Held Sale Cannot Be Continued Safely",
         description:
-          "This sale does not include a revision timestamp. Refresh the list; if it still cannot be opened, use Complete Sale instead.",
+          "This sale does not include a revision. Refresh the list; if it still cannot be opened, use Complete Sale instead.",
         variant: "destructive",
       });
       return;

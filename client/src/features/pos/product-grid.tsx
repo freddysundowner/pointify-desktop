@@ -1433,10 +1433,11 @@ export default function ProductGrid({
       // honours it, a sale committed before the response was lost won't be
       // duplicated when the queued copy is replayed.
       clientRef:
-        resumedHeldSale?.clientRef ||
-        ((typeof crypto !== "undefined" && "randomUUID" in crypto)
-          ? crypto.randomUUID()
-          : `${shopId || "shop"}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
+        resumedHeldSale
+          ? resumedHeldSale.clientRef
+          : ((typeof crypto !== "undefined" && "randomUUID" in crypto)
+            ? crypto.randomUUID()
+            : `${shopId || "shop"}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
       createdAt:
         resumedHeldSale?.createdAt ||
         ((!isHold && isCustomDateTime && customDateTime)
@@ -1479,6 +1480,7 @@ export default function ProductGrid({
             __heldSaleId: resumedHeldSale._id,
             expectedStatus: "hold",
             expectedUpdatedAt: resumedHeldSale.updatedAt || null,
+            expectedHeldSaleRevision: resumedHeldSale.heldSaleRevision || null,
           }
         : {}),
     };
@@ -1660,7 +1662,10 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
   const handleHoldTransaction = async () => {
     if (cartItems.length === 0) return;
-    if (!selectedCustomerId) {
+    // A resumed hold is already an existing sale. Do not interrupt its update
+    // with the optional "attach a customer" prompt when the original sale had
+    // no customer; save the same sale directly instead.
+    if (!resumedHeldSale && !selectedCustomerId) {
       setShowHoldAskCustomerDialog(true);
       return;
     }

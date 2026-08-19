@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
 import {
+  addHeldSaleRevision,
+  buildHeldSaleRevision,
   extractSaleRecord,
   getEntityId,
   verifyPersistedHeldSaleUpdate,
@@ -225,7 +227,10 @@ export function registerSalesRoutes(app: Express) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      res.json(data);
+      // Some legacy Pointify sale records do not include updatedAt. Expose a
+      // deterministic proxy revision for those records so they can still be
+      // safely resumed with a stale-write preflight instead of being blocked.
+      return res.json(addHeldSaleRevision(data));
     } catch (error: any) {
       console.error("Sales fetch error:", error);
       
@@ -525,6 +530,7 @@ export function registerSalesRoutes(app: Express) {
       const {
         expectedStatus,
         expectedUpdatedAt,
+        expectedHeldSaleRevision,
         ...updateBody
       } = req.body || {};
 
@@ -534,9 +540,9 @@ export function registerSalesRoutes(app: Express) {
       // preflight and then overwriting each other.
       return await withSaleUpdateLock(id, async () => {
         if (expectedStatus) {
-          if (!expectedUpdatedAt) {
+          if (!expectedUpdatedAt && !expectedHeldSaleRevision) {
             return res.status(409).json({
-              error: "This held sale has no revision timestamp and cannot be edited safely. Reload it before continuing.",
+              error: "This held sale has no revision and cannot be edited safely. Reload it before continuing.",
             });
           }
 
@@ -558,12 +564,24 @@ export function registerSalesRoutes(app: Express) {
               error: `This sale is no longer ${expectedStatus}. Refresh the sales list before continuing.`,
             });
           }
-          if (!currentSale.updatedAt) {
+          if (expectedUpdatedAt && !currentSale.updatedAt) {
             return res.status(409).json({
-              error: "The current held sale has no revision timestamp and cannot be edited safely.",
+              error: "The current held sale revision is unavailable. Reload it before continuing.",
             });
           }
-          if (String(currentSale.updatedAt) !== String(expectedUpdatedAt)) {
+          if (
+            expectedUpdatedAt &&
+            String(currentSale.updatedAt) !== String(expectedUpdatedAt)
+          ) {
+            return res.status(409).json({
+              error: "This held sale changed after it was opened. Reload it before saving.",
+            });
+          }
+          if (
+            !expectedUpdatedAt &&
+            expectedHeldSaleRevision &&
+            buildHeldSaleRevision(currentSale) !== expectedHeldSaleRevision
+          ) {
             return res.status(409).json({
               error: "This held sale changed after it was opened. Reload it before saving.",
             });
@@ -597,11 +615,11 @@ export function registerSalesRoutes(app: Express) {
         }
 
         let updatedSale = extractSaleRecord(data);
+        let heldSaleVerification:
+          | ReturnType<typeof verifyPersistedHeldSaleUpdate>
+          | null = null;
 
-        // A resumed hold is always re-read, even when the PUT response contains
-        // a sale-shaped object. Only a fresh authoritative GET can confirm that
-        // the write was persisted rather than merely echoed or acknowledged.
-        if (expectedStatus || !updatedSale) {
+        const fetchFreshSale = async () => {
           const refreshedResponse: any = await makePointifyRequest(`/sales/single/receipt/${id}`, {
             method: 'GET',
             headers: {
@@ -610,7 +628,34 @@ export function registerSalesRoutes(app: Express) {
             },
             cache: 'no-store',
           });
-          updatedSale = extractSaleRecord(refreshedResponse);
+          return extractSaleRecord(refreshedResponse);
+        };
+
+        if (expectedStatus) {
+          // Some Pointify deployments acknowledge the PUT before the updated
+          // record is visible to the receipt read. Poll briefly, but accept only
+          // after a fresh read actually matches the requested persisted state.
+          const verificationDelays = [0, 150, 400, 800];
+          for (const delayMs of verificationDelays) {
+            if (delayMs > 0) {
+              await new Promise((resolve) => setTimeout(resolve, delayMs));
+            }
+            updatedSale = await fetchFreshSale();
+            if (!updatedSale || getEntityId(updatedSale._id || updatedSale.id) !== String(id)) {
+              heldSaleVerification = null;
+              continue;
+            }
+            heldSaleVerification = verifyPersistedHeldSaleUpdate({
+              saleId: id,
+              expectedUpdatedAt,
+              expectedHeldSaleRevision,
+              updateBody,
+              persistedSale: updatedSale,
+            });
+            if (heldSaleVerification.ok) break;
+          }
+        } else if (!updatedSale) {
+          updatedSale = await fetchFreshSale();
         }
 
         if (!updatedSale || getEntityId(updatedSale._id || updatedSale.id) !== String(id)) {
@@ -620,19 +665,18 @@ export function registerSalesRoutes(app: Express) {
         }
 
         if (expectedStatus) {
-          const verification = verifyPersistedHeldSaleUpdate({
-            saleId: id,
-            expectedUpdatedAt: String(expectedUpdatedAt),
-            updateBody,
-            persistedSale: updatedSale,
-          });
-          if ("mismatches" in verification) {
+          if (!heldSaleVerification || "mismatches" in heldSaleVerification) {
+            const mismatches =
+              heldSaleVerification && "mismatches" in heldSaleVerification
+                ? heldSaleVerification.mismatches
+                : ["authoritative sale"];
             console.error(
-              `Held sale ${id} failed persistence verification: ${verification.mismatches.join(", ")}`,
+              `Held sale ${id} failed persistence verification: ${mismatches.join(", ")}`,
             );
             return res.status(502).json({
               error: "The held sale update was not fully confirmed. Your cart is still open; refresh the sales list before retrying.",
               code: "HELD_SALE_UPDATE_NOT_CONFIRMED",
+              mismatches,
             });
           }
         }

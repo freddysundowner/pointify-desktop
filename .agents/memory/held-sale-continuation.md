@@ -9,7 +9,7 @@ A resumed held sale remains the same server record. Carry its identity and revis
 
 **How to apply:** Preserve the open cart until an authoritative updated sale is returned. Reject stale revisions, and never route a failed held-sale update through the offline new-sale queue.
 
-Post-write confirmation must come from a fresh authoritative read whose revision changed and whose persisted sale content matches the requested update. An acknowledgement or sale-shaped PUT response is not sufficient proof.
+Post-write confirmation must come from a fresh authoritative read whose persisted sale content matches the requested update. Timestamped sales must also show a changed timestamp; legacy sales without `updatedAt` use a deterministic content revision for the stale-write preflight. An acknowledgement or sale-shaped PUT response is not sufficient proof.
 
 **Why:** Some upstream writes acknowledge before returning the persisted record, and an old or echoed record can otherwise cause the POS to clear unsaved cashier edits.
 
