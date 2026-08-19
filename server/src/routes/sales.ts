@@ -559,7 +559,41 @@ export function registerSalesRoutes(app: Express) {
           if (!currentSale || getEntityId(currentSale._id || currentSale.id) !== String(id)) {
             return res.status(404).json({ error: "Sale could not be found" });
           }
+
+          const currentShopId = getEntityId(currentSale.shopId);
+          const requestedShopId = getEntityId(updateBody.shopId);
+          if (
+            currentShopId &&
+            requestedShopId &&
+            currentShopId !== requestedShopId
+          ) {
+            return res.status(403).json({ error: "Sale does not belong to this shop" });
+          }
+
+          // A previous PUT can reach the authoritative backend even when this
+          // proxy times out while confirming it. On the cashier's next retry,
+          // the revision is therefore stale even though the stored sale already
+          // equals the requested cart. Treat that exact-content replay as an
+          // idempotent success; never perform a second write. If any persisted
+          // field differs, the normal stale-write rejection remains in force.
+          const alreadyApplied = verifyPersistedHeldSaleUpdate({
+            saleId: id,
+            expectedHeldSaleRevision: buildHeldSaleRevision(currentSale),
+            updateBody,
+            persistedSale: currentSale,
+          }).ok;
+          const respondAlreadyApplied = () =>
+            res.json({
+              success: true,
+              sale: addHeldSaleRevision(currentSale),
+              message: "Sale update was already applied",
+              recovered: true,
+            });
+
           if (currentSale.status !== expectedStatus) {
+            if (alreadyApplied) {
+              return respondAlreadyApplied();
+            }
             return res.status(409).json({
               error: `This sale is no longer ${expectedStatus}. Refresh the sales list before continuing.`,
             });
@@ -573,6 +607,9 @@ export function registerSalesRoutes(app: Express) {
             expectedUpdatedAt &&
             String(currentSale.updatedAt) !== String(expectedUpdatedAt)
           ) {
+            if (alreadyApplied) {
+              return respondAlreadyApplied();
+            }
             return res.status(409).json({
               error: "This held sale changed after it was opened. Reload it before saving.",
             });
@@ -582,19 +619,12 @@ export function registerSalesRoutes(app: Express) {
             expectedHeldSaleRevision &&
             buildHeldSaleRevision(currentSale) !== expectedHeldSaleRevision
           ) {
+            if (alreadyApplied) {
+              return respondAlreadyApplied();
+            }
             return res.status(409).json({
               error: "This held sale changed after it was opened. Reload it before saving.",
             });
-          }
-
-          const currentShopId = getEntityId(currentSale.shopId);
-          const requestedShopId = getEntityId(updateBody.shopId);
-          if (
-            currentShopId &&
-            requestedShopId &&
-            currentShopId !== requestedShopId
-          ) {
-            return res.status(403).json({ error: "Sale does not belong to this shop" });
           }
         }
 
