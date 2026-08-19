@@ -220,7 +220,39 @@ export default function ProductGrid({
   const [accompanimentPendingProduct, setAccompanimentPendingProduct] = useState<any>(null);
   const [accompanimentDialogOpen, setAccompanimentDialogOpen] = useState(false);
   const [accompanimentEditCartItemId, setAccompanimentEditCartItemId] = useState<string | number | null>(null);
-  const { setCartItems } = useCartContext();
+  const { setCartItems, resumedHeldSale } = useCartContext();
+  const restoredHeldSaleIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!resumedHeldSale) {
+      restoredHeldSaleIdRef.current = null;
+      return;
+    }
+    if (restoredHeldSaleIdRef.current === resumedHeldSale._id) return;
+    restoredHeldSaleIdRef.current = resumedHeldSale._id;
+
+    const customerId =
+      typeof resumedHeldSale.customerId === "object"
+        ? resumedHeldSale.customerId?._id || resumedHeldSale.customerId?.id
+        : resumedHeldSale.customerId;
+    setSelectedCustomerId(customerId ? String(customerId) : "");
+
+    const firstExtraCharge = Array.isArray(resumedHeldSale.extraCharges)
+      ? resumedHeldSale.extraCharges[0]
+      : null;
+    const restoredExtraAmount =
+      Number(resumedHeldSale.extraChargesTotal) ||
+      Number(firstExtraCharge?.amount) ||
+      0;
+    setExtraChargeAmount(restoredExtraAmount);
+    setExtraChargeInputValue(restoredExtraAmount > 0 ? String(restoredExtraAmount) : "");
+    setExtraChargeLabel(
+      firstExtraCharge?.name ||
+      resumedHeldSale.salesnote ||
+      "Transport",
+    );
+    setShowExtraChargeInput(false);
+  }, [resumedHeldSale?._id]);
 
   // Pre-load all accompaniment configs for this shop (restaurant mode only)
   const { data: shopAccompaniments } = useQuery({
@@ -810,9 +842,13 @@ export default function ProductGrid({
 
   const createTransactionMutation = useMutation({
     mutationFn: async (transactionData: any): Promise<any> => {
-      const response = await apiCall('/api/sales', {
-        method: "POST",
-        body: JSON.stringify(transactionData),
+      const { __heldSaleId, ...payload } = transactionData;
+      const isHeldSaleUpdate = Boolean(__heldSaleId);
+      const response = await apiCall(
+        isHeldSaleUpdate ? `/api/sales/${__heldSaleId}` : '/api/sales',
+        {
+        method: isHeldSaleUpdate ? "PUT" : "POST",
+        body: JSON.stringify(payload),
       });
       
       const data = await response.json();
@@ -823,13 +859,16 @@ export default function ProductGrid({
       // rejected the write. In that case the sale did NOT go through, so we must
       // surface it as an error instead of letting onSuccess pop the receipt as if
       // the item had been sold.
-      const saleCreated =
-        data && !Array.isArray(data) && data.success !== false && !!data.sale;
+      const saleCreated = isHeldSaleUpdate
+        ? data && !Array.isArray(data) && data.success === true && !!data.sale
+        : data && !Array.isArray(data) && data.success !== false && !!data.sale;
       if (!saleCreated) {
         throw new Error(
           data?.error ||
             data?.message ||
-            "Sale could not be completed. Please try again.",
+            (isHeldSaleUpdate
+              ? "The held sale could not be updated. Please try again."
+              : "Sale could not be completed. Please try again."),
         );
       }
 
@@ -906,6 +945,20 @@ export default function ProductGrid({
     },
     onError: (error: any, variables: any) => {
       console.error("Transaction error:", error);
+
+      // A held sale already exists on the server. If its update fails, preserve
+      // the cart for retry and never queue the payload as a new offline sale,
+      // which could create a duplicate when connectivity returns.
+      if (variables.__heldSaleId) {
+        toast({
+          title: "Held Sale Not Updated",
+          description: isNetworkError(error)
+            ? "The connection failed. Your cart is still open—reconnect and try again."
+            : error?.message || "The held sale could not be updated. Your cart has not been cleared.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Use the shared transport-failure detector so a real server rejection
       // (e.g. 400 "insufficient balance") is never misread as offline and
@@ -1302,6 +1355,22 @@ export default function ProductGrid({
         shopId = undefined;
       }
     }
+
+    // Continuing a hold must retain the shop and original seller/waiter
+    // attribution. The cashier completing it should not silently become the
+    // attendant who created the sale.
+    if (resumedHeldSale) {
+      const heldAttendantId =
+        typeof resumedHeldSale.attendantId === "object"
+          ? resumedHeldSale.attendantId?._id || resumedHeldSale.attendantId?.id
+          : resumedHeldSale.attendantId;
+      const heldShopId =
+        typeof resumedHeldSale.shopId === "object"
+          ? resumedHeldSale.shopId?._id || resumedHeldSale.shopId?.id
+          : resumedHeldSale.shopId;
+      if (heldAttendantId) attendantId = String(heldAttendantId);
+      if (heldShopId) shopId = String(heldShopId);
+    }
     
 
 
@@ -1346,7 +1415,10 @@ export default function ProductGrid({
           unitPrice: parseFloat(item.price.toString()),
           tax: parseFloat((item.price * (taxRate / 100)).toString()),
           attendantId: attendantId,
-          inventory: (productData as any)?.inventoryId || item.id, // Use inventoryId field
+          inventory:
+            (item as any).inventory ||
+            (productData as any)?.inventoryId ||
+            item.id,
           lineDiscount: parseFloat(((item.discount || 0) * item.quantity).toString()),
           createdAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
           salesnote: (item as any).accompaniments || '',  // accompaniment choices per item
@@ -1361,13 +1433,18 @@ export default function ProductGrid({
       // honours it, a sale committed before the response was lost won't be
       // duplicated when the queued copy is replayed.
       clientRef:
-        (typeof crypto !== "undefined" && "randomUUID" in crypto)
+        resumedHeldSale?.clientRef ||
+        ((typeof crypto !== "undefined" && "randomUUID" in crypto)
           ? crypto.randomUUID()
-          : `${shopId || "shop"}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-      createdAt: (!isHold && isCustomDateTime && customDateTime) ? customDateTime : new Date().toISOString(),
+          : `${shopId || "shop"}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
+      createdAt:
+        resumedHeldSale?.createdAt ||
+        ((!isHold && isCustomDateTime && customDateTime)
+          ? customDateTime
+          : new Date().toISOString()),
       status: isHold ? "hold" : "cashed",
       totaltax: parseFloat(totals.tax.toString()),
-      orderId: orderId,
+      orderId: resumedHeldSale?.orderId || orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
       batchTrack: shouldTrackBatches,
       allownegativeselling: false,
@@ -1397,6 +1474,13 @@ export default function ProductGrid({
       extraCharges: extraChargeAmount > 0 ? [{ name: extraChargeLabel, amount: extraChargeAmount }] : [],
       extraChargesTotal: extraChargeAmount,
       salesnote: extraChargeAmount > 0 ? extraChargeLabel : "",
+      ...(resumedHeldSale?._id
+        ? {
+            __heldSaleId: resumedHeldSale._id,
+            expectedStatus: "hold",
+            expectedUpdatedAt: resumedHeldSale.updatedAt || null,
+          }
+        : {}),
     };
 
     try {

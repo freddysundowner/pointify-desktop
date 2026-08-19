@@ -98,6 +98,7 @@ import "jspdf-autotable";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
+import { useCartContext, type ResumedHeldSale } from "@/contexts/CartContext";
 import { tryAgentPrintKitchen } from "@/lib/print-agent";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 
@@ -107,6 +108,13 @@ function SalesList() {
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const [location, setLocation] = useLocation();
   const salesRoute = useNavigationRoute("sales");
+  const posRoute = useNavigationRoute("pos");
+  const {
+    cartItems,
+    setCartItems,
+    setOrderId,
+    setResumedHeldSale,
+  } = useCartContext();
 
   // Add attendant authentication hooks
   const { attendant, isAuthenticated: isAttendantAuth } = useAttendantAuth();
@@ -148,6 +156,9 @@ function SalesList() {
   const [completePaymentMethod, setCompletePaymentMethod] = useState("cash");
   const [completeAmountPaid, setCompleteAmountPaid] = useState("");
   const [isCompleting, setIsCompleting] = useState(false);
+  const [heldSaleToContinue, setHeldSaleToContinue] = useState<ResumedHeldSale | null>(null);
+  const [replaceCartDialogOpen, setReplaceCartDialogOpen] = useState(false);
+  const [loadingHeldSaleId, setLoadingHeldSaleId] = useState<string | null>(null);
 
   // Pay Credit (credit → cashed) dialog state
   const [payDebtOpen, setPayDebtOpen] = useState(false);
@@ -479,6 +490,139 @@ function SalesList() {
   const handleDeleteSale = (sale: any) => {
     setSaleToDelete(sale);
     setDeleteDialogOpen(true);
+  };
+
+  const openHeldSaleInPos = (sale: ResumedHeldSale) => {
+    if (!sale.updatedAt) {
+      toast({
+        title: "Held Sale Cannot Be Continued Safely",
+        description:
+          "This sale does not include a revision timestamp. Refresh the list; if it still cannot be opened, use Complete Sale instead.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Number(sale.saleDiscount) > 0) {
+      toast({
+        title: "Held Sale Cannot Be Continued",
+        description:
+          "This legacy held sale has a sale-level discount that the POS cannot safely recalculate. Use the existing sale editor instead.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const unavailableItems: string[] = [];
+    const restoredItems = (sale.items || []).map((item: any, index: number) => {
+      const populatedProduct =
+        item.product && typeof item.product === "object" ? item.product : null;
+      const productId =
+        populatedProduct?._id ||
+        populatedProduct?.id ||
+        (typeof item.product === "string" ? item.product : null) ||
+        item.productId;
+      const productName =
+        populatedProduct?.name ||
+        item.productName ||
+        item.name;
+
+      if (!productId || !productName) {
+        unavailableItems.push(productName || `Item ${index + 1}`);
+        return null;
+      }
+
+      const quantity = Number(item.quantity) || 0;
+      const price = Number(item.unitPrice ?? item.price ?? populatedProduct?.sellingPrice) || 0;
+      const lineDiscount = Number(item.lineDiscount ?? item.discount) || 0;
+      const discountPerUnit = quantity > 0 ? lineDiscount / quantity : 0;
+      const inventoryId =
+        (typeof item.inventory === "object"
+          ? item.inventory?._id || item.inventory?.id
+          : item.inventory) ||
+        item.inventoryId ||
+        populatedProduct?.inventoryId;
+
+      return {
+        id: String(productId),
+        name: productName,
+        price,
+        quantity,
+        discount: discountPerUnit,
+        total: (price - discountPerUnit) * quantity,
+        originalPrice: Number(populatedProduct?.sellingPrice ?? price) || price,
+        maxDiscount: Math.max(Number(populatedProduct?.maxDiscount) || 0, discountPerUnit),
+        serialnumber: populatedProduct?.serialnumber,
+        inventory: inventoryId ? String(inventoryId) : undefined,
+        orderId: sale.orderId || null,
+        ...(item.salesnote ? { accompaniments: item.salesnote } : {}),
+      };
+    });
+
+    if (unavailableItems.length > 0 || restoredItems.length === 0) {
+      toast({
+        title: "Held Sale Cannot Be Continued",
+        description:
+          unavailableItems.length > 0
+            ? `Some products are no longer available: ${unavailableItems.slice(0, 3).join(", ")}${unavailableItems.length > 3 ? "…" : ""}.`
+            : "This held sale has no products to restore.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCartItems(restoredItems.filter(Boolean) as any[]);
+    setOrderId(sale.orderId || null);
+    setResumedHeldSale(sale);
+    setReplaceCartDialogOpen(false);
+    setHeldSaleToContinue(null);
+    setLocation(posRoute);
+  };
+
+  const handleContinueHeldSale = async (sale: any) => {
+    if (loadingHeldSaleId) return;
+    setLoadingHeldSaleId(String(sale.id));
+    try {
+      const response = await rawApiFetch(`/api/sales/${sale.id}`, {
+        auth: "attendant-first",
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || payload?.success === false) {
+        throw new Error(
+          payload?.error || payload?.message || `Could not load sale (${response.status})`,
+        );
+      }
+
+      const loadedSale =
+        payload?.sale ||
+        payload?.data?.sale ||
+        payload?.data ||
+        payload;
+      const loadedId = loadedSale?._id || loadedSale?.id || sale.id;
+      if (!loadedSale || loadedSale.status !== "hold") {
+        throw new Error("This sale is no longer on hold. Refresh the sales list and try again.");
+      }
+
+      const authoritativeSale: ResumedHeldSale = {
+        ...loadedSale,
+        _id: String(loadedId),
+      };
+
+      if (cartItems.length > 0) {
+        setHeldSaleToContinue(authoritativeSale);
+        setReplaceCartDialogOpen(true);
+      } else {
+        openHeldSaleInPos(authoritativeSale);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Could Not Continue Sale",
+        description: error?.message || "The held sale could not be loaded. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingHeldSaleId(null);
+    }
   };
 
   const handleKitchenPrint = async (sale: any) => {
@@ -1243,6 +1387,20 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       {sale.status === "hold" && (
         <>
           <Separator />
+          {(isAdmin || isCashier || hasAttendantPermission("pos", "can_sell")) && (
+            <Item
+              onClick={() => handleContinueHeldSale(sale)}
+              disabled={loadingHeldSaleId === String(sale.id)}
+              className="text-purple-700 focus:text-purple-700"
+            >
+              {loadingHeldSaleId === String(sale.id) ? (
+                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+              ) : (
+                <Edit className="mr-2 h-4 w-4" />
+              )}
+              Edit &amp; Continue in POS
+            </Item>
+          )}
           <Item onClick={() => handleCompleteSale(sale)} className="text-green-600 focus:text-green-600">
             <CheckCircle className="mr-2 h-4 w-4" />Complete Sale
           </Item>
@@ -2051,6 +2209,33 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={replaceCartDialogOpen}
+        onOpenChange={(open) => {
+          setReplaceCartDialogOpen(open);
+          if (!open) setHeldSaleToContinue(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace the current POS cart?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You already have {cartItems.length} {cartItems.length === 1 ? "item" : "items"} in the POS cart.
+              Continuing held sale #{heldSaleToContinue?.receiptNo || heldSaleToContinue?._id} will replace that unsaved cart.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Current Cart</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => heldSaleToContinue && openHeldSaleInPos(heldSaleToContinue)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              Replace &amp; Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { if (!isDeleting) setDeleteDialogOpen(open); }}>

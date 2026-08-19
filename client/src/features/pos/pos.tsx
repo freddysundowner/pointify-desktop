@@ -9,6 +9,7 @@ import CalculatorModal from "./calculator-modal";
 
 import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
+import { useCartContext } from "@/contexts/CartContext";
 import { useProducts } from "@/contexts/ProductsContext";
 import { usePrimaryShop } from "@/hooks/usePrimaryShop";
 import { useCart } from "@/hooks/useCart";
@@ -23,6 +24,7 @@ export default function POS() {
   const { attendant } = useAttendantAuth();
   const { products, refreshProducts } = useProducts();
   const { shopData: primaryShopData } = usePrimaryShop();
+  const { resumedHeldSale } = useCartContext();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
 
   const [activeCategory, setActiveCategory] = useState("all");
@@ -30,7 +32,18 @@ export default function POS() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [saleType, setSaleType] = useState<"Retail" | "Wholesale" | "Dealer">("Retail");
 
-  const taxRate = primaryShopData?.tax || 0;
+  const restoredTaxableSubtotal = resumedHeldSale
+    ? (resumedHeldSale.items || []).reduce((sum: number, item: any) => {
+        const quantity = Number(item.quantity) || 0;
+        const unitPrice = Number(item.unitPrice ?? item.price) || 0;
+        const lineDiscount = Number(item.lineDiscount ?? item.discount) || 0;
+        return sum + Math.max(0, unitPrice * quantity - lineDiscount);
+      }, 0)
+    : 0;
+  const taxRate =
+    resumedHeldSale && restoredTaxableSubtotal > 0
+      ? (Number(resumedHeldSale.totaltax) || 0) / restoredTaxableSubtotal * 100
+      : primaryShopData?.tax || 0;
   const effectiveShopId =
     selectedShopId || (typeof attendant?.shopId === "object" ? attendant.shopId._id : attendant?.shopId);
 
@@ -59,14 +72,30 @@ export default function POS() {
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > 0) {
+    if (cartItems.length > 0 && !resumedHeldSale) {
       updateCartPricesForSaleType(saleType);
     }
-  }, [saleType, products]);
+  }, [saleType, products, resumedHeldSale]);
 
-  const handleSaleTypeChange = (newSaleType: typeof saleType) => {
-    setSaleType(newSaleType);
-    updateCartPricesForSaleType(newSaleType);
+  useEffect(() => {
+    if (!resumedHeldSale) return;
+    const rawSaleType = String(resumedHeldSale.saleType || "").toLowerCase();
+    const restoredSaleType =
+      rawSaleType === "wholesale"
+        ? "Wholesale"
+        : rawSaleType === "dealer"
+          ? "Dealer"
+          : "Retail";
+    setSaleType(restoredSaleType);
+  }, [resumedHeldSale?._id]);
+
+  const handleSaleTypeChange = (newSaleType: string) => {
+    const normalizedSaleType =
+      newSaleType === "Wholesale" || newSaleType === "Dealer"
+        ? newSaleType
+        : "Retail";
+    setSaleType(normalizedSaleType);
+    updateCartPricesForSaleType(normalizedSaleType);
   };
 
   const handleBackToDashboard = () => {
@@ -78,6 +107,11 @@ export default function POS() {
       {/* Always-visible connection + sync status for the cashier (POS is not
           wrapped by the dashboard layout, so mount the bar here too). */}
       <NetworkStatusBar />
+      {resumedHeldSale && (
+        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-900">
+          Editing held sale #{resumedHeldSale.receiptNo || resumedHeldSale._id}. Changes will update this sale.
+        </div>
+      )}
       <div className="flex flex-1 min-h-0 relative">
       {/* Desktop only — mobile uses the back button inside the POS nav bar */}
       <div className="absolute top-3 left-4 z-50 hidden lg:flex items-center gap-2">
@@ -102,7 +136,7 @@ export default function POS() {
           onOpenCalculator={() => setShowCalculator(true)}
           cartItems={cartItems}
           totals={getTotals()}
-          orderId={ orderId}
+          orderId={orderId || undefined}
           onUpdateQuantity={updateQuantity}
           onUpdatePrice={updatePrice}
           onApplyDiscount={applyDiscount}

@@ -1,5 +1,11 @@
 import type { Express } from "express";
 import { makePointifyRequest } from "../config.js";
+import {
+  extractSaleRecord,
+  getEntityId,
+  verifyPersistedHeldSaleUpdate,
+  withSaleUpdateLock,
+} from "../lib/held-sale-update.js";
 
 // Authentication middleware to extract token from Authorization header
 const extractToken = (req: any) => {
@@ -516,24 +522,129 @@ export function registerSalesRoutes(app: Express) {
       }
 
       const { id } = req.params;
-      const data: any = await makePointifyRequest(`/sales/${id}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(req.body)
-      });
+      const {
+        expectedStatus,
+        expectedUpdatedAt,
+        ...updateBody
+      } = req.body || {};
 
-      // A write must never silently report success when upstream rejected it.
-      if (data && data.success === false) {
-        const statusCode = data.httpStatus || 502;
-        console.error("Sale update rejected by upstream:", JSON.stringify(data));
-        return res.status(statusCode).json({
-          error: data.error || data.message || "Failed to update sales transaction",
-          details: data,
+      // Keep the revision preflight, upstream write, and authoritative
+      // verification in one per-sale critical section. This prevents two
+      // requests handled by this server process from both passing the same
+      // preflight and then overwriting each other.
+      return await withSaleUpdateLock(id, async () => {
+        if (expectedStatus) {
+          if (!expectedUpdatedAt) {
+            return res.status(409).json({
+              error: "This held sale has no revision timestamp and cannot be edited safely. Reload it before continuing.",
+            });
+          }
+
+          const currentResponse: any = await makePointifyRequest(`/sales/single/receipt/${id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+            cache: 'no-store',
+          });
+          const currentSale = extractSaleRecord(currentResponse);
+
+          if (!currentSale || getEntityId(currentSale._id || currentSale.id) !== String(id)) {
+            return res.status(404).json({ error: "Sale could not be found" });
+          }
+          if (currentSale.status !== expectedStatus) {
+            return res.status(409).json({
+              error: `This sale is no longer ${expectedStatus}. Refresh the sales list before continuing.`,
+            });
+          }
+          if (!currentSale.updatedAt) {
+            return res.status(409).json({
+              error: "The current held sale has no revision timestamp and cannot be edited safely.",
+            });
+          }
+          if (String(currentSale.updatedAt) !== String(expectedUpdatedAt)) {
+            return res.status(409).json({
+              error: "This held sale changed after it was opened. Reload it before saving.",
+            });
+          }
+
+          const currentShopId = getEntityId(currentSale.shopId);
+          const requestedShopId = getEntityId(updateBody.shopId);
+          if (
+            currentShopId &&
+            requestedShopId &&
+            currentShopId !== requestedShopId
+          ) {
+            return res.status(403).json({ error: "Sale does not belong to this shop" });
+          }
+        }
+
+        const data: any = await makePointifyRequest(`/sales/${id}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(updateBody)
         });
-      }
 
-      res.json(data);
+        // A write must never silently report success when upstream rejected it.
+        if (data && data.success === false) {
+          const statusCode = data.httpStatus || 502;
+          console.error("Sale update rejected by upstream:", JSON.stringify(data));
+          return res.status(statusCode).json({
+            error: data.error || data.message || "Failed to update sales transaction",
+            details: data,
+          });
+        }
+
+        let updatedSale = extractSaleRecord(data);
+
+        // A resumed hold is always re-read, even when the PUT response contains
+        // a sale-shaped object. Only a fresh authoritative GET can confirm that
+        // the write was persisted rather than merely echoed or acknowledged.
+        if (expectedStatus || !updatedSale) {
+          const refreshedResponse: any = await makePointifyRequest(`/sales/single/receipt/${id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+            cache: 'no-store',
+          });
+          updatedSale = extractSaleRecord(refreshedResponse);
+        }
+
+        if (!updatedSale || getEntityId(updatedSale._id || updatedSale.id) !== String(id)) {
+          return res.status(502).json({
+            error: "The sale update could not be confirmed. Your cart is still open; refresh the sales list before retrying.",
+          });
+        }
+
+        if (expectedStatus) {
+          const verification = verifyPersistedHeldSaleUpdate({
+            saleId: id,
+            expectedUpdatedAt: String(expectedUpdatedAt),
+            updateBody,
+            persistedSale: updatedSale,
+          });
+          if ("mismatches" in verification) {
+            console.error(
+              `Held sale ${id} failed persistence verification: ${verification.mismatches.join(", ")}`,
+            );
+            return res.status(502).json({
+              error: "The held sale update was not fully confirmed. Your cart is still open; refresh the sales list before retrying.",
+              code: "HELD_SALE_UPDATE_NOT_CONFIRMED",
+            });
+          }
+        }
+
+        return res.json({
+          success: true,
+          sale: updatedSale,
+          message: data?.message || "Sale updated successfully",
+        });
+      });
     } catch (error: any) {
+      console.error("Sales update error:", error);
       res.status(500).json({ error: "Failed to update sales transaction" });
     }
   });

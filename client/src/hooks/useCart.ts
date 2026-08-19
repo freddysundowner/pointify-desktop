@@ -16,7 +16,14 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
   const primaryShopData = usePrimaryShop();
   const { shopData } = useSelector((state: RootState) => state.attendant);
 
-  const { cartItems, setCartItems, orderId, setOrderId } = useCartContext();
+  const {
+    cartItems,
+    setCartItems,
+    clearCart: clearSharedCart,
+    orderId,
+    setOrderId,
+    resumedHeldSale,
+  } = useCartContext();
   const [showReceipt, setShowReceipt] = useState(false);
   const hasAttendantPermission = (permission: string) => {
     if (!attendant) return true;
@@ -187,7 +194,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
     );
   };
 
-  const clearCart = () => setCartItems([]);
+  const clearCart = () => clearSharedCart();
 
   const getTotals = () => {
     const subtotal = cartItems.reduce((acc, item) => acc + item.total, 0);
@@ -215,6 +222,6 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
     completeCheckout,
     lastTransaction,
     setLastTransaction,orderId,
-    showReceipt, setShowReceipt,setOrderId
+    showReceipt, setShowReceipt, setOrderId, resumedHeldSale
   };
 };
