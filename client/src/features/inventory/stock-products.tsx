@@ -240,9 +240,21 @@ export default function StockProducts() {
 
   const handleSingleDelete = async () => {
     if (!singleDeleteProduct) return;
+    if (!effectiveShopId) {
+      toast({
+        title: "No shop selected",
+        description: "Please select a shop before deleting a product.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSingleDeleting(true);
     try {
-      const resp = await apiCall(`/api/product/${singleDeleteProduct._id}`, {
+      const params = new URLSearchParams({
+        shop: effectiveShopId,
+        useWarehouse: String(Boolean((shop as any)?.useWarehouse)),
+      });
+      const resp = await apiCall(`/api/product/${singleDeleteProduct._id}?${params.toString()}`, {
         method: "DELETE",
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);

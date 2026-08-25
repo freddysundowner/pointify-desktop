@@ -217,7 +217,29 @@ test("uses the verified sale attendant when legacy line items omit attendantId",
   assert.deepStrictEqual(result, { ok: true });
 });
 
-test("does not require inventory when a legacy update omits that unsupported field", () => {
+test("preserves original inventory when a legacy update omits that unsupported PUT field", () => {
+  const legacySale = {
+    ...persistedSale,
+    updatedAt: undefined,
+  };
+  const updateWithoutInventory = {
+    ...updateBody,
+    products: updateBody.products.map(({ inventory, ...item }) => item),
+  };
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    expectedItemInventories: [
+      { product: "product-1", inventory: "inventory-1" },
+    ],
+    updateBody: updateWithoutInventory,
+    persistedSale: legacySale,
+  });
+
+  assert.deepStrictEqual(result, { ok: true });
+});
+
+test("rejects a legacy update when authoritative readback loses original inventory", () => {
   const legacySale = {
     ...persistedSale,
     updatedAt: undefined,
@@ -230,11 +252,15 @@ test("does not require inventory when a legacy update omits that unsupported fie
   const result = verifyPersistedHeldSaleUpdate({
     saleId: "sale-1",
     expectedHeldSaleRevision: buildHeldSaleRevision(legacySale),
+    expectedItemInventories: [
+      { product: "product-1", inventory: "inventory-1" },
+    ],
     updateBody: updateWithoutInventory,
     persistedSale: legacySale,
   });
 
-  assert.deepStrictEqual(result, { ok: true });
+  assert.strictEqual(result.ok, false);
+  if (!result.ok) assert.ok(result.mismatches.includes("items.inventory"));
 });
 
 test("rejects a changed revision when status or line content did not persist", () => {

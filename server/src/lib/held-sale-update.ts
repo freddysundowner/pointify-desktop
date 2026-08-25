@@ -133,6 +133,27 @@ const normalizedItems = (value: any): Array<Record<string, string>> | null => {
     .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 };
 
+const normalizedInventoriesByProduct = (
+  value: any,
+  requestedProductIds: Set<string>,
+): Map<string, string[]> | null => {
+  if (!Array.isArray(value)) return null;
+
+  const inventories = new Map<string, string[]>();
+  for (const item of value) {
+    const product = getEntityId(item?.product ?? item?.productId);
+    if (!product || !requestedProductIds.has(product)) continue;
+    const inventory = getEntityId(item?.inventory ?? item?.inventoryId);
+    const productInventories = inventories.get(product) || [];
+    productInventories.push(inventory);
+    inventories.set(product, productInventories);
+  }
+  for (const productInventories of inventories.values()) {
+    productInventories.sort();
+  }
+  return inventories;
+};
+
 /**
  * Legacy Pointify sales can omit updatedAt entirely. For those records the
  * proxy issues a deterministic revision token based on every sale field that
@@ -219,12 +240,14 @@ export function verifyPersistedHeldSaleUpdate({
   saleId,
   expectedUpdatedAt,
   expectedHeldSaleRevision,
+  expectedItemInventories,
   updateBody,
   persistedSale,
 }: {
   saleId: string;
   expectedUpdatedAt?: string | null;
   expectedHeldSaleRevision?: string | null;
+  expectedItemInventories?: any[] | null;
   updateBody: SaleRecord;
   persistedSale: SaleRecord;
 }): HeldSaleVerification {
@@ -372,6 +395,34 @@ export function verifyPersistedHeldSaleUpdate({
         if (requestedItems[index][field] !== persistedItems[index][field]) {
           mismatches.push(`items.${field}`);
         }
+      }
+    }
+  }
+
+  if (Array.isArray(expectedItemInventories)) {
+    const requestedProductIds = new Set(
+      (Array.isArray(updateBody.products ?? updateBody.items)
+        ? updateBody.products ?? updateBody.items
+        : []
+      )
+        .map((item: any) => getEntityId(item?.product ?? item?.productId))
+        .filter(Boolean),
+    );
+    const expectedInventories = normalizedInventoriesByProduct(
+      expectedItemInventories,
+      requestedProductIds,
+    );
+    const persistedInventories = normalizedInventoriesByProduct(
+      persistedSale.items ?? persistedSale.products,
+      requestedProductIds,
+    );
+    for (const [product, inventories] of expectedInventories || []) {
+      if (
+        JSON.stringify(inventories) !==
+        JSON.stringify(persistedInventories?.get(product) || [])
+      ) {
+        mismatches.push("items.inventory");
+        break;
       }
     }
   }

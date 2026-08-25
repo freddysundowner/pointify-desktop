@@ -978,7 +978,15 @@ export function registerProductRoutes(app: Express) {
       }
 
       const { id } = req.params;
-      const data = await makePointifyRequest(`/product/${id}`, {
+      const query = new URLSearchParams();
+      if (typeof req.query.shop === "string" && req.query.shop) {
+        query.set("shop", req.query.shop);
+      }
+      if (typeof req.query.useWarehouse === "string") {
+        query.set("useWarehouse", req.query.useWarehouse);
+      }
+      const endpoint = `/product/${id}${query.size ? `?${query.toString()}` : ""}`;
+      const data = await makePointifyRequest(endpoint, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

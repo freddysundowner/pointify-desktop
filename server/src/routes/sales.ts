@@ -531,6 +531,7 @@ export function registerSalesRoutes(app: Express) {
         expectedStatus,
         expectedUpdatedAt,
         expectedHeldSaleRevision,
+        expectedItemInventories,
         ...updateBody
       } = req.body || {};
 
@@ -579,6 +580,7 @@ export function registerSalesRoutes(app: Express) {
           const alreadyApplied = verifyPersistedHeldSaleUpdate({
             saleId: id,
             expectedHeldSaleRevision: buildHeldSaleRevision(currentSale),
+            expectedItemInventories,
             updateBody,
             persistedSale: currentSale,
           }).ok;
@@ -679,6 +681,7 @@ export function registerSalesRoutes(app: Express) {
               saleId: id,
               expectedUpdatedAt,
               expectedHeldSaleRevision,
+              expectedItemInventories,
               updateBody,
               persistedSale: updatedSale,
             });

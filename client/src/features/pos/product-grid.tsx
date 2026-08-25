@@ -1486,6 +1486,19 @@ export default function ProductGrid({
             expectedStatus: "hold",
             expectedUpdatedAt: resumedHeldSale.updatedAt || null,
             expectedHeldSaleRevision: resumedHeldSale.heldSaleRevision || null,
+            expectedItemInventories: (
+              resumedHeldSale.items ||
+              resumedHeldSale.products ||
+              []
+            ).map((item: any) => ({
+              product: item?.product?._id || item?.product?.id || item?.product || item?.productId,
+              inventory:
+                item?.inventory?._id ||
+                item?.inventory?.id ||
+                item?.inventory ||
+                item?.inventoryId ||
+                null,
+            })),
           }
         : {}),
     };
