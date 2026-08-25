@@ -940,20 +940,80 @@ export function registerProductRoutes(app: Express) {
       if (!token) {
         return res.status(401).json({ error: "Authorization token required" });
       }
-      const { ids, shopId } = req.body;
-      if (!shopId && (!Array.isArray(ids) || ids.length === 0)) {
-        return res.status(400).json({ error: "ids array or shopId is required" });
+      const { ids, shopId, useWarehouse = false } = req.body;
+      if (!shopId) {
+        return res.status(400).json({ error: "shopId is required" });
       }
-      const payload = shopId ? { shopId } : { ids };
-      const data = await makePointifyRequest("/product/bulk/delete", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      res.json(data);
+
+      let productIds = Array.isArray(ids)
+        ? ids.filter((id): id is string => typeof id === "string" && id.length > 0)
+        : [];
+
+      // Pointify's bulk DELETE endpoint rejects even small JSON payloads with
+      // HTTP 413. For "Delete All", resolve IDs first and use the established
+      // per-product delete contract instead.
+      if (productIds.length === 0) {
+        let page = 1;
+        const limit = 100;
+        while (true) {
+          const params = new URLSearchParams({
+            page: String(page),
+            limit: String(limit),
+            shop: shopId,
+            useWarehouse: String(Boolean(useWarehouse)),
+          });
+          const productPage = await makePointifyRequest(
+            `/api/v2/products/list?${params.toString()}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          const pageProducts = Array.isArray(productPage?.data)
+            ? productPage.data
+            : Array.isArray(productPage)
+              ? productPage
+              : [];
+          productIds.push(
+            ...pageProducts
+              .map((product: any) => product?._id || product?.id)
+              .filter((id: any): id is string => typeof id === "string" && id.length > 0),
+          );
+          if (pageProducts.length < limit) break;
+          page += 1;
+        }
+      }
+
+      const failures: Array<{ id: string; status: number }> = [];
+      let deleted = 0;
+      for (const productId of [...new Set(productIds)]) {
+        const params = new URLSearchParams({
+          shop: shopId,
+          useWarehouse: String(Boolean(useWarehouse)),
+        });
+        try {
+          await makePointifyRequest(
+            `/product/${encodeURIComponent(productId)}?${params.toString()}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          deleted += 1;
+        } catch (error) {
+          failures.push({
+            id: productId,
+            status: (error as any).status || 500,
+          });
+        }
+      }
+
+      if (failures.length > 0) {
+        return res.status(409).json({
+          error: `Deleted ${deleted} product${deleted === 1 ? "" : "s"}; ${failures.length} could not be deleted`,
+          deleted,
+          failed: failures.length,
+        });
+      }
+
+      res.json({ success: true, deleted });
     } catch (error) {
       const status = (error as any).status || 500;
       const responseBody = (error as any).responseBody;

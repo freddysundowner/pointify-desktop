@@ -167,11 +167,19 @@ export default function StockProducts() {
   };
 
   const handleBulkDelete = async () => {
+    if (!effectiveShopId) {
+      toast({ title: "No shop selected", description: "Please select a shop first.", variant: "destructive" });
+      return;
+    }
     setIsBulkDeleting(true);
     try {
       const resp = await apiCall("/api/product/bulk/delete", {
         method: "DELETE",
-        body: JSON.stringify({ ids: selectedIds }),
+        body: JSON.stringify({
+          ids: selectedIds,
+          shopId: effectiveShopId,
+          useWarehouse: Boolean((shop as any)?.useWarehouse),
+        }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       toast({ title: "Deleted", description: `${selectedIds.length} product${selectedIds.length !== 1 ? "s" : ""} deleted successfully.` });
@@ -195,7 +203,10 @@ export default function StockProducts() {
     try {
       const resp = await apiCall("/api/product/bulk/delete", {
         method: "DELETE",
-        body: JSON.stringify({ shopId }),
+        body: JSON.stringify({
+          shopId,
+          useWarehouse: Boolean((shop as any)?.useWarehouse),
+        }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       toast({ title: "All products deleted", description: "All products in this shop have been deleted." });
