@@ -2208,7 +2208,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
 
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Panel - Transaction Form */}
-        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 min-h-0 overflow-hidden lg:overflow-visible' : viewMode === 'table' ? 'flex flex-col flex-1 min-h-0 overflow-hidden' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-2/3 p-2 lg:p-6 bg-white ${showMobileCart ? 'flex flex-col flex-1 min-h-0 overflow-hidden' : viewMode === 'table' ? 'flex flex-col flex-1 min-h-0 overflow-hidden' : 'hidden lg:flex lg:flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden'}`}>
           {/* Transaction ID + Date — desktop only */}
           <div className="hidden lg:grid grid-cols-2 gap-6 mb-6">
             <div>
@@ -2428,7 +2428,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
           )}
 
           {/* Items Table */}
-          <div className={`border border-gray-200 rounded-lg overflow-hidden shadow-sm ${viewMode === 'table' ? 'flex-1 min-h-0 flex flex-col mb-0 lg:mb-6' : 'flex-1 min-h-0 flex flex-col lg:flex-none lg:block mb-2 lg:mb-6'}`}>
+          <div className={`border border-gray-200 rounded-lg overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col ${viewMode === 'table' ? 'mb-0 lg:mb-6' : 'mb-2 lg:mb-6'}`}>
             <div className="bg-gray-50 px-3 py-1.5 lg:px-6 lg:py-3 border-b border-gray-200">
               <h3 className="text-xs font-semibold text-gray-600">
                 Cart {cartItems.length > 0 && <span className="text-purple-600">({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})</span>}
@@ -2444,7 +2444,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               <div className="text-right">Subtotal</div>
               <div className="text-center">Remove</div>
             </div>
-            <div className={`bg-white ${viewMode === 'table' ? 'flex-1 min-h-0 overflow-y-auto overscroll-contain' : 'flex-1 min-h-[80px] overflow-y-auto lg:flex-none lg:overflow-visible lg:min-h-[200px]'}`}>
+            <div className="bg-white flex-1 min-h-0 overflow-y-auto overscroll-contain">
               {cartItems.length === 0 ? (
                 <div className="p-3 lg:p-12 text-center text-gray-500">
                   <Package className="h-6 w-6 lg:h-16 lg:w-16 mx-auto mb-1 lg:mb-6 text-gray-300" />
