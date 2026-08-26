@@ -63,6 +63,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  optimizeDeps: {
+    include: ['react-hook-form', '@hookform/resolvers/zod', 'zod'],
+  },
   build: {
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
