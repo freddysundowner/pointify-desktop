@@ -113,7 +113,15 @@ export default function ReceiptView() {
       quantity: item.quantity || 0,
       unitPrice: item.unitPrice || 0,
       lineDiscount: item.lineDiscount || 0,
-      totalPrice: (item.quantity || 0) * (item.unitPrice || 0),
+      manageByPrice:
+        item.manageByPrice === true || item.product?.manageByPrice === true,
+      // Price-managed lines store the cashier-entered sale amount in unitPrice
+      // and the derived inventory fraction in quantity. Multiplying them again
+      // would turn a KES 20 sale of 0.02 units into the incorrect KES 0.40.
+      totalPrice:
+        item.manageByPrice === true || item.product?.manageByPrice === true
+          ? Number(item.unitPrice) || 0
+          : (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
       salesnote: item.salesnote || "",
     })),
     attendantName: sale.attendantId?.username || "Unknown",

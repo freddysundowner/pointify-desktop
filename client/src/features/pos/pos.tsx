@@ -37,7 +37,11 @@ export default function POS() {
         const quantity = Number(item.quantity) || 0;
         const unitPrice = Number(item.unitPrice ?? item.price) || 0;
         const lineDiscount = Number(item.lineDiscount ?? item.discount) || 0;
-        return sum + Math.max(0, unitPrice * quantity - lineDiscount);
+      const lineSubtotal =
+        item.manageByPrice === true || item.product?.manageByPrice === true
+          ? unitPrice
+          : unitPrice * quantity;
+      return sum + Math.max(0, lineSubtotal - lineDiscount);
       }, 0)
     : 0;
   const taxRate =
