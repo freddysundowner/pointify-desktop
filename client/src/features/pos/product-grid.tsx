@@ -2543,7 +2543,31 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
-                              <span className="w-6 text-center text-[15px] font-bold text-gray-800">{item.quantity}</span>
+                              <Input
+                                key={item.quantity}
+                                type="number"
+                                inputMode="decimal"
+                                min="0.001"
+                                step="0.001"
+                                defaultValue={item.quantity}
+                                onBlur={(e) => {
+                                  const newQuantity = parseFloat(e.target.value);
+                                  if (!Number.isFinite(newQuantity) || newQuantity <= 0) {
+                                    e.target.value = item.quantity.toString();
+                                    return;
+                                  }
+                                  if (newQuantity !== item.quantity) {
+                                    const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
+                                    onUpdateQuantity(item.id, newQuantity, productData);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                                className="w-12 h-7 px-1 text-center text-[15px] font-bold text-gray-800 border-0 bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-purple-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
                               <button
                                 onClick={() => {
                                   const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
@@ -2663,9 +2687,15 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                               <Input
                                 key={item.quantity}
                                 type="number"
+                                inputMode="decimal"
+                                step="0.001"
                                 defaultValue={item.quantity}
                                 onBlur={(e) => {
-                                  const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
+                                  const newQuantity = parseFloat(e.target.value);
+                                  if (!Number.isFinite(newQuantity) || newQuantity <= 0) {
+                                    e.target.value = item.quantity.toString();
+                                    return;
+                                  }
                                   if (newQuantity !== item.quantity) {
                                     const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
                                     onUpdateQuantity(item.id, newQuantity, productData);
@@ -2673,14 +2703,19 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
-                                    const newQuantity = Math.max(1, parseInt((e.target as HTMLInputElement).value) || 1);
+                                    const input = e.target as HTMLInputElement;
+                                    const newQuantity = parseFloat(input.value);
+                                    if (!Number.isFinite(newQuantity) || newQuantity <= 0) {
+                                      input.value = item.quantity.toString();
+                                      return;
+                                    }
                                     const productData = allProducts.find(p => p._id === item.id || p.id === item.id);
                                     onUpdateQuantity(item.id, newQuantity, productData);
-                                    (e.target as HTMLInputElement).blur();
+                                    input.blur();
                                   }
                                 }}
                                 className="w-12 h-7 p-1 text-center text-sm font-semibold border-0 bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-purple-400 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                min="1"
+                                min="0.001"
                               />
                               <Button
                                 variant="ghost"
