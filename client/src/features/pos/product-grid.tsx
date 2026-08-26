@@ -215,6 +215,8 @@ export default function ProductGrid({
   const [customItemQuantity, setCustomItemQuantity] = useState("1");
   const [showCustomItemOptions, setShowCustomItemOptions] = useState(false);
   const [isCreatingCustomItem, setIsCreatingCustomItem] = useState(false);
+  const [priceManagedProduct, setPriceManagedProduct] = useState<any>(null);
+  const [priceManagedAmount, setPriceManagedAmount] = useState("");
 
   // Accompaniment selector — holds the product awaiting accompaniment selection
   const [accompanimentPendingProduct, setAccompanimentPendingProduct] = useState<any>(null);
@@ -290,7 +292,7 @@ export default function ProductGrid({
    * In restaurant mode, products with accompaniment groups trigger the
    * selector dialog first; all other products go directly into the cart.
    */
-  const handleProductTap = (product: any) => {
+  const addProductAfterAmount = (product: any) => {
     if (!shopData?.isRestaurant) {
       onAddToCart(product);
       return;
@@ -302,6 +304,44 @@ export default function ProductGrid({
     }
     setAccompanimentPendingProduct(product);
     setAccompanimentDialogOpen(true);
+  };
+
+  const handleProductTap = (product: any) => {
+    if (product.manageByPrice === true) {
+      setPriceManagedProduct(product);
+      setPriceManagedAmount("");
+      return;
+    }
+    addProductAfterAmount(product);
+  };
+
+  const confirmPriceManagedAmount = () => {
+    const amount = Number(priceManagedAmount);
+    const baseSellingPrice = Number(
+      priceManagedProduct?.sellingPrice || priceManagedProduct?.price || 0,
+    );
+    if (!(amount > 0)) {
+      toast({
+        title: "Enter a valid amount",
+        description: "The sale amount must be greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!(baseSellingPrice > 0)) {
+      toast({
+        title: "Selling price missing",
+        description: "Set a selling price for this product before selling it by amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+    addProductAfterAmount({
+      ...priceManagedProduct,
+      __saleAmount: amount,
+    });
+    setPriceManagedProduct(null);
+    setPriceManagedAmount("");
   };
 
   /** Called when the waiter confirms their accompaniment choices. */
@@ -1499,6 +1539,15 @@ export default function ProductGrid({
                 item?.inventoryId ||
                 null,
             })),
+            expectedItemQuantities: cartItems
+              .filter((item: any) => item.manageByPrice)
+              .map((item: any) => ({
+                product: item.id,
+                quantity:
+                  Number(item.baseSellingPrice) > 0
+                    ? Number(item.price) / Number(item.baseSellingPrice)
+                    : Number(item.stockQuantity) || 0,
+              })),
           }
         : {}),
     };
@@ -2466,12 +2515,24 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <p className="text-xs text-purple-600 leading-snug truncate">{(item as any).accompaniments}</p>
                               )}
                               <p className="text-gray-400 text-xs">
-                                Ksh {item.price.toFixed(2)} each
+                                {(item as any).manageByPrice ? "Sale amount: " : ""}
+                                Ksh {item.price.toFixed(2)}{(item as any).manageByPrice ? "" : " each"}
                                 {(item.maxDiscount || 0) > 0 && (
                                   <span className="text-green-500 ml-1">−Ksh {(item.discount || 0).toFixed(2)}</span>
                                 )}
                               </p>
                             </div>
+                            {(item as any).manageByPrice ? (
+                              <div className="shrink-0 rounded-lg bg-purple-50 px-2 py-1 text-center">
+                                <p className="text-[10px] text-purple-500">Quantity</p>
+                                <p className="text-xs font-bold text-purple-700">
+                                  {(Number((item as any).baseSellingPrice) > 0
+                                    ? item.price / Number((item as any).baseSellingPrice)
+                                    : Number((item as any).stockQuantity) || 0
+                                  ).toFixed(3)}
+                                </p>
+                              </div>
+                            ) : (
                             <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden shrink-0">
                               <button
                                 onClick={() => {
@@ -2493,6 +2554,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
+                            )}
                             <p className="font-bold text-gray-900 text-[15px] shrink-0 min-w-[72px] whitespace-nowrap text-right tabular-nums">
                               <span className="text-[11px] font-medium text-gray-400 mr-0.5">Ksh</span>
                               {item.total.toFixed(2)}
@@ -2565,6 +2627,9 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           {/* Column 2: Unit Price */}
                           <div className="text-right">
                             <p className="font-semibold text-gray-800">Ksh {item.price.toFixed(2)}</p>
+                            {(item as any).manageByPrice && (
+                              <p className="text-xs text-purple-600">Sale amount</p>
+                            )}
                             {(item.maxDiscount || 0) > 0 && (
                               <p className="text-xs text-green-600">-Ksh {(item.discount || 0).toFixed(2)}</p>
                             )}
@@ -2572,6 +2637,17 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                           
                           {/* Column 3: Quantity */}
                           <div className="text-center">
+                            {(item as any).manageByPrice ? (
+                              <div className="inline-flex flex-col rounded-lg bg-purple-50 px-3 py-1">
+                                <span className="font-semibold text-purple-700">
+                                  {(Number((item as any).baseSellingPrice) > 0
+                                    ? item.price / Number((item as any).baseSellingPrice)
+                                    : Number((item as any).stockQuantity) || 0
+                                  ).toFixed(3)}
+                                </span>
+                                <span className="text-[10px] text-purple-500">calculated</span>
+                              </div>
+                            ) : (
                             <div className="inline-flex items-center bg-gray-100 rounded-lg p-0.5">
                               <Button
                                 variant="ghost"
@@ -2618,6 +2694,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
+                            )}
                           </div>
                           
                           {/* Column 4: Tax */}
@@ -4383,6 +4460,56 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(priceManagedProduct)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPriceManagedProduct(null);
+            setPriceManagedAmount("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Enter sale amount</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">
+              {priceManagedProduct?.name || priceManagedProduct?.title}
+            </p>
+            <Input
+              autoFocus
+              type="number"
+              min="0.01"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={priceManagedAmount}
+              onChange={(event) => setPriceManagedAmount(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") confirmPriceManagedAmount();
+              }}
+            />
+            {Number(priceManagedAmount) > 0 &&
+              Number(priceManagedProduct?.sellingPrice || priceManagedProduct?.price) > 0 && (
+                <p className="text-sm text-purple-700">
+                  Calculated quantity:{" "}
+                  {(
+                    Number(priceManagedAmount) /
+                    Number(priceManagedProduct?.sellingPrice || priceManagedProduct?.price)
+                  ).toFixed(3)}
+                </p>
+              )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPriceManagedProduct(null)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmPriceManagedAmount}>Add to cart</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

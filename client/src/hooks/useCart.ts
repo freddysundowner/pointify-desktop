@@ -48,6 +48,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
   const updateCartPricesForSaleType = (newSaleType: SaleType) => {
     setCartItems(prev =>
       prev.map(item => {
+        if ((item as any).manageByPrice) return item;
         const product = products.find((p: any) => (p._id || p.id) === item.id);
         if (!product) return item;
         const newPrice = getPriceForSaleType(product, newSaleType);
@@ -62,11 +63,39 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
 
   const addToCart = (product: Product, passedOrderId?: string) => {
     const quantity = product.quantity || 0;
+    const manageByPrice = (product as any).manageByPrice === true;
+    const enteredAmount = Number((product as any).__saleAmount);
+    const baseSellingPrice = Number(product.sellingPrice || product.price || 0);
+    const derivedQuantity =
+      manageByPrice && enteredAmount > 0 && baseSellingPrice > 0
+        ? enteredAmount / baseSellingPrice
+        : 0;
     setOrderId(passedOrderId || null);
     if (product.productType === "product" && quantity <= 0 && shopData?.allownegativeselling == false) {
       toast({
         title: "Out of Stock",
         description: `${product.name} is out of stock.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (manageByPrice && (!(enteredAmount > 0) || !(baseSellingPrice > 0))) {
+      toast({
+        title: "Invalid Amount",
+        description: "Enter a valid sale amount for this product.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      manageByPrice &&
+      product.productType === "product" &&
+      shopData?.allownegativeselling == false &&
+      derivedQuantity > quantity
+    ) {
+      toast({
+        title: "Insufficient Stock",
+        description: `Only ${quantity} ${product.name} available.`,
         variant: "destructive",
       });
       return;
@@ -77,6 +106,35 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === product._id || item.id === product.id);
       if (existingItem) {
+        if (manageByPrice) {
+          const combinedAmount = Number(existingItem.price || 0) + enteredAmount;
+          const combinedStockQuantity = combinedAmount / baseSellingPrice;
+          if (
+            product.productType === "product" &&
+            shopData?.allownegativeselling == false &&
+            combinedStockQuantity > quantity
+          ) {
+            toast({
+              title: "Insufficient Stock",
+              description: `Only ${quantity} ${product.name} available.`,
+              variant: "destructive",
+            });
+            return prev;
+          }
+          return prev.map(item =>
+            item.id === product._id || item.id === product.id
+              ? {
+                  ...item,
+                  price: combinedAmount,
+                  quantity: 1,
+                  total: combinedAmount - (item.discount || 0),
+                  manageByPrice: true,
+                  baseSellingPrice,
+                  stockQuantity: combinedStockQuantity,
+                } as any
+              : item
+          );
+        }
         if (!isService && existingItem.quantity + 1 > quantity) {
           toast({
             title: "Insufficient Stock",
@@ -97,7 +155,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
         );
       }
 
-      const price = getPriceForSaleType(product, saleType);
+      const price = manageByPrice ? enteredAmount : getPriceForSaleType(product, saleType);
       return [
         ...prev,
         {
@@ -111,6 +169,13 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
           maxDiscount: product.maxDiscount || 0,
           serialnumber: product?.serialnumber,
           orderId: passedOrderId || orderId,
+          ...(manageByPrice
+            ? {
+                manageByPrice: true,
+                baseSellingPrice,
+                stockQuantity: derivedQuantity,
+              }
+            : {}),
           ...((product as any).accompaniments ? { accompaniments: (product as any).accompaniments } : {}),
         }
       ];
@@ -188,7 +253,18 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
     setCartItems(prev =>
       prev.map(item =>
         item.id === id
-          ? { ...item, price: newPrice, total: item.quantity * newPrice }
+          ? (item as any).manageByPrice
+            ? {
+                ...item,
+                price: newPrice,
+                quantity: 1,
+                total: newPrice - (item.discount || 0),
+                stockQuantity:
+                  Number((item as any).baseSellingPrice) > 0
+                    ? newPrice / Number((item as any).baseSellingPrice)
+                    : 0,
+              } as any
+            : { ...item, price: newPrice, total: item.quantity * newPrice }
           : item
       )
     );

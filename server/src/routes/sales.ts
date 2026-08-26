@@ -532,6 +532,7 @@ export function registerSalesRoutes(app: Express) {
         expectedUpdatedAt,
         expectedHeldSaleRevision,
         expectedItemInventories,
+        expectedItemQuantities,
         ...updateBody
       } = req.body || {};
 
@@ -581,6 +582,7 @@ export function registerSalesRoutes(app: Express) {
             saleId: id,
             expectedHeldSaleRevision: buildHeldSaleRevision(currentSale),
             expectedItemInventories,
+            expectedItemQuantities,
             updateBody,
             persistedSale: currentSale,
           }).ok;
@@ -682,6 +684,7 @@ export function registerSalesRoutes(app: Express) {
               expectedUpdatedAt,
               expectedHeldSaleRevision,
               expectedItemInventories,
+              expectedItemQuantities,
               updateBody,
               persistedSale: updatedSale,
             });

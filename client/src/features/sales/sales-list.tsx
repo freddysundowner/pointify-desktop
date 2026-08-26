@@ -534,6 +534,10 @@ function SalesList() {
 
       const quantity = Number(item.quantity) || 0;
       const price = Number(item.unitPrice ?? item.price ?? populatedProduct?.sellingPrice) || 0;
+      const manageByPrice =
+        item.manageByPrice === true || populatedProduct?.manageByPrice === true;
+      const baseSellingPrice =
+        Number(populatedProduct?.sellingPrice ?? populatedProduct?.price) || 0;
       const lineDiscount = Number(item.lineDiscount ?? item.discount) || 0;
       const discountPerUnit = quantity > 0 ? lineDiscount / quantity : 0;
       const inventoryId =
@@ -547,14 +551,26 @@ function SalesList() {
         id: String(productId),
         name: productName,
         price,
-        quantity,
-        discount: discountPerUnit,
-        total: (price - discountPerUnit) * quantity,
+        quantity: manageByPrice ? 1 : quantity,
+        discount: manageByPrice ? lineDiscount : discountPerUnit,
+        total: manageByPrice
+          ? price - lineDiscount
+          : (price - discountPerUnit) * quantity,
         originalPrice: Number(populatedProduct?.sellingPrice ?? price) || price,
-        maxDiscount: Math.max(Number(populatedProduct?.maxDiscount) || 0, discountPerUnit),
+        maxDiscount: Math.max(
+          Number(populatedProduct?.maxDiscount) || 0,
+          manageByPrice ? lineDiscount : discountPerUnit,
+        ),
         serialnumber: populatedProduct?.serialnumber,
         inventory: inventoryId ? String(inventoryId) : undefined,
         orderId: sale.orderId || null,
+        ...(manageByPrice
+          ? {
+              manageByPrice: true,
+              baseSellingPrice,
+              stockQuantity: quantity,
+            }
+          : {}),
         ...(item.salesnote ? { accompaniments: item.salesnote } : {}),
       };
     });

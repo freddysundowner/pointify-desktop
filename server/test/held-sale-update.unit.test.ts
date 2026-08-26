@@ -282,6 +282,63 @@ test("rejects a changed revision when status or line content did not persist", (
   }
 });
 
+test("verifies a price-managed line using its derived stock quantity", () => {
+  const priceManagedUpdate = {
+    ...updateBody,
+    products: [{
+      ...updateBody.products[0],
+      quantity: 1,
+      unitPrice: 50,
+    }],
+  };
+  const priceManagedPersisted = {
+    ...persistedSale,
+    items: [{
+      ...persistedSale.items[0],
+      quantity: 0.25,
+      unitPrice: 50,
+    }],
+  };
+
+  assert.deepStrictEqual(
+    verifyPersistedHeldSaleUpdate({
+      saleId: "sale-1",
+      expectedUpdatedAt,
+      expectedItemQuantities: [{ product: "product-1", quantity: 0.25 }],
+      updateBody: priceManagedUpdate,
+      persistedSale: priceManagedPersisted,
+    }),
+    { ok: true },
+  );
+});
+
+test("rejects a price-managed line when the derived quantity did not persist", () => {
+  const result = verifyPersistedHeldSaleUpdate({
+    saleId: "sale-1",
+    expectedUpdatedAt,
+    expectedItemQuantities: [{ product: "product-1", quantity: 0.25 }],
+    updateBody: {
+      ...updateBody,
+      products: [{
+        ...updateBody.products[0],
+        quantity: 1,
+        unitPrice: 50,
+      }],
+    },
+    persistedSale: {
+      ...persistedSale,
+      items: [{
+        ...persistedSale.items[0],
+        quantity: 1,
+        unitPrice: 50,
+      }],
+    },
+  });
+
+  assert.strictEqual(result.ok, false);
+  if (!result.ok) assert.ok(result.mismatches.includes("items.quantity"));
+});
+
 test("rejects a changed revision when a payment reference did not persist", () => {
   const result = verifyPersistedHeldSaleUpdate({
     saleId: "sale-1",

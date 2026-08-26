@@ -133,6 +133,18 @@ const normalizedItems = (value: any): Array<Record<string, string>> | null => {
     .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 };
 
+const normalizedExpectedQuantitiesByProduct = (
+  value: any,
+): Map<string, string> => {
+  const quantities = new Map<string, string>();
+  if (!Array.isArray(value)) return quantities;
+  for (const item of value) {
+    const product = getEntityId(item?.product ?? item?.productId);
+    if (product) quantities.set(product, normalizedNumber(item?.quantity));
+  }
+  return quantities;
+};
+
 const normalizedInventoriesByProduct = (
   value: any,
   requestedProductIds: Set<string>,
@@ -241,6 +253,7 @@ export function verifyPersistedHeldSaleUpdate({
   expectedUpdatedAt,
   expectedHeldSaleRevision,
   expectedItemInventories,
+  expectedItemQuantities,
   updateBody,
   persistedSale,
 }: {
@@ -248,6 +261,7 @@ export function verifyPersistedHeldSaleUpdate({
   expectedUpdatedAt?: string | null;
   expectedHeldSaleRevision?: string | null;
   expectedItemInventories?: any[] | null;
+  expectedItemQuantities?: any[] | null;
   updateBody: SaleRecord;
   persistedSale: SaleRecord;
 }): HeldSaleVerification {
@@ -375,6 +389,13 @@ export function verifyPersistedHeldSaleUpdate({
   const persistedItems = normalizedItems(
     persistedSale.items ?? persistedSale.products,
   );
+  const expectedQuantities = normalizedExpectedQuantitiesByProduct(
+    expectedItemQuantities,
+  );
+  for (const item of requestedItems || []) {
+    const expectedQuantity = expectedQuantities.get(item.product);
+    if (expectedQuantity !== undefined) item.quantity = expectedQuantity;
+  }
   if (requestedItems === null || persistedItems === null) {
     mismatches.push("items");
   } else if (requestedItems.length !== persistedItems.length) {

@@ -33,3 +33,4 @@
 - [Canonical API transport](canonical-api-transport.md) — all /api client calls via rawApiFetch; dual token precedence (apiCall admin-first, React Query attendant-first) is intentional; former no-token sites need auth:'none'.
 - [PWA native/desktop feel](pwa-native-feel.md) — WCO titlebar is CSS-only; viewport-top chrome offset globally via .fixed.top-0/.sticky.top-0 rules, never per-page edits.
 - [Local print agent](local-print-agent.md) — cloud server can't reach shop-LAN printers; TCP printing goes browser → localhost:9105 agent; needs PNA header; always fall back to browser print.
+- [Price-managed products](price-managed-products.md) — keep entered sale amount separate from derived fractional stock quantity; held-sale totals and verification need both.
