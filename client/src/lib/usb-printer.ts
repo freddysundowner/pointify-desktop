@@ -19,6 +19,11 @@ export interface KitchenTicketPrintData {
 export interface ReceiptPrintData {
   shopName: string;
   shopAddress?: string;
+  shopContact?: string;
+  shopEmail?: string;
+  paybill_account?: string;
+  paybill_till?: string;
+  paybill_name?: string;
   receiptNumber: string;
   date: string;
   currency: string;
@@ -200,6 +205,19 @@ class USBThermalPrinter {
     cmd(ESC, 0x45, 0x00);             // bold off
 
     if (data.shopAddress) { txt(center(data.shopAddress)); nl(); }
+    if (data.shopContact) { txt(center(`Tel: ${data.shopContact}`)); nl(); }
+    if (data.shopEmail) { txt(center(data.shopEmail)); nl(); }
+    if (data.paybill_account) {
+      txt(center(`Paybill: ${data.paybill_account}`)); nl();
+      if (data.paybill_till) {
+        txt(center(`Account: ${data.paybill_till}`)); nl();
+      }
+    } else if (data.paybill_till) {
+      txt(center(`Buy Goods Till: ${data.paybill_till}`)); nl();
+    }
+    if ((data.paybill_account || data.paybill_till) && data.paybill_name) {
+      txt(center(`(${data.paybill_name})`)); nl();
+    }
     nl();
 
     cmd(ESC, 0x61, 0x00);             // left align

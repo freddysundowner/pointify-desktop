@@ -99,7 +99,7 @@ export default function ReceiptView() {
     customerName: sale.customerId?.name || "Walk-in",
     totalAmount: sale.totalAmount || 0,
     totalWithDiscount: sale.totalWithDiscount || sale.totalAmount || 0,
-    totaltax: sale.totaltax || 0,
+    totaltax: Number(sale.totaltax ?? sale.totalTax ?? sale.tax ?? 0),
     saleDiscount: sale.saleDiscount || 0,
     saleDate: sale.createdAt || sale.saleDate,
     status: sale.status === "cashed" ? "COMPLETED" : (sale.status || "").toUpperCase(),
@@ -143,9 +143,24 @@ export default function ReceiptView() {
         primaryShop?.email_receipt ||
         primaryShop?.receiptemail ||
         "",
-      paybill_account: sale.shopId?.paybill_account || primaryShop?.paybill_account || "",
-      paybill_till: sale.shopId?.paybill_till || primaryShop?.paybill_till || "",
-      paybill_name: sale.shopId?.paybill_name || primaryShop?.paybill_name || "",
+      paybill_account:
+        sale.shopId?.paybill_account ||
+        sale.shopId?.paybillAccount ||
+        primaryShop?.paybill_account ||
+        primaryShop?.paybillAccount ||
+        "",
+      paybill_till:
+        sale.shopId?.paybill_till ||
+        sale.shopId?.paybillTill ||
+        primaryShop?.paybill_till ||
+        primaryShop?.paybillTill ||
+        "",
+      paybill_name:
+        sale.shopId?.paybill_name ||
+        sale.shopId?.paybillName ||
+        primaryShop?.paybill_name ||
+        primaryShop?.paybillName ||
+        "",
       receipt_show_payment:
         (sale.shopId?.receipt_show_payment ?? primaryShop?.receipt_show_payment) !== false,
       receipt_footer: sale.shopId?.receipt_footer || primaryShop?.receipt_footer || "",
@@ -371,6 +386,9 @@ ${saleData.items.map((item: any) =>
             const data = getPrintData();
             await usbPrinter.printReceipt({
               shopName: data.shopName, shopAddress: data.shopAddress,
+              shopContact: data.shopContact, shopEmail: data.shopEmail,
+              paybill_account: data.paybill_account, paybill_till: data.paybill_till,
+              paybill_name: data.paybill_name,
               receiptNumber: data.receiptNumber || "", date: data.date, currency: data.currency,
               items: data.items,
               subtotal: data.subtotal, tax: data.tax, total: data.total,

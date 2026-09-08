@@ -69,6 +69,10 @@ export default function ReceiptModal({
   const transactionDate = new Date();
   const shopTaxRate = primaryShop?.tax || 0;
   const currency = primaryShop?.currency || 'KES';
+  const transactionTax = Number((transaction as any)?.tax ?? (transaction as any)?.totaltax ?? 0);
+  const paybillAccount = primaryShop?.paybill_account || primaryShop?.paybillAccount || '';
+  const paybillTill = primaryShop?.paybill_till || primaryShop?.paybillTill || '';
+  const paybillName = primaryShop?.paybill_name || primaryShop?.paybillName || '';
 
   const extraChargesArr: { name: string; amount: number }[] = Array.isArray((transaction as any)?.extraCharges)
     ? (transaction as any).extraCharges
@@ -85,9 +89,9 @@ export default function ReceiptModal({
     shopAddress: primaryShop?.address || '',
     shopContact: primaryShop?.contact || '',
     shopEmail: (primaryShop as any)?.email_receipt || primaryShop?.receiptemail || '',
-    paybill_account: primaryShop?.paybill_account || '',
-    paybill_till: primaryShop?.paybill_till || '',
-    paybill_name: primaryShop?.paybill_name || '',
+    paybill_account: paybillAccount,
+    paybill_till: paybillTill,
+    paybill_name: paybillName,
     showPaymentMethod: primaryShop?.receipt_show_payment !== false,
     footerText: primaryShop?.receipt_footer || '',
     receiptNumber: transaction?.id?.toString() ?? '',
@@ -104,7 +108,7 @@ export default function ReceiptModal({
       serialnumber: (item as any)?.serialnumber || '',
     })),
     subtotal: transaction?.subtotal ?? 0,
-    tax: transaction?.tax ?? 0,
+    tax: transactionTax,
     total: transaction?.total ?? 0,
     paymentMethod: transaction?.paymentMethod ?? 'cash',
     customerName: transaction?.customerName || 'Walk-in',
@@ -130,6 +134,10 @@ export default function ReceiptModal({
 </style></head><body>
 <div class="center bold">${primaryShop?.name || 'Business Name'}</div>
 ${primaryShop?.address ? `<div class="center">${primaryShop.address}</div>` : ''}
+${primaryShop?.contact ? `<div class="center">Tel: ${primaryShop.contact}</div>` : ''}
+${paybillAccount ? `<div class="center">Paybill: ${paybillAccount}${paybillTill ? ` / Acc: ${paybillTill}` : ''}</div>` : ''}
+${!paybillAccount && paybillTill ? `<div class="center">Buy Goods Till: ${paybillTill}</div>` : ''}
+${(paybillAccount || paybillTill) && paybillName ? `<div class="center">(${paybillName})</div>` : ''}
 <div class="center bold">SALES RECEIPT</div>
 <hr/>
 <div class="row"><span>Receipt #</span><span>${transaction?.id}</span></div>
@@ -144,7 +152,7 @@ ${Number(item.discount) > 0 ? `<div class="row"><span>  Discount</span><span>-${
 `).join('')}
 <hr/>
 <div class="row"><span>Subtotal</span><span>${cur} ${Number(transaction?.subtotal).toFixed(2)}</span></div>
-<div class="row"><span>Tax</span><span>${cur} ${Number(transaction?.tax).toFixed(2)}</span></div>
+<div class="row"><span>Tax</span><span>${cur} ${transactionTax.toFixed(2)}</span></div>
 ${extraCharge ? `<div class="row"><span>${extraCharge.label}</span><span>${cur} ${extraCharge.amount.toFixed(2)}</span></div>` : ''}
 <div class="row bold"><span>TOTAL</span><span>${cur} ${Number(transaction?.total).toFixed(2)}</span></div>
 ${primaryShop?.receipt_show_payment !== false ? `<div class="row"><span>Payment</span><span>${transaction?.paymentMethod}</span></div>` : ''}
@@ -175,6 +183,9 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
         try {
           await usbPrinter.printReceipt({
             shopName: data.shopName, shopAddress: data.shopAddress,
+            shopContact: data.shopContact, shopEmail: data.shopEmail,
+            paybill_account: data.paybill_account, paybill_till: data.paybill_till,
+            paybill_name: data.paybill_name,
             receiptNumber: data.receiptNumber, date: data.date, currency: data.currency,
             items: data.items.map((i: any) => ({
               name: i.name, quantity: i.quantity,
@@ -246,6 +257,14 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
     if (primaryShop?.contact) doc.text(`Phone: ${primaryShop.contact}`, 105, 35, { align: 'center' });
     const shopEmail = (primaryShop as any)?.email_receipt || primaryShop?.receiptemail || (primaryShop as any)?.email;
     if (shopEmail) doc.text(`Email: ${shopEmail}`, 105, 40, { align: 'center' });
+    if (paybillAccount) {
+      doc.text(`Paybill: ${paybillAccount}${paybillTill ? ` / Acc: ${paybillTill}` : ''}`, 105, 45, { align: 'center' });
+    } else if (paybillTill) {
+      doc.text(`Buy Goods Till: ${paybillTill}`, 105, 45, { align: 'center' });
+    }
+    if ((paybillAccount || paybillTill) && paybillName) {
+      doc.text(`(${paybillName})`, 105, 50, { align: 'center' });
+    }
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text('SALES RECEIPT', 105, 55, { align: 'center' });
@@ -275,7 +294,7 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
     doc.line(20, yPos, 190, yPos);
     yPos += 10;
     doc.text(`Subtotal: ${currency} ${(transaction?.subtotal ?? 0).toFixed(2)}`, 130, yPos); yPos += 8;
-    doc.text(`Tax (${shopTaxRate}%): ${currency} ${(transaction?.tax ?? 0).toFixed(2)}`, 130, yPos); yPos += 8;
+    doc.text(`Tax (${shopTaxRate}%): ${currency} ${transactionTax.toFixed(2)}`, 130, yPos); yPos += 8;
     if (extraCharge) {
       doc.text(`${extraCharge.label}: ${currency} ${extraCharge.amount.toFixed(2)}`, 130, yPos);
       yPos += 8;
@@ -367,14 +386,14 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
                   </span>
                 )}
               </div>
-              {(primaryShop?.paybill_account || primaryShop?.paybill_till) && (
+              {(paybillAccount || paybillTill) && (
                 <p className="text-[11px] text-gray-400 mt-0.5">
-                  {primaryShop?.paybill_account ? `Paybill: ${primaryShop.paybill_account}` : `Buy Goods: ${primaryShop.paybill_till}`}
-                  {primaryShop?.paybill_account && primaryShop?.paybill_till && ` · Acc: ${primaryShop.paybill_till}`}
+                  {paybillAccount ? `Paybill: ${paybillAccount}` : `Buy Goods: ${paybillTill}`}
+                  {paybillAccount && paybillTill && ` · Acc: ${paybillTill}`}
                 </p>
               )}
-              {(primaryShop?.paybill_account || primaryShop?.paybill_till) && primaryShop?.paybill_name && (
-                <p className="text-[10px] text-gray-400" data-testid="text-paybill-name">({primaryShop.paybill_name})</p>
+              {(paybillAccount || paybillTill) && paybillName && (
+                <p className="text-[10px] text-gray-400" data-testid="text-paybill-name">({paybillName})</p>
               )}
             </div>
 
@@ -425,7 +444,7 @@ ${primaryShop?.receipt_show_payment !== false && transaction?.paymentMethod === 
               )}
               <div className="flex justify-between text-gray-600">
                 <span>Tax ({shopTaxRate}%)</span>
-                <span className="font-medium">{currency} {Number(transaction.tax).toFixed(2)}</span>
+                <span className="font-medium">{currency} {transactionTax.toFixed(2)}</span>
               </div>
               {extraCharge && (
                 <div className="flex justify-between text-gray-600">
