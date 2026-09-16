@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart';
-import 'package:pointify/functions/functions.dart';
 import 'package:pointify/main.dart';
 import 'package:pointify/models/shop.dart';
 
@@ -52,97 +51,17 @@ Future<Uint8List> deliveryNotePdf(SaleModel stockReports, type) async {
                   headers: [
                     "Product",
                     "Qty",
-                    "Unit Price",
-                    "Total",
                   ],
                   data: stockReports.items!
                       .map((e) => [
                             e.product!.name,
                             e.quantity.toString(),
-                            htmlPrice(e.unitPrice),
-                            htmlPrice(e.unitPrice! * e.quantity!)
                           ])
                       .toList()),
-              SizedBox(height: 10),
-              Align(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                    width: 200,
-                    child: Column(children: [
-                      Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Sub Total :",
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  Text(
-                                    htmlPrice(stockReports.totalWithDiscount!),
-                                    style: const TextStyle(fontSize: 12),
-                                  )
-                                ]),
-                            Divider(
-                                thickness: 1,
-                                color: const PdfColor.fromInt(0xFF000000))
-                          ]),
-                      Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "VAT : ",
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  Text(
-                                    htmlPrice(0),
-                                    style: const TextStyle(fontSize: 12),
-                                  )
-                                ]),
-                            Divider(
-                                thickness: 1,
-                                color: const PdfColor.fromInt(0xFF000000))
-                          ]),
-                      Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Total :",
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                  Text(
-                                    htmlPrice(stockReports.totalWithDiscount!),
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12),
-                                  )
-                                ]),
-                            Divider(
-                                thickness: 1,
-                                color: const PdfColor.fromInt(0xFF000000)),
-                            Divider(
-                                height: 0.1,
-                                thickness: 1,
-                                color: const PdfColor.fromInt(0xFF000000))
-                          ]),
-                    ])),
-              ),
               SizedBox(height: 10),
               if (stockReports.attendant != null)
                 Text("Served by : ${stockReports.attendant!.username ?? " "}"),
               SizedBox(height: 10),
-              Text("Paid via : ${stockReports.paymentType ?? ""}"),
               SizedBox(height: 30),
               Row(children: [
                 Column(
