@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createDeliveryNote } from "@/lib/delivery-note";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1357,6 +1358,25 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
 
   const filteredSalesCount = totalCount;
 
+  const downloadDeliveryNote = async (sale: any) => {
+    try {
+      const response = await rawApiFetch(`/api/sales/single/receipt/${sale.id}`);
+      if (!response.ok) throw new Error("Could not load the sale");
+      const data = await response.json();
+      if (!Array.isArray(data.items)) throw new Error("Sale items are missing");
+      createDeliveryNote(data).save(
+        `delivery-note-${String(data.receiptNo || sale.id).replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`,
+      );
+      toast({ title: "Delivery Note Downloaded" });
+    } catch (error) {
+      toast({
+        title: "Delivery Note Failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
 
 
   const getStatusBadgeVariant = (status: string) => {
@@ -1394,6 +1414,9 @@ ${(data.items || []).map((item: any) => `<div class="item">${item.quantity}x ${i
       </Item>
       <Item onClick={() => openQuotationDialog(sale)}>
         <FileText className="mr-2 h-4 w-4" />Quotation
+      </Item>
+      <Item onClick={() => downloadDeliveryNote(sale)}>
+        <FileText className="mr-2 h-4 w-4" />Delivery Note
       </Item>
       {sale.status === "hold" && (
         <Item onClick={() => openInvoiceDialog(sale)}>
