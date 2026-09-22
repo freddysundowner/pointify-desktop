@@ -41,16 +41,21 @@ salesDialog(
             ),
             TextButton(
               onPressed: () {
-                if (receiptItem.product?.type != "service" &&
-                    double.parse(controller.text) >
-                        receiptItem.product!.quantity!) {
+                final quantity = double.tryParse(controller.text);
+                if (quantity == null || !quantity.isFinite || quantity <= 0) {
+                  generalAlert(message: "Enter a quantity greater than zero", title: "Error");
+                  return;
+                }
+                final isReduction = quantity <= (receiptItem.quantity ?? 0);
+                if (!isReduction &&
+                    !salesController.canSetSaleQuantity(receiptItem.product, quantity)) {
                   generalAlert(
                       message:
                           "quantity cannot be greater than ${receiptItem.product!.quantity}",
                       title: "Error");
                 } else {
                   Navigator.pop(context);
-                  receiptItem.quantity = double.parse(controller.text);
+                  receiptItem.quantity = quantity;
                   controller.text = "";
                   salesController.calculateAmount(index,
                       totalDiscount: salesController

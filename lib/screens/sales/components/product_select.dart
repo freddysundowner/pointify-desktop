@@ -17,9 +17,9 @@ Widget productListItemCard(
           function!(product);
         } else {
           if (userController
-                  .currentUser.value?.primaryShop?.allownegativeselling ==
-              false) {
-            if ((product.quantity == 0 || product.quantity! < 0) &&
+                  .currentUser.value?.primaryShop?.allownegativeselling !=
+              true) {
+            if ((product.quantity ?? 0) <= 0 &&
                 product.type == 'product') {
               generalAlert(title: "Error", message: "Out of stock");
               return;

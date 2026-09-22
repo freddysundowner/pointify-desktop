@@ -157,7 +157,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
       return [
         ...prev,
         {
-          id: product._id,
+          id: product._id || product.id,
           name: product.name,
           price,
           quantity: 1,
@@ -204,6 +204,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
   };
 
   const updateQuantity = (id: string | number, quantity: number, productData?: Product) => {
+    if (!Number.isFinite(quantity)) return;
     if (quantity <= 0) {
       setCartItems(prev => prev.filter(item => item.id !== id));
       return;
@@ -211,7 +212,9 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
 
     const isService = productData?.productType === "service" || productData?.virtual === true;
 
-    if (!allowNegativeSelling && productData && !isService && quantity > (productData.quantity || 0)) {
+    const currentQuantity = cartItems.find(item => item.id === id)?.quantity || 0;
+    if (!allowNegativeSelling && productData && !isService &&
+        quantity > currentQuantity && quantity > (productData.quantity || 0)) {
       toast({
         title: "Stock Limit",
         description: `Only ${productData.quantity} in stock.`,
