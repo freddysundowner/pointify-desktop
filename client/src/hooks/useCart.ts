@@ -4,8 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useCartContext } from "@/contexts/CartContext";
 import { usePrimaryShop } from "./usePrimaryShop";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store";
 
 type SaleType = "Retail" | "Wholesale" | "Dealer";
 
@@ -13,8 +11,8 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
   const { toast } = useToast();
   const { attendant } = useAttendantAuth();
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
-  const primaryShopData = usePrimaryShop();
-  const { shopData } = useSelector((state: RootState) => state.attendant);
+  const { shopData } = usePrimaryShop();
+  const allowNegativeSelling = shopData?.allownegativeselling === true;
 
   const {
     cartItems,
@@ -71,7 +69,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
         ? enteredAmount / baseSellingPrice
         : 0;
     setOrderId(passedOrderId || null);
-    if (product.productType === "product" && quantity <= 0 && shopData?.allownegativeselling == false) {
+    if (product.productType !== "service" && !product.virtual && quantity <= 0 && !allowNegativeSelling) {
       toast({
         title: "Out of Stock",
         description: `${product.name} is out of stock.`,
@@ -90,7 +88,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
     if (
       manageByPrice &&
       product.productType === "product" &&
-      shopData?.allownegativeselling == false &&
+      !allowNegativeSelling &&
       derivedQuantity > quantity
     ) {
       toast({
@@ -111,7 +109,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
           const combinedStockQuantity = combinedAmount / baseSellingPrice;
           if (
             product.productType === "product" &&
-            shopData?.allownegativeselling == false &&
+            !allowNegativeSelling &&
             combinedStockQuantity > quantity
           ) {
             toast({
@@ -135,7 +133,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
               : item
           );
         }
-        if (!isService && existingItem.quantity + 1 > quantity) {
+        if (!allowNegativeSelling && !isService && existingItem.quantity + 1 > quantity) {
           toast({
             title: "Insufficient Stock",
             description: `Only ${quantity} ${product.name} available.`,
@@ -213,7 +211,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
 
     const isService = productData?.productType === "service" || productData?.virtual === true;
 
-    if (productData && !isService && quantity > (productData.quantity || 0)) {
+    if (!allowNegativeSelling && productData && !isService && quantity > (productData.quantity || 0)) {
       toast({
         title: "Stock Limit",
         description: `Only ${productData.quantity} in stock.`,

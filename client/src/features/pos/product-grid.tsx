@@ -99,6 +99,7 @@ export default function ProductGrid({
   const { admin } = useAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
   const { shopData } = usePrimaryShop();
+  const allowNegativeSelling = shopData?.allownegativeselling === true;
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
@@ -597,13 +598,13 @@ export default function ProductGrid({
 
   const isDropdownItemSelectable = (item: any) => {
     const isService = item?.productType === 'service' || item?.virtual === true;
-    return isService || (item.quantity ?? 0) > 0;
+    return allowNegativeSelling || isService || (item.quantity ?? 0) > 0;
   };
 
   // Add an item to the cart, respecting stock/service rules, then clear the box.
   const addScannedItem = (item: any) => {
     const isService = item?.productType === 'service' || item?.virtual === true;
-    const isOutOfStock = !isService && (item.quantity ?? 0) === 0;
+    const isOutOfStock = !allowNegativeSelling && !isService && (item.quantity ?? 0) <= 0;
     if (isOutOfStock) {
       toast({
         title: "Out of stock",
@@ -1493,7 +1494,7 @@ export default function ProductGrid({
       orderId: resumedHeldSale?.orderId || orderId,
       duedate: selectedPaymentMethod === "credit" ? creditDueDate : null,
       batchTrack: shouldTrackBatches,
-      allownegativeselling: false,
+      allownegativeselling: allowNegativeSelling,
       mpesaTransId: !isHold && selectedPaymentMethod === "mpesa" ? mpesaTransactionId : 
                    !isHold && selectedPaymentMethod === "split" && splitAmounts.mpesa > 0 ? `SPLIT_${Date.now()}` : "",
       // Shop-level intent flag, always sent: tells the upstream sale-commit whether
@@ -2138,7 +2139,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                 ) : (
                   products.slice(0, 8).map((product: any, idx: number) => {
                     const isService = product?.productType === 'service' || product?.virtual === true;
-                    const isOutOfStock = !isService && (product.quantity === 0);
+                    const isOutOfStock = !allowNegativeSelling && !isService && (product.quantity ?? 0) <= 0;
                     const isHighlighted = idx === dropdownHighlight;
                     return (
                       <div
@@ -2418,7 +2419,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                     ) : (
                       products.slice(0, 8).map((product: any, idx: number) => {
                         const isService = product?.productType === 'service' || product?.virtual === true;
-                        const isOutOfStock = !isService && (product.quantity === 0);
+                        const isOutOfStock = !allowNegativeSelling && !isService && (product.quantity ?? 0) <= 0;
                         const isHighlighted = idx === dropdownHighlight;
                         return (
                         <div
@@ -3007,7 +3008,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                     const quantity = product.quantity || 0;
                     const reorderLevel = product.reorderLevel || product.lowStockThreshold || 0;
                     const isVirtual = product.virtual || product?.productType == "service";
-                    const isOutOfStock = !isVirtual && quantity === 0;
+                    const isOutOfStock = !allowNegativeSelling && !isVirtual && quantity <= 0;
                     const isLowStock = !isVirtual && quantity > 0 && quantity <= reorderLevel;
                     const imageUrl = product.images?.[0] || product.image;
                     
@@ -3911,7 +3912,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                   const productName = product.name || product.title;
                   const quantity = product.quantity || 0;
                   const isVirtual = product.virtual || product?.productType == "service";
-                  const isOutOfStock = !isVirtual && quantity === 0;
+                  const isOutOfStock = !allowNegativeSelling && !isVirtual && quantity <= 0;
                   const imageUrl = product.images?.[0] || product.image;
                   const inCartQty = cartItems
                     .filter((ci: any) => ci.id === productId || ci.productId === productId)
@@ -4346,7 +4347,7 @@ ${ticket.note ? `<hr/><div>Note: ${ticket.note}</div>` : ''}
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
                     {suggestions.map((p: any) => {
                       const isService = p.productType === 'service' || p.virtual;
-                      const outOfStock = !isService && (p.quantity ?? 0) <= 0;
+                      const outOfStock = !allowNegativeSelling && !isService && (p.quantity ?? 0) <= 0;
                       return (
                         <div
                           key={p._id}
