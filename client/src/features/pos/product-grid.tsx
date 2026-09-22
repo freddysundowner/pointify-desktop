@@ -19,7 +19,7 @@ import { useProducts } from "@/contexts/ProductsContext";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useAuth } from "@/features/auth/useAuth";
 import { useSelector } from "react-redux";
-import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePOSShop } from "@/hooks/usePOSShop";
 import type { RootState } from "@/store";
 import type { Product, CartItem, Customer, Transaction } from "@shared/schema";
 import type { AccompanimentGroup, AccompanimentSelection } from "@/types/accompaniments";
@@ -98,7 +98,7 @@ export default function ProductGrid({
   const { attendant, lockScreen } = useAttendantAuth();
   const { admin } = useAuth();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
-  const { shopData } = usePrimaryShop();
+  const { shopData } = usePOSShop();
   const allowNegativeSelling = shopData?.allownegativeselling === true;
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");

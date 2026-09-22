@@ -11,7 +11,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useCartContext } from "@/contexts/CartContext";
 import { useProducts } from "@/contexts/ProductsContext";
-import { usePrimaryShop } from "@/hooks/usePrimaryShop";
+import { usePOSShop } from "@/hooks/usePOSShop";
 import { useCart } from "@/hooks/useCart";
 
 import type { RootState } from "@/store";
@@ -23,7 +23,7 @@ export default function POS() {
   const { admin } = useAuth();
   const { attendant } = useAttendantAuth();
   const { products, refreshProducts } = useProducts();
-  const { shopData: primaryShopData } = usePrimaryShop();
+  const { shopData: primaryShopData, shopId: effectiveShopId } = usePOSShop();
   const { resumedHeldSale } = useCartContext();
   const { selectedShopId } = useSelector((state: RootState) => state.shop);
 
@@ -48,8 +48,6 @@ export default function POS() {
     resumedHeldSale && restoredTaxableSubtotal > 0
       ? (Number(resumedHeldSale.totaltax) || 0) / restoredTaxableSubtotal * 100
       : primaryShopData?.tax || 0;
-  const effectiveShopId =
-    selectedShopId || (typeof attendant?.shopId === "object" ? attendant.shopId._id : attendant?.shopId);
 
   const canSetSaleDate = attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("set_sale_date")) ?? false;
   const canSell = attendant?.permissions?.some(p => p.key === "pos" && p.value.includes("can_sell")) ?? false;

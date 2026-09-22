@@ -3,7 +3,7 @@ import type { CartItem, Product, Transaction } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useAttendantAuth } from "@/contexts/AttendantAuthContext";
 import { useCartContext } from "@/contexts/CartContext";
-import { usePrimaryShop } from "./usePrimaryShop";
+import { usePOSShop } from "./usePOSShop";
 
 type SaleType = "Retail" | "Wholesale" | "Dealer";
 
@@ -11,7 +11,7 @@ export const useCart = (products: Product[], taxRate: number, saleType: SaleType
   const { toast } = useToast();
   const { attendant } = useAttendantAuth();
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null);
-  const { shopData } = usePrimaryShop();
+  const { shopData } = usePOSShop();
   const allowNegativeSelling = shopData?.allownegativeselling === true;
 
   const {

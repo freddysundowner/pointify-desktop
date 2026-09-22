@@ -18,3 +18,10 @@ resolution. If it fetches shop data with react-query, gate `enabled` on
 `!!shopId && !!(adminToken || attendantToken)` — the admin token is null in
 attendant sessions, so gating on admin token alone leaves attendants unable to
 load shop settings. `apiCall` already forwards whichever token is in localStorage.
+
+POS stock policy must prefer current shop-query data over login snapshots, with
+only a matching-shop snapshot allowed as an offline fallback.
+**Why:** Login/Redux settings can remain stale after Negative Selling is changed,
+so correct quantity guards can still block sales using the wrong policy.
+**How to apply:** Keep product selection, cart editing, and the sale payload on
+the same reactive settings source; do not independently read auth snapshots.

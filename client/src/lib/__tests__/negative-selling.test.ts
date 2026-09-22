@@ -10,8 +10,8 @@ vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: state.toast }) }
 vi.mock("@/contexts/AttendantAuthContext", () => ({
   useAttendantAuth: () => ({ attendant: null }),
 }));
-vi.mock("@/hooks/usePrimaryShop", () => ({
-  usePrimaryShop: () => ({ shopData: { allownegativeselling: state.allowNegative } }),
+vi.mock("@/hooks/usePOSShop", () => ({
+  usePOSShop: () => ({ shopData: { allownegativeselling: state.allowNegative } }),
 }));
 vi.mock("@/contexts/CartContext", () => ({
   useCartContext: () => ({
