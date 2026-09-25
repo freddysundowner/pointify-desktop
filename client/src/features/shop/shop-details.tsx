@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "wouter";
 import type { RootState } from "@/store";
 import { setSelectedShopData } from "@/store/shopSlice";
+import { operationalToggleUpdate, isMpesaSettingsUpdate, mergeSavedShop } from "@/lib/shop-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -168,12 +169,12 @@ export default function ShopDetails() {
         allownegativeselling: shop.allownegativeselling || false,
         trackbatches: shop.trackbatches || false,
         useWarehouse: shop.useWarehouse || false,
-        allowOnlineSelling: shop.allowOnlineSelling || true,
+        allowOnlineSelling: shop.allowOnlineSelling ?? true,
         showstockonline: shop.showstockonline || false,
         showpriceonline: shop.showpriceonline || false,
         deletewarning: shop.deletewarning || 0,
         backupInterval: shop.backupInterval || "end_of_month",
-        allowBackup: shop.allowBackup || true,
+        allowBackup: shop.allowBackup ?? true,
         warehouse: shop.warehouse || false,
         production: shop.production || false,
         isRestaurant: shop.isRestaurant || false,
@@ -197,12 +198,15 @@ export default function ShopDetails() {
 
   // Update shop mutation
   const updateShopMutation = useMutation({
+    onMutate: () => ({ previousForm: formData }),
     mutationFn: async (data: any) => {
       const response = await apiCall(`/api/shop/${id}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
-      return await response.json();
+      const saved = await response.json();
+      if (!response.ok) throw new Error(saved?.error || "Failed to update shop settings.");
+      return mergeSavedShop(shop, saved, data);
     },
     onSuccess: (data: any, variables: any) => {
       // Invalidate queries to refresh data
@@ -216,7 +220,8 @@ export default function ShopDetails() {
       // (Mongo findByIdAndUpdate without {new: true}), which made just-saved
       // toggles look stale everywhere. Since the save succeeded, overlay the
       // fields we just sent on top of the returned document.
-      const updated = data && !Array.isArray(data) ? { ...data, ...variables } : null;
+      const updated = data;
+      queryClient.setQueryData(["shop", id], updated);
 
       // usePrimaryShop() (used by POS, dashboard sidebar, etc.) reads shop
       // data from this Redux snapshot rather than react-query, so without
@@ -242,7 +247,7 @@ export default function ShopDetails() {
       const validationOn = updated?.mpesa_require_validation !== false;
       const validationLabel = `M-Pesa validation is ${validationOn ? "ON" : "OFF"}.`;
 
-      if (linkError) {
+      if (isMpesaSettingsUpdate(variables) && linkError) {
         // The upstream error often looks like `SunPay 409: {"message":"..."}`.
         // Pull out the human-readable message so we don't show raw JSON.
         const readableLinkError = (() => {
@@ -271,13 +276,16 @@ export default function ShopDetails() {
 
       toast({
         title: "Shop Updated",
-        description: `Shop settings saved. ${validationLabel}`,
+        description: isMpesaSettingsUpdate(variables)
+          ? `Shop settings saved. ${validationLabel}`
+          : "Shop settings saved.",
       });
     },
-    onError: () => {
+    onError: (error: Error, _variables, context) => {
+      if (context?.previousForm) setFormData(context.previousForm);
       toast({
         title: "Error",
-        description: "Failed to update shop settings.",
+        description: error.message || "Failed to update shop settings.",
         variant: "destructive",
       });
     },
@@ -334,7 +342,7 @@ export default function ShopDetails() {
     if (!canSaveShop()) return;
     const next = { ...formData, [key]: checked };
     setFormData(next);
-    updateShopMutation.mutate(buildUpdateData(next));
+    updateShopMutation.mutate(operationalToggleUpdate(key, checked));
   };
 
   const handleSaveSettings = () => {
