@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes.js";
 import { getGlobalApiMode } from "./config.js";
 import "./network-status-handler.js";
 import path from "path";
+import { translateAttendantAuth } from "./middleware/upstream-auth.js";
 import fs from "fs";
 
 const app = express();
@@ -62,6 +63,8 @@ app.use((req, res, next) => {
     res.setHeader("Content-Type", "application/json");
     next();
   });
+
+  app.use("/api", translateAttendantAuth);
 
   await registerRoutes(app);
 

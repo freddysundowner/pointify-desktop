@@ -123,6 +123,8 @@ export async function verifyBearerToken(
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+  // attendant session already verified (signature + expiry) by translateAttendantAuth
+  if ((req as any).sessionToken) return next();
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!token) {

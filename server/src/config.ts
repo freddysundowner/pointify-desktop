@@ -1,10 +1,13 @@
 // src/api/pointify.ts
-// Ignore TLS/SSL certificate validation for upstream Pointify requests.
-// (api.pointifypos.com presents a certificate that does not match its
-// hostname; this disables Node's verification so requests don't fail.)
-// WARNING: this turns off HTTPS certificate checking process-wide.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS certificates are verified. api.pointifypos.com has a valid Let's Encrypt certificate (checked),
+// so the old process-wide NODE_TLS_REJECT_UNAUTHORIZED=0 is gone. Only for an on-prem backend with a
+// self-signed certificate, set POINTIFY_INSECURE_TLS=true (this disables verification for ALL requests).
+if (process.env.POINTIFY_INSECURE_TLS === 'true') {
+  console.warn('WARNING: POINTIFY_INSECURE_TLS=true: HTTPS certificate verification is disabled');
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
+import { requestAuth } from './lib/request-context.js';
 import FormData from 'form-data';
 import fs from 'fs';
 import fetchh from 'node-fetch';
@@ -75,6 +78,18 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // The Pointify API enforces tokens. Routes that did not pass one (the API used to be open) get the
+  // token of the request being handled; an explicit non-empty Authorization always wins.
+  const ctxAuth = requestAuth.getStore()?.authorization;
+  if (ctxAuth) {
+    const h: Record<string, any> = { ...((options.headers as Record<string, any>) || {}) };
+    const hasAuth = Object.keys(h).some((k) => k.toLowerCase() === 'authorization' && h[k]);
+    if (!hasAuth) {
+      for (const k of Object.keys(h)) if (k.toLowerCase() === 'authorization') delete h[k];
+      h['Authorization'] = ctxAuth;
+    }
+    options = { ...options, headers: h };
+  }
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } finally {
@@ -189,7 +204,6 @@ export async function makeLocalPointifyRequest(
   };
 
   let response: Response;
-  console.log(url, headers)
   try {
     response = await fetchWithTimeout(url, { ...options, headers }, LOCAL_REQUEST_TIMEOUT_MS);
   } catch (fetchError: any) {

@@ -43,7 +43,8 @@ export function registerAttendantAuthRoutes(app: Express) {
       let attendant: any;
       try {
         attendant = await makePointifyRequest(`/attendants/${loginResponse.userdata._id}`, {
-          method: 'GET'
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${loginResponse.token}` }
         });
       } catch (error) {
         console.log('Could not fetch attendant permissions from API, using empty array:', error.message);
@@ -69,7 +70,9 @@ export function registerAttendantAuthRoutes(app: Express) {
         shopId: attendant.shopId,
         adminId: attendant.adminId,
         permissions: attendant.permissions || [],
-        loginTime: new Date().toISOString()
+        loginTime: new Date().toISOString(),
+        // the API's own token for this attendant: swapped in for upstream calls (middleware/upstream-auth.ts)
+        ut: loginResponse.token
       });
 
       // Return success response
@@ -139,7 +142,8 @@ export function registerAttendantAuthRoutes(app: Express) {
       if (!attendant?.permissions) {
         try {
           attendant = await makePointifyRequest(`/attendants/${attendant?._id}`, {
-            method: 'GET'
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${loginResponse.token}` }
           });
         } catch (error: any) {
           console.log('Could not fetch attendant permissions from API, using response as-is:', error.message);
@@ -174,7 +178,8 @@ export function registerAttendantAuthRoutes(app: Express) {
           shopId: attendant?.shopId?._id || attendant?.shopId,
           adminId: attendant.adminId,
           permissions: attendant.permissions || [],
-          loginTime: new Date().toISOString()
+          loginTime: new Date().toISOString(),
+          ut: loginResponse.token
         })
       });
 
@@ -222,7 +227,7 @@ export function registerAttendantAuthRoutes(app: Express) {
         });
       }
 
-      const token = authHeader.substring(7);
+      const token = (req as any).sessionToken || authHeader.substring(7);
 
       // Two token shapes reach this endpoint:
       // 1. Password login (/api/auth/attendant/login) mints its own token —
